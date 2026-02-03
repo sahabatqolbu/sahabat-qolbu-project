@@ -1,0 +1,322 @@
+@import "tailwindcss";
+
+@theme {
+  /* Typography - Poppins as Primary */
+  --font-sans: var(--font-poppins);
+  --font-serif: var(--font-playfair);
+  --font-display: var(--font-playfair);
+
+  /* Brand Colors - Biru Tua (#0A2C45) */
+  --color-primary-50: #E6EBF0;
+  --color-primary-100: #CDD7E1;
+  --color-primary-200: #9BAFC3;
+  --color-primary-300: #6987A5;
+  --color-primary-400: #375F87;
+  --color-primary-500: #0A2C45;
+  --color-primary-600: #082338;
+  --color-primary-700: #061A2A;
+  --color-primary-800: #04121C;
+  --color-primary-900: #02090E;
+  --color-primary: #0A2C45;
+
+  /* Brand Colors - Kuning Emas (#FFC107) */
+  --color-secondary-50: #FFF9E6;
+  --color-secondary-100: #FFF3CC;
+  --color-secondary-200: #FFE799;
+  --color-secondary-300: #FFDB66;
+  --color-secondary-400: #FFCF33;
+  --color-secondary-500: #FFC107;
+  --color-secondary-600: #CC9A06;
+  --color-secondary-700: #997404;
+  --color-secondary-800: #664D03;
+  --color-secondary-900: #332701;
+  --color-secondary: #FFC107;
+
+  /* Rest of colors... */
+  --color-neutral-50: #F9FAFB;
+  --color-neutral-100: #F3F4F6;
+  --color-neutral-200: #E5E7EB;
+  --color-neutral-300: #D1D5DB;
+  --color-neutral-400: #9CA3AF;
+  --color-neutral-500: #6B7280;
+  --color-neutral-600: #4B5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1F2937;
+  --color-neutral-900: #111827;
+
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  --color-info: #3B82F6;
+
+  --color-background: #FFFFFF;
+  --color-foreground: #0A2C45;
+  --color-border: #E5E7EB;
+  --color-ring: #FFC107;
+
+  --radius: 1rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  :root {
+    --font-poppins: "Poppins", system-ui, sans-serif;
+    --font-playfair: "Playfair Display", Georgia, serif;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-white text-primary font-sans antialiased;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-3;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-secondary rounded-full;
+  }
+}
+
+@layer components {
+  /* Buttons - Enhanced Brand Colors */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2.5
+           bg-secondary hover:bg-secondary-600 active:bg-secondary-700
+           text-primary font-bold text-base
+           px-8 py-4 rounded-2xl
+           shadow-xl shadow-secondary/30
+           hover:shadow-2xl hover:shadow-secondary/50
+           transition-all duration-300 
+           hover:scale-[1.02] active:scale-[0.98]
+           border-2 border-secondary-600;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2.5
+           bg-primary hover:bg-primary-600 active:bg-primary-700
+           text-white font-bold text-base
+           px-8 py-4 rounded-2xl
+           shadow-xl shadow-primary/30
+           hover:shadow-2xl hover:shadow-primary/50
+           transition-all duration-300 
+           hover:scale-[1.02] active:scale-[0.98]
+           border-2 border-primary-700;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2.5
+           bg-transparent border-[3px] border-secondary
+           text-secondary hover:bg-secondary hover:text-primary
+           font-bold text-base
+           px-8 py-4 rounded-2xl
+           transition-all duration-300
+           hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .btn-outline-white {
+    @apply inline-flex items-center justify-center gap-2.5
+           bg-transparent border-[3px] border-white
+           text-white hover:bg-white hover:text-primary
+           font-bold text-base
+           px-8 py-4 rounded-2xl
+           transition-all duration-300
+           hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  /* Cards - Premium Design */
+  .card {
+    @apply bg-white rounded-3xl shadow-xl 
+           border-4 border-neutral-100
+           hover:border-secondary hover:shadow-2xl 
+           transition-all duration-500
+           overflow-hidden;
+  }
+
+  .card-primary {
+    @apply bg-gradient-to-br from-primary to-primary-700
+           text-white rounded-3xl shadow-2xl 
+           border-4 border-secondary p-8;
+  }
+
+  .card-secondary {
+    @apply bg-gradient-to-br from-secondary to-secondary-400
+           text-primary rounded-3xl shadow-2xl 
+           border-4 border-primary p-8;
+  }
+
+  /* Input */
+  .input-custom {
+    @apply w-full px-5 py-4
+           bg-white border-3 border-neutral-300 rounded-2xl
+           focus:ring-4 focus:ring-secondary/30 
+           focus:border-secondary
+           transition-all duration-200
+           text-primary font-medium text-base
+           placeholder:text-neutral-400
+           outline-none;
+  }
+
+  /* Typography - Poppins Based */
+  .heading-display {
+    @apply font-display font-black text-primary 
+           text-4xl sm:text-5xl md:text-6xl lg:text-7xl 
+           leading-[1.1] tracking-tight;
+  }
+
+  .heading-section {
+    @apply font-display font-bold text-primary 
+           text-3xl sm:text-4xl md:text-5xl 
+           leading-tight tracking-tight;
+  }
+
+  .heading-card {
+    @apply font-sans font-bold text-primary 
+           text-xl md:text-2xl;
+  }
+
+  .text-body {
+    @apply font-sans font-normal text-base md:text-lg 
+           text-neutral-700 leading-relaxed;
+  }
+
+  .text-body-large {
+    @apply font-sans font-medium text-lg md:text-xl 
+           text-neutral-700 leading-relaxed;
+  }
+
+  /* Badges - Brand Colors */
+  .badge {
+    @apply inline-flex items-center gap-2 
+           px-4 py-2 rounded-full 
+           text-sm font-bold tracking-wide;
+  }
+
+  .badge-primary {
+    @apply bg-primary text-white;
+  }
+
+  .badge-secondary {
+    @apply bg-secondary text-primary;
+  }
+
+  .badge-outline-primary {
+    @apply bg-white border-3 border-primary text-primary;
+  }
+
+  .badge-outline-secondary {
+    @apply bg-white border-3 border-secondary text-secondary;
+  }
+
+  /* Container */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Sections */
+  .section-primary {
+    @apply bg-gradient-to-br from-primary via-primary-600 to-primary-700 text-white;
+  }
+
+  .section-secondary {
+    @apply bg-gradient-to-br from-secondary-50 to-secondary-100/50 text-primary;
+  }
+
+  .section-white {
+    @apply bg-white text-primary;
+  }
+
+  .section-light {
+    @apply bg-neutral-50 text-primary;
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-secondary-400 via-secondary to-secondary-600 
+           bg-clip-text text-transparent;
+  }
+
+  .text-gradient-blue {
+    @apply bg-gradient-to-r from-primary to-primary-600 
+           bg-clip-text text-transparent;
+  }
+
+  .shadow-glow-gold {
+    box-shadow: 0 0 40px rgba(255, 193, 7, 0.3);
+  }
+
+  .shadow-glow-blue {
+    box-shadow: 0 0 40px rgba(10, 44, 69, 0.3);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mobile Enhancements */
+@media (max-width: 768px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline,
+  .btn-outline-white {
+    @apply min-h-[52px] text-sm px-6 py-3;
+  }
+
+  .input-custom {
+    @apply min-h-[52px] text-base;
+  }
+
+  .heading-display {
+    @apply text-3xl leading-tight;
+  }
+
+  .heading-section {
+    @apply text-2xl;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out;
+}

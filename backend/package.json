@@ -1,0 +1,45 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend API untuk Ekosistem Digital Sahabat Qolbu",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon --max-old-space-size=512 server.js",
+    "start": "node server.js",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate",
+    "seed": "node -r dotenv/config src/db/seed.js",
+    "test:email": "node src/utils/testEmail.js"
+  },
+  "keywords": [
+    "umrah",
+    "haji",
+    "travel"
+  ],
+  "author": "Sahabat Qolbu",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jimp": "^1.6.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "mysql2": "^3.16.0",
+    "nodemailer": "^7.0.12",
+    "xlsx": "^0.18.5",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.8",
+    "nodemon": "^3.1.11"
+  }
+}
