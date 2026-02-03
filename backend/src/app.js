@@ -42,12 +42,21 @@ app.use(
       const allowed = [
         "http://localhost:3000",
         "http://localhost:3001",
+        "https://sahabatqolbu.com",
+        "https://dashboard.sahabatqolbu.com",
         "https://sahabat-qolbu-project.vercel.app",
         process.env.FRONTEND_URL,
         process.env.DASHBOARD_URL,
       ];
-      if (!origin || allowed.includes(origin)) callback(null, true);
-      else callback(new Error("CORS not allowed"));
+
+      // Allow if no origin (like mobile apps or curl) or if in allowed list
+      // Or if it's a Vercel preview/deployment URL
+      if (!origin || allowed.includes(origin) || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        console.warn("🚫 CORS Blocked:", origin);
+        callback(new Error("CORS not allowed"));
+      }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
