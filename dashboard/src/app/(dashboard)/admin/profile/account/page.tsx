@@ -42,15 +42,18 @@ export default function AdminAccountPage() {
 
   // States
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false); // ✅ GANTI EMAIL
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newEmail, setNewEmail] = useState(""); // ✅ GANTI EMAIL
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
   // Logout countdown state
   const [logoutCountdown, setLogoutCountdown] = useState<number | null>(null);
+  const [logoutMessage, setLogoutMessage] = useState({ title: "", description: "" }); // ✅ GANTI EMAIL MESSAGES
 
   // Auto logout effect
   useEffect(() => {
@@ -68,9 +71,30 @@ export default function AdminAccountPage() {
     return () => clearTimeout(timer);
   }, [logoutCountdown, logout]);
 
-  // Request OTP Mutation
+  // Request OTP Password Mutation
   const requestOTPMutation = useMutation({
     mutationFn: () => accountService.requestPasswordOTP(),
+    onSuccess: (data) => {
+      setOtpSent(true);
+      setCountdown(60);
+      startCountdown();
+      toast({
+        title: "✅ OTP Terkirim",
+        description: `Kode OTP telah dikirim ke ${data.data?.email || "email Anda"}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal",
+        description: error.response?.data?.message || "Gagal mengirim OTP",
+      });
+    },
+  });
+
+  // ✅ Request OTP Email Mutation
+  const requestEmailOTPMutation = useMutation({
+    mutationFn: () => accountService.requestEmailOTP(),
     onSuccess: (data) => {
       setOtpSent(true);
       setCountdown(60);
@@ -95,6 +119,10 @@ export default function AdminAccountPage() {
     onSuccess: () => {
       setPasswordDialogOpen(false);
       resetForm();
+      setLogoutMessage({
+        title: "Password Berhasil Diubah!",
+        description: "Silakan login kembali dengan password baru",
+      });
       setLogoutCountdown(3);
 
       toast({
@@ -108,6 +136,33 @@ export default function AdminAccountPage() {
         variant: "destructive",
         title: "❌ Gagal",
         description: error.response?.data?.message || "Gagal mengubah password",
+      });
+    },
+  });
+
+  // ✅ Change Email Mutation
+  const changeEmailMutation = useMutation({
+    mutationFn: () => accountService.changeEmail(otp, newEmail),
+    onSuccess: () => {
+      setEmailDialogOpen(false);
+      resetForm();
+      setLogoutMessage({
+        title: "Email Berhasil Diubah!",
+        description: "Silakan login kembali dengan email baru",
+      });
+      setLogoutCountdown(3);
+
+      toast({
+        title: "✅ Email Berhasil Diubah",
+        description: "Silakan login kembali dengan email baru",
+        duration: 5000,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal",
+        description: error.response?.data?.message || "Gagal mengubah email",
       });
     },
   });
@@ -131,11 +186,12 @@ export default function AdminAccountPage() {
     setOtp("");
     setNewPassword("");
     setConfirmPassword("");
+    setNewEmail(""); // ✅ GANTI EMAIL
     setShowPassword(false);
     setCountdown(0);
   };
 
-  // Validate & Submit
+  // Validate & Submit Change Password
   const handleChangePassword = () => {
     if (!otp || otp.length !== 6) {
       toast({ variant: "destructive", title: "Masukkan 6 digit OTP" });
@@ -155,6 +211,23 @@ export default function AdminAccountPage() {
     changePasswordMutation.mutate();
   };
 
+  // ✅ Validate & Submit Change Email
+  const handleChangeEmail = () => {
+    if (!otp || otp.length !== 6) {
+      toast({ variant: "destructive", title: "Masukkan 6 digit OTP" });
+      return;
+    }
+    if (!newEmail || !/^\S+@\S+\.\S+$/.test(newEmail)) {
+      toast({ variant: "destructive", title: "Masukkan format email yang valid" });
+      return;
+    }
+    if (newEmail === user?.email) {
+      toast({ variant: "destructive", title: "Email baru tidak boleh sama dengan email saat ini" });
+      return;
+    }
+    changeEmailMutation.mutate();
+  };
+
   if (!user) return null;
 
   return (
@@ -167,14 +240,14 @@ export default function AdminAccountPage() {
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Password Berhasil Diubah!
+              {logoutMessage.title}
             </h2>
-            <p className="text-gray-600 mb-4">Anda akan logout dalam</p>
+            <p className="text-gray-600 mb-4">{logoutMessage.description}</p>
             <div className="text-5xl font-bold text-primary mb-4">
               {logoutCountdown}
             </div>
             <p className="text-sm text-gray-500">
-              Silakan login kembali dengan password baru
+              Menunggu pemutusan sesi...
             </p>
             <div className="mt-4 flex justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
@@ -210,13 +283,25 @@ export default function AdminAccountPage() {
               <Mail className="h-5 w-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium">{user.email}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{user.email}</p>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 h-5 px-1.5 text-[10px]">
+                    Verified
+                  </Badge>
+                </div>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Terverifikasi
-            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-primary border-primary/20 hover:bg-primary/5"
+              onClick={() => {
+                resetForm();
+                setEmailDialogOpen(true);
+              }}
+            >
+              Ubah Email
+            </Button>
           </div>
 
           <div className="flex items-center justify-between py-3 border-b">
@@ -465,6 +550,137 @@ export default function AdminAccountPage() {
                   </>
                 ) : (
                   "Ubah Password"
+                )}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ EMAIL CHANGE DIALOG */}
+      <Dialog
+        open={emailDialogOpen}
+        onOpenChange={(open) => {
+          setEmailDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              Ubah Email
+            </DialogTitle>
+            <DialogDescription>
+              {!otpSent
+                ? "Kami akan mengirim kode OTP ke email Anda saat ini"
+                : "Masukkan kode OTP dan email baru Anda"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {!otpSent ? (
+              <div className="text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+                  <Shield className="h-8 w-8 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Verifikasi email lama:</p>
+                  <p className="font-medium">{user.email}</p>
+                </div>
+                <Button
+                  onClick={() => requestEmailOTPMutation.mutate()}
+                  disabled={requestEmailOTPMutation.isPending}
+                  className="w-full"
+                >
+                  {requestEmailOTPMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Mengirim...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Kirim Kode OTP
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Kode OTP</Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="6 digit OTP dari email lama"
+                    value={otp}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    className="text-center text-2xl tracking-widest font-mono"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Email Baru</Label>
+                  <Input
+                    type="email"
+                    placeholder="nama@email baru.com"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                  />
+                  <p className="text-[10px] text-gray-500 italic">
+                    * Pastikan email baru aktif. Anda akan diminta login ulang.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center text-xs">
+                  {countdown > 0 ? (
+                    <span className="text-gray-400">
+                      Kirim ulang OTP dalam {countdown}s
+                    </span>
+                  ) : (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-xs"
+                      onClick={() => requestEmailOTPMutation.mutate()}
+                      disabled={requestEmailOTPMutation.isPending}
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Kirim Ulang OTP
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {otpSent && (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setEmailDialogOpen(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handleChangeEmail}
+                disabled={
+                  changeEmailMutation.isPending ||
+                  otp.length !== 6 ||
+                  !newEmail
+                }
+              >
+                {changeEmailMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  "Konfirmasi Ganti Email"
                 )}
               </Button>
             </DialogFooter>

@@ -21,6 +21,8 @@ import {
   getCurrentUser,
   requestPasswordChangeOTP, // ✅ TAMBAH INI
   changePasswordWithOTP, // ✅ TAMBAH INI
+  requestEmailChangeOTP, // ✅ TAMBAH INI
+  changeEmailWithOTP, // ✅ TAMBAH INI
 } from "../controllers/authController.js";
 import {
   getAllUsers,
@@ -203,9 +205,11 @@ const router = express.Router();
 // =====================================================
 // PUBLIC ROUTES (No Auth Required)
 // =====================================================
+router.get("/health-check", (req, res) => res.json({ status: "API router is alive" }));
 router.post("/auth/login", login);
 router.post("/auth/verify-otp", verifyOTPLogin);
 router.post("/auth/request-otp", requestOTP);
+router.get("/auth/test-public", (req, res) => res.json({ message: "Public route works" }));
 
 // =====================================================
 // PROTECTED ROUTES (Auth Required)
@@ -215,6 +219,11 @@ router.get("/auth/me", authenticate, getCurrentUser);
 // ✅ TAMBAHKAN 2 BARIS INI TEPAT DI BAWAH /auth/me
 router.post("/auth/password/request-otp", authenticate, requestPasswordChangeOTP);
 router.post("/auth/password/change", authenticate, changePasswordWithOTP);
+
+// ✅ GANTI EMAIL ROUTES
+router.post("/auth/email/request-otp", authenticate, requestEmailChangeOTP);
+router.post("/auth/email/change", authenticate, changeEmailWithOTP);
+
 
 
 
@@ -1195,13 +1204,5 @@ router.post(
 
 
 
-// ✅ DEBUG ROUTES (PALING BAWAH)
-console.log("🔥 REGISTERED ROUTES:");
-router.stack.forEach((r) => {
-  if (r.route) {
-    const method = Object.keys(r.route.methods)[0].toUpperCase();
-    console.log(`   ${method} ${r.route.path}`);
-  }
-});
 
 export default router;

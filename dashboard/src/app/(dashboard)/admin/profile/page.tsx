@@ -126,7 +126,7 @@ export default function AdminProfilePage() {
 
           {/* Company Profile - Only for ADMIN */}
           {user.role === "ADMIN" && (
-            <Link href="/admin/company">
+            <Link href="/admin/settings/company">
               <Button
                 variant="outline"
                 className="w-full justify-between h-auto py-3"

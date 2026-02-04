@@ -17,4 +17,19 @@ export const accountService = {
     });
     return response.data;
   },
+
+  // Request OTP untuk ganti email
+  requestEmailOTP: async () => {
+    const response = await api.post("/auth/email/request-otp");
+    return response.data;
+  },
+
+  // Ganti email dengan OTP
+  changeEmail: async (otp: string, newEmail: string) => {
+    const response = await api.post("/auth/email/change", {
+      otp,
+      newEmail,
+    });
+    return response.data;
+  },
 };

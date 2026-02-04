@@ -328,3 +328,133 @@ export const changePasswordWithOTP = async (req, res, next) => {
     next(error);
   }
 };
+
+// =====================================================
+// REQUEST EMAIL CHANGE OTP
+// =====================================================
+export const requestEmailChangeOTP = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 menit
+
+    // Save OTP to database
+    await db
+      .update(users)
+      .set({
+        otp,
+        otpExpiry,
+      })
+      .where(eq(users.id, userId));
+
+    // Send OTP via email to current email
+    await sendOTPEmail(user, otp);
+
+    console.log(`📧 Email change OTP sent to: ${user.email}`);
+
+    // Mask email for response
+    const [local, domain] = user.email.split("@");
+    const maskedEmail = local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
+
+    return res.json({
+      success: true,
+      message: "Kode OTP telah dikirim ke email Anda saat ini",
+      data: {
+        email: maskedEmail,
+        expiresIn: 600,
+      },
+    });
+  } catch (error) {
+    console.error("❌ REQUEST EMAIL CHANGE OTP ERROR:", error);
+    next(error);
+  }
+};
+
+// =====================================================
+// VERIFY OTP & CHANGE EMAIL
+// =====================================================
+export const changeEmailWithOTP = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { otp, newEmail } = req.body;
+
+    if (!otp || !newEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP dan email baru wajib diisi",
+      });
+    }
+
+    // Check if new email is already taken
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, newEmail),
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email baru sudah terdaftar",
+      });
+    }
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
+    }
+
+    // Verify OTP
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Kode OTP tidak valid",
+      });
+    }
+
+    if (!user.otpExpiry || new Date() > new Date(user.otpExpiry)) {
+      return res.status(400).json({
+        success: false,
+        message: "Kode OTP sudah kadaluarsa",
+      });
+    }
+
+    // Update email & clear OTP
+    await db
+      .update(users)
+      .set({
+        email: newEmail,
+        otp: null,
+        otpExpiry: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+
+    console.log(`✅ Email changed for user: ${userId} to ${newEmail}`);
+
+    return res.json({
+      success: true,
+      message: "Email berhasil diubah. Silakan login kembali.",
+    });
+  } catch (error) {
+    console.error("❌ CHANGE EMAIL ERROR:", error);
+    next(error);
+  }
+};
