@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/sahj7196/public_html/api/backend
+    - /bin/cp -r backend/* $DEPLOYPATH
