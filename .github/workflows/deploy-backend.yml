@@ -15,9 +15,9 @@ jobs:
       - name: Upload backend via SFTP
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: 65002
-          source: "backend/*"
-          target: "/home/sahj7196/public_html/api/backend"
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USERNAME }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            port: 22
+            source: "backend/*"
+            target: "/home/USERNAME/public_html/api/backend"
