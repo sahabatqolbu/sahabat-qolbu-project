@@ -2,8 +2,6 @@ name: Deploy Backend to cPanel
 
 on:
   push:
-    paths:
-      - 'backend/**'
     branches:
       - main
 
