@@ -1,7 +1,12 @@
 // backend/src/routes/api.js
 import express from "express";
+import { and, eq } from "drizzle-orm";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
+import { validate, authSchemas } from "../validators/index.js";
+import { authLimiter, otpLimiter, apiLimiter } from "../middlewares/rateLimiter.js";
+import { db } from "../db/index.js";
+import { agentData, jamaahData } from "../db/schema.js";
 
 // ✅ IMPORT UPLOAD CUMA SEKALI (PALING ATAS)
 import {
@@ -25,13 +30,35 @@ import {
   changeEmailWithOTP, // ✅ TAMBAH INI
 } from "../controllers/authController.js";
 import {
+  getAllStaff,
+  getStaffById,
+  createStaff,
+  updateStaff,
+  toggleStaffStatus,
+  deleteStaff,
+  resetStaffPassword,
+  getStaffStats,
+} from "../controllers/staffController.js";
+import {
   getAllUsers,
   getUserById,
   createUser,
   updateUser,
   toggleUserStatus,
   deleteUser,
+  importUsers,
+  bulkDeleteUsers,
+  bulkUpdateUserStatus,
 } from "../controllers/adminController.js";
+import {
+  getAllTransactions,
+  getTransactionById,
+  verifyTransaction,
+} from "../controllers/transactionController.js";
+import {
+  getSalesReport,
+  getGrowthStats,
+} from "../controllers/reportController.js";
 import {
   getAllPackages,
   getPackageById,
@@ -206,9 +233,11 @@ const router = express.Router();
 // PUBLIC ROUTES (No Auth Required)
 // =====================================================
 router.get("/health-check", (req, res) => res.json({ status: "API router is alive" }));
-router.post("/auth/login", login);
-router.post("/auth/verify-otp", verifyOTPLogin);
-router.post("/auth/request-otp", requestOTP);
+
+// Auth routes with rate limiting and validation
+router.post("/auth/login", authLimiter, validate(authSchemas.login), login);
+router.post("/auth/verify-otp", otpLimiter, validate(authSchemas.verifyOTP), verifyOTPLogin);
+router.post("/auth/request-otp", authLimiter, validate(authSchemas.requestOTP), requestOTP);
 router.get("/auth/test-public", (req, res) => res.json({ message: "Public route works" }));
 
 // =====================================================
@@ -217,12 +246,12 @@ router.get("/auth/test-public", (req, res) => res.json({ message: "Public route 
 router.get("/auth/me", authenticate, getCurrentUser);
 
 // ✅ TAMBAHKAN 2 BARIS INI TEPAT DI BAWAH /auth/me
-router.post("/auth/password/request-otp", authenticate, requestPasswordChangeOTP);
-router.post("/auth/password/change", authenticate, changePasswordWithOTP);
+router.post("/auth/password/request-otp", authenticate, authLimiter, requestPasswordChangeOTP);
+router.post("/auth/password/change", authenticate, otpLimiter, validate(authSchemas.changePassword), changePasswordWithOTP);
 
 // ✅ GANTI EMAIL ROUTES
-router.post("/auth/email/request-otp", authenticate, requestEmailChangeOTP);
-router.post("/auth/email/change", authenticate, changeEmailWithOTP);
+router.post("/auth/email/request-otp", authenticate, authLimiter, requestEmailChangeOTP);
+router.post("/auth/email/change", authenticate, otpLimiter, validate(authSchemas.changeEmail), changeEmailWithOTP);
 
 
 
@@ -304,6 +333,49 @@ router.delete(
   deleteUser
 );
 
+router.post(
+  "/admin/users/import",
+  authenticate,
+  authorize(["ADMIN"]),
+  importUsers
+);
+
+router.post(
+  "/admin/users/bulk-delete",
+  authenticate,
+  authorize(["ADMIN"]),
+  bulkDeleteUsers
+);
+
+router.patch(
+  "/admin/users/bulk-status",
+  authenticate,
+  authorize(["ADMIN"]),
+  bulkUpdateUserStatus
+);
+
+// =====================================================
+// ADMIN - STAFF MANAGEMENT
+// =====================================================
+router.get("/admin/staff", authenticate, authorize(["ADMIN"]), getAllStaff);
+router.get("/admin/staff/stats", authenticate, authorize(["ADMIN"]), getStaffStats);
+router.get("/admin/staff/:id", authenticate, authorize(["ADMIN"]), getStaffById);
+router.post("/admin/staff", authenticate, authorize(["ADMIN"]), createStaff);
+router.put("/admin/staff/:id", authenticate, authorize(["ADMIN"]), updateStaff);
+router.patch(
+  "/admin/staff/:id/toggle",
+  authenticate,
+  authorize(["ADMIN"]),
+  toggleStaffStatus
+);
+router.delete("/admin/staff/:id", authenticate, authorize(["ADMIN"]), deleteStaff);
+router.post(
+  "/admin/staff/:id/reset-password",
+  authenticate,
+  authorize(["ADMIN"]),
+  resetStaffPassword
+);
+
 // =====================================================
 // ADMIN - DASHBOARD STATS
 // =====================================================
@@ -312,6 +384,40 @@ router.get(
   authenticate,
   authorize(["ADMIN"]),
   getAdminDashboardStats
+);
+
+// ✅ ADMIN - TRANSACTIONS
+router.get(
+  "/admin/transactions",
+  authenticate,
+  authorize(["ADMIN", "FINANCE"]),
+  getAllTransactions
+);
+router.get(
+  "/admin/transactions/:id",
+  authenticate,
+  authorize(["ADMIN", "FINANCE"]),
+  getTransactionById
+);
+router.patch(
+  "/admin/transactions/:id/verify",
+  authenticate,
+  authorize(["ADMIN", "FINANCE"]),
+  verifyTransaction
+);
+
+// ✅ ADMIN - REPORTS
+router.get(
+  "/admin/reports/sales",
+  authenticate,
+  authorize(["ADMIN"]),
+  getSalesReport
+);
+router.get(
+  "/admin/reports/growth",
+  authenticate,
+  authorize(["ADMIN"]),
+  getGrowthStats
 );
 
 // =====================================================

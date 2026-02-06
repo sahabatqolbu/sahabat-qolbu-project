@@ -2,11 +2,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 interface User {
   id: number;
   email: string;
   fullName: string;
-  role: "ADMIN" | "FINANCE" | "AGEN" | "JAMAAH";
+  role: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH";
   phone: string | null;
 }
 
@@ -20,6 +22,11 @@ interface AuthState {
   updateUser: (user: Partial<User>) => void;
 }
 
+// Logger for development only
+const log = isProduction 
+  ? () => {} 
+  : console.log;
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -28,10 +35,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (token, user) => {
-        console.log("💾 Setting auth:", {
-          token: token.substring(0, 20) + "...",
-          user,
-        });
+        log("💾 Setting auth state");
 
         // Save to localStorage
         if (typeof window !== "undefined") {
@@ -44,14 +48,15 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
         });
 
-        console.log("✅ Auth state updated");
+        log("✅ Auth state updated");
       },
 
       logout: () => {
-        console.log("👋 Logging out...");
+        log("👋 Logging out...");
 
         if (typeof window !== "undefined") {
           localStorage.removeItem("token");
+          localStorage.removeItem("auth-storage");
         }
 
         set({
@@ -60,7 +65,10 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         });
 
-        window.location.href = "/login";
+        // Redirect to login
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
       },
 
       updateUser: (updatedUser) => {
@@ -72,6 +80,12 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        // Don't persist token in storage for security
+        // Token is stored separately in localStorage
+      }),
     }
   )
 );

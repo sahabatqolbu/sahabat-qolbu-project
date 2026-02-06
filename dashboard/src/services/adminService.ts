@@ -75,6 +75,19 @@ export const adminService = {
       const response = await api.delete(`/admin/users/${id}`);
       return response.data;
     },
+
+    importUsers: async (users: any[]) => {
+      const response = await api.post("/admin/users/import", { users });
+      return response.data;
+    },
+    bulkDelete: async (ids: number[]) => {
+      const response = await api.post("/admin/users/bulk-delete", { ids });
+      return response.data;
+    },
+    bulkUpdateStatus: async (ids: number[], isActive: boolean) => {
+      const response = await api.patch("/admin/users/bulk-status", { ids, isActive });
+      return response.data;
+    },
   },
 
   // =====================================================
@@ -428,7 +441,7 @@ export const adminService = {
 
     // ✅ TAMBAH INI
     getJamaahNeedingReminder: async (type?: "document" | "payment") => {
-      const response = await api.get("/admin/jamaah/need-reminder", {
+      const response = await api.get("/admin/reminders/jamaah", {
         params: { type },
       });
       return response.data;
@@ -440,10 +453,7 @@ export const adminService = {
       title: string;
       message: string;
     }) => {
-      const response = await api.post(
-        "/admin/notifications/send-reminder",
-        data,
-      );
+      const response = await api.post("/admin/reminders/send", data);
       return response.data;
     },
 
@@ -453,10 +463,7 @@ export const adminService = {
       title: string;
       message: string;
     }) => {
-      const response = await api.post(
-        "/admin/notifications/send-bulk-reminder",
-        data,
-      );
+      const response = await api.post("/admin/reminders/send-bulk", data);
       return response.data;
     },
   },
@@ -482,10 +489,10 @@ export const adminService = {
     send: async (data: {
       userId: number;
       type:
-        | "REMINDER_DOCUMENT"
-        | "REMINDER_PAYMENT"
-        | "REMINDER_PROFILE"
-        | "REMINDER_GENERAL";
+      | "REMINDER_DOCUMENT"
+      | "REMINDER_PAYMENT"
+      | "REMINDER_PROFILE"
+      | "REMINDER_GENERAL";
       title: string;
       message: string;
     }) => {
@@ -496,10 +503,10 @@ export const adminService = {
     sendBulk: async (data: {
       userIds: number[];
       type:
-        | "REMINDER_DOCUMENT"
-        | "REMINDER_PAYMENT"
-        | "REMINDER_PROFILE"
-        | "REMINDER_GENERAL";
+      | "REMINDER_DOCUMENT"
+      | "REMINDER_PAYMENT"
+      | "REMINDER_PROFILE"
+      | "REMINDER_GENERAL";
       title: string;
       message: string;
     }) => {
@@ -590,6 +597,38 @@ export const adminService = {
 
     syncAllPackages: async () => {
       const response = await api.post("/calendar/sync-packages");
+      return response.data;
+    },
+  },
+
+  // =====================================================
+  // TRANSACTIONS
+  // =====================================================
+  transactions: {
+    getAll: async (params?: { search?: string; status?: string; packageId?: number }) => {
+      const response = await api.get("/admin/transactions", { params });
+      return response.data;
+    },
+    getById: async (id: number) => {
+      const response = await api.get(`/admin/transactions/${id}`);
+      return response.data;
+    },
+    verify: async (id: number, data: { status: string; remarks?: string }) => {
+      const response = await api.patch(`/admin/transactions/${id}/verify`, data);
+      return response.data;
+    },
+  },
+
+  // =====================================================
+  // REPORTS
+  // =====================================================
+  reports: {
+    getSales: async (params?: { startDate?: string; endDate?: string }) => {
+      const response = await api.get("/admin/reports/sales", { params });
+      return response.data;
+    },
+    getGrowth: async () => {
+      const response = await api.get("/admin/reports/growth");
       return response.data;
     },
   },

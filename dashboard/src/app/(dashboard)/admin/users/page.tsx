@@ -1,3 +1,4 @@
+// dashboard/src/app/(dashboard)/admin/users/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -13,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -55,10 +57,13 @@ import {
   Shield,
   Loader2,
   Eye,
+  FileDown,
+  FileUp,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import Link from "next/link";
+import * as XLSX from "xlsx"; // ✅ TAMBAH INI
 
 // Role Badge Color
 const getRoleBadge = (role: string) => {
@@ -81,6 +86,84 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  // ===== DOWNLOAD TEMPLATE =====
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        fullName: "Fulan bin Fulan",
+        email: "fulan@example.com",
+        phone: "08123456789",
+        role: "JAMAAH",
+        packageId: "",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+
+    // Auto-width for columns
+    const wscols = [
+      { wch: 25 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 10 },
+    ];
+    worksheet["!cols"] = wscols;
+
+    XLSX.writeFile(workbook, "Template_Import_User.xlsx");
+  };
+
+  // ===== HANDLE IMPORT EXCEL =====
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        if (data.length === 0) {
+          toast({ variant: "destructive", title: "File Kosong", description: "Tidak ada data di dalam file." });
+          return;
+        }
+
+        const response = await adminService.users.importUsers(data);
+
+        if (response.success) {
+          toast({
+            title: "✅ Import Berhasil",
+            description: `Berhasil: ${response.data.success}, Gagal: ${response.data.failed}`,
+          });
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+          setImportDialogOpen(false);
+        }
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "❌ Gagal Import",
+          description: error.response?.data?.message || "Format file tidak didukung",
+        });
+      } finally {
+        setIsImporting(false);
+        e.target.value = ""; // reset input
+      }
+    };
+
+    reader.readAsBinaryString(file);
+  };
 
   // ===== FETCH USERS =====
   const { data, isLoading, error } = useQuery({
@@ -106,9 +189,8 @@ export default function UsersPage() {
       const user = users.find((u: any) => u.id === userId);
       toast({
         title: "✅ Status Diupdate",
-        description: `User ${user?.fullName} ${
-          user?.isActive ? "dinonaktifkan" : "diaktifkan"
-        }`,
+        description: `User ${user?.fullName} ${user?.isActive ? "dinonaktifkan" : "diaktifkan"
+          }`,
       });
     },
     onError: (error: any) => {
@@ -146,6 +228,48 @@ export default function UsersPage() {
     }
   };
 
+  // ===== BULK ACTIONS =====
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: number[]) => adminService.users.bulkDelete(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setSelectedIds([]);
+      toast({ title: "✅ Berhasil", description: "User terpilih berhasil dihapus" });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "❌ Gagal", description: error.response?.data?.message || "Terjadi kesalahan" });
+    },
+  });
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: ({ ids, isActive }: { ids: number[]; isActive: boolean }) =>
+      adminService.users.bulkUpdateStatus(ids, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setSelectedIds([]);
+      toast({ title: "✅ Berhasil", description: "Status user terpilih berhasil diperbarui" });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "❌ Gagal", description: error.response?.data?.message || "Terjadi kesalahan" });
+    },
+  });
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(users.map((u: any) => u.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (userId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, userId]);
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => id !== userId));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -159,12 +283,22 @@ export default function UsersPage() {
             Manajemen user sistem (Admin, Finance, Agen, Jamaah)
           </p>
         </div>
-        <Link href="/admin/users/create">
-          <Button className="bg-secondary hover:bg-secondary/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Tambah User
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setImportDialogOpen(true)}
+            className="border-primary text-primary hover:bg-primary/5"
+          >
+            <FileUp className="h-4 w-4 mr-2" />
+            Import Excel
           </Button>
-        </Link>
+          <Link href="/admin/users/create">
+            <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah User
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -214,6 +348,60 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <Card className="bg-primary/5 border-primary/20 sticky top-20 z-10 shadow-lg animate-in slide-in-from-top-4">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="bg-primary text-white">
+                {selectedIds.length} Terpilih
+              </Badge>
+              <p className="text-sm font-medium text-gray-700 hidden md:block">
+                Pilih aksi untuk user-user ini
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white"
+                onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, isActive: true })}
+                disabled={bulkStatusMutation.isPending}
+              >
+                <UserCheck className="h-4 w-4 mr-1 text-green-600" />
+                Aktifkan
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white"
+                onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, isActive: false })}
+                disabled={bulkStatusMutation.isPending}
+              >
+                <UserX className="h-4 w-4 mr-1 text-red-600" />
+                Nonaktifkan
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (confirm("Hapus semua user terpilih?")) {
+                    bulkDeleteMutation.mutate(selectedIds);
+                  }
+                }}
+                disabled={bulkDeleteMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Hapus
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+                Batal
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Table */}
       <Card>
         <CardHeader>
@@ -239,6 +427,12 @@ export default function UsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={selectedIds.length === users.length && users.length > 0}
+                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                      />
+                    </TableHead>
                     <TableHead>Nama Lengkap</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
@@ -250,7 +444,13 @@ export default function UsersPage() {
                 </TableHeader>
                 <TableBody>
                   {users.map((user: any) => (
-                    <TableRow key={user.id}>
+                    <TableRow key={user.id} className={selectedIds.includes(user.id) ? "bg-primary/5" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.includes(user.id)}
+                          onCheckedChange={(checked) => handleSelectOne(user.id, !!checked)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -298,8 +498,8 @@ export default function UsersPage() {
                       <TableCell className="text-gray-600 text-sm">
                         {user.createdAt
                           ? format(new Date(user.createdAt), "dd MMM yyyy", {
-                              locale: localeId,
-                            })
+                            locale: localeId,
+                          })
                           : "-"}
                       </TableCell>
                       <TableCell className="text-right">
@@ -404,6 +604,50 @@ export default function UsersPage() {
                 "Hapus"
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Import Users Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import User via Excel</DialogTitle>
+            <DialogDescription>
+              Gunakan fitur ini untuk menambah jamaah atau staff dalam jumlah banyak sekaligus.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Info Format:</strong> Kolom wajib adalah `fullName`, `email`, dan `role` (ADMIN, FINANCE, STAFF, AGEN, JAMAAH).
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={downloadTemplate}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              Unduh Template Excel (.xlsx)
+            </Button>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Pilih File Excel</label>
+              <Input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleImportExcel}
+                disabled={isImporting}
+              />
+              {isImporting && (
+                <div className="flex items-center gap-2 text-primary text-sm mt-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Memproses data...
+                </div>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

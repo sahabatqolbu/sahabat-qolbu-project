@@ -38,6 +38,15 @@ const getBottomNavItems = (role: string) => {
       { label: "Komisi", href: "/finance/commissions", icon: Wallet },
       { label: "Laporan", href: "/finance/reports", icon: FileText },
     ],
+    STAFF: [
+      {
+        label: "Profil",
+        href: "/admin/profile",
+        icon: Users,
+        exact: true,
+      },
+      { label: "Akun", href: "/admin/profile/account", icon: FileText },
+    ],
     AGEN: [
       { label: "Dashboard", href: "/agen", icon: LayoutDashboard, exact: true },
       { label: "Jamaah", href: "/agen/jamaah", icon: Users },

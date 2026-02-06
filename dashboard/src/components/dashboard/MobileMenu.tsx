@@ -118,15 +118,16 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{user.fullName}</p>
               <p className="text-xs text-gray-600 truncate">{user.email}</p>
-              <span
-                className={cn(
-                  "inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold",
-                  user.role === "ADMIN" && "bg-purple-100 text-purple-800",
-                  user.role === "FINANCE" && "bg-green-100 text-green-800",
-                  user.role === "AGEN" && "bg-blue-100 text-blue-800",
-                  user.role === "JAMAAH" && "bg-orange-100 text-orange-800"
-                )}
-              >
+                <span
+                  className={cn(
+                    "inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold",
+                    user.role === "ADMIN" && "bg-purple-100 text-purple-800",
+                    user.role === "FINANCE" && "bg-green-100 text-green-800",
+                    user.role === "STAFF" && "bg-slate-100 text-slate-800",
+                    user.role === "AGEN" && "bg-blue-100 text-blue-800",
+                    user.role === "JAMAAH" && "bg-orange-100 text-orange-800"
+                  )}
+                >
                 {user.role}
               </span>
             </div>

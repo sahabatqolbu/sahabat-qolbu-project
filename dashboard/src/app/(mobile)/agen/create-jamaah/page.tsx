@@ -37,15 +37,12 @@ import {
   ArrowLeft,
   CheckCircle,
   Copy,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function CreateJamaahPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [showCredentials, setShowCredentials] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<any>(null);
 
   // Form setup
@@ -146,7 +143,7 @@ export default function CreateJamaahPage() {
               Akun Berhasil Dibuat!
             </CardTitle>
             <CardDescription className="text-green-700">
-              Silakan berikan kredensial berikut kepada jamaah
+              Akun berhasil dibuat. Password telah dikirim ke email jamaah.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -155,7 +152,7 @@ export default function CreateJamaahPage() {
               <Label className="text-sm text-gray-600">Email Login</Label>
               <div className="flex items-center gap-2 mt-1">
                 <Input
-                  value={createdAccount.credentials.email}
+                  value={createdAccount.user.email}
                   readOnly
                   className="font-mono"
                 />
@@ -163,43 +160,7 @@ export default function CreateJamaahPage() {
                   variant="outline"
                   size="icon"
                   onClick={() =>
-                    copyToClipboard(createdAccount.credentials.email, "Email")
-                  }
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="bg-white p-4 rounded-lg border border-green-200">
-              <Label className="text-sm text-gray-600">Password</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  value={createdAccount.credentials.password}
-                  type={showCredentials ? "text" : "password"}
-                  readOnly
-                  className="font-mono"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowCredentials(!showCredentials)}
-                >
-                  {showCredentials ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    copyToClipboard(
-                      createdAccount.credentials.password,
-                      "Password"
-                    )
+                    copyToClipboard(createdAccount.user.email, "Email")
                   }
                 >
                   <Copy className="h-4 w-4" />
@@ -211,7 +172,8 @@ export default function CreateJamaahPage() {
             <Alert>
               <AlertDescription className="text-sm">
                 📧 Email berisi kredensial login telah dikirim ke{" "}
-                <strong>{createdAccount.user.email}</strong>
+                <strong>{createdAccount.user.email}</strong>. Password tidak
+                ditampilkan di dashboard demi keamanan.
               </AlertDescription>
             </Alert>
 

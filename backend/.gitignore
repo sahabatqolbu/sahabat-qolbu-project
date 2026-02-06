@@ -38,6 +38,7 @@ coverage/
 # Misc
 *.bak
 *.tmp
+*.zip
 .cache/
 
 

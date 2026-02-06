@@ -12,7 +12,14 @@ export default function FinanceDashboardPage() {
 
   useEffect(() => {
     if (user && user.role !== "FINANCE") {
-      router.replace(`/${user.role.toLowerCase()}`);
+      const roleRoutes: Record<string, string> = {
+        ADMIN: "/admin",
+        FINANCE: "/finance",
+        STAFF: "/admin/profile",
+        AGEN: "/agen",
+        JAMAAH: "/jamaah",
+      };
+      router.replace(roleRoutes[user.role] || "/login");
     }
   }, [user, router]);
 

@@ -32,13 +32,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, UserPlus, Eye, EyeOff, Copy } from "lucide-react";
+import { Loader2, ArrowLeft, UserPlus, Copy } from "lucide-react";
 import Link from "next/link";
 
 export default function CreateUserPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [showCredentials, setShowCredentials] = useState(false);
   const [createdUser, setCreatedUser] = useState<any>(null);
 
   const {
@@ -139,8 +138,8 @@ export default function CreateUserPage() {
               ✅ User Berhasil Dibuat!
             </CardTitle>
             <CardDescription className="text-green-700">
-              Email berisi kredensial login telah dikirim ke{" "}
-              <strong>{createdUser.credentials.email}</strong>
+              Email berisi instruksi login telah dikirim ke{" "}
+              <strong>{createdUser.user.email}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -149,19 +148,18 @@ export default function CreateUserPage() {
               <AlertDescription className="text-blue-800">
                 💌 <strong>Email Telah Dikirim!</strong>
                 <br />
-                Kredensial login telah dikirim ke{" "}
-                <strong>{createdUser.credentials.email}</strong>. Jika jamaah
-                tidak menerima email dalam 5 menit, silakan cek folder spam atau
-                gunakan kredensial di bawah untuk dikirim manual via WhatsApp.
+                Informasi login telah dikirim ke{" "}
+                <strong>{createdUser.user.email}</strong>. Jika jamaah
+                tidak menerima email dalam 5 menit, silakan cek folder spam.
               </AlertDescription>
             </Alert>
 
-            {/* Existing credentials display */}
+            {/* User data */}
             <div className="bg-white p-4 rounded-lg border border-green-200">
               <Label className="text-sm text-gray-600">Email Login</Label>
               <div className="flex items-center gap-2 mt-1">
                 <Input
-                  value={createdUser.credentials.email}
+                  value={createdUser.user.email}
                   readOnly
                   className="font-mono"
                 />
@@ -169,42 +167,7 @@ export default function CreateUserPage() {
                   variant="outline"
                   size="icon"
                   onClick={() =>
-                    copyToClipboard(createdUser.credentials.email, "Email")
-                  }
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-lg border border-green-200">
-              <Label className="text-sm text-gray-600">Password</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  value={createdUser.credentials.password}
-                  type={showCredentials ? "text" : "password"}
-                  readOnly
-                  className="font-mono"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowCredentials(!showCredentials)}
-                >
-                  {showCredentials ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    copyToClipboard(
-                      createdUser.credentials.password,
-                      "Password"
-                    )
+                    copyToClipboard(createdUser.user.email, "Email")
                   }
                 >
                   <Copy className="h-4 w-4" />
@@ -222,7 +185,7 @@ export default function CreateUserPage() {
                 variant="outline"
                 className="flex-1"
                 onClick={() => {
-                  const message = `Assalamu'alaikum ${createdUser.user.fullName},\n\nAkun umrah Anda telah dibuat!\n\n📧 Email: ${createdUser.credentials.email}\n🔑 Password: ${createdUser.credentials.password}\n\n🔗 Login di: dashboard.sahabatqolbu.com/login\n\n⚠️ Harap ganti password setelah login pertama.\n\nBarakallahu fiikum,\nSahabat Qolbu Travel`;
+                  const message = `Assalamu'alaikum ${createdUser.user.fullName},\n\nAkun umrah Anda telah dibuat.\n\n📧 Email: ${createdUser.user.email}\n🔐 Password sudah dikirim melalui email (cek inbox/spam).\n\n🔗 Login di: dashboard.sahabatqolbu.com/login\n\nBarakallahu fiikum,\nSahabat Qolbu Travel`;
                   window.open(
                     `https://wa.me/?text=${encodeURIComponent(message)}`,
                     "_blank"

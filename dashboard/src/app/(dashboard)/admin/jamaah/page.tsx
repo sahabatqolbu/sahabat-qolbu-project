@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jamaahService, JamaahListItem } from "@/services/jamaahService";
+import { adminService } from "@/services/adminService";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
 import {
@@ -91,7 +92,10 @@ import {
   Trash2,
   MoreHorizontal,
   AlertTriangle,
+  FileUp,
+  FileDown,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export default function JamaahPage() {
   const router = useRouter();
@@ -114,6 +118,10 @@ export default function JamaahPage() {
     open: boolean;
     jamaah: JamaahListItem | null;
   }>({ open: false, jamaah: null });
+
+  // ✅ IMPORT STATE
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // ===== HELPER: Check Profile Complete (SAMAKAN dengan Agen) =====
   const checkProfileComplete = (j: JamaahListItem) => {
@@ -212,6 +220,68 @@ export default function JamaahPage() {
       });
     },
   });
+
+  // ===== BULK IMPORT LOGIC =====
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        fullName: "Nama Lengkap Jamaah",
+        email: "jamaah@example.com",
+        phone: "08123456789",
+        role: "JAMAAH",
+        packageId: "ID_PAKET",
+        nik: "1234567890123456",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template_Jamaah");
+    XLSX.writeFile(workbook, "Template_Import_Jamaah.xlsx");
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        if (data.length === 0) {
+          toast({ variant: "destructive", title: "File Kosong", description: "Tidak ada data ditemukan" });
+          return;
+        }
+
+        const response = await adminService.users.importUsers(data);
+
+        if (response.success) {
+          toast({
+            title: "✅ Import Selesai",
+            description: `Berhasil: ${response.data.success}, Gagal: ${response.data.failed}`,
+          });
+          queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
+          setImportDialogOpen(false);
+        }
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "❌ Gagal Import",
+          description: error.response?.data?.message || "Terjadi kesalahan sistem",
+        });
+      } finally {
+        setIsImporting(false);
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
 
   // ===== CLIENT-SIDE FILTERING =====
   const jamaahList: JamaahListItem[] = useMemo(() => {
@@ -389,23 +459,23 @@ export default function JamaahPage() {
   // ===== BADGE HELPERS =====
   const getPaymentBadge = (status: string) => {
     const config: Record<string, { class: string; label: string; icon: any }> =
-      {
-        LUNAS: {
-          class: "bg-green-100 text-green-800 border-green-200",
-          label: "Lunas",
-          icon: CheckCircle,
-        },
-        CICILAN: {
-          class: "bg-yellow-100 text-yellow-800 border-yellow-200",
-          label: "Cicilan",
-          icon: Clock,
-        },
-        BELUM_BAYAR: {
-          class: "bg-red-100 text-red-800 border-red-200",
-          label: "Belum Bayar",
-          icon: XCircle,
-        },
-      };
+    {
+      LUNAS: {
+        class: "bg-green-100 text-green-800 border-green-200",
+        label: "Lunas",
+        icon: CheckCircle,
+      },
+      CICILAN: {
+        class: "bg-yellow-100 text-yellow-800 border-yellow-200",
+        label: "Cicilan",
+        icon: Clock,
+      },
+      BELUM_BAYAR: {
+        class: "bg-red-100 text-red-800 border-red-200",
+        label: "Belum Bayar",
+        icon: XCircle,
+      },
+    };
     const cfg = config[status] || config.BELUM_BAYAR;
     const Icon = cfg.icon;
     return (
@@ -465,38 +535,38 @@ export default function JamaahPage() {
     }
 
     const config: Record<string, { class: string; label: string; icon: any }> =
-      {
-        DRAFT: {
-          class: "bg-gray-100 text-gray-600 border-gray-300",
-          label: "Draft",
-          icon: FileText,
-        },
-        PENDING_DOCUMENT: {
-          class: "bg-blue-100 text-blue-700 border-blue-300",
-          label: "Pending Dokumen",
-          icon: FileText,
-        },
-        PENDING_PAYMENT: {
-          class: "bg-orange-100 text-orange-700 border-orange-300",
-          label: "Pending Bayar",
-          icon: Clock,
-        },
-        VERIFIED: {
-          class: "bg-cyan-100 text-cyan-700 border-cyan-300",
-          label: "Verified",
-          icon: CheckCircle,
-        },
-        APPROVED: {
-          class: "bg-green-100 text-green-700 border-green-300",
-          label: "Approved",
-          icon: CheckCircle,
-        },
-        REJECTED: {
-          class: "bg-red-100 text-red-700 border-red-300",
-          label: "Rejected",
-          icon: XCircle,
-        },
-      };
+    {
+      DRAFT: {
+        class: "bg-gray-100 text-gray-600 border-gray-300",
+        label: "Draft",
+        icon: FileText,
+      },
+      PENDING_DOCUMENT: {
+        class: "bg-blue-100 text-blue-700 border-blue-300",
+        label: "Pending Dokumen",
+        icon: FileText,
+      },
+      PENDING_PAYMENT: {
+        class: "bg-orange-100 text-orange-700 border-orange-300",
+        label: "Pending Bayar",
+        icon: Clock,
+      },
+      VERIFIED: {
+        class: "bg-cyan-100 text-cyan-700 border-cyan-300",
+        label: "Verified",
+        icon: CheckCircle,
+      },
+      APPROVED: {
+        class: "bg-green-100 text-green-700 border-green-300",
+        label: "Approved",
+        icon: CheckCircle,
+      },
+      REJECTED: {
+        class: "bg-red-100 text-red-700 border-red-300",
+        label: "Rejected",
+        icon: XCircle,
+      },
+    };
 
     const cfg = config[status] || config.DRAFT;
     const Icon = cfg.icon;
@@ -610,18 +680,10 @@ export default function JamaahPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push("/admin/jamaah/import")}
+            onClick={() => setImportDialogOpen(true)}
           >
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toast({ title: "Export sedang diproses..." })}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
+            <FileUp className="h-4 w-4 mr-2" />
+            Import Excel
           </Button>
           <Button
             className="bg-secondary hover:bg-secondary/90 text-primary font-medium"
@@ -635,18 +697,18 @@ export default function JamaahPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card
-          className="bg-gradient-to-br from-primary/5 to-primary/10 cursor-pointer hover:shadow-md transition-shadow"
+          className="cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => clearAllFilters()}
         >
-          <CardContent className="p-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Total</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Total</p>
-                <p className="text-2xl font-bold text-primary">{stats.total}</p>
-              </div>
-              <Users className="h-8 w-8 text-primary/20" />
+              <Users className="h-5 w-5 text-primary" />
+              <p className="text-2xl font-bold">{stats.total}</p>
             </div>
           </CardContent>
         </Card>
@@ -658,15 +720,13 @@ export default function JamaahPage() {
             setStatusPaymentFilter("LUNAS");
           }}
         >
-          <CardContent className="p-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Lunas</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Lunas</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {stats.lunas}
-                </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-200" />
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="text-2xl font-bold text-green-600">{stats.lunas}</p>
             </div>
           </CardContent>
         </Card>
@@ -678,15 +738,13 @@ export default function JamaahPage() {
             setStatusPaymentFilter("CICILAN");
           }}
         >
-          <CardContent className="p-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Cicilan</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Cicilan</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {stats.cicilan}
-                </p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-200" />
+              <Clock className="h-5 w-5 text-yellow-600" />
+              <p className="text-2xl font-bold text-yellow-600">{stats.cicilan}</p>
             </div>
           </CardContent>
         </Card>
@@ -698,15 +756,13 @@ export default function JamaahPage() {
             setStatusPaymentFilter("BELUM_BAYAR");
           }}
         >
-          <CardContent className="p-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Belum Bayar</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Belum Bayar</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {stats.belumBayar}
-                </p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-200" />
+              <XCircle className="h-5 w-5 text-red-600" />
+              <p className="text-2xl font-bold text-red-600">{stats.belumBayar}</p>
             </div>
           </CardContent>
         </Card>
@@ -718,17 +774,13 @@ export default function JamaahPage() {
             setProfileFilter("lengkap");
           }}
         >
-          <CardContent className="p-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Profil Lengkap</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 font-medium">
-                  Profil Lengkap
-                </p>
-                <p className="text-2xl font-bold text-cyan-600">
-                  {stats.profileComplete}
-                </p>
-              </div>
-              <FileText className="h-8 w-8 text-cyan-200" />
+              <FileText className="h-5 w-5 text-cyan-600" />
+              <p className="text-2xl font-bold text-cyan-600">{stats.profileComplete}</p>
             </div>
           </CardContent>
         </Card>
@@ -736,7 +788,7 @@ export default function JamaahPage() {
 
       {/* Outstanding Alert */}
       {stats.totalOutstanding > 0 && (
-        <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
+        <Card className="bg-red-50 border-red-200">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-6 w-6 text-red-500" />
@@ -880,9 +932,8 @@ export default function JamaahPage() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={`justify-start text-left font-normal ${
-                        !dateFrom && "text-muted-foreground"
-                      }`}
+                      className={`justify-start text-left font-normal ${!dateFrom && "text-muted-foreground"
+                        }`}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateFrom
@@ -917,9 +968,8 @@ export default function JamaahPage() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={`justify-start text-left font-normal ${
-                        !dateTo && "text-muted-foreground"
-                      }`}
+                      className={`justify-start text-left font-normal ${!dateTo && "text-muted-foreground"
+                        }`}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateTo
@@ -1068,13 +1118,11 @@ export default function JamaahPage() {
               <CardDescription>
                 {isLoading
                   ? "Memuat data..."
-                  : `Menampilkan ${jamaahList.length} jamaah${
-                      activeFilterCount > 0
-                        ? ` (difilter dari ${
-                            jamaahResponse?.data?.length || 0
-                          })`
-                        : ""
-                    }`}
+                  : `Menampilkan ${jamaahList.length} jamaah${activeFilterCount > 0
+                    ? ` (difilter dari ${jamaahResponse?.data?.length || 0
+                    })`
+                    : ""
+                  }`}
               </CardDescription>
             </div>
             <Button
@@ -1232,21 +1280,20 @@ export default function JamaahPage() {
                           {jamaah.packageType && (
                             <Badge
                               variant="outline"
-                              className={`text-[10px] font-medium ${
-                                jamaah.packageType === "FULL_SERVICE"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                  : jamaah.packageType === "EXTREME"
-                                    ? "bg-red-50 text-red-700 border-red-300"
-                                    : jamaah.packageType === "SEMI_MANDIRI"
-                                      ? "bg-blue-50 text-blue-700 border-blue-300"
-                                      : jamaah.packageType === "FLEKSIBILITAS"
-                                        ? "bg-purple-50 text-purple-700 border-purple-300"
-                                        : jamaah.packageType === "KONSORSIUM"
-                                          ? "bg-orange-50 text-orange-700 border-orange-300"
-                                          : jamaah.packageType === "LA"
-                                            ? "bg-cyan-50 text-cyan-700 border-cyan-300"
-                                            : "bg-gray-50 text-gray-700 border-gray-300"
-                              }`}
+                              className={`text-[10px] font-medium ${jamaah.packageType === "FULL_SERVICE"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                : jamaah.packageType === "EXTREME"
+                                  ? "bg-red-50 text-red-700 border-red-300"
+                                  : jamaah.packageType === "SEMI_MANDIRI"
+                                    ? "bg-blue-50 text-blue-700 border-blue-300"
+                                    : jamaah.packageType === "FLEKSIBILITAS"
+                                      ? "bg-purple-50 text-purple-700 border-purple-300"
+                                      : jamaah.packageType === "KONSORSIUM"
+                                        ? "bg-orange-50 text-orange-700 border-orange-300"
+                                        : jamaah.packageType === "LA"
+                                          ? "bg-cyan-50 text-cyan-700 border-cyan-300"
+                                          : "bg-gray-50 text-gray-700 border-gray-300"
+                                }`}
                             >
                               {jamaah.packageType === "FULL_SERVICE"
                                 ? "Full Service"
@@ -1255,7 +1302,7 @@ export default function JamaahPage() {
                                   : jamaah.packageType === "LA"
                                     ? "Land Arr."
                                     : jamaah.packageType.charAt(0) +
-                                      jamaah.packageType.slice(1).toLowerCase()}
+                                    jamaah.packageType.slice(1).toLowerCase()}
                             </Badge>
                           )}
                           {jamaah.departureDate && (
@@ -1289,11 +1336,10 @@ export default function JamaahPage() {
 
                       <TableCell className="text-right">
                         <span
-                          className={`font-bold ${
-                            parseFloat(jamaah.outstanding) > 0
-                              ? "text-red-600"
-                              : "text-green-600"
-                          }`}
+                          className={`font-bold ${parseFloat(jamaah.outstanding) > 0
+                            ? "text-red-600"
+                            : "text-green-600"
+                            }`}
                         >
                           {formatRupiah(jamaah.outstanding)}
                         </span>
@@ -1355,6 +1401,51 @@ export default function JamaahPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Import Jamaah Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Jamaah via Excel</DialogTitle>
+            <DialogDescription>
+              Tambah banyak jamaah sekaligus. Jamaah akan otomatis dibuatkan akun dan mendapatkan email kredensial.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (JAMAAH) terisi. Kolom `packageId` opsional tapi disarankan.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={downloadTemplate}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              Unduh Template Excel (.xlsx)
+            </Button>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Pilih File Excel</label>
+              <Input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleImportExcel}
+                disabled={isImporting}
+              />
+              {isImporting && (
+                <div className="flex items-center gap-2 text-primary text-sm mt-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Memproses data...
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

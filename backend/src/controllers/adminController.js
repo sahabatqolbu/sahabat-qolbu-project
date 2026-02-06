@@ -1,8 +1,8 @@
 // backend/src/controllers/adminController.js
 
 import { db } from "../db/index.js";
-import { users, jamaahData } from "../db/schema.js";
-import { eq, like, or, and, sql } from "drizzle-orm";
+import { users, jamaahData, agenProfiles } from "../db/schema.js";
+import { eq, like, or, and, sql, inArray } from "drizzle-orm";
 import { sendCredentialsEmail } from "../utils/email.js";
 import {
   successResponse,
@@ -90,7 +90,6 @@ export const createUser = async (req, res, next) => {
 
     // ✅ GENERATE PASSWORD OTOMATIS
     const tempPassword = generatePassword(12);
-    console.log("🔐 Generated password:", tempPassword);
 
     if (!tempPassword || tempPassword.length === 0) {
       console.error("❌ Password generation failed!");
@@ -156,11 +155,10 @@ export const createUser = async (req, res, next) => {
           console.error(`❌ Email error for ${email}:`, err.message);
         });
     } else {
-      console.log("📧 EMAIL TO:", email);
-      console.log("   Password:", tempPassword);
+      console.log("📧 Email service unavailable, credentials email not sent");
     }
 
-    // ✅ RETURN CREDENTIALS KE FRONTEND
+    // ✅ RETURN USER DATA ONLY (never expose plaintext credentials)
     return createdResponse(
       res,
       {
@@ -170,10 +168,6 @@ export const createUser = async (req, res, next) => {
           email: email.toLowerCase(),
           role,
           bookingNumber: bookingNumber, // ✅ Include booking number
-        },
-        credentials: {
-          email: email.toLowerCase(),
-          password: tempPassword,
         },
       },
       "User berhasil dibuat"
@@ -319,6 +313,149 @@ export const deleteUser = async (req, res, next) => {
     await db.delete(users).where(eq(users.id, parseInt(id)));
 
     return successResponse(res, null, "User berhasil dihapus");
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===== IMPORT USERS (BULK) =====
+export const importUsers = async (req, res, next) => {
+  try {
+    const { users: userList } = req.body;
+
+    if (!userList || !Array.isArray(userList) || userList.length === 0) {
+      return errorResponse(res, "Data users tidak valid atau kosong", 400);
+    }
+
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: [],
+    };
+
+    // Kita proses satu per satu biar bisa kirim email masing-masing
+    // Untuk performa ribuan data, sebaiknya pake BullMQ/Queue, 
+    // tapi untuk skala ratusan, loop async masih oke.
+    for (const userData of userList) {
+      try {
+        const { fullName, email, phone, role, packageId, nik } = userData;
+
+        // Validasi minimal
+        if (!fullName || !email || !role) {
+          results.failed++;
+          results.errors.push({ email: email || "unknown", reason: "Data tidak lengkap" });
+          continue;
+        }
+
+        // Cek duplikat
+        const existing = await db.query.users.findFirst({
+          where: eq(users.email, email.toLowerCase()),
+        });
+
+        if (existing) {
+          results.failed++;
+          results.errors.push({ email, reason: "Email sudah terdaftar" });
+          continue;
+        }
+
+        // Generate & Hash Password
+        const tempPassword = generatePassword(12);
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+        // Insert User
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            fullName,
+            phone: phone || null,
+            role: role.toUpperCase(),
+            isActive: true,
+            isEmailVerified: false,
+          })
+          .$returningId();
+
+        // Jika JAMAAH -> Create jamaahData
+        if (role.toUpperCase() === "JAMAAH") {
+          const bookingNumber = await generateBookingNumber();
+          await db.insert(jamaahData).values({
+            userId: newUser.id,
+            bookingNumber,
+            dateOfBooking: new Date(),
+            packageId: packageId ? parseInt(packageId) : null,
+            nik: nik || null,
+            registrationStatus: "DRAFT",
+            isProfileComplete: false,
+          });
+        }
+
+        // Jika AGEN -> Create agenProfiles
+        if (role.toUpperCase() === "AGEN") {
+          await db.insert(agenProfiles).values({
+            userId: newUser.id,
+            namaKtp: fullName,
+            nik: nik || null,
+          });
+        }
+
+        // Kirim Email (Non-blocking)
+        sendCredentialsEmail(email.toLowerCase(), fullName, tempPassword).catch(err => {
+          console.error(`📧 Failed to send import email to ${email}:`, err.message);
+        });
+
+        results.success++;
+      } catch (err) {
+        console.error(`❌ Error importing user ${userData.email}:`, err);
+        results.failed++;
+        results.errors.push({ email: userData.email, reason: err.message });
+      }
+    }
+
+    return successResponse(res, results, `Berhasil memproses ${userList.length} data`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===== BULK DELETE USERS =====
+export const bulkDeleteUsers = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return errorResponse(res, "Daftar ID tidak valid", 400);
+    }
+
+    // Filter out users that might have constraints (optional logic)
+    // For now, simple bulk delete (cascades should handle relations)
+    await db.delete(users).where(inArray(users.id, ids));
+
+    return successResponse(res, null, `${ids.length} user berhasil dihapus`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===== BULK UPDATE STATUS =====
+export const bulkUpdateUserStatus = async (req, res, next) => {
+  try {
+    const { ids, isActive } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return errorResponse(res, "Daftar ID tidak valid", 400);
+    }
+
+    await db
+      .update(users)
+      .set({ isActive: !!isActive })
+      .where(inArray(users.id, ids));
+
+    return successResponse(
+      res,
+      null,
+      `${ids.length} user berhasil ${isActive ? "diaktifkan" : "dinonaktifkan"}`
+    );
   } catch (error) {
     next(error);
   }

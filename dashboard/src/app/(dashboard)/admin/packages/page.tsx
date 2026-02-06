@@ -7,6 +7,7 @@ import { packageService, Package } from "@/services/packageService";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getImageUrl } from "@/lib/utils"; // ✅ HARUS ADA INI
 import { PACKAGE_TYPE_LABELS, getTypeBadge } from "@/lib/utils";
@@ -51,7 +52,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import {
   Plus,
   Search,
@@ -258,7 +258,7 @@ export default function PackagesPage() {
             Export
           </Button>
           <Link href="/admin/packages/create">
-            <Button className="bg-secondary hover:bg-secondary/90">
+            <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
               <Plus className="h-4 w-4 mr-2" />
               Tambah Paket
             </Button>
@@ -268,58 +268,49 @@ export default function PackagesPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Total Seat
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Total Seat</p>
-                <p className="text-3xl font-bold text-blue-900">
-                  {summary?.totalSeats || 0}
-                </p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-blue-200 flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-700" />
-              </div>
+              <Users className="h-5 w-5 text-blue-600" />
+              <span className="text-2xl font-bold">{summary?.totalSeats || 0}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="p-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Seat Terisi
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">
-                  Seat Terisi
-                </p>
-                <p className="text-3xl font-bold text-green-900">
-                  {summary?.bookedSeats || 0}
-                </p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-green-200 flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-green-700" />
-              </div>
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <span className="text-2xl font-bold">{summary?.bookedSeats || 0}</span>
             </div>
             {summary && summary.totalSeats > 0 && (
-              <Progress
-                value={(summary.bookedSeats / summary.totalSeats) * 100}
-                className="mt-3 h-2"
-              />
+              <p className="text-xs text-gray-500 mt-2">
+                {Math.round((summary.bookedSeats / summary.totalSeats) * 100)}% dari total seat
+              </p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <CardContent className="p-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Sisa Seat
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-orange-600 font-medium">Sisa Seat</p>
-                <p className="text-3xl font-bold text-orange-900">
-                  {summary?.remainingSeats || 0}
-                </p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-orange-200 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-orange-700" />
-              </div>
+              <Calendar className="h-5 w-5 text-orange-600" />
+              <span className="text-2xl font-bold">{summary?.remainingSeats || 0}</span>
             </div>
           </CardContent>
         </Card>

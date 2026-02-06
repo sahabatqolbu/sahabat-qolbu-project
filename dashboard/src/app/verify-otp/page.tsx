@@ -82,6 +82,7 @@ export default function VerifyOTPPage() {
       const roleRoutes: Record<string, string> = {
         ADMIN: "/admin",
         FINANCE: "/finance",
+        STAFF: "/admin/profile",
         AGEN: "/agen",
         JAMAAH: "/jamaah",
       };

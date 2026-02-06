@@ -58,9 +58,13 @@ import {
   XCircle,
   Clock,
   Users,
+  FileUp,
+  FileDown,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import * as XLSX from "xlsx";
 
 export default function AdminAgenPage() {
   const router = useRouter();
@@ -72,6 +76,10 @@ export default function AdminAgenPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
+
+  // ✅ IMPORT STATE
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // ===== FETCH AGENTS =====
   const { data, isLoading, error } = useQuery({
@@ -153,6 +161,67 @@ export default function AdminAgenPage() {
     return variants[status] || variants.DRAFT;
   };
 
+  // ===== BULK IMPORT LOGIC =====
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        fullName: "Nama Lengkap Agen",
+        email: "agen@example.com",
+        phone: "08123456789",
+        role: "AGEN",
+        nik: "1234567890123456",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template_Agen");
+    XLSX.writeFile(workbook, "Template_Import_Agen.xlsx");
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        if (data.length === 0) {
+          toast({ variant: "destructive", title: "File Kosong", description: "Tidak ada data ditemukan" });
+          return;
+        }
+
+        const response = await adminService.users.importUsers(data);
+
+        if (response.success) {
+          toast({
+            title: "✅ Import Selesai",
+            description: `Berhasil: ${response.data.success}, Gagal: ${response.data.failed}`,
+          });
+          queryClient.invalidateQueries({ queryKey: ["agents"] });
+          setImportDialogOpen(false);
+        }
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "❌ Gagal Import",
+          description: error.response?.data?.message || "Terjadi kesalahan sistem",
+        });
+      } finally {
+        setIsImporting(false);
+        e.target.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -165,6 +234,24 @@ export default function AdminAgenPage() {
           <p className="text-gray-600 mt-1">
             Manajemen agen dan approval pendaftaran
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportDialogOpen(true)}
+          >
+            <FileUp className="h-4 w-4 mr-2" />
+            Import Excel
+          </Button>
+          <Button
+            className="bg-secondary hover:bg-secondary/90 text-primary font-medium"
+            size="sm"
+            onClick={() => router.push("/admin/users/create")}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Tambah Agen
+          </Button>
         </div>
       </div>
 
@@ -422,8 +509,8 @@ export default function AdminAgenPage() {
                         <TableCell className="text-gray-600 text-sm whitespace-nowrap">
                           {agent.createdAt
                             ? format(new Date(agent.createdAt), "dd MMM yyyy", {
-                                locale: localeId,
-                              })
+                              locale: localeId,
+                            })
                             : "-"}
                         </TableCell>
 
@@ -515,6 +602,51 @@ export default function AdminAgenPage() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Agen Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Agen via Excel</DialogTitle>
+            <DialogDescription>
+              Tambah banyak agen sekaligus. Agen akan otomatis dibuatkan akun, profil agen, dan mendapatkan email kredensial.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (AGEN) terisi. Kolom `nik` opsional.
+              </p>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={downloadTemplate}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              Unduh Template Excel (.xlsx)
+            </Button>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Pilih File Excel</label>
+              <Input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleImportExcel}
+                disabled={isImporting}
+              />
+              {isImporting && (
+                <div className="flex items-center gap-2 text-primary text-sm mt-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Memproses data...
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

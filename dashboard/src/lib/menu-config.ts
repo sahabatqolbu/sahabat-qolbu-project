@@ -22,6 +22,7 @@ import {
   Calendar,
   User,
   UserCog,
+  Briefcase,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -48,6 +49,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Kelola User",
       href: "/admin/users",
       icon: Users,
+    },
+    {
+      label: "Kelola Staff",
+      href: "/admin/staff",
+      icon: Briefcase,
     },
     {
       label: "Paket Umrah",
@@ -251,6 +257,20 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Paket Saya",
       href: "/jamaah/package",
       icon: Package,
+    },
+  ],
+
+  STAFF: [
+    {
+      label: "Profil Saya",
+      href: "/admin/profile",
+      icon: User,
+      exact: true,
+    },
+    {
+      label: "Keamanan Akun",
+      href: "/admin/profile/account",
+      icon: Shield,
     },
   ],
 };

@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-3">
         <Link href="/admin/users/create">
-          <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+          <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
             <UserPlus className="h-4 w-4 mr-2" />
             Tambah User
           </Button>

@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { comparePassword, hashPassword } from "../utils/password.js";
 import { generateToken } from "../utils/jwt.js";
 import { generateOTP, getOTPExpiry, verifyOTP } from "../utils/otp.js";
@@ -9,32 +9,51 @@ import {
   successResponse,
   errorResponse,
   unauthorizedResponse,
+  validationErrorResponse,
 } from "../utils/response.js";
+import { logger } from "../utils/logger.js";
+
+/**
+ * Normalize email to lowercase and trim
+ */
+const normalizeEmail = (email) => email?.toLowerCase().trim();
 
 // =====================================================
 // LOGIN - GENERATE OTP
 // =====================================================
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.validatedBody || req.body;
+    const normalizedEmail = normalizeEmail(email);
 
-    // Find user by email using Drizzle
+    logger.info("Login attempt", { email: normalizedEmail });
+
+    // Find user by email
     const user = await db.query.users.findFirst({
-      where: eq(users.email, email),
+      where: eq(sql`LOWER(${users.email})`, normalizedEmail),
     });
 
     if (!user) {
+      logger.security("Login failed - user not found", { email: normalizedEmail });
       return unauthorizedResponse(res, "Email atau password salah");
     }
 
     // Check password
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
+      logger.security("Login failed - invalid password", { 
+        userId: user.id,
+        email: normalizedEmail 
+      });
       return unauthorizedResponse(res, "Email atau password salah");
     }
 
     // Check if user is active
     if (!user.isActive) {
+      logger.security("Login failed - inactive account", { 
+        userId: user.id,
+        email: normalizedEmail 
+      });
       return errorResponse(
         res,
         "Akun Anda telah dinonaktifkan. Hubungi admin.",
@@ -52,22 +71,30 @@ export const login = async (req, res, next) => {
       .set({
         otp: otp,
         otpExpiry: otpExpiry,
+        updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));
 
     // Send OTP via email
-    await sendOTPEmail(user, otp);
+    const emailSent = await sendOTPEmail(user, otp);
+    
+    if (!emailSent.success) {
+      logger.error("Failed to send OTP email", emailSent.error, { userId: user.id });
+      return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
+    }
+
+    logger.info("OTP sent successfully", { userId: user.id });
 
     return successResponse(
       res,
       {
         email: user.email,
-        message: `OTP telah dikirim ke ${user.email}`,
-        expiresIn: `${process.env.OTP_EXPIRY_MINUTES} menit`,
+        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
       "Silakan cek email Anda untuk kode OTP"
     );
   } catch (error) {
+    logger.error("Login error", error);
     next(error);
   }
 };
@@ -77,24 +104,32 @@ export const login = async (req, res, next) => {
 // =====================================================
 export const verifyOTPLogin = async (req, res, next) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp } = req.validatedBody || req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    logger.info("OTP verification attempt", { email: normalizedEmail });
 
     // Find user
     const user = await db.query.users.findFirst({
-      where: eq(users.email, email),
+      where: eq(sql`LOWER(${users.email})`, normalizedEmail),
     });
 
     if (!user) {
+      logger.security("OTP verification failed - user not found", { email: normalizedEmail });
       return errorResponse(res, "User tidak ditemukan", 404);
     }
 
     // Verify OTP
     const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
     if (!otpValidation.valid) {
+      logger.security("OTP verification failed - invalid OTP", { 
+        userId: user.id,
+        reason: otpValidation.message 
+      });
       return errorResponse(res, otpValidation.message, 400);
     }
 
-    // Clear OTP
+    // Clear OTP and update login info
     await db
       .update(users)
       .set({
@@ -102,15 +137,19 @@ export const verifyOTPLogin = async (req, res, next) => {
         otpExpiry: null,
         isEmailVerified: true,
         lastLogin: new Date(),
+        updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));
 
-    // Generate JWT Token
+    // Generate JWT Token with token version
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
+      iat: Date.now(),
     });
+
+    logger.security("User logged in successfully", { userId: user.id, email: user.email });
 
     return successResponse(
       res,
@@ -127,6 +166,7 @@ export const verifyOTPLogin = async (req, res, next) => {
       "Login berhasil"
     );
   } catch (error) {
+    logger.error("OTP verification error", error);
     next(error);
   }
 };
@@ -136,14 +176,20 @@ export const verifyOTPLogin = async (req, res, next) => {
 // =====================================================
 export const requestOTP = async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email } = req.validatedBody || req.body;
+    const normalizedEmail = normalizeEmail(email);
 
     const user = await db.query.users.findFirst({
-      where: eq(users.email, email),
+      where: eq(sql`LOWER(${users.email})`, normalizedEmail),
     });
 
     if (!user) {
-      return errorResponse(res, "Email tidak terdaftar", 404);
+      // Return success even if user not found (security best practice)
+      return successResponse(
+        res,
+        { email: normalizedEmail },
+        "Jika email terdaftar, OTP baru telah dikirim"
+      );
     }
 
     // Generate new OTP
@@ -155,21 +201,30 @@ export const requestOTP = async (req, res, next) => {
       .set({
         otp: otp,
         otpExpiry: otpExpiry,
+        updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));
 
     // Send OTP
-    await sendOTPEmail(user, otp);
+    const emailSent = await sendOTPEmail(user, otp);
+    
+    if (!emailSent.success) {
+      logger.error("Failed to send OTP email", emailSent.error, { userId: user.id });
+      return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
+    }
+
+    logger.info("New OTP requested", { userId: user.id });
 
     return successResponse(
       res,
       {
         email: user.email,
-        expiresIn: `${process.env.OTP_EXPIRY_MINUTES} menit`,
+        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
       "OTP baru telah dikirim"
     );
   } catch (error) {
+    logger.error("Request OTP error", error);
     next(error);
   }
 };
@@ -182,7 +237,7 @@ export const getCurrentUser = async (req, res, next) => {
     const user = await db.query.users.findFirst({
       where: eq(users.id, req.user.userId),
       columns: {
-        password: false, // Exclude password
+        password: false,
         otp: false,
         otpExpiry: false,
       },
@@ -194,12 +249,10 @@ export const getCurrentUser = async (req, res, next) => {
 
     return successResponse(res, user);
   } catch (error) {
+    logger.error("Get current user error", error);
     next(error);
   }
 };
-
-
-
 
 // =====================================================
 // REQUEST PASSWORD CHANGE OTP
@@ -213,15 +266,12 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User tidak ditemukan",
-      });
+      return errorResponse(res, "User tidak ditemukan", 404);
     }
 
     // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 menit
+    const otp = generateOTP();
+    const otpExpiry = getOTPExpiry();
 
     // Save OTP to database
     await db
@@ -229,28 +279,34 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
       .set({
         otp,
         otpExpiry,
+        updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
 
-    // Send OTP via email (pakai function yang sudah ada)
-    await sendOTPEmail(user, otp);
+    // Send OTP via email
+    const emailSent = await sendOTPEmail(user, otp);
+    
+    if (!emailSent.success) {
+      logger.error("Failed to send password change OTP", emailSent.error, { userId });
+      return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
+    }
 
-    console.log(`📧 Password change OTP sent to: ${user.email}`);
+    logger.info("Password change OTP sent", { userId });
 
     // Mask email for response
     const [local, domain] = user.email.split("@");
     const maskedEmail = local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
 
-    return res.json({
-      success: true,
-      message: "Kode OTP telah dikirim ke email Anda",
-      data: {
+    return successResponse(
+      res,
+      {
         email: maskedEmail,
-        expiresIn: 600,
+        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
-    });
+      "Kode OTP telah dikirim ke email Anda"
+    );
   } catch (error) {
-    console.error("❌ REQUEST PASSWORD CHANGE OTP ERROR:", error);
+    logger.error("Request password change OTP error", error);
     next(error);
   }
 };
@@ -261,46 +317,21 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
 export const changePasswordWithOTP = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const { otp, newPassword } = req.body;
-
-    if (!otp || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP dan password baru wajib diisi",
-      });
-    }
-
-    if (newPassword.length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: "Password minimal 8 karakter",
-      });
-    }
+    const { otp, newPassword } = req.validatedBody || req.body;
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
     });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User tidak ditemukan",
-      });
+      return errorResponse(res, "User tidak ditemukan", 404);
     }
 
     // Verify OTP
-    if (!user.otp || user.otp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Kode OTP tidak valid",
-      });
-    }
-
-    if (!user.otpExpiry || new Date() > new Date(user.otpExpiry)) {
-      return res.status(400).json({
-        success: false,
-        message: "Kode OTP sudah kadaluarsa",
-      });
+    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
+    if (!otpValidation.valid) {
+      logger.security("Password change failed - invalid OTP", { userId });
+      return errorResponse(res, otpValidation.message, 400);
     }
 
     // Hash new password
@@ -317,14 +348,11 @@ export const changePasswordWithOTP = async (req, res, next) => {
       })
       .where(eq(users.id, userId));
 
-    console.log(`✅ Password changed for user: ${userId}`);
+    logger.security("Password changed successfully", { userId });
 
-    return res.json({
-      success: true,
-      message: "Password berhasil diubah",
-    });
+    return successResponse(res, null, "Password berhasil diubah. Silakan login kembali.");
   } catch (error) {
-    console.error("❌ CHANGE PASSWORD ERROR:", error);
+    logger.error("Change password error", error);
     next(error);
   }
 };
@@ -341,15 +369,12 @@ export const requestEmailChangeOTP = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User tidak ditemukan",
-      });
+      return errorResponse(res, "User tidak ditemukan", 404);
     }
 
     // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 menit
+    const otp = generateOTP();
+    const otpExpiry = getOTPExpiry();
 
     // Save OTP to database
     await db
@@ -357,28 +382,34 @@ export const requestEmailChangeOTP = async (req, res, next) => {
       .set({
         otp,
         otpExpiry,
+        updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
 
     // Send OTP via email to current email
-    await sendOTPEmail(user, otp);
+    const emailSent = await sendOTPEmail(user, otp);
+    
+    if (!emailSent.success) {
+      logger.error("Failed to send email change OTP", emailSent.error, { userId });
+      return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
+    }
 
-    console.log(`📧 Email change OTP sent to: ${user.email}`);
+    logger.info("Email change OTP sent", { userId });
 
     // Mask email for response
     const [local, domain] = user.email.split("@");
     const maskedEmail = local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
 
-    return res.json({
-      success: true,
-      message: "Kode OTP telah dikirim ke email Anda saat ini",
-      data: {
+    return successResponse(
+      res,
+      {
         email: maskedEmail,
-        expiresIn: 600,
+        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
-    });
+      "Kode OTP telah dikirim ke email Anda saat ini"
+    );
   } catch (error) {
-    console.error("❌ REQUEST EMAIL CHANGE OTP ERROR:", error);
+    logger.error("Request email change OTP error", error);
     next(error);
   }
 };
@@ -389,25 +420,16 @@ export const requestEmailChangeOTP = async (req, res, next) => {
 export const changeEmailWithOTP = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const { otp, newEmail } = req.body;
-
-    if (!otp || !newEmail) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP dan email baru wajib diisi",
-      });
-    }
+    const { otp, newEmail } = req.validatedBody || req.body;
+    const normalizedNewEmail = normalizeEmail(newEmail);
 
     // Check if new email is already taken
     const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, newEmail),
+      where: eq(sql`LOWER(${users.email})`, normalizedNewEmail),
     });
 
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email baru sudah terdaftar",
-      });
+    if (existingUser && existingUser.id !== userId) {
+      return errorResponse(res, "Email baru sudah terdaftar", 400);
     }
 
     const user = await db.query.users.findFirst({
@@ -415,46 +437,41 @@ export const changeEmailWithOTP = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User tidak ditemukan",
-      });
+      return errorResponse(res, "User tidak ditemukan", 404);
     }
 
     // Verify OTP
-    if (!user.otp || user.otp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Kode OTP tidak valid",
-      });
-    }
-
-    if (!user.otpExpiry || new Date() > new Date(user.otpExpiry)) {
-      return res.status(400).json({
-        success: false,
-        message: "Kode OTP sudah kadaluarsa",
-      });
+    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
+    if (!otpValidation.valid) {
+      logger.security("Email change failed - invalid OTP", { userId });
+      return errorResponse(res, otpValidation.message, 400);
     }
 
     // Update email & clear OTP
     await db
       .update(users)
       .set({
-        email: newEmail,
+        email: normalizedNewEmail,
         otp: null,
         otpExpiry: null,
+        isEmailVerified: false,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
 
-    console.log(`✅ Email changed for user: ${userId} to ${newEmail}`);
-
-    return res.json({
-      success: true,
-      message: "Email berhasil diubah. Silakan login kembali.",
+    logger.security("Email changed successfully", { 
+      userId, 
+      oldEmail: user.email,
+      newEmail: normalizedNewEmail 
     });
+
+    return successResponse(
+      res,
+      null,
+      "Email berhasil diubah. Silakan login kembali dengan email baru."
+    );
   } catch (error) {
-    console.error("❌ CHANGE EMAIL ERROR:", error);
+    logger.error("Change email error", error);
     next(error);
   }
 };

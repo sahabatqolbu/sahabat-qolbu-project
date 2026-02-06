@@ -1,38 +1,68 @@
-// backend/src/middlewares/authMiddleware.js
-import { verifyToken } from "../utils/jwt.js";
+import { verifyToken, extractToken } from "../utils/jwt.js";
 import { unauthorizedResponse } from "../utils/response.js";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { logger } from "../utils/logger.js";
 
-// =====================================================
-// JWT AUTHENTICATION MIDDLEWARE
-// =====================================================
+/**
+ * JWT Authentication Middleware
+ * Validates JWT token and attaches user to request
+ */
 export const authenticate = async (req, res, next) => {
   try {
-    // Get token from header
-    const authHeader = req.headers.authorization;
+    // Extract token from header
+    const token = extractToken(req.headers.authorization);
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return unauthorizedResponse(res, "Token tidak ditemukan");
+    if (!token) {
+      logger.security("Authentication failed - no token", {
+        ip: req.ip,
+        path: req.path,
+      });
+      return unauthorizedResponse(res, "Token tidak ditemukan. Silakan login kembali.");
     }
 
-    const token = authHeader.split(" ")[1];
-
     // Verify token
-    const decoded = verifyToken(token);
+    let decoded;
+    try {
+      decoded = verifyToken(token);
+    } catch (error) {
+      logger.security("Authentication failed - invalid token", {
+        ip: req.ip,
+        path: req.path,
+        error: error.message,
+      });
+      return unauthorizedResponse(res, error.message);
+    }
 
-    // Get user from database using Drizzle
+    // Get user from database (select only needed fields)
     const user = await db.query.users.findFirst({
       where: eq(users.id, decoded.userId),
+      columns: {
+        id: true,
+        email: true,
+        role: true,
+        fullName: true,
+        phone: true,
+        isActive: true,
+        isEmailVerified: true,
+      },
     });
 
     if (!user) {
+      logger.security("Authentication failed - user not found", {
+        userId: decoded.userId,
+        ip: req.ip,
+      });
       return unauthorizedResponse(res, "User tidak ditemukan");
     }
 
     if (!user.isActive) {
-      return unauthorizedResponse(res, "Akun Anda telah dinonaktifkan");
+      logger.security("Authentication failed - inactive account", {
+        userId: user.id,
+        ip: req.ip,
+      });
+      return unauthorizedResponse(res, "Akun Anda telah dinonaktifkan. Hubungi admin.");
     }
 
     // Attach user to request object
@@ -41,16 +71,57 @@ export const authenticate = async (req, res, next) => {
       email: user.email,
       role: user.role,
       fullName: user.fullName,
+      phone: user.phone,
+      isEmailVerified: user.isEmailVerified,
     };
-
-    // Update last login
-    await db
-      .update(users)
-      .set({ lastLogin: new Date() })
-      .where(eq(users.id, user.id));
 
     next();
   } catch (error) {
-    return unauthorizedResponse(res, error.message);
+    logger.error("Authentication middleware error", error, {
+      path: req.path,
+      ip: req.ip,
+    });
+    return unauthorizedResponse(res, "Terjadi kesalahan saat autentikasi");
+  }
+};
+
+/**
+ * Optional authentication middleware
+ * Attaches user if token exists, but doesn't require it
+ */
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const token = extractToken(req.headers.authorization);
+    
+    if (!token) {
+      return next();
+    }
+
+    const decoded = verifyToken(token);
+    
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, decoded.userId),
+      columns: {
+        id: true,
+        email: true,
+        role: true,
+        fullName: true,
+        isActive: true,
+      },
+    });
+
+    if (user && user.isActive) {
+      req.user = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        fullName: user.fullName,
+      };
+    }
+
+    next();
+  } catch (error) {
+    // Silent fail for optional auth
+    next();
   }
 };

@@ -1,13 +1,15 @@
 // backend/src/app.js
 import express from "express";
-import cors from "cors";
-import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { logger } from "./utils/logger.js";
+import { corsOptions, helmetOptions, requestId } from "./config/security.js";
+import cors from "cors";
+import helmet from "helmet";
+import { apiLimiter } from "./middlewares/rateLimiter.js";
 
 dotenv.config();
 
@@ -15,68 +17,35 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 
-console.log("🔥 APP.JS LOADED");
+logger.info("🚀 Application starting...");
 
-// ===== MIDDLEWARE URUTAN YANG BENAR =====
+// ===== SECURITY MIDDLEWARE =====
 
-// 1. Debug middleware (paling atas)
-app.use((req, res, next) => {
-  console.log("🔍 REQUEST:", req.method, req.path);
-  next();
-});
+// 1. Request ID for tracing
+app.use(requestId);
 
-// 2. Security
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+// 2. Helmet security headers
+app.use(helmet(helmetOptions));
 
-// 3. Rate limit
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
-app.use("/api/", limiter);
+// 3. CORS configuration
+app.use(cors(corsOptions));
 
-// 4. CORS
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowed = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://sahabatqolbu.com",
-        "https://dashboard.sahabatqolbu.com",
-        "https://sahabat-qolbu-project.vercel.app",
-        process.env.FRONTEND_URL,
-        process.env.DASHBOARD_URL,
-      ];
+// 4. General rate limiting
+app.use("/api/", apiLimiter);
 
-      // Allow if no origin (like mobile apps or curl) or if in allowed list
-      // Or if it's a Vercel preview/deployment URL
-      if (!origin || allowed.includes(origin) || origin.endsWith(".vercel.app")) {
-        callback(null, true);
-      } else {
-        console.warn("🚫 CORS Blocked:", origin);
-        callback(new Error("CORS not allowed"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-// 5. Parsers
+// 5. Body parsers with limits
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// 6. Logging
+// 6. Request logging
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
 // 7. Static files
 const uploadsPath = path.join(__dirname, "../public/uploads");
-console.log("📂 UPLOADS PATH:", path.resolve(uploadsPath));
+logger.info("Static files path configured", { path: path.resolve(uploadsPath) });
 
 // ✅ Serve untuk /uploads (tanpa /api)
 app.use(
@@ -104,17 +73,23 @@ app.get("/api", (req, res) => res.json({ message: "Sahabat Qolbu API" }));
 import apiRoutes from "./routes/api.js";
 app.use("/api", apiRoutes);
 
-// ===== 10. 404 HANDLER (DI BAWAH ROUTES) =====
+// ===== 10. 404 HANDLER =====
 app.use((req, res) => {
-  console.log("❌ 404:", req.path);
-  res.status(404).json({
-    error: "Not found",
+  logger.info("404 - Endpoint not found", { 
+    method: req.method, 
     path: req.path,
+    requestId: req.id 
+  });
+  res.status(404).json({
+    success: false,
+    message: `Endpoint ${req.method} ${req.path} tidak ditemukan`,
   });
 });
 
-// ===== 11. ERROR HANDLER (PALING BAWAH) =====
+// ===== 11. ERROR HANDLER (MUST BE LAST) =====
 import { errorHandler } from "./middlewares/errorHandler.js";
 app.use(errorHandler);
+
+logger.info("✅ Application middleware configured successfully");
 
 export default app;

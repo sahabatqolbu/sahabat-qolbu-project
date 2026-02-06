@@ -21,7 +21,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.error("❌ Email service error:", error);
   } else {
-    console.log("✅ Email service ready (Mailtrap)");
+    console.log("✅ Email service ready");
   }
 });
 
@@ -96,9 +96,8 @@ export const sendWelcomeEmail = async (user) => {
           <p>Silakan login untuk melengkapi profil dan memulai perjalanan ibadah Anda.</p>
           
           <center>
-            <a href="${
-              process.env.FRONTEND_URL
-            }/login" class="button">Login Sekarang</a>
+            <a href="${process.env.FRONTEND_URL
+    }/login" class="button">Login Sekarang</a>
           </center>
           
           <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
@@ -161,9 +160,8 @@ export const sendOTPEmail = async (user, otp) => {
           
           <div class="warning">
             ⚠️ <strong>Penting:</strong><br>
-            • Kode ini berlaku selama <strong>${
-              process.env.OTP_EXPIRY_MINUTES
-            } menit</strong><br>
+            • Kode ini berlaku selama <strong>${process.env.OTP_EXPIRY_MINUTES
+    } menit</strong><br>
             • Jangan bagikan kode ini kepada siapapun<br>
             • Jika bukan Anda yang meminta, segera hubungi customer service
           </div>
@@ -171,8 +169,8 @@ export const sendOTPEmail = async (user, otp) => {
           <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 20px;">
             Kode akan kedaluwarsa pada:<br>
             <strong>${new Date(
-              Date.now() + parseInt(process.env.OTP_EXPIRY_MINUTES) * 60000
-            ).toLocaleString("id-ID")}</strong>
+      Date.now() + parseInt(process.env.OTP_EXPIRY_MINUTES) * 60000
+    ).toLocaleString("id-ID")}</strong>
           </p>
         </div>
         
@@ -252,14 +250,14 @@ export const sendPaymentConfirmationEmail = async (transaction, jamaah) => {
             <tr>
               <td><strong>Jumlah Bayar</strong></td>
               <td>Rp ${parseFloat(transaction.paidAmount).toLocaleString(
-                "id-ID"
-              )}</td>
+    "id-ID"
+  )}</td>
             </tr>
             <tr class="total-row">
               <td><strong>Sisa Pembayaran</strong></td>
               <td>Rp ${parseFloat(transaction.remainingAmount).toLocaleString(
-                "id-ID"
-              )}</td>
+    "id-ID"
+  )}</td>
             </tr>
           </table>
           

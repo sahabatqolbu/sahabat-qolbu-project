@@ -425,7 +425,6 @@ console.log("✅ Created jamaah:", bookingNumber, "by agent:", agent.id);
 
 // ✅ KIRIM EMAIL KREDENSIAL
 if (isNewUser && generatedPassword) {
-  console.log("📧 Password for new user:", generatedPassword);
   console.log("📧 Attempting to send credentials email to:", email);
 
   try {

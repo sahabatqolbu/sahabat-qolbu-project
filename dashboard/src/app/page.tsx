@@ -17,6 +17,7 @@ export default function HomePage() {
       const routes = {
         ADMIN: "/admin",
         FINANCE: "/finance",
+        STAFF: "/admin/profile",
         AGEN: "/agen",
         JAMAAH: "/jamaah",
       };
