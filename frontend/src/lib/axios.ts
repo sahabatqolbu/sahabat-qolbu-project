@@ -19,13 +19,6 @@ const api: AxiosInstance = axios.create({
 // Request Interceptor - Attach Token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage
-    const token = localStorage.getItem("auth_token");
-
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     // Log request di development
     if (process.env.NODE_ENV === "development") {
       console.log("🚀 API Request:", {
@@ -72,8 +65,6 @@ api.interceptors.response.use(
 
       // Handle 401 Unauthorized - Token expired
       if (status === 401) {
-        // Clear token
-        localStorage.removeItem("auth_token");
         localStorage.removeItem("user_data");
 
         // Redirect to login (if not already on login page)

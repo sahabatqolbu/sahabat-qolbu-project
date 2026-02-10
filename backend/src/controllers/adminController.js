@@ -60,7 +60,8 @@ const generateBookingNumber = async () => {
 // ✅ UPDATED: Create User
 export const createUser = async (req, res, next) => {
   try {
-    const { fullName, email, phone, role, packageId } = req.body;
+    const { fullName, email, phone, role, packageId } = req.validatedBody || req.body;
+    const requesterRole = req.user?.role;
 
     console.log("📥 CREATE USER REQUEST:", {
       fullName,
@@ -68,7 +69,20 @@ export const createUser = async (req, res, next) => {
       phone,
       role,
       packageId,
+      requesterRole,
     });
+
+    if (!requesterRole || (requesterRole !== "ADMIN" && requesterRole !== "STAFF")) {
+      return errorResponse(res, "Akses ditolak", 403);
+    }
+
+    if (requesterRole === "STAFF" && role !== "AGEN" && role !== "JAMAAH") {
+      return errorResponse(
+        res,
+        "Staff hanya bisa membuat user dengan role AGEN atau JAMAAH",
+        403
+      );
+    }
 
     // ✅ VALIDASI
     if (!fullName || !email || !phone || !role) {
@@ -109,6 +123,7 @@ export const createUser = async (req, res, next) => {
         fullName,
         phone,
         role,
+        createdBy: req.user?.userId || null,
         isActive: true,
         isEmailVerified: false,
       })
@@ -185,6 +200,7 @@ export const createUser = async (req, res, next) => {
 export const getAllUsers = async (req, res, next) => {
   try {
     const { search, role, isActive } = req.query;
+    const requesterRole = req.user?.role;
 
     const conditions = [];
     if (search) {
@@ -195,7 +211,17 @@ export const getAllUsers = async (req, res, next) => {
         )
       );
     }
-    if (role) {
+    if (requesterRole === "STAFF" || requesterRole === "FINANCE") {
+      if (role && role !== "AGEN" && role !== "JAMAAH") {
+        return successResponse(res, []);
+      }
+
+      if (role === "AGEN" || role === "JAMAAH") {
+        conditions.push(eq(users.role, role));
+      } else {
+        conditions.push(or(eq(users.role, "AGEN"), eq(users.role, "JAMAAH")));
+      }
+    } else if (role) {
       conditions.push(eq(users.role, role));
     }
     if (isActive !== undefined) {
@@ -207,7 +233,32 @@ export const getAllUsers = async (req, res, next) => {
       orderBy: (users, { desc }) => [desc(users.createdAt)],
     });
 
-    return successResponse(res, allUsers);
+    const creatorIds = [...new Set(allUsers.map((u) => u.createdBy).filter(Boolean))];
+
+    const creators = creatorIds.length
+      ? await db.query.users.findMany({
+          where: inArray(users.id, creatorIds),
+          columns: {
+            id: true,
+            fullName: true,
+            email: true,
+            role: true,
+          },
+        })
+      : [];
+
+    const creatorById = new Map(creators.map((c) => [c.id, c]));
+
+    const enrichedUsers = allUsers.map((u) => {
+      const registeredBy = u.createdBy ? creatorById.get(u.createdBy) || null : null;
+
+      return {
+        ...u,
+        registeredBy,
+      };
+    });
+
+    return successResponse(res, enrichedUsers);
   } catch (error) {
     next(error);
   }
@@ -217,12 +268,21 @@ export const getAllUsers = async (req, res, next) => {
 export const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const requesterRole = req.user?.role;
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, parseInt(id)),
     });
 
     if (!user) {
+      return errorResponse(res, "User tidak ditemukan", 404);
+    }
+
+    if (
+      (requesterRole === "STAFF" || requesterRole === "FINANCE") &&
+      user.role !== "AGEN" &&
+      user.role !== "JAMAAH"
+    ) {
       return errorResponse(res, "User tidak ditemukan", 404);
     }
 
@@ -236,7 +296,7 @@ export const getUserById = async (req, res, next) => {
 export const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { fullName, phone, role, isActive } = req.body;
+    const { fullName, phone, role, isActive } = req.validatedBody || req.body;
 
     const existingUser = await db.query.users.findFirst({
       where: eq(users.id, parseInt(id)),
@@ -371,6 +431,7 @@ export const importUsers = async (req, res, next) => {
             fullName,
             phone: phone || null,
             role: role.toUpperCase(),
+            createdBy: req.user?.userId || null,
             isActive: true,
             isEmailVerified: false,
           })

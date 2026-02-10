@@ -34,11 +34,7 @@ export const corsOptions = {
     }
 
     // Check if origin is allowed
-    if (
-      allowedOrigins.includes(origin) ||
-      origin.endsWith(".vercel.app") ||
-      origin.endsWith(".sahabatqolbu.com")
-    ) {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 

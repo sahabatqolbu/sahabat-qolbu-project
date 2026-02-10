@@ -18,6 +18,14 @@ import { logger } from "../utils/logger.js";
  */
 const normalizeEmail = (email) => email?.toLowerCase().trim();
 
+const getAuthCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/",
+});
+
 // =====================================================
 // LOGIN - GENERATE OTP
 // =====================================================
@@ -146,10 +154,11 @@ export const verifyOTPLogin = async (req, res, next) => {
       userId: user.id,
       email: user.email,
       role: user.role,
-      iat: Date.now(),
     });
 
     logger.security("User logged in successfully", { userId: user.id, email: user.email });
+
+    res.cookie("access_token", token, getAuthCookieOptions());
 
     return successResponse(
       res,
@@ -350,6 +359,8 @@ export const changePasswordWithOTP = async (req, res, next) => {
 
     logger.security("Password changed successfully", { userId });
 
+    res.clearCookie("access_token", getAuthCookieOptions());
+
     return successResponse(res, null, "Password berhasil diubah. Silakan login kembali.");
   } catch (error) {
     logger.error("Change password error", error);
@@ -465,6 +476,8 @@ export const changeEmailWithOTP = async (req, res, next) => {
       newEmail: normalizedNewEmail 
     });
 
+    res.clearCookie("access_token", getAuthCookieOptions());
+
     return successResponse(
       res,
       null,
@@ -474,4 +487,9 @@ export const changeEmailWithOTP = async (req, res, next) => {
     logger.error("Change email error", error);
     next(error);
   }
+};
+
+export const logout = async (req, res) => {
+  res.clearCookie("access_token", getAuthCookieOptions());
+  return successResponse(res, null, "Logout berhasil");
 };

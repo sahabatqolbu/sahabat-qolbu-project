@@ -122,6 +122,26 @@ export const userSchemas = {
   }),
 };
 
+export const adminUserSchemas = {
+  create: z.object({
+    email: z
+      .string()
+      .min(1, messages.email.required)
+      .email(messages.email.invalid)
+      .transform((val) => val.toLowerCase().trim()),
+    fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
+    phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid"),
+    role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"]),
+    packageId: z.union([z.string(), z.number()]).optional(),
+  }),
+  update: z.object({
+    fullName: z.string().min(2).max(255).optional(),
+    phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid").optional().nullable(),
+    role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"]).optional(),
+    isActive: z.boolean().optional(),
+  }),
+};
+
 /**
  * Jamaah validation schemas
  */
@@ -170,6 +190,20 @@ export const packageSchemas = {
   }),
 };
 
+export const transactionSchemas = {
+  verifyStatus: z.object({
+    status: z.enum([
+      "PENDING",
+      "PARTIAL",
+      "PAID",
+      "VERIFIED",
+      "CANCELLED",
+      "REFUNDED",
+    ]),
+    remarks: z.string().max(500).optional(),
+  }),
+};
+
 /**
  * Pagination schema
  */
@@ -198,7 +232,8 @@ export const validate = (schema) => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Format Zod errors
-        const errors = error.errors.map((err) => ({
+        const zodIssues = error.issues || error.errors || [];
+        const errors = zodIssues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
           code: err.code,
@@ -228,7 +263,8 @@ export const validateQuery = (schema) => {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errors = error.errors.map((err) => ({
+        const zodIssues = error.issues || error.errors || [];
+        const errors = zodIssues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
         }));
@@ -255,7 +291,8 @@ export const validateParams = (schema) => {
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errors = error.errors.map((err) => ({
+        const zodIssues = error.issues || error.errors || [];
+        const errors = zodIssues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
         }));

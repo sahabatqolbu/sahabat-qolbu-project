@@ -8,6 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/axios";
 
 // Types
 export interface User {
@@ -42,11 +43,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Initialize auth state from localStorage
   useEffect(() => {
     const initAuth = () => {
-      const storedToken = localStorage.getItem("auth_token");
       const storedUser = localStorage.getItem("user_data");
 
-      if (storedToken && storedUser) {
-        setToken(storedToken);
+      if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
 
@@ -59,41 +58,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Login - Step 1: Send OTP
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
+      const response = await api.post("/auth/login", { email, password });
+      const data = response.data;
 
       if (data.success) {
         return Promise.resolve();
       } else {
         throw new Error(data.message);
       }
-    } catch (error: any) {
-      throw new Error(error.message || "Login gagal");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(error.message || "Login gagal");
+      }
+      throw new Error("Login gagal");
     }
   };
 
   // Verify OTP - Step 2: Get Token
   const verifyOTP = async (email: string, otp: string) => {
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/verify-otp",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, otp }),
-        }
-      );
-
-      const data = await response.json();
+      const response = await api.post("/auth/verify-otp", { email, otp });
+      const data = response.data;
 
       if (data.success && data.data) {
         const { token: newToken, user: userData } = data.data;
@@ -103,7 +88,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
 
         // Save to localStorage
-        localStorage.setItem("auth_token", newToken);
         localStorage.setItem("user_data", JSON.stringify(userData));
 
         // Redirect based on role
@@ -111,8 +95,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         throw new Error(data.message);
       }
-    } catch (error: any) {
-      throw new Error(error.message || "Verifikasi OTP gagal");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(error.message || "Verifikasi OTP gagal");
+      }
+      throw new Error("Verifikasi OTP gagal");
     }
   };
 
@@ -120,7 +107,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("auth_token");
     localStorage.removeItem("user_data");
     router.push("/login");
   };
@@ -128,13 +114,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Refresh User Data
   const refreshUser = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
+      const response = await api.get("/auth/me");
+      const data = response.data;
 
       if (data.success && data.data) {
         setUser(data.data);
@@ -160,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value: AuthContextType = {
     user,
     token,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user,
     isLoading,
     login,
     verifyOTP,

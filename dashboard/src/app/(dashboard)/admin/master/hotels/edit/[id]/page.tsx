@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { masterService } from "@/services/masterService";
+import api from "@/lib/axios";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,24 +123,8 @@ export default function EditHotelPage() {
         payload.append("image", imageFile);
       }
 
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/master/hotels/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: payload,
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Update failed");
-      }
-
-      return response.json();
+      const response = await api.put(`/master/hotels/${id}`, payload);
+      return response.data;
     },
     onSuccess: (response) => {
       console.log("✅ Update success:", response);

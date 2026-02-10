@@ -43,7 +43,7 @@ NODE_ENV=development
 ## ▶️ Cara Menjalankan Project
 
 ### Backend
-cd dashboard
+cd backend
 npm install
 npm run dev
 

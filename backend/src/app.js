@@ -47,9 +47,32 @@ if (process.env.NODE_ENV === "development") {
 const uploadsPath = path.join(__dirname, "../public/uploads");
 logger.info("Static files path configured", { path: path.resolve(uploadsPath) });
 
+const publicUploadFolders = new Set([
+  "company",
+  "hotels",
+  "airlines",
+  "packages",
+  "itinerary",
+  "general",
+]);
+
+const publicUploadsOnly = (req, res, next) => {
+  const [folder] = req.path.split("/").filter(Boolean);
+
+  if (!folder || !publicUploadFolders.has(folder)) {
+    return res.status(403).json({
+      success: false,
+      message: "Akses file ditolak",
+    });
+  }
+
+  next();
+};
+
 // ✅ Serve untuk /uploads (tanpa /api)
 app.use(
   "/uploads",
+  publicUploadsOnly,
   express.static(uploadsPath, {
     maxAge: "1d",
     etag: true,
@@ -59,6 +82,7 @@ app.use(
 // ✅ JUGA serve untuk /api/uploads
 app.use(
   "/api/uploads",
+  publicUploadsOnly,
   express.static(uploadsPath, {
     maxAge: "1d",
     etag: true,

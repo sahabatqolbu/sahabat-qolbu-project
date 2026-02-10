@@ -12,7 +12,8 @@ import { logger } from "../utils/logger.js";
 export const authenticate = async (req, res, next) => {
   try {
     // Extract token from header
-    const token = extractToken(req.headers.authorization);
+    const token =
+      extractToken(req.headers.authorization) || req.cookies?.access_token || null;
 
     if (!token) {
       logger.security("Authentication failed - no token", {
@@ -91,7 +92,8 @@ export const authenticate = async (req, res, next) => {
  */
 export const optionalAuth = async (req, res, next) => {
   try {
-    const token = extractToken(req.headers.authorization);
+    const token =
+      extractToken(req.headers.authorization) || req.cookies?.access_token || null;
     
     if (!token) {
       return next();

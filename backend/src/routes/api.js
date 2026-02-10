@@ -3,7 +3,12 @@ import express from "express";
 import { and, eq } from "drizzle-orm";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
-import { validate, authSchemas } from "../validators/index.js";
+import {
+  validate,
+  authSchemas,
+  adminUserSchemas,
+  transactionSchemas,
+} from "../validators/index.js";
 import { authLimiter, otpLimiter, apiLimiter } from "../middlewares/rateLimiter.js";
 import { db } from "../db/index.js";
 import { agentData, jamaahData } from "../db/schema.js";
@@ -28,6 +33,7 @@ import {
   changePasswordWithOTP, // ✅ TAMBAH INI
   requestEmailChangeOTP, // ✅ TAMBAH INI
   changeEmailWithOTP, // ✅ TAMBAH INI
+  logout,
 } from "../controllers/authController.js";
 import {
   getAllStaff,
@@ -153,6 +159,10 @@ import * as agentRequirementController from "../controllers/agentRequirementCont
 import * as agentPurposeController from "../controllers/agentPurposeController.js";
 import * as periodController from "../controllers/periodController.js";
 import * as agenController from "../controllers/agenController.js";
+import {
+  assignJamaahToPackage,
+  sendJamaahNotification,
+} from "../controllers/financePosController.js";
 import * as packageController from "../controllers/packageController.js";
 import * as agenJamaahController from "../controllers/agenJamaahController.js";
 
@@ -164,6 +174,7 @@ import {
   markAllAsRead,
   deleteNotification,
   deleteAllRead,
+  getPendingAgentApprovalsCount,
   getJamaahNeedingReminder, // ✅ TAMBAH
   getAgenNeedingReminder, // ✅ TAMBAH
   sendReminder, // ✅ TAMBAH
@@ -182,6 +193,7 @@ import {
   searchMahram,
   getMyPayments,
   getMyPackage,
+  requestPackageConsultation,
 } from "../controllers/jamaahSelfController.js";
 
 // Multer setup
@@ -201,7 +213,7 @@ const jamaahDocStorage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const userId = req.user?.id || "unknown";
+    const userId = req.user?.userId || "unknown";
     const timestamp = Date.now();
     const ext = path.extname(file.originalname);
     cb(null, `${userId}-${timestamp}${ext}`);
@@ -252,6 +264,7 @@ router.post("/auth/password/change", authenticate, otpLimiter, validate(authSche
 // ✅ GANTI EMAIL ROUTES
 router.post("/auth/email/request-otp", authenticate, authLimiter, requestEmailChangeOTP);
 router.post("/auth/email/change", authenticate, otpLimiter, validate(authSchemas.changeEmail), changeEmailWithOTP);
+router.post("/auth/logout", authenticate, logout);
 
 
 
@@ -310,16 +323,35 @@ router.get(
   getMyPackage
 );
 
+router.post(
+  "/jamaah/package/request",
+  authenticate,
+  authorize(["JAMAAH"]),
+  requestPackageConsultation
+);
+
 
 
 
 // =====================================================
 // ADMIN - USER MANAGEMENT
 // =====================================================
-router.get("/admin/users", authenticate, authorize(["ADMIN"]), getAllUsers);
-router.post("/admin/users", authenticate, authorize(["ADMIN"]), createUser);
-router.get("/admin/users/:id", authenticate, authorize(["ADMIN"]), getUserById);
-router.put("/admin/users/:id", authenticate, authorize(["ADMIN"]), updateUser);
+router.get("/admin/users", authenticate, authorize(["ADMIN", "STAFF", "FINANCE"]), getAllUsers);
+router.post(
+  "/admin/users",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  validate(adminUserSchemas.create),
+  createUser
+);
+router.get("/admin/users/:id", authenticate, authorize(["ADMIN", "STAFF", "FINANCE"]), getUserById);
+router.put(
+  "/admin/users/:id",
+  authenticate,
+  authorize(["ADMIN"]),
+  validate(adminUserSchemas.update),
+  updateUser
+);
 router.patch(
   "/admin/users/:id/toggle",
   authenticate,
@@ -382,7 +414,7 @@ router.post(
 router.get(
   "/admin/dashboard/stats",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF", "FINANCE"]),
   getAdminDashboardStats
 );
 
@@ -402,7 +434,8 @@ router.get(
 router.patch(
   "/admin/transactions/:id/verify",
   authenticate,
-  authorize(["ADMIN", "FINANCE"]),
+  authorize(["ADMIN"]),
+  validate(transactionSchemas.verifyStatus),
   verifyTransaction
 );
 
@@ -410,13 +443,13 @@ router.patch(
 router.get(
   "/admin/reports/sales",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "FINANCE"]),
   getSalesReport
 );
 router.get(
   "/admin/reports/growth",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "FINANCE"]),
   getGrowthStats
 );
 
@@ -529,7 +562,7 @@ router.delete(
 router.get(
   "/admin/packages",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF", "FINANCE"]),
   getAllPackages
 );
 
@@ -545,7 +578,7 @@ router.post(
 router.get(
   "/admin/packages/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF", "FINANCE"]),
   getPackageById
 );
 
@@ -748,7 +781,7 @@ router.post(
 router.get(
   "/admin/jamaah",
   authenticate,
-  authorize(["ADMIN", "FINANCE"]),
+  authorize(["ADMIN", "FINANCE", "STAFF"]),
   getAllJamaah
 );
 
@@ -762,7 +795,7 @@ router.post(
 router.get(
   "/admin/jamaah/:bookingNumber",
   authenticate,
-  authorize(["ADMIN", "FINANCE", "AGEN"]),
+  authorize(["ADMIN", "FINANCE", "AGEN", "STAFF"]),
   getJamaahByBookingNumber
 );
 
@@ -791,7 +824,7 @@ router.post(
 router.get(
   "/admin/jamaah/:bookingNumber/payments",
   authenticate,
-  authorize(["ADMIN", "FINANCE", "AGEN"]),
+  authorize(["ADMIN", "FINANCE", "AGEN", "STAFF"]),
   getPayments
 );
 
@@ -820,7 +853,7 @@ router.post("/jamaah/:bookingNumber/revert", authenticate, authorize("ADMIN"), r
 router.get(
   "/admin/master/agent-levels",
   authenticate,
-  authorize(["ADMIN", "AGEN"]), // ✅ AGEN BISA BACA
+  authorize(["ADMIN", "AGEN", "STAFF", "FINANCE"]), // ✅ FINANCE bisa baca
   agentLevelController.getAll
 );
 router.post(
@@ -832,7 +865,7 @@ router.post(
 router.get(
   "/admin/master/agent-levels/:id",
   authenticate,
-  authorize(["ADMIN", "AGEN"]), // ✅ AGEN BISA BACA DETAIL
+  authorize(["ADMIN", "AGEN", "STAFF", "FINANCE"]), // ✅ FINANCE bisa baca detail
   agentLevelController.getById
 );
 router.put(
@@ -852,7 +885,7 @@ router.delete(
 router.get(
   "/admin/master/agent-requirements",
   authenticate,
-  authorize(["ADMIN", "AGEN"]), // ✅ AGEN BISA BACA
+  authorize(["ADMIN", "AGEN", "STAFF", "FINANCE"]), // ✅ FINANCE bisa baca
   agentRequirementController.getAll
 );
 router.post(
@@ -878,7 +911,7 @@ router.delete(
 router.get(
   "/admin/master/agent-purposes",
   authenticate,
-  authorize(["ADMIN", "AGEN"]), // ✅ AGEN BISA BACA
+  authorize(["ADMIN", "AGEN", "STAFF", "FINANCE"]), // ✅ FINANCE bisa baca
   agentPurposeController.getAll
 );
 router.post(
@@ -904,7 +937,7 @@ router.delete(
 router.get(
   "/admin/master/periods",
   authenticate,
-  authorize(["ADMIN", "AGEN"]), // ✅ AGEN BISA BACA
+  authorize(["ADMIN", "AGEN", "STAFF", "FINANCE"]), // ✅ FINANCE bisa baca
   periodController.getAll
 );
 router.post(
@@ -916,7 +949,7 @@ router.post(
 router.get(
   "/admin/master/periods/:id",
   authenticate,
-  authorize(["ADMIN", "AGEN"]), // ✅ AGEN BISA BACA DETAIL
+  authorize(["ADMIN", "AGEN", "STAFF", "FINANCE"]), // ✅ FINANCE bisa baca detail
   periodController.getById
 );
 router.put(
@@ -938,13 +971,13 @@ router.delete(
 router.get(
   "/admin/agen",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF", "FINANCE"]),
   agenController.getAll
 );
 router.get(
   "/admin/agen/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF", "FINANCE"]),
   agenController.getById
 );
 router.put(
@@ -1038,7 +1071,7 @@ router.get(
   "/agen/jamaah",
   authenticate,
   authorize(["AGEN"]),
-  agenController.getMyJamaahList, // ← GANTI KE INI
+  agenJamaahController.getMyJamaah,
 );
 
 router.get(
@@ -1156,6 +1189,12 @@ router.post(
 // =====================================================
 router.get("/notifications", authenticate, getMyNotifications);
 router.get("/notifications/unread-count", authenticate, getUnreadCount);
+router.get(
+  "/notifications/admin/pending-agent-approvals",
+  authenticate,
+  authorize(["ADMIN", "STAFF", "FINANCE"]),
+  getPendingAgentApprovalsCount
+);
 router.patch("/notifications/:id/read", authenticate, markAsRead);
 router.patch("/notifications/read-all", authenticate, markAllAsRead);
 router.delete("/notifications/:id", authenticate, deleteNotification);
@@ -1167,15 +1206,29 @@ router.delete("/notifications/clear-read", authenticate, deleteAllRead);
 router.get(
   "/admin/reminders/jamaah",
   authenticate,
-  authorize(["ADMIN", "FINANCE"]),
+  authorize(["ADMIN", "FINANCE", "STAFF"]),
   getJamaahNeedingReminder
 );
 
 router.get(
   "/admin/reminders/agen",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF", "FINANCE"]),
   getAgenNeedingReminder
+);
+
+router.post(
+  "/admin/finance/pos/assign-package",
+  authenticate,
+  authorize(["ADMIN", "FINANCE"]),
+  assignJamaahToPackage
+);
+
+router.post(
+  "/admin/finance/pos/send-reminder",
+  authenticate,
+  authorize(["ADMIN", "FINANCE"]),
+  sendJamaahNotification
 );
 
 router.post(

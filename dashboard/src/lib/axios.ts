@@ -46,15 +46,6 @@ api.interceptors.request.use(
       logger.debug("📦 FormData detected - auto Content-Type");
     }
 
-    // Attach token
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-        logger.debug("🔑 Token attached");
-      }
-    }
-
     return config;
   },
   (error: AxiosError) => {
@@ -83,7 +74,6 @@ api.interceptors.response.use(
       
       if (typeof window !== "undefined") {
         // Clear auth data
-        localStorage.removeItem("token");
         localStorage.removeItem("auth-storage");
         
         // Only redirect if not already on login page

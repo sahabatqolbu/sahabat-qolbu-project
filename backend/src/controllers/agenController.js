@@ -19,6 +19,20 @@ import { successResponse, errorResponse } from "../utils/response.js";
 import { sendWelcomeEmail } from "../utils/email.js";
 import { notifyAdmins } from "./notificationController.js";
 
+const getBookedSeats = async (packageId) => {
+  const [result] = await db
+    .select({ count: count() })
+    .from(jamaahData)
+    .where(
+      and(
+        eq(jamaahData.packageId, packageId),
+        sql`${jamaahData.registrationStatus} IN ('DRAFT','PENDING_DOCUMENT','PENDING_PAYMENT','VERIFIED','APPROVED')`
+      )
+    );
+
+  return Number(result?.count || 0);
+};
+
 
 // =====================================================
 // CREATE JAMAAH ACCOUNT (Agen Provisioning)
@@ -27,10 +41,15 @@ export const createJamaahAccount = async (req, res, next) => {
   try {
     const { fullName, email, phone, packageId, roomType } = req.body;
     const agenId = req.user.userId; // From JWT middleware
+    const parsedPackageId = parseInt(packageId, 10);
+
+    if (!Number.isInteger(parsedPackageId) || parsedPackageId <= 0) {
+      return errorResponse(res, "Package ID tidak valid", 400);
+    }
 
     // Check if package exists
     const packageData = await db.query.packages.findFirst({
-      where: eq(packages.id, packageId),
+      where: eq(packages.id, parsedPackageId),
     });
 
     if (!packageData) {
@@ -43,7 +62,8 @@ export const createJamaahAccount = async (req, res, next) => {
     }
 
     // Check seat availability
-    if (packageData.bookedSeats >= packageData.totalSeats) {
+    const bookedSeats = await getBookedSeats(parsedPackageId);
+    if (bookedSeats >= packageData.totalSeats) {
       return errorResponse(res, "Kursi paket sudah penuh", 400);
     }
 
@@ -71,6 +91,7 @@ export const createJamaahAccount = async (req, res, next) => {
           role: "JAMAAH",
           fullName: fullName,
           phone: phone,
+          createdBy: agenId,
           isActive: true,
           isEmailVerified: false,
         })
@@ -84,21 +105,14 @@ export const createJamaahAccount = async (req, res, next) => {
           fullName: fullName,
           phone: phone,
           email: email,
-          packageId: packageId,
-          roomType: roomType || "QUAD",
-          agenId: userId,
+          packageId: parsedPackageId,
+          roomTypeMakkah: roomType || "QUAD",
+          roomTypeMadinah: roomType || "QUAD",
+          agenId: agenId,
           registrationStatus: "DRAFT",
           isProfileComplete: false,
         })
         .$returningId();
-
-      // 3. Update package booked seats
-      await tx
-        .update(packages)
-        .set({
-          bookedSeats: packageData.bookedSeats + 1,
-        })
-        .where(eq(packages.id, packageId));
 
       return { userId: newUser.id, jamaahId: newJamaah.id };
     });
@@ -594,6 +608,8 @@ export const updateMyProfile = async (req, res, next) => {
       accountName,
       accountNumber,
       bankName,
+      currentLevelId,
+      starObtainedBy,
       purposes,
       customPurpose,
       agreedRequirements,
@@ -643,6 +659,11 @@ export const updateMyProfile = async (req, res, next) => {
         accountName,
         accountNumber,
         bankName,
+        currentLevelId:
+          currentLevelId !== undefined && currentLevelId !== null
+            ? parseInt(currentLevelId)
+            : undefined,
+        starObtainedBy,
         purposes: purposes ? JSON.stringify(purposes) : undefined,
         customPurpose,
         agreedRequirements: agreedRequirements
@@ -696,7 +717,7 @@ export const submitForApproval = async (req, res, next) => {
       return errorResponse(res, "Data agen belum lengkap", 400);
     }
 
-    if (agent.agentData.status !== "DRAFT") {
+    if (!["DRAFT", "REJECTED"].includes(agent.agentData.status)) {
       return errorResponse(res, "Agen sudah submit sebelumnya", 400);
     }
 
@@ -734,7 +755,7 @@ export const submitForApproval = async (req, res, next) => {
       type: "AGENT_SUBMITTED",
       title: "Agen Baru Menunggu Approval",
       message: `${agent.agentData.fullNameKtp || agent.fullName} telah mengajukan pendaftaran agen`,
-      link: `/admin/agents/${userId}`,
+      link: `/admin/agen/${userId}`,
       referenceId: userId,
       referenceType: "agent",
     });

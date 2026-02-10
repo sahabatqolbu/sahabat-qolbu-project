@@ -1,9 +1,17 @@
 // backend/src/controllers/jamaahSelfController.js
 import { db } from "../db/index.js";
-import { jamaahData, users, packages, jamaahPayments } from "../db/schema.js";
+import {
+  jamaahData,
+  users,
+  packages,
+  jamaahPayments,
+  agentData,
+} from "../db/schema.js";
 import { eq, like, or, and, desc, sql, ne } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
+import { createNotification, notifyAdmins } from "./notificationController.js";
+import { logger } from "../utils/logger.js";
 
 // =====================================================
 // GET PROFILE (Jamaah akses data sendiri)
@@ -12,11 +20,12 @@ export const getMyProfile = async (req, res, next) => {
   try {
     const userId = req.user.userId; // ✅ FIX: userId bukan id
 
-    console.log("📥 JAMAAH GET PROFILE - userId:", userId);
+    logger.debug("Jamaah get profile", { userId });
 
     // Get jamaah_data dengan relasi
     const jamaah = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
       with: {
         user: {
           columns: {
@@ -100,7 +109,7 @@ export const getMyProfile = async (req, res, next) => {
       daysUntilH30 = Math.ceil((deadlineH30 - today) / (1000 * 60 * 60 * 24));
     }
 
-    console.log("✅ Found jamaah:", jamaah.bookingNumber);
+    logger.debug("Jamaah profile loaded", { userId });
 
     return res.json({
       success: true,
@@ -127,7 +136,7 @@ export const getMyProfile = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ GET PROFILE ERROR:", error);
+    logger.error("Get jamaah profile error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -159,7 +168,7 @@ const parseDateOrNull = (value) => {
     // Return format yyyy-MM-dd untuk MySQL DATE column
     return date.toISOString().split("T")[0];
   } catch (e) {
-    console.warn("Invalid date:", value);
+    logger.warn("Invalid date value received");
     return null;
   }
 };
@@ -185,11 +194,11 @@ export const updateMyBiodata = async (req, res, next) => {
     const userId = req.user.userId;
     const updateData = req.body;
 
-    console.log("📥 JAMAAH UPDATE BIODATA - userId:", userId);
-    console.log("📥 Raw data received:", updateData);
+    logger.debug("Jamaah update biodata", { userId });
 
     const existing = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
     });
 
     if (!existing) {
@@ -262,7 +271,7 @@ export const updateMyBiodata = async (req, res, next) => {
       }
     }
 
-    console.log("📥 Sanitized data:", filteredData);
+    logger.debug("Jamaah biodata sanitized", { userId, fields: Object.keys(filteredData) });
 
     // Only update if there's data to update
     if (Object.keys(filteredData).length === 0) {
@@ -283,6 +292,7 @@ export const updateMyBiodata = async (req, res, next) => {
 
     const updated = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
     });
 
     const isProfileComplete = !!(
@@ -303,7 +313,7 @@ export const updateMyBiodata = async (req, res, next) => {
       .set({ isProfileComplete })
       .where(eq(jamaahData.userId, userId));
 
-    console.log("✅ Updated biodata for userId:", userId);
+    logger.info("Jamaah biodata updated", { userId });
 
     return res.json({
       success: true,
@@ -313,7 +323,7 @@ export const updateMyBiodata = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ UPDATE BIODATA ERROR:", error);
+    logger.error("Update jamaah biodata error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -326,12 +336,7 @@ export const uploadMyDocument = async (req, res, next) => {
     const userId = req.user.userId; // ✅ FIX
     const { documentType } = req.body;
 
-    console.log(
-      "📥 JAMAAH UPLOAD DOC - userId:",
-      userId,
-      "type:",
-      documentType,
-    );
+    logger.debug("Jamaah upload document", { userId, documentType });
 
     if (!req.file) {
       return res.status(400).json({
@@ -361,19 +366,13 @@ export const uploadMyDocument = async (req, res, next) => {
 
     const existing = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
     });
 
     if (!existing) {
       return res.status(404).json({
         success: false,
         message: "Data jamaah tidak ditemukan",
-      });
-    }
-
-    if (existing.registrationStatus === "APPROVED") {
-      return res.status(403).json({
-        success: false,
-        message: "Data sudah diapprove. Hubungi admin untuk perubahan.",
       });
     }
 
@@ -408,7 +407,7 @@ export const uploadMyDocument = async (req, res, next) => {
       })
       .where(eq(jamaahData.userId, userId));
 
-    console.log("✅ Uploaded", documentType, "for userId:", userId);
+    logger.info("Jamaah document uploaded", { userId, documentType });
 
     return res.json({
       success: true,
@@ -418,7 +417,7 @@ export const uploadMyDocument = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ UPLOAD DOC ERROR:", error);
+    logger.error("Upload jamaah document error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -430,10 +429,11 @@ export const submitForApproval = async (req, res, next) => {
   try {
     const userId = req.user.userId; // ✅ FIX
 
-    console.log("📥 JAMAAH SUBMIT FOR APPROVAL - userId:", userId);
+    logger.debug("Jamaah submit for approval", { userId });
 
     const existing = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
     });
 
     if (!existing) {
@@ -497,14 +497,14 @@ export const submitForApproval = async (req, res, next) => {
       })
       .where(eq(jamaahData.userId, userId));
 
-    console.log("✅ Submitted for approval:", existing.bookingNumber);
+    logger.info("Jamaah submitted for approval", { userId });
 
     return res.json({
       success: true,
       message: "Data berhasil disubmit. Menunggu approval admin.",
     });
   } catch (error) {
-    console.error("❌ SUBMIT ERROR:", error);
+    logger.error("Submit jamaah for approval error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -517,7 +517,7 @@ export const searchMahram = async (req, res, next) => {
     const userId = req.user.userId; // ✅ FIX
     const { q } = req.query;
 
-    console.log("📥 SEARCH MAHRAM - query:", q);
+    logger.debug("Jamaah search mahram", { userId, queryLength: String(q || "").length });
 
     if (!q || q.length < 3) {
       return res.json({
@@ -528,6 +528,7 @@ export const searchMahram = async (req, res, next) => {
 
     const myJamaah = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
     });
 
     const results = await db.query.jamaahData.findMany({
@@ -576,7 +577,7 @@ export const searchMahram = async (req, res, next) => {
       data,
     });
   } catch (error) {
-    console.error("❌ SEARCH MAHRAM ERROR:", error);
+    logger.error("Search mahram error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -588,10 +589,11 @@ export const getMyPayments = async (req, res, next) => {
   try {
     const userId = req.user.userId; // ✅ FIX
 
-    console.log("📥 JAMAAH GET PAYMENTS - userId:", userId);
+    logger.debug("Jamaah get payments", { userId });
 
     const jamaah = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
     });
 
     if (!jamaah) {
@@ -622,7 +624,7 @@ export const getMyPayments = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ GET PAYMENTS ERROR:", error);
+    logger.error("Get jamaah payments error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -634,10 +636,11 @@ export const getMyPackage = async (req, res, next) => {
   try {
     const userId = req.user.userId; // ✅ FIX
 
-    console.log("📥 JAMAAH GET PACKAGE - userId:", userId);
+    logger.debug("Jamaah get package", { userId });
 
     const jamaah = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
+      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
       with: {
         package: {
           with: {
@@ -685,7 +688,119 @@ export const getMyPackage = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ GET PACKAGE ERROR:", error);
+    logger.error("Get jamaah package error", error, { userId: req.user?.userId });
+    next(error);
+  }
+};
+
+// =====================================================
+// REQUEST PACKAGE CONSULTATION (notify agent/admin)
+// =====================================================
+export const requestPackageConsultation = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { packageId } = req.body;
+
+    const pkgId = parseInt(packageId, 10);
+    if (!pkgId) {
+      return res.status(400).json({
+        success: false,
+        message: "Paket tidak valid",
+      });
+    }
+
+    const [jamaah, pkg] = await Promise.all([
+      db.query.jamaahData.findFirst({
+        where: eq(jamaahData.userId, userId),
+        orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      }),
+      db.query.packages.findFirst({
+        where: eq(packages.id, pkgId),
+      }),
+    ]);
+
+    if (!jamaah) {
+      return res.status(404).json({
+        success: false,
+        message: "Data jamaah tidak ditemukan",
+      });
+    }
+
+    if (!pkg) {
+      return res.status(404).json({
+        success: false,
+        message: "Paket tidak ditemukan",
+      });
+    }
+
+    const requesterName = jamaah.namaPaspor || req.user.fullName || `Jamaah #${userId}`;
+    const notificationPayload = {
+      type: "SYSTEM",
+      title: "Minat Paket dari Jamaah",
+      message: `${requesterName} meminta bantuan pendaftaran paket ${pkg.name}`,
+      link: `/admin/jamaah/${jamaah.bookingNumber}`,
+      referenceId: jamaah.id,
+      referenceType: "jamaah",
+    };
+
+    let target = "ADMIN";
+
+    if (jamaah.agenId) {
+      const agenByUser = await db.query.users.findFirst({
+        where: and(
+          eq(users.id, jamaah.agenId),
+          eq(users.role, "AGEN"),
+          eq(users.isActive, true),
+        ),
+      });
+
+      let agenUserId = agenByUser?.id;
+
+      if (!agenUserId) {
+        const agentRecord = await db.query.agentData.findFirst({
+          where: eq(agentData.id, jamaah.agenId),
+          columns: { userId: true },
+        });
+
+        if (agentRecord?.userId) {
+          const agenByAgentData = await db.query.users.findFirst({
+            where: and(
+              eq(users.id, agentRecord.userId),
+              eq(users.role, "AGEN"),
+              eq(users.isActive, true),
+            ),
+            columns: { id: true },
+          });
+          agenUserId = agenByAgentData?.id;
+        }
+      }
+
+      if (agenUserId) {
+        await createNotification({
+          userId: agenUserId,
+          ...notificationPayload,
+          link: `/agen/jamaah/${jamaah.id}`,
+        });
+        target = "AGEN";
+      } else {
+        await notifyAdmins(notificationPayload);
+      }
+    } else {
+      await notifyAdmins(notificationPayload);
+    }
+
+    return res.json({
+      success: true,
+      message:
+        target === "AGEN"
+          ? "Permintaan sudah dikirim ke agen Anda"
+          : "Permintaan sudah dikirim ke admin",
+      data: { target },
+    });
+  } catch (error) {
+    logger.error("Request package consultation error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };

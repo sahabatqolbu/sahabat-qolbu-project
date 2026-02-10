@@ -37,11 +37,6 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (token, user) => {
         log("💾 Setting auth state");
 
-        // Save to localStorage
-        if (typeof window !== "undefined") {
-          localStorage.setItem("token", token);
-        }
-
         set({
           token,
           user,
@@ -55,7 +50,6 @@ export const useAuthStore = create<AuthState>()(
         log("👋 Logging out...");
 
         if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
           localStorage.removeItem("auth-storage");
         }
 

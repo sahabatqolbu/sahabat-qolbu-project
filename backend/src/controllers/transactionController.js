@@ -4,14 +4,6 @@ import { transactions, jamaahData, packages, paymentInstallments, users } from "
 import { eq, and, like, desc, sql } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 
-const ALLOWED_TRANSACTION_STATUSES = [
-    "PENDING",
-    "PARTIAL",
-    "PAID",
-    "VERIFIED",
-    "CANCELLED",
-    "REFUNDED",
-];
 const VALID_STATUS_TRANSITIONS = {
     PENDING: ["PARTIAL", "PAID", "VERIFIED", "CANCELLED"],
     PARTIAL: ["PAID", "VERIFIED", "CANCELLED"],
@@ -96,16 +88,8 @@ export const getTransactionById = async (req, res, next) => {
 export const verifyTransaction = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { status, remarks } = req.body; // status: PAID, VERIFIED, CANCELLED
+        const { status, remarks } = req.validatedBody || req.body; // status: PAID, VERIFIED, CANCELLED
         const adminId = req.user.userId;
-
-        if (!status || !ALLOWED_TRANSACTION_STATUSES.includes(status)) {
-            return errorResponse(res, "Status transaksi tidak valid", 400);
-        }
-
-        if (remarks !== undefined && typeof remarks !== "string") {
-            return errorResponse(res, "Remarks harus berupa teks", 400);
-        }
 
         const transaction = await db.query.transactions.findFirst({
             where: eq(transactions.id, parseInt(id)),

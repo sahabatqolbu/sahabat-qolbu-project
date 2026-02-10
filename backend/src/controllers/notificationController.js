@@ -2,8 +2,9 @@
 
 import { db } from "../db/index.js";
 import { notifications, users, jamaahData, agentData } from "../db/schema.js";
-import { eq, and, desc, inArray, sql, or } from "drizzle-orm";
+import { eq, and, desc, inArray, sql, or, gte } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
+import { logger } from "../utils/logger.js";
 
 // =====================================================
 // HELPER: Create Notification
@@ -28,10 +29,10 @@ export const createNotification = async ({
       referenceType,
       isRead: false,
     });
-    console.log(`🔔 Notification created for user ${userId}: ${title}`);
+    logger.info("Notification created", { userId, type });
     return true;
   } catch (error) {
-    console.error("❌ Failed to create notification:", error);
+    logger.error("Failed to create notification", error, { userId, type });
     return false;
   }
 };
@@ -64,10 +65,10 @@ export const notifyAdmins = async ({
       });
     }
 
-    console.log(`🔔 Notification sent to ${admins.length} admins`);
+    logger.info("Notification sent to admins", { count: admins.length, type });
     return true;
   } catch (error) {
-    console.error("❌ Failed to notify admins:", error);
+    logger.error("Failed to notify admins", error, { type });
     return false;
   }
 };
@@ -105,7 +106,7 @@ export const notifyFinance = async ({
 
     return true;
   } catch (error) {
-    console.error("❌ Failed to notify finance:", error);
+    logger.error("Failed to notify finance", error, { type });
     return false;
   }
 };
@@ -144,7 +145,7 @@ export const getMyNotifications = async (req, res, next) => {
       unreadCount,
     });
   } catch (error) {
-    console.error("❌ GET NOTIFICATIONS ERROR:", error);
+    logger.error("Get notifications error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -167,7 +168,44 @@ export const getUnreadCount = async (req, res, next) => {
 
     return successResponse(res, { unreadCount: count });
   } catch (error) {
-    console.error("❌ GET UNREAD COUNT ERROR:", error);
+    logger.error("Get unread count error", error, { userId: req.user?.userId });
+    next(error);
+  }
+};
+
+// =====================================================
+// ADMIN: GET PENDING AGENT APPROVAL COUNT
+// =====================================================
+export const getPendingAgentApprovalsCount = async (req, res, next) => {
+  try {
+    const user = req.user;
+
+    if (!user || !["ADMIN", "STAFF", "FINANCE"].includes(user.role)) {
+      return errorResponse(res, "Unauthorized", 403);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const result = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(agentData)
+      .where(eq(agentData.status, "PENDING"));
+
+    const todayResult = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(agentData)
+      .where(and(eq(agentData.status, "PENDING"), gte(agentData.submittedAt, today)));
+
+    const pendingCount = Number(result[0]?.count || 0);
+    const todayCount = Number(todayResult[0]?.count || 0);
+
+    return successResponse(res, {
+      pendingApprovals: pendingCount,
+      todaySubmitted: todayCount,
+    });
+  } catch (error) {
+    logger.error("Get pending agent approvals count error", error);
     next(error);
   }
 };
@@ -201,7 +239,7 @@ export const markAsRead = async (req, res, next) => {
 
     return successResponse(res, null, "Notifikasi ditandai sudah dibaca");
   } catch (error) {
-    console.error("❌ MARK AS READ ERROR:", error);
+    logger.error("Mark as read error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -225,7 +263,7 @@ export const markAllAsRead = async (req, res, next) => {
 
     return successResponse(res, null, "Semua notifikasi ditandai sudah dibaca");
   } catch (error) {
-    console.error("❌ MARK ALL AS READ ERROR:", error);
+    logger.error("Mark all as read error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -253,7 +291,7 @@ export const deleteNotification = async (req, res, next) => {
 
     return successResponse(res, null, "Notifikasi dihapus");
   } catch (error) {
-    console.error("❌ DELETE NOTIFICATION ERROR:", error);
+    logger.error("Delete notification error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -273,7 +311,7 @@ export const deleteAllRead = async (req, res, next) => {
 
     return successResponse(res, null, "Notifikasi yang sudah dibaca dihapus");
   } catch (error) {
-    console.error("❌ DELETE ALL READ ERROR:", error);
+    logger.error("Delete all read notifications error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -404,7 +442,7 @@ export const getJamaahNeedingReminder = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ GET JAMAAH NEEDING REMINDER ERROR:", error);
+    logger.error("Get jamaah needing reminder error", error);
     next(error);
   }
 };
@@ -533,7 +571,7 @@ export const getAgenNeedingReminder = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ GET AGEN NEEDING REMINDER ERROR:", error);
+    logger.error("Get agen needing reminder error", error);
     next(error);
   }
 };
@@ -590,11 +628,11 @@ export const sendReminder = async (req, res, next) => {
       isRead: false,
     });
 
-    console.log(`🔔 Reminder sent to user ${userId}: ${title}`);
+    logger.info("Reminder sent", { userId: parseInt(userId) });
 
     return successResponse(res, null, "Pengingat berhasil dikirim");
   } catch (error) {
-    console.error("❌ SEND REMINDER ERROR:", error);
+    logger.error("Send reminder error", error);
     next(error);
   }
 };
@@ -661,7 +699,7 @@ export const sendBulkReminder = async (req, res, next) => {
 
     await db.insert(notifications).values(notificationValues);
 
-    console.log(`🔔 Bulk reminder sent to ${userList.length} users`);
+    logger.info("Bulk reminder sent", { count: userList.length });
 
     return successResponse(
       res,
@@ -671,7 +709,7 @@ export const sendBulkReminder = async (req, res, next) => {
       `Pengingat berhasil dikirim ke ${userList.length} orang`,
     );
   } catch (error) {
-    console.error("❌ BULK REMINDER ERROR:", error);
+    logger.error("Bulk reminder error", error);
     next(error);
   }
 };
@@ -802,7 +840,7 @@ export const getAgenJamaahReminders = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error("❌ GET AGEN JAMAAH REMINDERS ERROR:", error);
+    logger.error("Get agen jamaah reminders error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -852,13 +890,14 @@ export const agenSendReminderToJamaah = async (req, res, next) => {
       isRead: false,
     });
 
-    console.log(
-      `🔔 Agen ${agenUserId} sent reminder to jamaah ${jamaahUserId}`,
-    );
+    logger.info("Agen sent reminder to jamaah", {
+      agenUserId,
+      jamaahUserId: parseInt(jamaahUserId),
+    });
 
     return successResponse(res, null, "Pengingat berhasil dikirim ke jamaah");
   } catch (error) {
-    console.error("❌ AGEN SEND REMINDER ERROR:", error);
+    logger.error("Agen send reminder error", error, { userId: req.user?.userId });
     next(error);
   }
 };
