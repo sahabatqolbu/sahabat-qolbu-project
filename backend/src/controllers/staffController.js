@@ -48,8 +48,8 @@ export const getAllStaff = async (req, res, next) => {
     if (search) {
       whereConditions.push(
         or(
-          like(sql`LOWER(${users.fullName})`, `%${search.toLowerCase()}%`),
-          like(sql`LOWER(${users.email})`, `%${search.toLowerCase()}%`),
+          like(users.fullName, `%${search}%`),
+          like(users.email, `%${search}%`),
           like(users.phone, `%${search}%`)
         )
       );
@@ -144,7 +144,7 @@ export const createStaff = async (req, res, next) => {
 
     // Check if email already exists
     const existingUser = await db.query.users.findFirst({
-      where: eq(sql`LOWER(${users.email})`, normalizedEmail),
+      where: sql`${users.email} = ${normalizedEmail}`,
     });
 
     if (existingUser) {
@@ -164,6 +164,7 @@ export const createStaff = async (req, res, next) => {
         fullName,
         phone: phone || null,
         role: "STAFF",
+        createdBy: req.user?.userId || null,
         isActive: true,
         isEmailVerified: false,
       })

@@ -1,6 +1,8 @@
 import rateLimit from "express-rate-limit";
 import { logger } from "../utils/logger.js";
 
+const isDevelopment = process.env.NODE_ENV !== "production";
+
 /**
  * Rate limiting configurations
  */
@@ -8,7 +10,9 @@ import { logger } from "../utils/logger.js";
 // General API rate limit
 export const apiLimiter = rateLimit({
   windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+  max:
+    parseInt(process.env.RATE_LIMIT_MAX) || (isDevelopment ? 10000 : 300),
+  skip: () => isDevelopment,
   message: {
     success: false,
     message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",

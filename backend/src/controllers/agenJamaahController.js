@@ -44,6 +44,34 @@ const generateBookingNumber = async () => {
   return `${prefix}-${String(sequence).padStart(4, "0")}`;
 };
 
+const isBookingNumberDuplicateError = (error) => {
+  const message = error?.sqlMessage || error?.message || "";
+  return error?.code === "ER_DUP_ENTRY" && message.includes("booking_number");
+};
+
+const createJamaahDataWithRetry = async (buildValues, maxRetries = 5) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const bookingNumber = await generateBookingNumber();
+
+    try {
+      const [newJamaah] = await db
+        .insert(jamaahData)
+        .values(buildValues(bookingNumber))
+        .$returningId();
+
+      return { bookingNumber, newJamaah };
+    } catch (error) {
+      if (isBookingNumberDuplicateError(error) && attempt < maxRetries) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error("Gagal membuat booking number unik");
+};
+
 // ===== HELPER: Check Profile Completeness =====
 const checkProfileComplete = (jamaah) => {
   const requiredFields = {
@@ -109,9 +137,20 @@ export const getMyJamaah = async (req, res, next) => {
     // if (!agent) { ... }
     // console.log("📥 Agent ID:", agent.id);
 
-    // ✅ Query langsung dengan userId
-    // Karena jamaah_data.agen_id references users.id, BUKAN agent_data.id
-    const conditions = [eq(jamaahData.agenId, userId)]; // ← Pakai userId!
+    // NOTE:
+    // Sebagian data lama masih menyimpan agen_id = agent_data.id,
+    // sedangkan data baru menyimpan agen_id = users.id.
+    // Jadi untuk backward compatibility, query harus membaca keduanya.
+    const agent = await db.query.agentData.findFirst({
+      where: eq(agentData.userId, userId),
+      columns: { id: true },
+    });
+
+    const conditions = [
+      agent
+        ? or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id))
+        : eq(jamaahData.agenId, userId),
+    ];
 
     if (status && status !== "all") {
       conditions.push(eq(jamaahData.registrationStatus, status));
@@ -255,10 +294,19 @@ export const getJamaahById = async (req, res, next) => {
     // ❌ HAPUS lookup agent_data
     // const agent = await db.query.agentData.findFirst({...});
 
+    const agent = await db.query.agentData.findFirst({
+      where: eq(agentData.userId, userId),
+      columns: { id: true },
+    });
+
+    const ownershipCondition = agent
+      ? or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id))
+      : eq(jamaahData.agenId, userId);
+
     const jamaah = await db.query.jamaahData.findFirst({
       where: and(
         eq(jamaahData.id, parseInt(id)),
-        eq(jamaahData.agenId, userId), // ← Pakai userId!
+        ownershipCondition,
       ),
       with: {
         user: true,
@@ -372,6 +420,7 @@ export const createJamaah = async (req, res, next) => {
           phone,
           password: hashedPassword,
           role: "JAMAAH",
+          createdBy: agenUserId,
           isActive: true,
         })
         .$returningId();
@@ -380,9 +429,6 @@ export const createJamaah = async (req, res, next) => {
       isNewUser = true;
       console.log("✅ New user created:", jamaahUserId);
     }
-
-    // Generate booking number
-    const bookingNumber = await generateBookingNumber();
 
     // Get package price
     let hargaPaket = "0";
@@ -395,14 +441,12 @@ export const createJamaah = async (req, res, next) => {
       }
     }
 
-    // Create jamaah record
-    const [newJamaah] = await db
-      .insert(jamaahData)
-      .values({
+    const { bookingNumber, newJamaah } = await createJamaahDataWithRetry(
+      (generatedBookingNumber) => ({
         userId: jamaahUserId,
-        agenId: agent.id,
+        agenId: agenUserId,
         packageId: packageId ? parseInt(packageId) : null,
-        bookingNumber,
+        bookingNumber: generatedBookingNumber,
         dateOfBooking: new Date(),
         registrationStatus: "DRAFT",
         statusPayment: "BELUM_BAYAR",
@@ -418,7 +462,7 @@ export const createJamaah = async (req, res, next) => {
         totalPayment: "0",
         outstanding: hargaPaket.toString(),
       })
-      .$returningId();
+    );
 
 
 console.log("✅ Created jamaah:", bookingNumber, "by agent:", agent.id);
@@ -500,7 +544,7 @@ export const updateJamaah = async (req, res, next) => {
     const existing = await db.query.jamaahData.findFirst({
       where: and(
         eq(jamaahData.id, parseInt(id)),
-        eq(jamaahData.agenId, agent.id),
+        or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id)),
       ),
     });
 
@@ -590,11 +634,10 @@ export const updateJamaah = async (req, res, next) => {
 // =====================================================
 export const getDashboardStats = async (req, res, next) => {
   try {
-    // const agenUserId = req.user.userId;
     const userId = req.user.userId; // ✅ users.id
 
     const agent = await db.query.agentData.findFirst({
-      where: eq(agentData.userId, agenUserId),
+      where: eq(agentData.userId, userId),
     });
 
     if (!agent) {
@@ -605,7 +648,7 @@ export const getDashboardStats = async (req, res, next) => {
     }
 
     const jamaahList = await db.query.jamaahData.findMany({
-      where: eq(jamaahData.agenId, userId), // ← Pakai userId!
+      where: or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id)),
       columns: {
         id: true,
         statusPayment: true,

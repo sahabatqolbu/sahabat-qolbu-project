@@ -16,7 +16,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuthStore();
+  const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,11 +30,11 @@ export default function DashboardLayout({
 
   useEffect(() => {
     // Only check auth after hydration complete
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !user) {
       console.log("❌ Not authenticated, redirecting to login");
       router.replace("/login");
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, user, router]);
 
   // Show loading during hydration
   if (isLoading) {
@@ -49,7 +49,7 @@ export default function DashboardLayout({
   }
 
   // Show loading if not authenticated (before redirect)
-  if (!isAuthenticated || !user) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

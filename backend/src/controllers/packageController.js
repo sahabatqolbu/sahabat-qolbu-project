@@ -7,7 +7,7 @@ import {
   jamaahData,
   calendarEvents,
 } from "../db/schema.js";
-import { eq, desc, like, and, or, sql, count } from "drizzle-orm";
+import { eq, desc, like, and, or, count, inArray } from "drizzle-orm";
 import {
   successResponse,
   errorResponse,
@@ -17,13 +17,18 @@ import {
 import * as XLSX from "xlsx";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
+import { UPLOAD_BASE } from "../utils/upload.js";
 
 // ✅ IMPORT SYNC FUNCTION
 import { syncPackageEvent } from "./calendarController.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const getUploadAbsolutePath = (uploadPath) => {
+  if (!uploadPath || typeof uploadPath !== "string") return null;
+  const relativePath = uploadPath.startsWith("/uploads/")
+    ? uploadPath.replace("/uploads/", "")
+    : uploadPath.replace(/^\/+/, "");
+  return path.join(UPLOAD_BASE, relativePath);
+};
 
 // =====================================================
 // HELPER: Generate Package Code
@@ -58,6 +63,38 @@ const getBookedSeats = async (packageId) => {
       ),
     );
   return result[0]?.count || 0;
+};
+
+const getBookedSeatsByPackageIds = async (packageIds = []) => {
+  if (!packageIds.length) {
+    return new Map();
+  }
+
+  const rows = await db
+    .select({
+      packageId: jamaahData.packageId,
+      count: count(),
+    })
+    .from(jamaahData)
+    .where(
+      and(
+        inArray(jamaahData.packageId, packageIds),
+        or(
+          eq(jamaahData.registrationStatus, "CONFIRMED"),
+          eq(jamaahData.registrationStatus, "PENDING_PAYMENT"),
+        ),
+      ),
+    )
+    .groupBy(jamaahData.packageId);
+
+  const bookedSeatsByPackageId = new Map();
+  for (const row of rows) {
+    if (row.packageId != null) {
+      bookedSeatsByPackageId.set(Number(row.packageId), Number(row.count || 0));
+    }
+  }
+
+  return bookedSeatsByPackageId;
 };
 
 // =====================================================
@@ -111,9 +148,11 @@ export const getAllPackages = async (req, res, next) => {
       },
     });
 
-    const packagesWithStats = await Promise.all(
-      allPackages.map(async (pkg) => {
-        const bookedSeats = await getBookedSeats(pkg.id);
+    const allPackageIds = allPackages.map((pkg) => pkg.id);
+    const bookedSeatsByPackageId = await getBookedSeatsByPackageIds(allPackageIds);
+
+    const packagesWithStats = allPackages.map((pkg) => {
+        const bookedSeats = bookedSeatsByPackageId.get(pkg.id) || 0;
         const remainingSeats = pkg.totalSeats - bookedSeats;
         const daysUntilDeparture = getDaysUntilDeparture(pkg.departureDate);
 
@@ -151,8 +190,7 @@ export const getAllPackages = async (req, res, next) => {
           hotelMakkahRooms,
           hotelMadinahRooms,
         };
-      }),
-    );
+      });
 
     const totalResult = await db
       .select({ count: count() })
@@ -168,9 +206,13 @@ export const getAllPackages = async (req, res, next) => {
     let totalSeatsAll = 0;
     let bookedSeatsAll = 0;
 
+    const statsPackageIds = allPackagesForStats.map((pkg) => pkg.id);
+    const summaryBookedSeatsByPackageId =
+      await getBookedSeatsByPackageIds(statsPackageIds);
+
     for (const pkg of allPackagesForStats) {
       totalSeatsAll += pkg.totalSeats;
-      bookedSeatsAll += await getBookedSeats(pkg.id);
+      bookedSeatsAll += summaryBookedSeatsByPackageId.get(pkg.id) || 0;
     }
 
     return successResponse(res, {
@@ -372,12 +414,8 @@ export const updatePackage = async (req, res, next) => {
     let itineraryPdf = existingPackage.itineraryPdf;
     if (req.uploadedFile) {
       if (existingPackage.itineraryPdf) {
-        const oldPdfPath = path.join(
-          __dirname,
-          "../../uploads/itinerary",
-          path.basename(existingPackage.itineraryPdf),
-        );
-        if (fs.existsSync(oldPdfPath)) {
+        const oldPdfPath = getUploadAbsolutePath(existingPackage.itineraryPdf);
+        if (oldPdfPath && fs.existsSync(oldPdfPath)) {
           fs.unlinkSync(oldPdfPath);
         }
       }
@@ -529,12 +567,8 @@ export const uploadItineraryPdf = async (req, res, next) => {
     }
 
     if (existingPackage.itineraryPdf) {
-      const oldPdfPath = path.join(
-        __dirname,
-        "../../uploads/itinerary",
-        path.basename(existingPackage.itineraryPdf),
-      );
-      if (fs.existsSync(oldPdfPath)) {
+      const oldPdfPath = getUploadAbsolutePath(existingPackage.itineraryPdf);
+      if (oldPdfPath && fs.existsSync(oldPdfPath)) {
         fs.unlinkSync(oldPdfPath);
       }
     }
@@ -580,13 +614,9 @@ export const deleteItineraryPdf = async (req, res, next) => {
       return errorResponse(res, "Tidak ada PDF untuk dihapus", 404);
     }
 
-    const pdfPath = path.join(
-      __dirname,
-      "../../uploads/itinerary",
-      path.basename(existingPackage.itineraryPdf),
-    );
+    const pdfPath = getUploadAbsolutePath(existingPackage.itineraryPdf);
 
-    if (fs.existsSync(pdfPath)) {
+    if (pdfPath && fs.existsSync(pdfPath)) {
       fs.unlinkSync(pdfPath);
     }
 
@@ -639,20 +669,16 @@ export const deletePackage = async (req, res, next) => {
       .where(eq(calendarEvents.packageId, parseInt(id)));
 
     if (pkg.itineraryPdf) {
-      const pdfPath = path.join(
-        __dirname,
-        "../../uploads/itinerary",
-        path.basename(pkg.itineraryPdf),
-      );
-      if (fs.existsSync(pdfPath)) {
+      const pdfPath = getUploadAbsolutePath(pkg.itineraryPdf);
+      if (pdfPath && fs.existsSync(pdfPath)) {
         fs.unlinkSync(pdfPath);
       }
     }
 
     if (pkg.images && pkg.images.length > 0) {
       for (const img of pkg.images) {
-        const imagePath = path.join(__dirname, "../..", img.imageUrl);
-        if (fs.existsSync(imagePath)) {
+        const imagePath = getUploadAbsolutePath(img.imageUrl);
+        if (imagePath && fs.existsSync(imagePath)) {
           fs.unlinkSync(imagePath);
         }
       }
@@ -895,8 +921,8 @@ export const deletePackageImage = async (req, res, next) => {
       return errorResponse(res, "Gambar tidak ditemukan", 404);
     }
 
-    const imagePath = path.join(__dirname, "../..", image.imageUrl);
-    if (fs.existsSync(imagePath)) {
+    const imagePath = getUploadAbsolutePath(image.imageUrl);
+    if (imagePath && fs.existsSync(imagePath)) {
       fs.unlinkSync(imagePath);
     }
 

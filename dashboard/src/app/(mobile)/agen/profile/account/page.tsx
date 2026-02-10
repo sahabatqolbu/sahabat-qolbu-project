@@ -174,7 +174,7 @@ export default function AgenAccountPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 w-full md:max-w-md mx-auto">
+      <div className="min-h-screen bg-gray-50 p-4 w-full md:max-w-7xl md:px-6 mx-auto">
         <Skeleton className="h-8 w-32 mb-4" />
         <Skeleton className="h-32 w-full rounded-2xl mb-4" />
         <Skeleton className="h-48 w-full rounded-2xl" />
@@ -183,7 +183,7 @@ export default function AgenAccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 w-full md:max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-24 w-full md:max-w-7xl md:px-6 mx-auto">
       {/* LOGOUT COUNTDOWN OVERLAY */}
       {logoutCountdown !== null && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">

@@ -10,7 +10,7 @@ import { logger } from "../utils/logger.js";
  */
 
 // Allowed origins for CORS
-const allowedOrigins = [
+export const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   process.env.FRONTEND_URL,
@@ -51,6 +51,18 @@ export const corsOptions = {
   ],
   exposedHeaders: ["X-Request-ID"],
   maxAge: 86400, // 24 hours
+};
+
+export const isTrustedOrigin = (originOrReferer) => {
+  if (!originOrReferer) return false;
+
+  try {
+    const parsed = new URL(originOrReferer);
+    const normalizedOrigin = parsed.origin;
+    return allowedOrigins.includes(normalizedOrigin);
+  } catch {
+    return false;
+  }
 };
 
 /**

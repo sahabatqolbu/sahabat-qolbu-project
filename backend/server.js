@@ -1,6 +1,6 @@
 // backend/server.js
 import app from "./src/app.js";
-import { testConnection } from "./src/db/index.js";
+import { testConnection, ensureSchemaCompatibility } from "./src/db/index.js";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
@@ -92,6 +92,9 @@ const startServer = async () => {
     }
     
     logger.info("✅ Database connected successfully");
+
+    // Backward-compatible schema guard
+    await ensureSchemaCompatibility();
 
     // Ensure upload directories
     ensureUploadDirs();

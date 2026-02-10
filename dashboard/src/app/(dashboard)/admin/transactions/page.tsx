@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
+import { useAuthStore } from "@/stores/authStore";
 import {
     Card,
     CardContent,
@@ -67,6 +68,8 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function TransactionsPage() {
+    const { user } = useAuthStore();
+    const isFinanceReadOnly = user?.role === "FINANCE";
     const queryClient = useQueryClient();
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -249,7 +252,7 @@ export default function TransactionsPage() {
                                 </div>
                             </div>
 
-                            {selectedTx.status === "PENDING" && (
+                            {!isFinanceReadOnly && selectedTx.status === "PENDING" && (
                                 <div className="flex gap-3 pt-4 border-t">
                                     <Button
                                         className="flex-1 bg-secondary hover:bg-secondary/90 text-primary font-medium"

@@ -433,7 +433,7 @@ export default function AgenRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-44 w-full md:max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-44 w-full md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-primary text-white p-6 pb-10">
         <div className="flex items-center gap-4 mb-6">
@@ -966,7 +966,7 @@ export default function AgenRegisterPage() {
       </form>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 pb-6 md:max-w-md md:mx-auto z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 pb-6 md:px-8 z-50">
         <div className="text-center text-sm mb-3">
           {updateMutation.isPending ? (
             <span className="text-gray-500 flex items-center justify-center gap-2">

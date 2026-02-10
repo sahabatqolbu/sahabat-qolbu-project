@@ -696,7 +696,12 @@ router.delete(
 // =====================================================
 // MASTER DATA - BANKS
 // =====================================================
-router.get("/master/banks", authenticate, getAllBanks);
+router.get(
+  "/master/banks",
+  authenticate,
+  authorize(["ADMIN", "FINANCE", "STAFF"]),
+  getAllBanks
+);
 router.get("/master/banks/active", getActiveBanks);
 router.post("/master/banks", authenticate, authorize(["ADMIN"]), createBank);
 router.put("/master/banks/:id", authenticate, authorize(["ADMIN"]), updateBank);

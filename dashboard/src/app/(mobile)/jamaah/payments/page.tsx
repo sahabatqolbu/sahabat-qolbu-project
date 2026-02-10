@@ -48,7 +48,7 @@ export default function JamaahPaymentsPage() {
   const progress = hargaFinal > 0 ? (totalPayment / hargaFinal) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center gap-3">

@@ -123,7 +123,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32 w-full md:max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-32 w-full md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-primary text-white p-6">
         <div className="flex items-center gap-3">
@@ -309,7 +309,7 @@ export default function EditProfilePage() {
       </form>
 
       {/* Bottom Action */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 pb-6 md:max-w-md md:mx-auto z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 pb-6 md:px-8 z-50">
         <Button
           type="submit"
           className="w-full h-12 bg-primary hover:bg-primary-600"

@@ -115,18 +115,18 @@ export default function JamaahDashboardPage() {
   ).filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:pb-8 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-5 pb-20 rounded-b-[2rem] relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 rounded-b-[2rem] md:rounded-b-[2.5rem] relative overflow-hidden">
         {/* Decorative */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-8 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs text-white/60">Assalamu'alaikum,</p>
-              <h1 className="text-lg font-bold">
+              <p className="text-xs md:text-sm text-white/60">Assalamu'alaikum,</p>
+              <h1 className="text-lg md:text-3xl font-bold">
                 {profile.user?.fullName?.split(" ")[0] || "Jamaah"} 👋
               </h1>
             </div>
@@ -163,7 +163,7 @@ export default function JamaahDashboardPage() {
       </div>
 
       {/* Content */}
-      <div className="px-4 -mt-12 space-y-4 relative z-10">
+      <div className="px-4 md:px-8 -mt-12 md:-mt-16 space-y-4 md:space-y-6 relative z-10 max-w-7xl mx-auto">
         {/* Package Card */}
         {packageData ? (
           <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
@@ -306,7 +306,7 @@ export default function JamaahDashboardPage() {
           <h2 className="text-sm font-semibold text-[var(--color-primary)] mb-3 px-1">
             Menu
           </h2>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 md:grid-cols-6 gap-2 md:gap-4">
             <Link href="/jamaah/packages">
               <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                 <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center mb-1.5">

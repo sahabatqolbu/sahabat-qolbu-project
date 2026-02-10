@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,6 +28,7 @@ import {
   AlertTriangle,
   Clock,
   ChevronRight,
+  ShieldAlert,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
@@ -83,6 +85,9 @@ interface Notification {
 export function NotificationDropdown() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "ADMIN";
+  const canUseAdminNotifFeatures = user?.role === "ADMIN" || user?.role === "STAFF";
 
   // Fetch notifications
   const { data, isLoading } = useQuery({
@@ -106,6 +111,31 @@ export function NotificationDropdown() {
       };
     },
     refetchInterval: 60000,
+    enabled: canUseAdminNotifFeatures,
+  });
+
+  const { data: pendingApprovalsData } = useQuery({
+    queryKey: ["pending-agent-approvals"],
+    queryFn: () => adminService.notifications.getPendingAgentApprovals(),
+    refetchInterval: 30000,
+    enabled: canUseAdminNotifFeatures,
+  });
+
+  const { data: dashboardStatsData } = useQuery({
+    queryKey: ["admin-dashboard-stats-lite"],
+    queryFn: () => adminService.dashboard.getStats(),
+    refetchInterval: 30000,
+    enabled: canUseAdminNotifFeatures,
+  });
+
+  const { data: pendingAgentsData } = useQuery({
+    queryKey: ["admin-pending-agents-dropdown"],
+    queryFn: () =>
+      adminService.agen.getAll({
+        status: "PENDING",
+      }),
+    refetchInterval: 30000,
+    enabled: canUseAdminNotifFeatures,
   });
 
   const notifications: Notification[] = data?.data?.notifications || [];
@@ -116,6 +146,28 @@ export function NotificationDropdown() {
     urgentCount: 0,
   };
   const totalReminders = reminderStats.jamaahCount + reminderStats.agenCount;
+  const pendingApprovalsFromNotifApi =
+    pendingApprovalsData?.data?.pendingApprovals ||
+    pendingApprovalsData?.pendingApprovals ||
+    0;
+  const pendingApprovalsFromStatsApi =
+    dashboardStatsData?.data?.agents?.pending ||
+    dashboardStatsData?.agents?.pending ||
+    0;
+  const pendingApprovalsFromAgenApi =
+    pendingAgentsData?.data?.length ||
+    pendingAgentsData?.data?.agents?.length ||
+    pendingAgentsData?.agents?.length ||
+    0;
+  const pendingApprovals = Math.max(
+    pendingApprovalsFromNotifApi,
+    pendingApprovalsFromStatsApi,
+    pendingApprovalsFromAgenApi,
+  );
+  const todaySubmitted =
+    pendingApprovalsData?.data?.todaySubmitted ||
+    pendingApprovalsData?.todaySubmitted ||
+    0;
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
@@ -148,9 +200,13 @@ export function NotificationDropdown() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {(unreadCount > 0 || totalReminders > 0) && (
+          {(unreadCount > 0 || totalReminders > 0 || pendingApprovals > 0) && (
             <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500 hover:bg-red-500">
-              {unreadCount > 0
+              {pendingApprovals > 0
+                ? pendingApprovals > 9
+                  ? "9+"
+                  : pendingApprovals
+                : unreadCount > 0
                 ? unreadCount > 9
                   ? "9+"
                   : unreadCount
@@ -161,8 +217,39 @@ export function NotificationDropdown() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-80 md:w-96">
+        {canUseAdminNotifFeatures && pendingApprovals > 0 && (
+          <>
+            <Link href="/admin/agen" onClick={() => setIsOpen(false)}>
+              <div className="px-4 py-3 bg-gradient-to-r from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 transition-colors cursor-pointer border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                      <ShieldAlert className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-red-900 text-sm">
+                        Approval Agen Menunggu
+                      </p>
+                      <p className="text-xs text-red-700">
+                        {pendingApprovals} akun agen perlu ditinjau
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-red-600" />
+                </div>
+                {todaySubmitted > 0 && (
+                  <p className="mt-2 text-xs text-red-700 font-medium">
+                    +{todaySubmitted} pengajuan baru hari ini
+                  </p>
+                )}
+              </div>
+            </Link>
+            <DropdownMenuSeparator />
+          </>
+        )}
+
         {/* ✅ REMINDER SHORTCUT - BAGIAN PALING ATAS */}
-        {totalReminders > 0 && (
+        {canUseAdminNotifFeatures && totalReminders > 0 && (
           <>
             <Link href="/admin/reminders" onClick={() => setIsOpen(false)}>
               <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors cursor-pointer">

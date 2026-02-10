@@ -5,8 +5,9 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jamaahService } from "@/services/jamaahService";
+import { adminService } from "@/services/adminService";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -100,6 +101,7 @@ import {
   Undo2,
   ShieldCheck,
   ShieldX,
+  Save,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -116,6 +118,27 @@ export default function JamaahDetailPage() {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [revertDialogOpen, setRevertDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [editingSection, setEditingSection] = useState<
+    "biodata" | "paket" | null
+  >(null);
+  const [inlineForm, setInlineForm] = useState<any>({
+    namaPaspor: "",
+    nik: "",
+    birthPlace: "",
+    birthDate: "",
+    gender: "",
+    packageId: "",
+    agenId: "",
+    notePaket: "FULLSERVICE",
+    roomTypeMakkah: "",
+    roomTypeMadinah: "",
+    hargaPaket: "0",
+    potonganFeeAgen: "0",
+    potonganPoinAgen: "0",
+    potonganCashbackKK: "0",
+    registrationStatus: "DRAFT",
+    notes: "",
+  });
 
   const [paymentForm, setPaymentForm] = useState({
     paidBy: "",
@@ -151,6 +174,23 @@ export default function JamaahDetailPage() {
   });
 
   const payments = paymentsResponse?.data || [];
+
+  const { data: packagesResponse } = useQuery({
+    queryKey: ["packages-dropdown-inline"],
+    queryFn: async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/packages`);
+      return res.json();
+    },
+  });
+
+  const packages = packagesResponse?.data?.packages || [];
+
+  const { data: agenResponse } = useQuery({
+    queryKey: ["agen-dropdown-inline"],
+    queryFn: () => adminService.agen.getAll({ status: "APPROVED" }),
+  });
+
+  const agenList = agenResponse?.data || [];
 
   // =====================================================
   // FETCH BANKS
@@ -282,6 +322,171 @@ export default function JamaahDetailPage() {
       });
     },
   });
+
+  const updateInlineMutation = useMutation({
+    mutationFn: (payload: any) => jamaahService.update(bookingNumber, payload),
+    onSuccess: () => {
+      toast({ title: "✅ Data jamaah berhasil diupdate" });
+      queryClient.invalidateQueries({ queryKey: ["jamaah-detail", bookingNumber] });
+      queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
+      setEditingSection(null);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal update data",
+        description: error.response?.data?.message || "Terjadi kesalahan",
+      });
+    },
+  });
+
+  const populateInlineForm = () => {
+    if (!jamaah) return;
+    const toInputDate = (dateString: string | null | undefined) => {
+      if (!dateString) return "";
+      return new Date(dateString).toISOString().split("T")[0];
+    };
+
+    setInlineForm({
+      namaPaspor: jamaah.namaPaspor || "",
+      nik: jamaah.nik || "",
+      birthPlace: jamaah.birthPlace || "",
+      birthDate: toInputDate(jamaah.birthDate),
+      gender: jamaah.gender || "",
+      packageId: jamaah.packageId?.toString() || "none",
+      agenId: jamaah.agenId?.toString() || "none",
+      notePaket: jamaah.notePaket || "FULLSERVICE",
+      roomTypeMakkah: jamaah.roomTypeMakkah || "",
+      roomTypeMadinah: jamaah.roomTypeMadinah || "",
+      hargaPaket: jamaah.hargaPaket || "0",
+      potonganFeeAgen: jamaah.potonganFeeAgen || "0",
+      potonganPoinAgen: jamaah.potonganPoinAgen || "0",
+      potonganCashbackKK: jamaah.potonganCashbackKK || "0",
+      registrationStatus: jamaah.registrationStatus || "DRAFT",
+      notes: jamaah.notes || "",
+    });
+  };
+
+  useEffect(() => {
+    populateInlineForm();
+  }, [jamaah]);
+
+  const handleInlineSave = () => {
+    const payload: any = {
+      ...inlineForm,
+      packageId:
+        inlineForm.packageId && inlineForm.packageId !== "none"
+          ? parseInt(inlineForm.packageId, 10)
+          : null,
+      agenId:
+        inlineForm.agenId && inlineForm.agenId !== "none"
+          ? parseInt(inlineForm.agenId, 10)
+          : null,
+      roomTypeMakkah:
+        inlineForm.roomTypeMakkah && inlineForm.roomTypeMakkah !== "none"
+          ? inlineForm.roomTypeMakkah
+          : null,
+      roomTypeMadinah:
+        inlineForm.roomTypeMadinah && inlineForm.roomTypeMadinah !== "none"
+          ? inlineForm.roomTypeMadinah
+          : null,
+      notePaket:
+        inlineForm.notePaket && inlineForm.notePaket !== "none"
+          ? inlineForm.notePaket
+          : null,
+      notes: inlineForm.notes || null,
+    };
+
+    updateInlineMutation.mutate(payload);
+  };
+
+  const mapPackageTypeToNotePaket = (pkgType?: string) => {
+    switch (pkgType) {
+      case "FULL_SERVICE":
+        return "FULLSERVICE";
+      case "EXTREME":
+        return "EXTREME";
+      case "KONSORSIUM":
+        return "KONSORSIUM";
+      default:
+        return "B2B";
+    }
+  };
+
+  const pickDefaultRoomType = (
+    pkg: any,
+    prefix: "hotelMakkah" | "hotelMadinah",
+  ) => {
+    const candidates = [
+      { key: `${prefix}Double`, value: "DOUBLE" },
+      { key: `${prefix}Triple`, value: "TRIPLE" },
+      { key: `${prefix}Quad`, value: "QUAD" },
+      { key: `${prefix}Quint`, value: "QUINT" },
+    ] as const;
+
+    let selected: string | null = null;
+    let maxSeats = -1;
+
+    for (const candidate of candidates) {
+      const seats = Number(pkg?.[candidate.key] || 0);
+      if (seats > maxSeats) {
+        maxSeats = seats;
+        selected = candidate.value;
+      }
+    }
+
+    return maxSeats > 0 ? selected : null;
+  };
+
+  const applyPackageDefaults = (packageId: string) => {
+    if (!packageId || packageId === "none") {
+      setInlineForm((prev: any) => ({
+        ...prev,
+        packageId: "none",
+        hargaPaket: "0",
+        potonganFeeAgen: "0",
+        potonganPoinAgen: "0",
+        potonganCashbackKK: "0",
+        roomTypeMakkah: "",
+        roomTypeMadinah: "",
+      }));
+      return;
+    }
+
+    const selectedPackage = packages.find(
+      (pkg: any) => pkg.id.toString() === packageId,
+    );
+
+    if (!selectedPackage) return;
+
+    const harga = selectedPackage.discountPrice
+      ? parseFloat(selectedPackage.discountPrice)
+      : parseFloat(selectedPackage.price) || 0;
+
+    setInlineForm((prev: any) => ({
+      ...prev,
+      packageId,
+      notePaket: mapPackageTypeToNotePaket(selectedPackage.type),
+      roomTypeMakkah:
+        pickDefaultRoomType(selectedPackage, "hotelMakkah") || prev.roomTypeMakkah,
+      roomTypeMadinah:
+        pickDefaultRoomType(selectedPackage, "hotelMadinah") || prev.roomTypeMadinah,
+      hargaPaket: harga.toString(),
+      potonganFeeAgen: "0",
+      potonganPoinAgen: "0",
+      potonganCashbackKK: "0",
+    }));
+
+    toast({
+      title: "📦 Paket dipilih",
+      description: `Default data paket sudah diisi otomatis (harga, note, tipe kamar).`,
+    });
+  };
+
+  const saveSection = (section: "biodata" | "paket") => {
+    handleInlineSave();
+    setEditingSection(section);
+  };
 
   const resetPaymentForm = () => {
     setPaymentForm({
@@ -752,8 +957,8 @@ export default function JamaahDetailPage() {
 
           <Link href={`/admin/jamaah/${bookingNumber}/edit`}>
             <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Data
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Edit Lengkap
             </Button>
           </Link>
         </div>
@@ -1032,19 +1237,57 @@ export default function JamaahDetailPage() {
                     Informasi biodata sesuai dokumen resmi
                   </CardDescription>
                 </div>
-                {profileCompleteness?.categories?.biodata && (
-                  <Badge
-                    variant="outline"
-                    className={
-                      profileCompleteness.categories.biodata.complete
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }
-                  >
-                    {profileCompleteness.categories.biodata.passed}/
-                    {profileCompleteness.categories.biodata.total}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {profileCompleteness?.categories?.biodata && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        profileCompleteness.categories.biodata.complete
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }
+                    >
+                      {profileCompleteness.categories.biodata.passed}/
+                      {profileCompleteness.categories.biodata.total}
+                    </Badge>
+                  )}
+                  {editingSection === "biodata" ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          populateInlineForm();
+                          setEditingSection(null);
+                        }}
+                        disabled={updateInlineMutation.isPending}
+                      >
+                        Batal
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => saveSection("biodata")}
+                        disabled={updateInlineMutation.isPending}
+                      >
+                        {updateInlineMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Simpan
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingSection("biodata")}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -1058,13 +1301,25 @@ export default function JamaahDetailPage() {
                           <AlertCircle className="h-3 w-3 inline ml-1 text-yellow-500" />
                         )}
                       </p>
-                      <p className="font-medium">
-                        {jamaah.namaPaspor || (
-                          <span className="text-gray-400 italic">
-                            Belum diisi
-                          </span>
-                        )}
-                      </p>
+                      {editingSection === "biodata" ? (
+                        <Input
+                          value={inlineForm.namaPaspor}
+                          onChange={(e) =>
+                            setInlineForm((prev: any) => ({
+                              ...prev,
+                              namaPaspor: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="font-medium">
+                          {jamaah.namaPaspor || (
+                            <span className="text-gray-400 italic">
+                              Belum diisi
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">
@@ -1073,13 +1328,25 @@ export default function JamaahDetailPage() {
                           <AlertCircle className="h-3 w-3 inline ml-1 text-yellow-500" />
                         )}
                       </p>
-                      <p className="font-medium font-mono">
-                        {jamaah.nik || (
-                          <span className="text-gray-400 italic">
-                            Belum diisi
-                          </span>
-                        )}
-                      </p>
+                      {editingSection === "biodata" ? (
+                        <Input
+                          value={inlineForm.nik}
+                          onChange={(e) =>
+                            setInlineForm((prev: any) => ({
+                              ...prev,
+                              nik: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="font-medium font-mono">
+                          {jamaah.nik || (
+                            <span className="text-gray-400 italic">
+                              Belum diisi
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -1090,13 +1357,25 @@ export default function JamaahDetailPage() {
                           <AlertCircle className="h-3 w-3 inline ml-1 text-yellow-500" />
                         )}
                       </p>
-                      <p className="font-medium">
-                        {jamaah.birthPlace || (
-                          <span className="text-gray-400 italic">
-                            Belum diisi
-                          </span>
-                        )}
-                      </p>
+                      {editingSection === "biodata" ? (
+                        <Input
+                          value={inlineForm.birthPlace}
+                          onChange={(e) =>
+                            setInlineForm((prev: any) => ({
+                              ...prev,
+                              birthPlace: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="font-medium">
+                          {jamaah.birthPlace || (
+                            <span className="text-gray-400 italic">
+                              Belum diisi
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">
@@ -1105,15 +1384,28 @@ export default function JamaahDetailPage() {
                           <AlertCircle className="h-3 w-3 inline ml-1 text-yellow-500" />
                         )}
                       </p>
-                      <p className="font-medium">
-                        {jamaah.birthDate ? (
-                          formatDate(jamaah.birthDate)
-                        ) : (
-                          <span className="text-gray-400 italic">
-                            Belum diisi
-                          </span>
-                        )}
-                      </p>
+                      {editingSection === "biodata" ? (
+                        <Input
+                          type="date"
+                          value={inlineForm.birthDate}
+                          onChange={(e) =>
+                            setInlineForm((prev: any) => ({
+                              ...prev,
+                              birthDate: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="font-medium">
+                          {jamaah.birthDate ? (
+                            formatDate(jamaah.birthDate)
+                          ) : (
+                            <span className="text-gray-400 italic">
+                              Belum diisi
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -1124,17 +1416,38 @@ export default function JamaahDetailPage() {
                           <AlertCircle className="h-3 w-3 inline ml-1 text-yellow-500" />
                         )}
                       </p>
-                      <p className="font-medium">
-                        {jamaah.gender === "PRIA" ? (
-                          "Laki-laki"
-                        ) : jamaah.gender === "WANITA" ? (
-                          "Perempuan"
-                        ) : (
-                          <span className="text-gray-400 italic">
-                            Belum diisi
-                          </span>
-                        )}
-                      </p>
+                      {editingSection === "biodata" ? (
+                        <Select
+                          value={inlineForm.gender || "none"}
+                          onValueChange={(value) =>
+                            setInlineForm((prev: any) => ({
+                              ...prev,
+                              gender: value === "none" ? "" : value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">-</SelectItem>
+                            <SelectItem value="PRIA">Laki-laki</SelectItem>
+                            <SelectItem value="WANITA">Perempuan</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="font-medium">
+                          {jamaah.gender === "PRIA" ? (
+                            "Laki-laki"
+                          ) : jamaah.gender === "WANITA" ? (
+                            "Perempuan"
+                          ) : (
+                            <span className="text-gray-400 italic">
+                              Belum diisi
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">
@@ -1164,14 +1477,27 @@ export default function JamaahDetailPage() {
                         <AlertCircle className="h-3 w-3 inline ml-1 text-yellow-500" />
                       )}
                     </p>
-                    <p className="font-medium">
-                      {jamaah.address || (
-                        <span className="text-gray-400 italic">
-                          Belum diisi
-                        </span>
+                      {editingSection === "biodata" ? (
+                        <Textarea
+                          rows={2}
+                          value={inlineForm.address || ""}
+                          onChange={(e) =>
+                            setInlineForm((prev: any) => ({
+                              ...prev,
+                              address: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="font-medium">
+                          {jamaah.address || (
+                            <span className="text-gray-400 italic">
+                              Belum diisi
+                            </span>
+                          )}
+                        </p>
                       )}
-                    </p>
-                  </div>
+                    </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Kota/Kab</p>
@@ -1385,20 +1711,77 @@ export default function JamaahDetailPage() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Informasi Paket</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Informasi Paket</CardTitle>
+                {editingSection === "paket" ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        populateInlineForm();
+                        setEditingSection(null);
+                      }}
+                      disabled={updateInlineMutation.isPending}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => saveSection("paket")}
+                      disabled={updateInlineMutation.isPending}
+                    >
+                      {updateInlineMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Simpan
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditingSection("paket")}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Nama Paket</p>
-                    <p className="font-semibold text-lg text-primary">
-                      {jamaah.package?.name || (
-                        <span className="text-gray-400 italic">
-                          Belum Pilih Paket
-                        </span>
-                      )}
-                    </p>
+                    {editingSection === "paket" ? (
+                      <Select
+                        value={inlineForm.packageId || "none"}
+                        onValueChange={applyPackageDefaults}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih paket" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Belum pilih paket</SelectItem>
+                          {packages.map((pkg: any) => (
+                            <SelectItem key={pkg.id} value={pkg.id.toString()}>
+                              {pkg.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="font-semibold text-lg text-primary">
+                        {jamaah.package?.name || (
+                          <span className="text-gray-400 italic">
+                            Belum Pilih Paket
+                          </span>
+                        )}
+                      </p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1411,27 +1794,65 @@ export default function JamaahDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Note Paket</p>
-                      <Badge>{jamaah.notePaket || "FULLSERVICE"}</Badge>
+                      {editingSection === "paket" ? (
+                        <Select
+                          value={inlineForm.notePaket || "FULLSERVICE"}
+                          onValueChange={(value) =>
+                            setInlineForm((prev: any) => ({ ...prev, notePaket: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FULLSERVICE">Full Service</SelectItem>
+                            <SelectItem value="EXTREME">Extreme</SelectItem>
+                            <SelectItem value="KONSORSIUM">Konsorsium</SelectItem>
+                            <SelectItem value="B2B">B2B</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge>{jamaah.notePaket || "FULLSERVICE"}</Badge>
+                      )}
                     </div>
                   </div>
                   {/* Show Agen Name here too if exists */}
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">
-                      Didaftarkan oleh
-                    </p>
-                    {jamaah.agen ? (
-                      <div className="flex items-center gap-2">
-                        <UserCheck className="h-4 w-4 text-green-600" />
-                        <p className="font-medium">
-                          {jamaah.agen.user?.fullName || jamaah.agen.fullName}
-                        </p>
-                        {jamaah.agen.currentStar > 0 &&
-                          renderStars(jamaah.agen.currentStar)}
-                      </div>
-                    ) : (
-                      <p className="text-gray-400 italic">Tidak ada agen</p>
-                    )}
-                  </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">
+                        Didaftarkan oleh
+                      </p>
+                      {editingSection === "paket" ? (
+                        <Select
+                          value={inlineForm.agenId || "none"}
+                          onValueChange={(value) =>
+                            setInlineForm((prev: any) => ({ ...prev, agenId: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih agen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Tanpa Agen</SelectItem>
+                            {agenList.map((agen: any) => (
+                              <SelectItem key={agen.id} value={agen.id.toString()}>
+                                {agen.fullName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : jamaah.agen ? (
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="h-4 w-4 text-green-600" />
+                          <p className="font-medium">
+                            {jamaah.agen.user?.fullName || jamaah.agen.fullName}
+                          </p>
+                          {jamaah.agen.currentStar > 0 &&
+                            renderStars(jamaah.agen.currentStar)}
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 italic">Tidak ada agen</p>
+                      )}
+                    </div>
                 </div>
 
                 <div className="space-y-4">
@@ -1464,10 +1885,33 @@ export default function JamaahDetailPage() {
                         )}
                       </p>
                       <p className="font-medium">
-                        {jamaah.roomTypeMakkah || (
-                          <span className="text-gray-400 italic">
-                            Belum dipilih
-                          </span>
+                        {editingSection === "paket" ? (
+                          <Select
+                            value={inlineForm.roomTypeMakkah || "none"}
+                            onValueChange={(value) =>
+                              setInlineForm((prev: any) => ({
+                                ...prev,
+                                roomTypeMakkah: value === "none" ? "" : value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih tipe kamar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">-</SelectItem>
+                              <SelectItem value="DOUBLE">Double</SelectItem>
+                              <SelectItem value="TRIPLE">Triple</SelectItem>
+                              <SelectItem value="QUAD">Quad</SelectItem>
+                              <SelectItem value="QUINT">Quint</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          jamaah.roomTypeMakkah || (
+                            <span className="text-gray-400 italic">
+                              Belum dipilih
+                            </span>
+                          )
                         )}
                       </p>
                     </div>
@@ -1479,10 +1923,33 @@ export default function JamaahDetailPage() {
                         )}
                       </p>
                       <p className="font-medium">
-                        {jamaah.roomTypeMadinah || (
-                          <span className="text-gray-400 italic">
-                            Belum dipilih
-                          </span>
+                        {editingSection === "paket" ? (
+                          <Select
+                            value={inlineForm.roomTypeMadinah || "none"}
+                            onValueChange={(value) =>
+                              setInlineForm((prev: any) => ({
+                                ...prev,
+                                roomTypeMadinah: value === "none" ? "" : value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih tipe kamar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">-</SelectItem>
+                              <SelectItem value="DOUBLE">Double</SelectItem>
+                              <SelectItem value="TRIPLE">Triple</SelectItem>
+                              <SelectItem value="QUAD">Quad</SelectItem>
+                              <SelectItem value="QUINT">Quint</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          jamaah.roomTypeMadinah || (
+                            <span className="text-gray-400 italic">
+                              Belum dipilih
+                            </span>
+                          )
                         )}
                       </p>
                     </div>
@@ -1498,7 +1965,11 @@ export default function JamaahDetailPage() {
               <CardTitle className="text-lg">Rincian Harga</CardTitle>
             </CardHeader>
             <CardContent>
-              {parseFloat(jamaah.hargaPaket || "0") === 0 ? (
+              {parseFloat(
+                editingSection === "paket"
+                  ? inlineForm.hargaPaket || "0"
+                  : jamaah.hargaPaket || "0",
+              ) === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <CreditCard className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                   <p className="font-medium">Harga Belum Ditetapkan</p>
@@ -1510,26 +1981,60 @@ export default function JamaahDetailPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between py-2">
                     <span className="text-gray-600">Harga Paket</span>
-                    <span className="font-medium">
-                      {formatRupiah(jamaah.hargaPaket)}
-                    </span>
-                  </div>
-                  {parseFloat(jamaah.potonganFeeAgen || "0") > 0 && (
+                      <span className="font-medium">
+                        {formatRupiah(
+                          editingSection === "paket"
+                            ? inlineForm.hargaPaket
+                            : jamaah.hargaPaket,
+                        )}
+                      </span>
+                    </div>
+                  {parseFloat(
+                    editingSection === "paket"
+                      ? inlineForm.potonganFeeAgen || "0"
+                      : jamaah.potonganFeeAgen || "0",
+                  ) > 0 && (
                     <div className="flex justify-between py-2 text-red-600">
                       <span>- Potongan Fee Agen</span>
-                      <span>{formatRupiah(jamaah.potonganFeeAgen)}</span>
+                      <span>
+                        {formatRupiah(
+                          editingSection === "paket"
+                            ? inlineForm.potonganFeeAgen
+                            : jamaah.potonganFeeAgen,
+                        )}
+                      </span>
                     </div>
                   )}
-                  {parseFloat(jamaah.potonganPoinAgen || "0") > 0 && (
+                  {parseFloat(
+                    editingSection === "paket"
+                      ? inlineForm.potonganPoinAgen || "0"
+                      : jamaah.potonganPoinAgen || "0",
+                  ) > 0 && (
                     <div className="flex justify-between py-2 text-red-600">
                       <span>- Potongan Poin Agen</span>
-                      <span>{formatRupiah(jamaah.potonganPoinAgen)}</span>
+                      <span>
+                        {formatRupiah(
+                          editingSection === "paket"
+                            ? inlineForm.potonganPoinAgen
+                            : jamaah.potonganPoinAgen,
+                        )}
+                      </span>
                     </div>
                   )}
-                  {parseFloat(jamaah.potonganCashbackKK || "0") > 0 && (
+                  {parseFloat(
+                    editingSection === "paket"
+                      ? inlineForm.potonganCashbackKK || "0"
+                      : jamaah.potonganCashbackKK || "0",
+                  ) > 0 && (
                     <div className="flex justify-between py-2 text-red-600">
                       <span>- Cashback Kartu Kredit</span>
-                      <span>{formatRupiah(jamaah.potonganCashbackKK)}</span>
+                      <span>
+                        {formatRupiah(
+                          editingSection === "paket"
+                            ? inlineForm.potonganCashbackKK
+                            : jamaah.potonganCashbackKK,
+                        )}
+                      </span>
                     </div>
                   )}
                   <Separator />

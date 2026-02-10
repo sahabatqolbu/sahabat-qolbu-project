@@ -65,7 +65,7 @@ export default function CommissionsPage() {
 
   return (
     <ProfileGuard requireComplete={true}>
-      <div className="min-h-screen bg-gray-50 pb-24">
+      <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl">
           <div className="text-center mb-6">

@@ -51,11 +51,6 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       icon: Users,
     },
     {
-      label: "Kelola Staff",
-      href: "/admin/staff",
-      icon: Briefcase,
-    },
-    {
       label: "Paket Umrah",
       href: "/admin/packages",
       icon: Package,
@@ -173,18 +168,38 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       exact: true,
     },
     {
-      label: "Verifikasi Pembayaran",
-      href: "/finance/payments",
+      label: "Kelola User",
+      href: "/admin/users",
+      icon: Users,
+    },
+    {
+      label: "Paket Umrah",
+      href: "/admin/packages",
+      icon: Package,
+    },
+    {
+      label: "Kelola Jamaah",
+      href: "/admin/jamaah",
+      icon: UserCheck,
+    },
+    {
+      label: "Kelola Agen",
+      href: "/admin/agen",
+      icon: UserCog,
+    },
+    {
+      label: "POS Jamaah",
+      href: "/finance/pos",
       icon: CreditCard,
     },
     {
-      label: "Cairkan Komisi",
-      href: "/finance/commissions",
+      label: "Transaksi",
+      href: "/admin/transactions",
       icon: Wallet,
     },
     {
-      label: "Laporan Keuangan",
-      href: "/finance/reports",
+      label: "Laporan",
+      href: "/admin/reports",
       icon: FileText,
     },
   ],
@@ -262,16 +277,104 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
 
   STAFF: [
     {
-      label: "Profil Saya",
-      href: "/admin/profile",
-      icon: User,
+      label: "Dashboard",
+      href: "/staff",
+      icon: LayoutDashboard,
       exact: true,
     },
     {
-      label: "Keamanan Akun",
-      href: "/admin/profile/account",
-      icon: Shield,
+      label: "Kelola User",
+      href: "/admin/users",
+      icon: Users,
     },
+    {
+      label: "Paket Umrah",
+      href: "/admin/packages",
+      icon: Package,
+    },
+    {
+      label: "Kelola Jamaah",
+      href: "/admin/jamaah",
+      icon: UserCheck,
+    },
+    {
+      label: "Kelola Agen",
+      href: "/admin/agen",
+      icon: UserCog,
+    },
+    {
+      label: "Data Master",
+      icon: Database,
+      children: [
+        {
+          label: "Hotel",
+          href: "/admin/master/hotels",
+          icon: Building2,
+        },
+        {
+          label: "Maskapai",
+          href: "/admin/master/airlines",
+          icon: Plane,
+        },
+        {
+          label: "Bandara",
+          href: "/admin/master/airports",
+          icon: MapPin,
+        },
+        {
+          label: "Bank",
+          href: "/admin/master/banks",
+          icon: Landmark,
+        },
+        {
+          label: "Level Agen",
+          href: "/admin/master/agent-levels",
+          icon: Shield,
+        },
+        {
+          label: "Persyaratan Agen",
+          href: "/admin/master/agent-requirements",
+          icon: FileCheck,
+        },
+        {
+          label: "Tujuan Bergabung",
+          href: "/admin/master/agent-purposes",
+          icon: Target,
+        },
+        {
+          label: "Periode Closing",
+          href: "/admin/master/periods",
+          icon: Calendar,
+        },
+      ],
+    },
+    {
+      label: "Konten",
+      icon: FileText,
+      children: [
+        {
+          label: "Testimonial",
+          href: "/admin/content/testimonials",
+          icon: MessageSquare,
+        },
+        {
+          label: "FAQ",
+          href: "/admin/content/faqs",
+          icon: HelpCircle,
+        },
+        {
+          label: "Gallery",
+          href: "/admin/content/gallery",
+          icon: ImageIcon,
+        },
+      ],
+    },
+    {
+      label: "Profil Saya",
+      href: "/admin/profile",
+      icon: User,
+    },
+
   ],
 };
 

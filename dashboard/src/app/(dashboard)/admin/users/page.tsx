@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation"; // ✅ TAMBAHKAN INI
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
+import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -78,6 +79,10 @@ const getRoleBadge = (role: string) => {
 
 export default function UsersPage() {
   const router = useRouter(); // ✅ TAMBAHKAN INI
+  const { user: authUser } = useAuthStore();
+  const isStaff = authUser?.role === "STAFF";
+  const isFinance = authUser?.role === "FINANCE";
+  const isReadOnlyRole = isFinance;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -180,6 +185,9 @@ export default function UsersPage() {
   });
 
   const users = data?.data || [];
+  const displayedUsers = (isStaff || isFinance)
+    ? users.filter((u: any) => u.role === "AGEN" || u.role === "JAMAAH")
+    : users;
 
   // ===== TOGGLE USER STATUS =====
   const toggleStatusMutation = useMutation({
@@ -256,7 +264,7 @@ export default function UsersPage() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(users.map((u: any) => u.id));
+      setSelectedIds(displayedUsers.map((u: any) => u.id));
     } else {
       setSelectedIds([]);
     }
@@ -280,9 +288,12 @@ export default function UsersPage() {
             Kelola User
           </h1>
           <p className="text-gray-600 mt-1">
-            Manajemen user sistem (Admin, Finance, Agen, Jamaah)
+            {(isStaff || isFinance)
+              ? "Manajemen user sistem (Agen, Jamaah)"
+              : "Manajemen user sistem (Admin, Finance, Agen, Jamaah)"}
           </p>
         </div>
+        {!isReadOnlyRole && (
         <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
@@ -299,6 +310,7 @@ export default function UsersPage() {
             </Button>
           </Link>
         </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -321,13 +333,13 @@ export default function UsersPage() {
             {/* Role Filter */}
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Semua Role" />
+              <SelectValue placeholder="Semua Role" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Role</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="FINANCE">Finance</SelectItem>
-                <SelectItem value="STAFF">Staff</SelectItem>
+                {!isStaff && !isFinance && <SelectItem value="ADMIN">Admin</SelectItem>}
+                {!isStaff && !isFinance && <SelectItem value="FINANCE">Finance</SelectItem>}
+                {!isStaff && !isFinance && <SelectItem value="STAFF">Staff</SelectItem>}
                 <SelectItem value="AGEN">Agen</SelectItem>
                 <SelectItem value="JAMAAH">Jamaah</SelectItem>
               </SelectContent>
@@ -349,12 +361,12 @@ export default function UsersPage() {
       </Card>
 
       {/* Bulk Action Bar */}
-      {selectedIds.length > 0 && (
+      {!isReadOnlyRole && selectedIds.length > 0 && (
         <Card className="bg-primary/5 border-primary/20 sticky top-20 z-10 shadow-lg animate-in slide-in-from-top-4">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="bg-primary text-white">
-                {selectedIds.length} Terpilih
+                  {selectedIds.length} Terpilih
               </Badge>
               <p className="text-sm font-medium text-gray-700 hidden md:block">
                 Pilih aksi untuk user-user ini
@@ -406,7 +418,7 @@ export default function UsersPage() {
       <Card>
         <CardHeader>
           <CardTitle>Daftar User</CardTitle>
-          <CardDescription>Total {users.length} user terdaftar</CardDescription>
+          <CardDescription>Total {displayedUsers.length} user terdaftar</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -417,7 +429,7 @@ export default function UsersPage() {
             <div className="text-center py-12">
               <p className="text-red-500">Error: {(error as any).message}</p>
             </div>
-          ) : users.length === 0 ? (
+          ) : displayedUsers.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">Tidak ada user ditemukan</p>
@@ -427,15 +439,18 @@ export default function UsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50px]">
-                      <Checkbox
-                        checked={selectedIds.length === users.length && users.length > 0}
-                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                      />
-                    </TableHead>
+                    {!isReadOnlyRole && (
+                      <TableHead className="w-[50px]">
+                        <Checkbox
+                          checked={selectedIds.length === displayedUsers.length && displayedUsers.length > 0}
+                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>Nama Lengkap</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Didaftarkan Oleh</TableHead>
                     <TableHead>No. HP</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Terdaftar</TableHead>
@@ -443,14 +458,16 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user: any) => (
+                  {displayedUsers.map((user: any) => (
                     <TableRow key={user.id} className={selectedIds.includes(user.id) ? "bg-primary/5" : ""}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.includes(user.id)}
-                          onCheckedChange={(checked) => handleSelectOne(user.id, !!checked)}
-                        />
-                      </TableCell>
+                      {!isReadOnlyRole && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.includes(user.id)}
+                            onCheckedChange={(checked) => handleSelectOne(user.id, !!checked)}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -472,6 +489,16 @@ export default function UsersPage() {
                           <Shield className="h-3 w-3 mr-1" />
                           {user.role}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-600">
+                        {user.registeredBy ? (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-900">{user.registeredBy.fullName}</span>
+                            <span className="text-xs text-gray-500">{user.registeredBy.role}</span>
+                          </div>
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
                       <TableCell className="text-gray-600">
                         {user.phone || "-"}
@@ -520,46 +547,47 @@ export default function UsersPage() {
                               Lihat Detail
                             </DropdownMenuItem>
 
-                            {/* ✅ EDIT USER */}
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/admin/users/${user.id}/edit`)
-                              }
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
+                            {!isReadOnlyRole && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    router.push(`/admin/users/${user.id}/edit`)
+                                  }
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
 
-                            {/* ✅ TOGGLE STATUS */}
-                            <DropdownMenuItem
-                              onClick={() =>
-                                toggleStatusMutation.mutate(user.id)
-                              }
-                            >
-                              {user.isActive ? (
-                                <>
-                                  <UserX className="h-4 w-4 mr-2" />
-                                  Nonaktifkan
-                                </>
-                              ) : (
-                                <>
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Aktifkan
-                                </>
-                              )}
-                            </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    toggleStatusMutation.mutate(user.id)
+                                  }
+                                >
+                                  {user.isActive ? (
+                                    <>
+                                      <UserX className="h-4 w-4 mr-2" />
+                                      Nonaktifkan
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="h-4 w-4 mr-2" />
+                                      Aktifkan
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
 
-                            {/* ✅ DELETE USER */}
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Hapus
-                            </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Hapus
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -573,7 +601,7 @@ export default function UsersPage() {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {!isReadOnlyRole && <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Konfirmasi Hapus User</DialogTitle>
@@ -606,9 +634,9 @@ export default function UsersPage() {
             </Button>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
       {/* Import Users Dialog */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+      {!isReadOnlyRole && <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Import User via Excel</DialogTitle>
@@ -620,7 +648,8 @@ export default function UsersPage() {
           <div className="space-y-4 py-4">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>💡 Info Format:</strong> Kolom wajib adalah `fullName`, `email`, dan `role` (ADMIN, FINANCE, STAFF, AGEN, JAMAAH).
+                <strong>💡 Info Format:</strong> Kolom wajib adalah `fullName`, `email`, dan `role`
+                {isStaff ? " (AGEN, JAMAAH)." : " (ADMIN, FINANCE, STAFF, AGEN, JAMAAH)."}
               </p>
             </div>
 
@@ -650,7 +679,7 @@ export default function UsersPage() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
     </div>
   );
 }

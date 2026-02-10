@@ -10,20 +10,20 @@ export default function HomePage() {
   const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!user) {
       router.replace("/login");
-    } else if (user) {
+    } else {
       // 🔥 ROLE-BASED REDIRECT
       const routes = {
         ADMIN: "/admin",
         FINANCE: "/finance",
-        STAFF: "/admin/profile",
+        STAFF: "/staff",
         AGEN: "/agen",
         JAMAAH: "/jamaah",
       };
       router.replace(routes[user.role]);
     }
-  }, [isAuthenticated, user, router]);
+  }, [user, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

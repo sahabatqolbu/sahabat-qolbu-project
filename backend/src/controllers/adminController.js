@@ -57,6 +57,30 @@ const generateBookingNumber = async () => {
   return bookingNumber;
 };
 
+const isBookingNumberDuplicateError = (error) => {
+  const message = error?.sqlMessage || error?.message || "";
+  return error?.code === "ER_DUP_ENTRY" && message.includes("booking_number");
+};
+
+const createJamaahDataWithRetry = async (buildValues, maxRetries = 5) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const bookingNumber = await generateBookingNumber();
+
+    try {
+      await db.insert(jamaahData).values(buildValues(bookingNumber));
+      return bookingNumber;
+    } catch (error) {
+      if (isBookingNumberDuplicateError(error) && attempt < maxRetries) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error("Gagal membuat booking number unik");
+};
+
 // ✅ UPDATED: Create User
 export const createUser = async (req, res, next) => {
   try {
@@ -135,23 +159,15 @@ export const createUser = async (req, res, next) => {
     let bookingNumber = null;
 
     if (role === "JAMAAH") {
-      // ✅ GENERATE BOOKING NUMBER
-      bookingNumber = await generateBookingNumber();
-
-      const jamaahDataValues = {
+      bookingNumber = await createJamaahDataWithRetry((generatedBookingNumber) => ({
         userId: newUser.id,
-        bookingNumber: bookingNumber, // ✅ WAJIB!
-        dateOfBooking: new Date(), // ✅ WAJIB!
+        bookingNumber: generatedBookingNumber,
+        dateOfBooking: new Date(),
         packageId: packageId ? parseInt(packageId) : null,
         registrationStatus: "DRAFT",
         isProfileComplete: false,
-        // Optional fields - akan NULL
-        agenId: req.user?.role === "AGEN" ? req.user.id : null,
-      };
-
-      console.log("📦 Creating jamaahData:", jamaahDataValues);
-
-      await db.insert(jamaahData).values(jamaahDataValues);
+        agenId: req.user?.role === "AGEN" ? req.user.userId : null,
+      }));
 
       console.log("✅ JamaahData created with booking:", bookingNumber);
     }
@@ -439,16 +455,15 @@ export const importUsers = async (req, res, next) => {
 
         // Jika JAMAAH -> Create jamaahData
         if (role.toUpperCase() === "JAMAAH") {
-          const bookingNumber = await generateBookingNumber();
-          await db.insert(jamaahData).values({
+          await createJamaahDataWithRetry((generatedBookingNumber) => ({
             userId: newUser.id,
-            bookingNumber,
+            bookingNumber: generatedBookingNumber,
             dateOfBooking: new Date(),
             packageId: packageId ? parseInt(packageId) : null,
             nik: nik || null,
             registrationStatus: "DRAFT",
             isProfileComplete: false,
-          });
+          }));
         }
 
         // Jika AGEN -> Create agenProfiles

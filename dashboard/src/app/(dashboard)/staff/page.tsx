@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import AdminDashboardPage from "../admin/page";
 import { useAuthStore } from "@/stores/authStore";
 
-export default function FinanceDashboardPage() {
+export default function StaffDashboardPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
   useEffect(() => {
     if (!user) return;
 
-    if (user.role !== "FINANCE") {
+    if (user.role !== "STAFF") {
       const roleRoutes: Record<string, string> = {
         ADMIN: "/admin",
         FINANCE: "/finance",
@@ -25,7 +25,7 @@ export default function FinanceDashboardPage() {
     }
   }, [user, router]);
 
-  if (!user || user.role !== "FINANCE") {
+  if (!user || user.role !== "STAFF") {
     return null;
   }
 

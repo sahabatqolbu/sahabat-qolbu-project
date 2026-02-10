@@ -1,3 +1,5 @@
 sqcb_ssh_key
+*.pem
+*.key
 backend/public/uploads/
 !backend/public/uploads/.gitkeep

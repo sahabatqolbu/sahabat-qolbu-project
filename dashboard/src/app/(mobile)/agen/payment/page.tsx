@@ -92,7 +92,7 @@ export default function PaymentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-28 w-full md:max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-28 w-full md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl sticky top-0 z-10">
         <div className="flex items-center gap-4 mb-4">

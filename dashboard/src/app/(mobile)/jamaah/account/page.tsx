@@ -180,7 +180,7 @@ export default function AccountInfoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* ✅ LOGOUT COUNTDOWN OVERLAY */}
       {logoutCountdown !== null && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">

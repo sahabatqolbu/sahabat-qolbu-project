@@ -31,9 +31,17 @@ export default function JamaahPackagePage() {
     queryFn: () => jamaahSelfService.getPackage(),
   });
 
+  const { data: availablePackagesData, isLoading: isAvailableLoading } =
+    useQuery({
+      queryKey: ["jamaah-available-packages"],
+      queryFn: () => jamaahSelfService.getAvailablePackages(),
+      staleTime: 60_000,
+    });
+
   const packageData = data?.data?.package;
   const bookingInfo = data?.data?.booking;
   const pricing = data?.data?.pricing;
+  const availablePackages = availablePackagesData?.data?.packages || [];
 
   if (isLoading) {
     return (
@@ -47,7 +55,7 @@ export default function JamaahPackagePage() {
 
   if (!packageData) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24">
+      <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
         {/* Header */}
         <div className="bg-white border-b px-4 py-3 sticky top-0 z-10">
           <div className="flex items-center gap-3">
@@ -60,15 +68,86 @@ export default function JamaahPackagePage() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center h-[60vh] px-4">
-          <Package className="h-16 w-16 text-gray-300 mb-4" />
-          <h2 className="font-semibold text-lg text-gray-700 mb-2">
-            Belum Ada Paket
-          </h2>
-          <p className="text-sm text-gray-500 text-center">
-            Anda belum terdaftar di paket manapun. Hubungi agen untuk mendaftar
-            paket umrah.
-          </p>
+        <div className="p-4 space-y-4">
+          <Card className="border-0 shadow-md rounded-2xl">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-[var(--color-primary)] mt-0.5" />
+                <div>
+                  <h2 className="font-semibold text-gray-800">Belum Ada Paket Terpilih</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Anda belum terdaftar di paket manapun. Berikut daftar paket yang tersedia untuk dipilih.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {isAvailableLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-28 w-full rounded-2xl" />
+              <Skeleton className="h-28 w-full rounded-2xl" />
+              <Skeleton className="h-28 w-full rounded-2xl" />
+            </div>
+          ) : availablePackages.length === 0 ? (
+            <Card className="border-0 shadow-md rounded-2xl">
+              <CardContent className="p-8 text-center">
+                <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="font-medium text-gray-700">Belum ada paket tersedia</p>
+                <p className="text-sm text-gray-500 mt-1">Silakan hubungi admin/agen untuk informasi paket terbaru.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {availablePackages.map((pkg: any) => {
+                const finalPrice = parseFloat(pkg.discountPrice || pkg.price || "0");
+                const seats = Number(pkg.remainingSeats ?? pkg.totalSeats ?? 0);
+
+                return (
+                  <Link key={pkg.id} href={`/jamaah/packages/${pkg.id}`}>
+                    <Card className="border-0 shadow-md rounded-2xl hover:shadow-lg transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="secondary" className="text-xs">{pkg.type || "UMROH"}</Badge>
+                              <span className="text-xs text-gray-500">Kode: {pkg.code || "-"}</span>
+                            </div>
+                            <p className="font-semibold text-gray-900 line-clamp-1">{pkg.name}</p>
+                            <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3.5 w-3.5" />
+                                {pkg.departureDate
+                                  ? format(new Date(pkg.departureDate), "dd MMM yyyy", { locale: id })
+                                  : "Tanggal belum ditentukan"}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                {pkg.duration || "-"} hari
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3.5 w-3.5" />
+                                {seats} kursi
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">Mulai dari</p>
+                            <p className="font-bold text-[var(--color-primary)] text-sm">
+                              Rp {finalPrice.toLocaleString("id-ID")}
+                            </p>
+                            <p className="text-[11px] text-[var(--color-primary)] mt-2">
+                              Lihat detail
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <BottomNav role="JAMAAH" />
@@ -77,7 +156,7 @@ export default function JamaahPackagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center gap-3">

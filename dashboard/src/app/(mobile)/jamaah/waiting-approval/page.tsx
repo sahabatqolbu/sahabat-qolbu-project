@@ -55,7 +55,7 @@ export default function WaitingApprovalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 md:max-w-7xl md:px-6 mx-auto">
       <div className="max-w-sm w-full">
         <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
           <CardContent className="p-0">

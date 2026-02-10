@@ -255,7 +255,7 @@ const packages = Array.isArray(packagesData?.data)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-md lg:mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-7xl lg:px-6 lg:mx-auto">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">

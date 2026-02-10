@@ -308,6 +308,25 @@ export const jamaahSelfService = {
     return response.data;
   },
 
+  getAvailablePackages: async () => {
+    const response = await api.get("/packages", {
+      params: {
+        isActive: true,
+      },
+    });
+    return response.data;
+  },
+
+  getPackageDetail: async (id: number | string) => {
+    const response = await api.get(`/packages/${id}`);
+    return response.data;
+  },
+
+  requestPackageConsultation: async (packageId: number | string) => {
+    const response = await api.post("/jamaah/package/request", { packageId });
+    return response.data;
+  },
+
   // ✅ PASTIKAN INI ADA
   getCalendarEvents: async (startDate: string, endDate: string) => {
     const response = await api.get("/calendar/events", {

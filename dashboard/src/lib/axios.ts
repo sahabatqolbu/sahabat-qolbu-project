@@ -6,6 +6,20 @@ const isProduction = process.env.NODE_ENV === "production";
 const enableDebugLogs = process.env.NEXT_PUBLIC_DEBUG_LOGS === "true" || !isProduction;
 
 const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+const fallbackDevApiUrl = "http://localhost:5000/api";
+
+const resolvedApiUrl = (() => {
+  if (!envApiUrl) return fallbackDevApiUrl;
+  if (isProduction) return envApiUrl;
+
+  try {
+    const parsed = new URL(envApiUrl);
+    const isLocal = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    return isLocal ? envApiUrl : fallbackDevApiUrl;
+  } catch {
+    return fallbackDevApiUrl;
+  }
+})();
 
 // Logger utility
 const logger = {
@@ -25,9 +39,26 @@ const logger = {
   },
 };
 
+const getStoredToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem("auth-storage");
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as {
+      state?: { token?: string | null };
+    };
+
+    return parsed?.state?.token || null;
+  } catch {
+    return null;
+  }
+};
+
 // Create axios instance
 const api = axios.create({
-  baseURL: envApiUrl || "http://localhost:5000/api",
+  baseURL: resolvedApiUrl,
   headers: {
     "Content-Type": "application/json",
   },
@@ -35,10 +66,17 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
+logger.debug("🌐 API baseURL:", resolvedApiUrl);
+
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
     logger.debug("🚀 API REQUEST:", config.method?.toUpperCase(), config.url);
+
+    const token = getStoredToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
     // Handle FormData
     if (config.data instanceof FormData) {
@@ -70,9 +108,23 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized
     if (status === 401) {
+      const isAuthFlowRequest =
+        url?.includes("/auth/login") ||
+        url?.includes("/auth/verify-otp") ||
+        url?.includes("/auth/request-otp");
+
+      if (isAuthFlowRequest) {
+        return Promise.reject(error);
+      }
+
       logger.error("🚫 UNAUTHORIZED! Redirecting to login...");
       
       if (typeof window !== "undefined") {
+        const hasSession = Boolean(getStoredToken());
+        if (!hasSession) {
+          return Promise.reject(error);
+        }
+
         // Clear auth data
         localStorage.removeItem("auth-storage");
         

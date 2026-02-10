@@ -128,7 +128,7 @@ export default function JamaahListPage() {
 
   return (
     <ProfileGuard requireComplete={true}>
-      <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-md lg:mx-auto">
+      <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-7xl lg:mx-auto">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl sticky top-0 z-10">
           <div className="flex items-center justify-between mb-4">

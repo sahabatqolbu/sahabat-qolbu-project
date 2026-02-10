@@ -87,7 +87,7 @@ export default function PackagesPage() {
   return (
     <ProfileGuard requireComplete={true}>
       {/* ✅ FIX: Tambah overflow-x-hidden di root container */}
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:max-w-md mx-auto overflow-x-hidden">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:max-w-7xl md:px-6 mx-auto overflow-x-hidden">
         {/* Header */}
         <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-6 pb-10 rounded-b-[2.5rem] shadow-xl sticky top-0 z-10 overflow-hidden">
           {/* Decorative elements */}

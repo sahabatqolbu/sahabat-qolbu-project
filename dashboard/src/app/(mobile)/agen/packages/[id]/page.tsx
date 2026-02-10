@@ -263,7 +263,7 @@ export default function PackageDetailPage() {
 
   return (
     <ProfileGuard requireComplete={true}>
-      <div className="min-h-screen bg-gray-50 pb-32 md:max-w-md mx-auto">
+      <div className="min-h-screen bg-gray-50 pb-32 md:max-w-7xl md:px-6 mx-auto">
         {/* Image Gallery */}
         <div className="relative h-64 w-full bg-[var(--color-primary-100)]">
           {sortedImages.length > 0 ? (
@@ -708,7 +708,7 @@ export default function PackageDetailPage() {
         </div>
 
         {/* Fixed Bottom CTA */}
-        <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 md:max-w-md md:mx-auto shadow-lg z-20">
+        <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 md:px-8 shadow-lg z-20">
           <div className="flex items-center gap-3">
             {/* Copy Link */}
             <Button
@@ -734,7 +734,7 @@ export default function PackageDetailPage() {
             <Button
               className="flex-1 bg-gradient-to-r from-[var(--color-secondary-600)] to-[var(--color-secondary)] text-[var(--color-secondary-foreground)] hover:from-[var(--color-secondary-700)] hover:to-[var(--color-secondary-600)] font-semibold h-12"
               onClick={() =>
-                router.push(`/agen/bookings/create?packageId=${pkg.id}`)
+                router.push(`/agen/jamaah/create?packageId=${pkg.id}`)
               }
               disabled={remainingSeats === 0}
             >

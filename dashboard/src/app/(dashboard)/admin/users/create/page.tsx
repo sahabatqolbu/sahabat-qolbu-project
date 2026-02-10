@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { adminService } from "@/services/adminService";
 import { agenService } from "@/services/agenService";
+import { useAuthStore } from "@/stores/authStore";
 import {
   createUserSchema,
   CreateUserFormData,
@@ -39,6 +40,9 @@ export default function CreateUserPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [createdUser, setCreatedUser] = useState<any>(null);
+  const { user: authUser } = useAuthStore();
+  const isStaff = authUser?.role === "STAFF";
+  const isFinance = authUser?.role === "FINANCE";
 
   const {
     register,
@@ -96,6 +100,24 @@ export default function CreateUserPage() {
   });
 
   const onSubmit = (data: CreateUserFormData) => {
+    if (isFinance) {
+      toast({
+        variant: "destructive",
+        title: "Akses Ditolak",
+        description: "Finance tidak diizinkan membuat user baru.",
+      });
+      return;
+    }
+
+    if (isStaff && data.role !== "AGEN" && data.role !== "JAMAAH") {
+      toast({
+        variant: "destructive",
+        title: "Role Tidak Diizinkan",
+        description: "Staff hanya bisa membuat akun Agen atau Jamaah.",
+      });
+      return;
+    }
+
     console.log("📤 SUBMIT DATA:", data); // ✅ DEBUG
     createMutation.mutate(data);
   };
@@ -279,9 +301,9 @@ export default function CreateUserPage() {
                     <SelectValue placeholder="-- Pilih Role --" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="FINANCE">Finance</SelectItem>
-                    <SelectItem value="STAFF">Staff</SelectItem>
+                    {!isStaff && !isFinance && <SelectItem value="ADMIN">Admin</SelectItem>}
+                    {!isStaff && !isFinance && <SelectItem value="FINANCE">Finance</SelectItem>}
+                    {!isStaff && !isFinance && <SelectItem value="STAFF">Staff</SelectItem>}
                     <SelectItem value="AGEN">Agen</SelectItem>
                     <SelectItem value="JAMAAH">Jamaah</SelectItem>
                   </SelectContent>
@@ -334,7 +356,7 @@ export default function CreateUserPage() {
                 type="submit"
                 className="w-full bg-secondary hover:bg-secondary/90"
                 size="lg"
-                disabled={createMutation.isPending} // ✅ CUMA INI DOANG
+                disabled={createMutation.isPending || isFinance}
               >
                 {createMutation.isPending ? (
                   <>
@@ -356,7 +378,9 @@ export default function CreateUserPage() {
       {/* Info */}
       <Alert>
         <AlertDescription>
-          💡 Password akan di-generate otomatis dan dikirim via email
+          {isStaff
+            ? "💡 Staff hanya bisa membuat akun Agen dan Jamaah."
+            : "💡 Password akan di-generate otomatis dan dikirim via email"}
         </AlertDescription>
       </Alert>
     </div>

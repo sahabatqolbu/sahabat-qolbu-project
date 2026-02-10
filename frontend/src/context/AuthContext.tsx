@@ -21,7 +21,6 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -36,23 +35,42 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Provider Component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Initialize auth state from localStorage
+  // Initialize auth state from backend cookie session
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const storedUser = localStorage.getItem("user_data");
 
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch {
+          localStorage.removeItem("user_data");
+        }
+      }
+
+      try {
+        const response = await api.get("/auth/me");
+        const data = response.data;
+
+        if (data.success && data.data) {
+          setUser(data.data);
+          localStorage.setItem("user_data", JSON.stringify(data.data));
+        } else {
+          setUser(null);
+          localStorage.removeItem("user_data");
+        }
+      } catch {
+        setUser(null);
+        localStorage.removeItem("user_data");
       }
 
       setIsLoading(false);
     };
 
-    initAuth();
+    void initAuth();
   }, []);
 
   // Login - Step 1: Send OTP
@@ -81,10 +99,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const data = response.data;
 
       if (data.success && data.data) {
-        const { token: newToken, user: userData } = data.data;
+        const { user: userData } = data.data;
 
-        // Save to state
-        setToken(newToken);
         setUser(userData);
 
         // Save to localStorage
@@ -105,8 +121,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Logout
   const logout = () => {
+    void api.post("/auth/logout").catch(() => {});
     setUser(null);
-    setToken(null);
     localStorage.removeItem("user_data");
     router.push("/login");
   };
@@ -140,7 +156,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value: AuthContextType = {
     user,
-    token,
     isAuthenticated: !!user,
     isLoading,
     login,

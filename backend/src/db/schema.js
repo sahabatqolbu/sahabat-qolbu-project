@@ -32,6 +32,7 @@ export const users = mysqlTable(
 
     fullName: varchar("full_name", { length: 255 }).notNull(),
     phone: varchar("phone", { length: 20 }),
+    createdBy: int("created_by").references(() => users.id),
 
     // OTP Fields
     otp: varchar("otp", { length: 6 }),
@@ -53,6 +54,7 @@ export const users = mysqlTable(
   (table) => ({
     emailIdx: index("email_idx").on(table.email),
     roleIdx: index("role_idx").on(table.role),
+    createdByIdx: index("created_by_idx").on(table.createdBy),
   })
 );
 

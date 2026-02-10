@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
+import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -68,8 +69,10 @@ import * as XLSX from "xlsx";
 
 export default function AdminAgenPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isFinanceReadOnly = user?.role === "FINANCE";
 
   const [search, setSearch] = useState("");
   const [starFilter, setStarFilter] = useState<string>("all");
@@ -235,7 +238,7 @@ export default function AdminAgenPage() {
             Manajemen agen dan approval pendaftaran
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {!isFinanceReadOnly && <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -252,7 +255,7 @@ export default function AdminAgenPage() {
             <Plus className="h-4 w-4 mr-2" />
             Tambah Agen
           </Button>
-        </div>
+        </div>}
       </div>
 
       {/* Stats Cards */}
@@ -531,24 +534,28 @@ export default function AdminAgenPage() {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Lihat Detail
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  router.push(`/admin/agen/${agent.id}/edit`)
-                                }
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-600"
-                                onClick={() => {
-                                  setSelectedAgent(agent);
-                                  setDeleteDialogOpen(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Hapus
-                              </DropdownMenuItem>
+                              {!isFinanceReadOnly && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(`/admin/agen/${agent.id}/edit`)
+                                    }
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-red-600 focus:text-red-600"
+                                    onClick={() => {
+                                      setSelectedAgent(agent);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Hapus
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -563,7 +570,7 @@ export default function AdminAgenPage() {
       </Card>
 
       {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {!isFinanceReadOnly && <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Konfirmasi Hapus Agen</DialogTitle>
@@ -603,10 +610,10 @@ export default function AdminAgenPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
 
       {/* Import Agen Dialog */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+      {!isFinanceReadOnly && <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Import Agen via Excel</DialogTitle>
@@ -648,7 +655,7 @@ export default function AdminAgenPage() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
     </div>
   );
 }

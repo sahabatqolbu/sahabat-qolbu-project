@@ -30,12 +30,8 @@ export default function VerifyOTPPage() {
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(300);
 
-  // 🔥 DEBUG: Check email
   useEffect(() => {
-    console.log("🔍 Email from store:", email);
-
     if (!email) {
-      console.log("❌ No email found, redirecting to login");
       router.push("/login");
       return;
     }
@@ -65,10 +61,6 @@ export default function VerifyOTPPage() {
   const verifyMutation = useMutation({
     mutationFn: authService.verifyOTP,
     onSuccess: (data) => {
-      console.log("✅ OTP Verified successfully");
-      console.log("👤 User:", data.data.user);
-      console.log("🔑 Token:", data.data.token.substring(0, 20) + "...");
-
       // Save auth data to Zustand
       setAuth(data.data.token, data.data.user as any);
       clearOTPData();
@@ -82,14 +74,12 @@ export default function VerifyOTPPage() {
       const roleRoutes: Record<string, string> = {
         ADMIN: "/admin",
         FINANCE: "/finance",
-        STAFF: "/admin/profile",
+        STAFF: "/staff",
         AGEN: "/agen",
         JAMAAH: "/jamaah",
       };
 
       const targetRoute = roleRoutes[data.data.user.role] || "/login";
-
-      console.log("🚀 Redirecting to:", targetRoute);
 
       // Small delay to ensure state is saved
       setTimeout(() => {
@@ -139,16 +129,11 @@ export default function VerifyOTPPage() {
 
   // Handle OTP Change
   const handleOTPChange = (value: string) => {
-    console.log("📝 OTP Input:", value);
     setOtp(value);
     setError("");
 
     // Auto-submit when 6 digits
     if (value.length === 6) {
-      console.log("🚀 Auto-submitting OTP...");
-      console.log("📧 Email:", email);
-      console.log("🔢 OTP:", value);
-
       verifyMutation.mutate({ email, otp: value });
     }
   };
@@ -165,7 +150,6 @@ export default function VerifyOTPPage() {
     resendMutation.mutate({ email });
   };
 
-  // 🔥 Show loading if no email
   if (!email) {
     return (
       <div className="min-h-screen flex items-center justify-center">

@@ -134,7 +134,7 @@ export default function AgenProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 w-full md:max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-24 w-full md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-primary text-white p-6 pb-20">
         <div className="flex items-center justify-between mb-6">

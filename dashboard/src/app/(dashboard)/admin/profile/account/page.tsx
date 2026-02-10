@@ -51,6 +51,12 @@ export default function AdminAccountPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
+  const hasMinLength = newPassword.length >= 8;
+  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasLowercase = /[a-z]/.test(newPassword);
+  const hasNumber = /[0-9]/.test(newPassword);
+  const hasSpecialChar = /[@$!%*?&]/.test(newPassword);
+
   // Logout countdown state
   const [logoutCountdown, setLogoutCountdown] = useState<number | null>(null);
   const [logoutMessage, setLogoutMessage] = useState({ title: "", description: "" }); // ✅ GANTI EMAIL MESSAGES
@@ -132,10 +138,14 @@ export default function AdminAccountPage() {
       });
     },
     onError: (error: any) => {
+      const firstValidationError = error.response?.data?.errors?.[0]?.message;
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message || "Gagal mengubah password",
+        description:
+          firstValidationError ||
+          error.response?.data?.message ||
+          "Gagal mengubah password",
       });
     },
   });
@@ -197,8 +207,17 @@ export default function AdminAccountPage() {
       toast({ variant: "destructive", title: "Masukkan 6 digit OTP" });
       return;
     }
-    if (newPassword.length < 8) {
+    if (!hasMinLength) {
       toast({ variant: "destructive", title: "Password minimal 8 karakter" });
+      return;
+    }
+    if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecialChar) {
+      toast({
+        variant: "destructive",
+        title: "Password belum memenuhi syarat",
+        description:
+          "Gunakan huruf besar, huruf kecil, angka, dan karakter khusus (@$!%*?&)",
+      });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -413,6 +432,14 @@ export default function AdminAccountPage() {
               </div>
             ) : (
               <div className="space-y-4">
+                <Alert className="border-amber-200 bg-amber-50">
+                  <AlertDescription className="text-xs text-amber-900">
+                    Password wajib memenuhi semua syarat: minimal 8 karakter,
+                    huruf besar, huruf kecil, angka, dan karakter khusus
+                    (`@$!%*?&`). Jika belum memenuhi, password tidak bisa disimpan.
+                  </AlertDescription>
+                </Alert>
+
                 {/* OTP Input */}
                 <div className="space-y-2">
                   <Label>Kode OTP</Label>
@@ -494,30 +521,38 @@ export default function AdminAccountPage() {
                     <ul className="list-disc list-inside space-y-1">
                       <li
                         className={
-                          newPassword.length >= 8
-                            ? "text-green-600"
-                            : "text-gray-500"
+                          hasMinLength ? "text-green-600" : "text-gray-500"
                         }
                       >
                         Minimal 8 karakter
                       </li>
                       <li
                         className={
-                          /[A-Z]/.test(newPassword)
-                            ? "text-green-600"
-                            : "text-gray-500"
+                          hasUppercase ? "text-green-600" : "text-gray-500"
                         }
                       >
                         Huruf besar
                       </li>
                       <li
                         className={
-                          /[0-9]/.test(newPassword)
-                            ? "text-green-600"
-                            : "text-gray-500"
+                          hasLowercase ? "text-green-600" : "text-gray-500"
+                        }
+                      >
+                        Huruf kecil
+                      </li>
+                      <li
+                        className={
+                          hasNumber ? "text-green-600" : "text-gray-500"
                         }
                       >
                         Angka
+                      </li>
+                      <li
+                        className={
+                          hasSpecialChar ? "text-green-600" : "text-gray-500"
+                        }
+                      >
+                        Karakter khusus (@$!%*?&)
                       </li>
                     </ul>
                   </AlertDescription>
@@ -539,7 +574,11 @@ export default function AdminAccountPage() {
                 disabled={
                   changePasswordMutation.isPending ||
                   otp.length !== 6 ||
-                  newPassword.length < 8 ||
+                  !hasMinLength ||
+                  !hasUppercase ||
+                  !hasLowercase ||
+                  !hasNumber ||
+                  !hasSpecialChar ||
                   newPassword !== confirmPassword
                 }
               >

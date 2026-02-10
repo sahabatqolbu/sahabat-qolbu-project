@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jamaahService, JamaahListItem } from "@/services/jamaahService";
 import { adminService } from "@/services/adminService";
+import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/axios";
 import {
@@ -99,8 +100,10 @@ import * as XLSX from "xlsx";
 
 export default function JamaahPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isFinanceReadOnly = user?.role === "FINANCE";
 
   // ===== FILTER STATES =====
   const [search, setSearch] = useState("");
@@ -676,7 +679,7 @@ export default function JamaahPage() {
           </h1>
           <p className="text-gray-600 mt-1">Kelola data jamaah & pembayaran</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {!isFinanceReadOnly && <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -693,7 +696,7 @@ export default function JamaahPage() {
             <Plus className="h-4 w-4 mr-2" />
             Tambah Jamaah
           </Button>
-        </div>
+        </div>}
       </div>
 
       {/* Stats Cards */}
@@ -1195,7 +1198,7 @@ export default function JamaahPage() {
                   <X className="h-4 w-4 mr-2" />
                   Reset Filter
                 </Button>
-              ) : (
+              ) : isFinanceReadOnly ? null : (
                 <Button
                   className="mt-6 bg-secondary text-primary hover:bg-secondary/90"
                   onClick={() => router.push("/admin/users/create")}
@@ -1371,24 +1374,28 @@ export default function JamaahPage() {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Lihat Detail
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  router.push(
-                                    `/admin/jamaah/${jamaah.bookingNumber}/edit`,
-                                  )
-                                }
-                              >
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit Data
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(jamaah)}
-                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Hapus
-                              </DropdownMenuItem>
+                              {!isFinanceReadOnly && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/admin/jamaah/${jamaah.bookingNumber}/edit`,
+                                      )
+                                    }
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Data
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(jamaah)}
+                                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Hapus
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1403,49 +1410,51 @@ export default function JamaahPage() {
       </Card>
 
       {/* Import Jamaah Dialog */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Import Jamaah via Excel</DialogTitle>
-            <DialogDescription>
-              Tambah banyak jamaah sekaligus. Jamaah akan otomatis dibuatkan akun dan mendapatkan email kredensial.
-            </DialogDescription>
-          </DialogHeader>
+      {!isFinanceReadOnly && (
+        <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Import Jamaah via Excel</DialogTitle>
+              <DialogDescription>
+                Tambah banyak jamaah sekaligus. Jamaah akan otomatis dibuatkan akun dan mendapatkan email kredensial.
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>💡 Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (JAMAAH) terisi. Kolom `packageId` opsional tapi disarankan.
-              </p>
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (JAMAAH) terisi. Kolom `packageId` opsional tapi disarankan.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={downloadTemplate}
+              >
+                <FileDown className="h-4 w-4 mr-2" />
+                Unduh Template Excel (.xlsx)
+              </Button>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Pilih File Excel</label>
+                <Input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  onChange={handleImportExcel}
+                  disabled={isImporting}
+                />
+                {isImporting && (
+                  <div className="flex items-center gap-2 text-primary text-sm mt-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Memproses data...
+                  </div>
+                )}
+              </div>
             </div>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={downloadTemplate}
-            >
-              <FileDown className="h-4 w-4 mr-2" />
-              Unduh Template Excel (.xlsx)
-            </Button>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Pilih File Excel</label>
-              <Input
-                type="file"
-                accept=".xlsx, .xls"
-                onChange={handleImportExcel}
-                disabled={isImporting}
-              />
-              {isImporting && (
-                <div className="flex items-center gap-2 text-primary text-sm mt-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Memproses data...
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

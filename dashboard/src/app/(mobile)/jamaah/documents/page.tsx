@@ -136,7 +136,7 @@ export default function JamaahDocumentsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 sticky top-0 z-10">
         <div className="flex items-center gap-3">
@@ -149,7 +149,7 @@ export default function JamaahDocumentsPage() {
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 md:py-6 space-y-4 md:space-y-6">
         {/* Status */}
         <Card className="border-0 shadow-md rounded-2xl">
           <CardContent className="p-4">
@@ -212,7 +212,7 @@ export default function JamaahDocumentsPage() {
           <Alert>
             <Lock className="h-4 w-4" />
             <AlertDescription>
-              Dokumen sudah diapprove. Hubungi admin untuk perubahan.
+              Dokumen wajib sudah diapprove. Dokumen opsional tetap bisa diupload.
             </AlertDescription>
           </Alert>
         )}
@@ -252,24 +252,16 @@ export default function JamaahDocumentsPage() {
             Dokumen Opsional (Boleh Menyusul)
           </h2>
           <div className="space-y-3">
-            {optionalDocs.map((doc) =>
-              isApproved ? (
-                <DocumentCard
-                  key={doc.type}
-                  doc={doc}
-                  onPreview={handlePreview}
-                />
-              ) : (
-                <DocumentUploader
-                  key={doc.type}
-                  type={doc.type}
-                  label={doc.label}
-                  description={doc.description}
-                  currentUrl={doc.url || null}
-                  onUploadSuccess={handleUploadSuccess}
-                />
-              ),
-            )}
+            {optionalDocs.map((doc) => (
+              <DocumentUploader
+                key={doc.type}
+                type={doc.type}
+                label={doc.label}
+                description={doc.description}
+                currentUrl={doc.url || null}
+                onUploadSuccess={handleUploadSuccess}
+              />
+            ))}
           </div>
         </div>
       </div>

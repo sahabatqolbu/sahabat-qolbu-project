@@ -5,6 +5,7 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageService, Package } from "@/services/packageService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -79,8 +80,10 @@ import { id as localeId } from "date-fns/locale";
 
 export default function PackagesPage() {
   const { toast } = useToast();
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isFinanceReadOnly = user?.role === "FINANCE";
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -233,7 +236,7 @@ export default function PackagesPage() {
           </h1>
           <p className="text-gray-600 mt-1">Manajemen paket perjalanan umrah</p>
         </div>
-        <div className="flex gap-2">
+        {!isFinanceReadOnly && <div className="flex gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -263,7 +266,7 @@ export default function PackagesPage() {
               Tambah Paket
             </Button>
           </Link>
-        </div>
+        </div>}
       </div>
 
       {/* Summary Cards */}
@@ -372,12 +375,12 @@ export default function PackagesPage() {
             <div className="text-center py-12">
               <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">Belum ada paket</p>
-              <Link href="/admin/packages/create">
+              {!isFinanceReadOnly && <Link href="/admin/packages/create">
                 <Button className="mt-4">
                   <Plus className="h-4 w-4 mr-2" />
                   Buat Paket Pertama
                 </Button>
-              </Link>
+              </Link>}
             </div>
           ) : (
             <>
@@ -588,12 +591,14 @@ export default function PackagesPage() {
                                   Lihat Detail
                                 </DropdownMenuItem>
                               </Link>
-                              <Link href={`/admin/packages/${pkg.id}/edit`}>
-                                <DropdownMenuItem>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit Paket
-                                </DropdownMenuItem>
-                              </Link>
+                              {!isFinanceReadOnly && (
+                                <Link href={`/admin/packages/${pkg.id}/edit`}>
+                                  <DropdownMenuItem>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Paket
+                                  </DropdownMenuItem>
+                                </Link>
+                              )}
                               <Link
                                 href={`/admin/packages/${pkg.id}/itinerary`}
                               >
@@ -602,14 +607,18 @@ export default function PackagesPage() {
                                   Lihat Itinerary
                                 </DropdownMenuItem>
                               </Link>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => setDeleteId(pkg.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Hapus
-                              </DropdownMenuItem>
+                              {!isFinanceReadOnly && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setDeleteId(pkg.id)}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Hapus
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -651,7 +660,7 @@ export default function PackagesPage() {
       </Card>
 
       {/* Delete Dialog */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      {!isFinanceReadOnly && <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus Paket?</AlertDialogTitle>
@@ -674,7 +683,7 @@ export default function PackagesPage() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>}
     </div>
   );
 }

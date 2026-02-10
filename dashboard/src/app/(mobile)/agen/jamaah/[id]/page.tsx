@@ -261,7 +261,7 @@ export default function JamaahDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-md lg:mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-7xl lg:px-6 lg:mx-auto">
       {/* ===== HEADER ===== */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 pb-20 rounded-b-[2rem]">
         <div className="flex items-center gap-3 mb-3">

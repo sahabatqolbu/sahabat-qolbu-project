@@ -419,6 +419,13 @@ export const adminService = {
       return response.data;
     },
 
+    getPendingAgentApprovals: async () => {
+      const response = await api.get(
+        "/notifications/admin/pending-agent-approvals",
+      );
+      return response.data;
+    },
+
     markAsRead: async (id: number) => {
       const response = await api.patch(`/notifications/${id}/read`);
       return response.data;

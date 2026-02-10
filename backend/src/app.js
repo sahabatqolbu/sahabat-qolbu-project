@@ -6,7 +6,12 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "./utils/logger.js";
-import { corsOptions, helmetOptions, requestId } from "./config/security.js";
+import {
+  corsOptions,
+  helmetOptions,
+  requestId,
+  isTrustedOrigin,
+} from "./config/security.js";
 import cors from "cors";
 import helmet from "helmet";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
@@ -53,8 +58,48 @@ const publicUploadFolders = new Set([
   "airlines",
   "packages",
   "itinerary",
+  "jamaah",
   "general",
 ]);
+
+const csrfProtectedMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+const csrfProtection = (req, res, next) => {
+  if (!csrfProtectedMethods.has(req.method)) {
+    return next();
+  }
+
+  const hasAuthCookie = Boolean(req.cookies?.access_token);
+  if (!hasAuthCookie) {
+    return next();
+  }
+
+  const origin = req.get("origin");
+  const referer = req.get("referer");
+  const fetchSite = req.get("sec-fetch-site");
+
+  if (fetchSite && !["same-origin", "same-site", "none"].includes(fetchSite)) {
+    return res.status(403).json({
+      success: false,
+      message: "Permintaan ditolak karena sumber request tidak valid",
+    });
+  }
+
+  if (!origin && !referer) {
+    return next();
+  }
+
+  if (isTrustedOrigin(origin) || isTrustedOrigin(referer)) {
+    return next();
+  }
+
+  return res.status(403).json({
+    success: false,
+    message: "Permintaan ditolak karena validasi keamanan origin gagal",
+  });
+};
+
+app.use(csrfProtection);
 
 const publicUploadsOnly = (req, res, next) => {
   const [folder] = req.path.split("/").filter(Boolean);

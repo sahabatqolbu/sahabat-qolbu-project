@@ -1,8 +1,8 @@
 // dashboard/src/app/(mobile)/agen/jamaah/create/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { agenService } from "@/services/agenService";
@@ -50,6 +50,7 @@ interface FormData {
 
 export default function CreateJamaahPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -66,6 +67,16 @@ export default function CreateJamaahPage() {
   });
 
   const selectedPackageId = watch("packageId");
+
+  useEffect(() => {
+    const packageId = searchParams.get("packageId");
+    if (!packageId) return;
+
+    const parsed = Number(packageId);
+    if (!Number.isInteger(parsed) || parsed <= 0) return;
+
+    setValue("packageId", packageId);
+  }, [searchParams, setValue]);
 
   // ===== FETCH PACKAGES =====
   const { data: packagesData, isLoading: packagesLoading } = useQuery({
@@ -131,7 +142,7 @@ export default function CreateJamaahPage() {
 
   return (
     <ProfileGuard requireComplete={true}>
-      <div className="min-h-screen bg-gray-50 pb-28 w-full md:max-w-md mx-auto">
+      <div className="min-h-screen bg-gray-50 pb-28 w-full md:max-w-7xl md:px-6 mx-auto">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl sticky top-0 z-10">
           <div className="flex items-center gap-4">

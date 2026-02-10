@@ -171,7 +171,7 @@ export default function AgenCalendarPage() {
   const weekDays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-white sticky top-0 z-10 border-b">
         <div className="flex items-center justify-between p-4">

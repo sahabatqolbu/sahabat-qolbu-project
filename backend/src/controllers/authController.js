@@ -18,13 +18,42 @@ import { logger } from "../utils/logger.js";
  */
 const normalizeEmail = (email) => email?.toLowerCase().trim();
 
-const getAuthCookieOptions = () => ({
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: "/",
-});
+const getAuthCookieOptions = (req) => {
+  const cookieSecureOverride = process.env.COOKIE_SECURE;
+  const forwardedProto = req?.get?.("x-forwarded-proto")?.split(",")?.[0]?.trim();
+  const requestIsHttps = Boolean(req?.secure) || forwardedProto === "https";
+
+  const isSecureCookie =
+    cookieSecureOverride === "true"
+      ? true
+      : cookieSecureOverride === "false"
+        ? false
+        : requestIsHttps;
+
+  return {
+    httpOnly: true,
+    secure: isSecureCookie,
+    sameSite: isSecureCookie ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  };
+};
+
+const findUserByEmail = async (email) => {
+  const [row] = await db.execute(
+    sql`SELECT id, email, password, role, full_name AS fullName, phone, otp, otp_expiry AS otpExpiry, is_active AS isActive, is_email_verified AS isEmailVerified, last_login AS lastLogin, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE email = ${email} LIMIT 1`
+  );
+
+  return row || null;
+};
+
+const findUserById = async (userId) => {
+  const [row] = await db.execute(
+    sql`SELECT id, email, password, role, full_name AS fullName, phone, otp, otp_expiry AS otpExpiry, is_active AS isActive, is_email_verified AS isEmailVerified, last_login AS lastLogin, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE id = ${userId} LIMIT 1`
+  );
+
+  return row || null;
+};
 
 // =====================================================
 // LOGIN - GENERATE OTP
@@ -37,9 +66,7 @@ export const login = async (req, res, next) => {
     logger.info("Login attempt", { email: normalizedEmail });
 
     // Find user by email
-    const user = await db.query.users.findFirst({
-      where: eq(sql`LOWER(${users.email})`, normalizedEmail),
-    });
+    const user = await findUserByEmail(normalizedEmail);
 
     if (!user) {
       logger.security("Login failed - user not found", { email: normalizedEmail });
@@ -118,9 +145,7 @@ export const verifyOTPLogin = async (req, res, next) => {
     logger.info("OTP verification attempt", { email: normalizedEmail });
 
     // Find user
-    const user = await db.query.users.findFirst({
-      where: eq(sql`LOWER(${users.email})`, normalizedEmail),
-    });
+    const user = await findUserByEmail(normalizedEmail);
 
     if (!user) {
       logger.security("OTP verification failed - user not found", { email: normalizedEmail });
@@ -158,7 +183,7 @@ export const verifyOTPLogin = async (req, res, next) => {
 
     logger.security("User logged in successfully", { userId: user.id, email: user.email });
 
-    res.cookie("access_token", token, getAuthCookieOptions());
+    res.cookie("access_token", token, getAuthCookieOptions(req));
 
     return successResponse(
       res,
@@ -188,9 +213,7 @@ export const requestOTP = async (req, res, next) => {
     const { email } = req.validatedBody || req.body;
     const normalizedEmail = normalizeEmail(email);
 
-    const user = await db.query.users.findFirst({
-      where: eq(sql`LOWER(${users.email})`, normalizedEmail),
-    });
+    const user = await findUserByEmail(normalizedEmail);
 
     if (!user) {
       // Return success even if user not found (security best practice)
@@ -243,14 +266,9 @@ export const requestOTP = async (req, res, next) => {
 // =====================================================
 export const getCurrentUser = async (req, res, next) => {
   try {
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, req.user.userId),
-      columns: {
-        password: false,
-        otp: false,
-        otpExpiry: false,
-      },
-    });
+    const [user] = await db.execute(
+      sql`SELECT id, email, role, full_name AS fullName, phone, is_active AS isActive, is_email_verified AS isEmailVerified, last_login AS lastLogin, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE id = ${req.user.userId} LIMIT 1`
+    );
 
     if (!user) {
       return errorResponse(res, "User tidak ditemukan", 404);
@@ -270,9 +288,7 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
+    const user = await findUserById(userId);
 
     if (!user) {
       return errorResponse(res, "User tidak ditemukan", 404);
@@ -328,9 +344,7 @@ export const changePasswordWithOTP = async (req, res, next) => {
     const userId = req.user.userId;
     const { otp, newPassword } = req.validatedBody || req.body;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
+    const user = await findUserById(userId);
 
     if (!user) {
       return errorResponse(res, "User tidak ditemukan", 404);
@@ -359,7 +373,7 @@ export const changePasswordWithOTP = async (req, res, next) => {
 
     logger.security("Password changed successfully", { userId });
 
-    res.clearCookie("access_token", getAuthCookieOptions());
+    res.clearCookie("access_token", getAuthCookieOptions(req));
 
     return successResponse(res, null, "Password berhasil diubah. Silakan login kembali.");
   } catch (error) {
@@ -375,9 +389,7 @@ export const requestEmailChangeOTP = async (req, res, next) => {
   try {
     const userId = req.user.userId;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
+    const user = await findUserById(userId);
 
     if (!user) {
       return errorResponse(res, "User tidak ditemukan", 404);
@@ -435,17 +447,13 @@ export const changeEmailWithOTP = async (req, res, next) => {
     const normalizedNewEmail = normalizeEmail(newEmail);
 
     // Check if new email is already taken
-    const existingUser = await db.query.users.findFirst({
-      where: eq(sql`LOWER(${users.email})`, normalizedNewEmail),
-    });
+    const existingUser = await findUserByEmail(normalizedNewEmail);
 
     if (existingUser && existingUser.id !== userId) {
       return errorResponse(res, "Email baru sudah terdaftar", 400);
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
+    const user = await findUserById(userId);
 
     if (!user) {
       return errorResponse(res, "User tidak ditemukan", 404);
@@ -476,7 +484,7 @@ export const changeEmailWithOTP = async (req, res, next) => {
       newEmail: normalizedNewEmail 
     });
 
-    res.clearCookie("access_token", getAuthCookieOptions());
+    res.clearCookie("access_token", getAuthCookieOptions(req));
 
     return successResponse(
       res,
@@ -490,6 +498,12 @@ export const changeEmailWithOTP = async (req, res, next) => {
 };
 
 export const logout = async (req, res) => {
-  res.clearCookie("access_token", getAuthCookieOptions());
+  const cookieOptions = getAuthCookieOptions(req);
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: cookieOptions.secure,
+    sameSite: cookieOptions.sameSite,
+    path: "/",
+  });
   return successResponse(res, null, "Logout berhasil");
 };

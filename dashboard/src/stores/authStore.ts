@@ -34,11 +34,11 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
 
-      setAuth: (token, user) => {
+      setAuth: (_token, user) => {
         log("💾 Setting auth state");
 
         set({
-          token,
+          token: _token,
           user,
           isAuthenticated: true,
         });
@@ -75,11 +75,22 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        token: state.token,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        // Don't persist token in storage for security
-        // Token is stored separately in localStorage
       }),
+      merge: (persistedState, currentState) => {
+        const mergedState = {
+          ...currentState,
+          ...(persistedState as Partial<AuthState>),
+        };
+
+        return {
+          ...mergedState,
+          token: mergedState.token ?? null,
+          isAuthenticated: Boolean(mergedState.user && mergedState.token),
+        };
+      },
     }
   )
 );

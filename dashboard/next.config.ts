@@ -14,11 +14,6 @@ const nextConfig = {
         hostname: "api.sahabatqolbu.com",
         pathname: "/**",
       },
-      // ✅ TAMBAH: Allow external URLs (untuk data lama di database)
-      {
-        protocol: "https",
-        hostname: "**", // Allow semua domain HTTPS
-      },
     ],
   },
 };

@@ -283,18 +283,18 @@ export default function AgenDashboardPage() {
   const remainingClosing = nextLevelClosing - totalClosing;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:max-w-md mx-auto overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:pb-8 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-5 pb-20 rounded-b-[2rem] relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 rounded-b-[2rem] md:rounded-b-[2.5rem] relative overflow-hidden">
         {/* Decorative */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-8 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2" />
 
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-1">
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-1 md:mb-0">
             <div>
-              <p className="text-xs text-white/60">Selamat datang,</p>
-              <h1 className="text-lg font-bold">
+              <p className="text-xs md:text-sm text-white/60">Selamat datang,</p>
+              <h1 className="text-lg md:text-3xl font-bold">
                 {profile?.fullName?.split(" ")[0] || "Agen"} 👋
               </h1>
             </div>
@@ -303,16 +303,16 @@ export default function AgenDashboardPage() {
             <div className="flex items-center gap-2">
               {/* ✅ TAMBAH ICON CALENDAR */}
               <Link href="/agen/calendar">
-                <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors">
-                  <Calendar className="h-5 w-5" />
+                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                  <Calendar className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
               </Link>
 
               <NotificationDropdownAgen />
 
               <Link href="/agen/profile">
-                <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
-                  <User className="h-5 w-5" />
+                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
+                  <User className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
               </Link>
             </div>
@@ -321,7 +321,7 @@ export default function AgenDashboardPage() {
       </div>
 
       {/* Content */}
-      <div className="px-4 -mt-14 space-y-4 relative z-10">
+      <div className="px-4 md:px-8 -mt-14 md:-mt-16 space-y-4 md:space-y-6 relative z-10 max-w-7xl mx-auto">
         {/* Level Card */}
         <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
           <CardContent className="p-0">
@@ -392,41 +392,41 @@ export default function AgenDashboardPage() {
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2.5 md:gap-4">
           <Card className="border-0 shadow-md rounded-2xl">
-            <CardContent className="p-3 text-center">
-              <div className="h-9 w-9 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2">
-                <Users className="h-4 w-4 text-blue-600" />
+            <CardContent className="p-3 md:p-4 text-center">
+              <div className="h-9 w-9 md:h-11 md:w-11 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-2">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
               </div>
-              <p className="text-xl font-bold text-[var(--color-primary)]">
+              <p className="text-xl md:text-2xl font-bold text-[var(--color-primary)]">
                 {profile?.totalJamaah || 0}
               </p>
-              <p className="text-[10px] text-gray-500">Jamaah</p>
+              <p className="text-[10px] md:text-xs text-gray-500">Jamaah</p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-md rounded-2xl">
-            <CardContent className="p-3 text-center">
-              <div className="h-9 w-9 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-2">
-                <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <CardContent className="p-3 md:p-4 text-center">
+              <div className="h-9 w-9 md:h-11 md:w-11 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-2">
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-emerald-600" />
               </div>
-              <p className="text-xl font-bold text-[var(--color-primary)]">
+              <p className="text-xl md:text-2xl font-bold text-[var(--color-primary)]">
                 {totalClosing}
               </p>
-              <p className="text-[10px] text-gray-500">Closing</p>
+              <p className="text-[10px] md:text-xs text-gray-500">Closing</p>
             </CardContent>
           </Card>
 
           <Link href="/agen/commissions">
             <Card className="border-0 shadow-md rounded-2xl h-full">
-              <CardContent className="p-3 text-center h-full flex flex-col justify-center">
-                <div className="h-9 w-9 rounded-xl bg-[var(--color-secondary)]/10 flex items-center justify-center mx-auto mb-2">
-                  <Wallet className="h-4 w-4 text-[var(--color-secondary-600)]" />
+              <CardContent className="p-3 md:p-4 text-center h-full flex flex-col justify-center">
+                <div className="h-9 w-9 md:h-11 md:w-11 rounded-xl bg-[var(--color-secondary)]/10 flex items-center justify-center mx-auto mb-2">
+                  <Wallet className="h-4 w-4 md:h-5 md:w-5 text-[var(--color-secondary-600)]" />
                 </div>
-                <p className="text-sm font-bold text-[var(--color-primary)]">
+                <p className="text-sm md:text-base font-bold text-[var(--color-primary)]">
                   Rp 0
                 </p>
-                <p className="text-[10px] text-gray-500">Komisi</p>
+                <p className="text-[10px] md:text-xs text-gray-500">Komisi</p>
               </CardContent>
             </Card>
           </Link>
@@ -452,110 +452,112 @@ export default function AgenDashboardPage() {
           </Card>
         </Link>
 
-        {/* Menu Grid */}
-        <div>
-          <h2 className="text-sm font-semibold text-[var(--color-primary)] my-3 px-1">
-            Menu Cepat
-          </h2>
-          <div className="grid grid-cols-4 gap-2">
-            <Link href="/agen/jamaah">
-              <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mb-1.5">
-                  <Users className="h-5 w-5 text-blue-600" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Menu Grid */}
+          <div className="lg:col-span-2">
+            <h2 className="text-sm md:text-base font-semibold text-[var(--color-primary)] my-3 px-1">
+              Menu Cepat
+            </h2>
+            <div className="grid grid-cols-4 gap-2 md:gap-4">
+              <Link href="/agen/jamaah">
+                <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-blue-50 flex items-center justify-center mb-1.5">
+                    <Users className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-medium text-gray-600 text-center">
+                    Jamaah
+                  </p>
                 </div>
-                <p className="text-[10px] font-medium text-gray-600 text-center">
-                  Jamaah
-                </p>
-              </div>
-            </Link>
+              </Link>
 
-            <Link href="/agen/packages">
-              <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center mb-1.5">
-                  <Package className="h-5 w-5 text-purple-600" />
+              <Link href="/agen/packages">
+                <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-purple-50 flex items-center justify-center mb-1.5">
+                    <Package className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-medium text-gray-600 text-center">
+                    Paket
+                  </p>
                 </div>
-                <p className="text-[10px] font-medium text-gray-600 text-center">
-                  Paket
-                </p>
-              </div>
-            </Link>
+              </Link>
 
-            <Link href="/agen/commissions">
-              <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-[var(--color-secondary)]/10 flex items-center justify-center mb-1.5">
-                  <Wallet className="h-5 w-5 text-[var(--color-secondary-600)]" />
+              <Link href="/agen/commissions">
+                <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-[var(--color-secondary)]/10 flex items-center justify-center mb-1.5">
+                    <Wallet className="h-5 w-5 text-[var(--color-secondary-600)]" />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-medium text-gray-600 text-center">
+                    Komisi
+                  </p>
                 </div>
-                <p className="text-[10px] font-medium text-gray-600 text-center">
-                  Komisi
-                </p>
-              </div>
-            </Link>
+              </Link>
 
-            <Link href="/agen/profile">
-              <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center mb-1.5">
-                  <User className="h-5 w-5 text-gray-600" />
+              <Link href="/agen/profile">
+                <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-gray-100 flex items-center justify-center mb-1.5">
+                    <User className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-medium text-gray-600 text-center">
+                    Profil
+                  </p>
                 </div>
-                <p className="text-[10px] font-medium text-gray-600 text-center">
-                  Profil
-                </p>
-              </div>
-            </Link>
+              </Link>
+            </div>
           </div>
-        </div>
 
-        {/* Referral Code */}
-        {agentData?.referralCode && (
-          <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
-            <CardContent className="p-0">
-              <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-600)] p-4 text-white">
-                <div className="flex items-center gap-2 mb-3">
-                  <Gift className="h-4 w-4 text-[var(--color-secondary)]" />
-                  <p className="text-xs font-medium">Kode Referral</p>
+          {/* Referral Code */}
+          {agentData?.referralCode && (
+            <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
+              <CardContent className="p-0">
+                <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-600)] p-4 md:p-5 text-white h-full">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Gift className="h-4 w-4 text-[var(--color-secondary)]" />
+                    <p className="text-xs md:text-sm font-medium">Kode Referral</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-3 md:p-4 flex items-center justify-between">
+                    <code className="text-lg md:text-xl font-bold tracking-widest">
+                      {agentData.referralCode}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg"
+                      onClick={() => {
+                        navigator.clipboard.writeText(agentData.referralCode);
+                        toast({ title: "Kode berhasil dicopy!" });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-[10px] md:text-xs text-white/60 mt-2">
+                    Bagikan untuk rekrut agen baru
+                  </p>
                 </div>
-                <div className="bg-white/10 rounded-xl p-3 flex items-center justify-between">
-                  <code className="text-lg font-bold tracking-widest">
-                    {agentData.referralCode}
-                  </code>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-white hover:bg-white/20 rounded-lg"
-                    onClick={() => {
-                      navigator.clipboard.writeText(agentData.referralCode);
-                      toast({ title: "Kode berhasil dicopy!" });
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tips Card */}
+          <Card className="border-0 shadow-sm rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-amber-600" />
                 </div>
-                <p className="text-[10px] text-white/60 mt-2">
-                  Bagikan untuk rekrut agen baru
-                </p>
+                <div>
+                  <p className="text-xs md:text-sm font-semibold text-amber-800 mb-1">
+                    Tips Hari Ini
+                  </p>
+                  <p className="text-[11px] md:text-sm text-amber-700 leading-relaxed">
+                    Follow up jamaah yang sudah terdaftar untuk meningkatkan
+                    closing rate! 🚀
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {/* Tips Card */}
-        <Card className="border-0 shadow-sm rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <Sparkles className="h-4 w-4 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-amber-800 mb-1">
-                  Tips Hari Ini
-                </p>
-                <p className="text-[11px] text-amber-700 leading-relaxed">
-                  Follow up jamaah yang sudah terdaftar untuk meningkatkan
-                  closing rate! 🚀
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       <BottomNav role="AGEN" />

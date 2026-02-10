@@ -154,7 +154,7 @@ export default function DocumentsPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-md lg:mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-7xl lg:px-6 lg:mx-auto">
       {/* Hidden File Input */}
       <input
         type="file"

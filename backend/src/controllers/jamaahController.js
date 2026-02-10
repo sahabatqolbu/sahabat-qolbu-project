@@ -26,6 +26,34 @@ const generateBookingNumber = async () => {
   return `${prefix}-${String(sequence).padStart(4, "0")}`;
 };
 
+const isBookingNumberDuplicateError = (error) => {
+  const message = error?.sqlMessage || error?.message || "";
+  return error?.code === "ER_DUP_ENTRY" && message.includes("booking_number");
+};
+
+const createJamaahRecordWithRetry = async (buildValues, maxRetries = 5) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const bookingNumber = await generateBookingNumber();
+
+    try {
+      const [newJamaah] = await db
+        .insert(jamaahData)
+        .values(buildValues(bookingNumber))
+        .$returningId();
+
+      return { bookingNumber, newJamaah };
+    } catch (error) {
+      if (isBookingNumberDuplicateError(error) && attempt < maxRetries) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error("Gagal membuat booking number unik");
+};
+
 // =====================================================
 // SYNC USER JAMAAH → JAMAAH_DATA
 // =====================================================
@@ -69,24 +97,24 @@ export const syncJamaahFromUsers = async (req, res, next) => {
     const results = [];
     for (const user of usersWithoutJamaahData) {
       try {
-        const bookingNumber = await generateBookingNumber();
-
-        await db.insert(jamaahData).values({
-          userId: user.id,
-          bookingNumber,
-          dateOfBooking: new Date(),
-          registrationStatus: "DRAFT",
-          statusPayment: "BELUM_BAYAR",
-          isProfileComplete: false,
-          notePaket: "FULLSERVICE",
-          hargaPaket: "0",
-          potonganFeeAgen: "0",
-          potonganPoinAgen: "0",
-          potonganCashbackKK: "0",
-          hargaFinal: "0",
-          totalPayment: "0",
-          outstanding: "0",
-        });
+        const { bookingNumber } = await createJamaahRecordWithRetry(
+          (generatedBookingNumber) => ({
+            userId: user.id,
+            bookingNumber: generatedBookingNumber,
+            dateOfBooking: new Date(),
+            registrationStatus: "DRAFT",
+            statusPayment: "BELUM_BAYAR",
+            isProfileComplete: false,
+            notePaket: "FULLSERVICE",
+            hargaPaket: "0",
+            potonganFeeAgen: "0",
+            potonganPoinAgen: "0",
+            potonganCashbackKK: "0",
+            hargaFinal: "0",
+            totalPayment: "0",
+            outstanding: "0",
+          })
+        );
 
         results.push({
           userId: user.id,
@@ -398,9 +426,6 @@ export const createJamaah = async (req, res, next) => {
       }
     }
 
-    // Generate booking number
-    const bookingNumber = await generateBookingNumber();
-
     // Calculate pricing
     const harga = parseFloat(hargaPaket) || 0;
     const feeAgen = parseFloat(potonganFeeAgen) || 0;
@@ -408,13 +433,12 @@ export const createJamaah = async (req, res, next) => {
     const cashback = parseFloat(potonganCashbackKK) || 0;
     const hargaFinal = harga - feeAgen - poinAgen - cashback;
 
-    const [newJamaah] = await db
-      .insert(jamaahData)
-      .values({
+    const { bookingNumber, newJamaah } = await createJamaahRecordWithRetry(
+      (generatedBookingNumber) => ({
         userId: userId ? parseInt(userId) : null,
         packageId: packageId ? parseInt(packageId) : null,
-        agenId: req.user?.role === "AGEN" ? req.user.id : null,
-        bookingNumber,
+        agenId: req.user?.role === "AGEN" ? req.user.userId : null,
+        bookingNumber: generatedBookingNumber,
         dateOfBooking: new Date(),
         namaMitra,
         notePaket: notePaket || "FULLSERVICE",
@@ -431,7 +455,7 @@ export const createJamaah = async (req, res, next) => {
         registrationStatus: "DRAFT",
         isProfileComplete: false,
       })
-      .$returningId();
+    );
 
     console.log("✅ Created jamaah with booking:", bookingNumber);
 
@@ -783,7 +807,7 @@ export const verifyPayment = async (req, res, next) => {
     await db
       .update(jamaahPayments)
       .set({
-        verifiedBy: req.user.id,
+        verifiedBy: req.user.userId,
         verifiedAt: new Date(),
         updatedAt: new Date(),
       })
