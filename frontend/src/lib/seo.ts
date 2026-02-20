@@ -3,22 +3,20 @@ import { Metadata } from "next";
 const siteConfig = {
   name: "Sahabat Qolbu Cahaya Baitullah",
   description:
-    "Tour & Travel. Berpengalaman memberangkatkan ribuan jamaah dengan layanan profesional, harga terjangkau, dan izin resmi dari Kementerian Agama.",
+    "Travel umroh sunnah resmi Kemenag dari Cileungsi, Bogor. Melayani jamaah seluruh Indonesia dengan pendampingan ibadah profesional dan amanah.",
   url: "https://sahabatqolbu.com",
   ogImage: "https://sahabatqolbu.com/og-image.jpg",
   keywords: [
-    "umrah",
-    "travel umrah",
-    "paket umrah",
-    "umrah murah",
-    "umrah terpercaya",
-    "travel umrah terbaik",
+    "travel umroh sunnah cileungsi",
+    "travel umroh bogor",
+    "travel umroh resmi kemenag",
+    "paket umroh 2026",
+    "haji furoda",
     "sahabat qolbu",
-    "umrah jakarta",
-    "umrah ramadhan",
-    "umrah plus turki",
-    "biaya umrah",
-    "daftar umrah",
+    "travel umroh indonesia",
+    "umroh ramadhan",
+    "biaya umroh",
+    "daftar umroh",
   ],
   authors: [
     {
@@ -99,8 +97,7 @@ export function generateMetadata(page?: {
     },
     manifest: "/site.webmanifest",
     verification: {
-      google: "your-google-verification-code",
-      yandex: "your-yandex-verification-code",
+      google: "adb578ae3708098e",
     },
   };
 }

@@ -169,7 +169,14 @@ export default function TransactionsPage() {
                                     </TableRow>
                                 ) : (
                                     txList.map((tx: any) => (
-                                        <TableRow key={tx.id}>
+                                        <TableRow
+                                            key={tx.id}
+                                            className="hover:bg-gray-50/50 cursor-pointer group"
+                                            onClick={() => {
+                                                setSelectedTx(tx);
+                                                setIsDetailOpen(true);
+                                            }}
+                                        >
                                             <TableCell className="font-medium">{tx.invoiceNumber}</TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
@@ -185,7 +192,10 @@ export default function TransactionsPage() {
                                                 Rp {new Intl.NumberFormat("id-ID").format(tx.paidAmount)}
                                             </TableCell>
                                             <TableCell>{getStatusBadge(tx.status)}</TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell
+                                                className="text-right"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"

@@ -15,7 +15,7 @@ export interface User {
   id: number;
   email: string;
   fullName: string;
-  role: "ADMIN" | "FINANCE" | "AGEN" | "JAMAAH";
+  role: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH";
   phone?: string;
 }
 
@@ -144,14 +144,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Redirect based on role
   const redirectToDashboard = (role: User["role"]) => {
+    const dashboardBaseUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || "http://localhost:3001";
     const dashboardRoutes = {
-      ADMIN: "/dashboard/admin",
-      FINANCE: "/dashboard/finance",
-      AGEN: "/dashboard/agen",
-      JAMAAH: "/dashboard/jamaah",
+      ADMIN: `${dashboardBaseUrl}/admin`,
+      FINANCE: `${dashboardBaseUrl}/finance`,
+      STAFF: `${dashboardBaseUrl}/staff`,
+      AGEN: `${dashboardBaseUrl}/agen`,
+      JAMAAH: `${dashboardBaseUrl}/jamaah`,
     };
 
-    router.push(dashboardRoutes[role]);
+    const destination = dashboardRoutes[role] || dashboardBaseUrl;
+    if (destination.startsWith("http://") || destination.startsWith("https://")) {
+      window.location.href = destination;
+      return;
+    }
+
+    router.push(destination);
   };
 
   const value: AuthContextType = {

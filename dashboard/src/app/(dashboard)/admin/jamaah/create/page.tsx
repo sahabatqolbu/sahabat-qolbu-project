@@ -10,6 +10,7 @@ import * as z from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { jamaahService } from "@/services/jamaahService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/authStore";
 import api from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,19 +55,50 @@ const createJamaahSchema = z.object({
 
 type CreateJamaahForm = z.infer<typeof createJamaahSchema>;
 
+interface PackageOption {
+  id: number;
+  name: string;
+  price?: string;
+}
+
+interface JamaahUserOption {
+  id: number;
+  fullName: string;
+  email: string;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function CreateJamaahPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuthStore();
+  const roleBasePath =
+    user?.role === "FINANCE" ? "/finance" : user?.role === "STAFF" ? "/staff" : "/admin";
+  const jamaahBasePath = `${roleBasePath}/jamaah`;
   const [userMode, setUserMode] = useState<"existing" | "new">("new");
 
-  // FIXED: Hapus generic <CreateJamaahForm> biar ga konflik sama defaultValues yg kosong
   const {
     register,
     handleSubmit,
     setValue,
     watch,
     formState: { errors },
-  } = useForm({
+  } = useForm<CreateJamaahForm>({
     resolver: zodResolver(createJamaahSchema),
     defaultValues: {
       userMode: "new",
@@ -92,7 +124,9 @@ export default function CreateJamaahPage() {
   });
 
   // SAFE ARRAY CHECK
-  const packages = Array.isArray(packagesData?.data) ? packagesData.data : [];
+  const packages: PackageOption[] = Array.isArray(packagesData?.data)
+    ? (packagesData.data as PackageOption[])
+    : [];
 
   // ===== FETCH USERS (Jamaah Role) =====
   const { data: usersData, isLoading: usersLoading } = useQuery({
@@ -105,16 +139,18 @@ export default function CreateJamaahPage() {
   });
 
   // SAFE ARRAY CHECK
-  const jamaahUsers = Array.isArray(usersData?.data) ? usersData.data : [];
+  const jamaahUsers: JamaahUserOption[] = Array.isArray(usersData?.data)
+    ? (usersData.data as JamaahUserOption[])
+    : [];
 
   // ===== AUTO FILL HARGA PAKET =====
   const selectedPackageId = watch("packageId");
 
   useEffect(() => {
     if (selectedPackageId && packages.length > 0) {
-      const pkg = packages.find((p: any) => p.id === selectedPackageId);
+      const pkg = packages.find((p) => p.id === selectedPackageId);
       if (pkg) {
-        setValue("hargaPaket", parseFloat(pkg.price) || 0);
+        setValue("hargaPaket", parseFloat(pkg.price || "0") || 0);
       }
     }
   }, [selectedPackageId, packages, setValue]);
@@ -132,8 +168,7 @@ export default function CreateJamaahPage() {
 
   // ===== CREATE MUTATION =====
   const createMutation = useMutation({
-    // Perlu casting 'any' atau sesuaikan type manual karena generic useForm dihapus
-    mutationFn: (data: any) => {
+    mutationFn: (data: CreateJamaahForm) => {
       const payload = {
         createNewUser: data.userMode === "new",
         userId: data.userMode === "existing" ? data.userId : undefined,
@@ -157,13 +192,13 @@ export default function CreateJamaahPage() {
         title: "✅ Booking Berhasil Dibuat",
         description: `Booking Number: ${response.data.bookingNumber}`,
       });
-      router.push(`/admin/jamaah/${response.data.bookingNumber}`);
+      router.push(`${jamaahBasePath}/${response.data.bookingNumber}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Membuat Booking",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -180,7 +215,7 @@ export default function CreateJamaahPage() {
     <div className="max-w-5xl mx-auto space-y-6 py-6 px-4">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/admin/jamaah">
+        <Link href={jamaahBasePath}>
           <Button variant="ghost" size="icon">
             <ArrowLeft />
           </Button>
@@ -283,7 +318,7 @@ export default function CreateJamaahPage() {
                             Tidak ada user jamaah
                           </SelectItem>
                         ) : (
-                          jamaahUsers.map((user: any) => (
+                          jamaahUsers.map((user) => (
                             <SelectItem
                               key={user.id}
                               value={user.id.toString()}
@@ -337,7 +372,7 @@ export default function CreateJamaahPage() {
                             Tidak ada paket tersedia
                           </SelectItem>
                         ) : (
-                          packages.map((pkg: any) => (
+                          packages.map((pkg) => (
                             <SelectItem key={pkg.id} value={pkg.id.toString()}>
                               {pkg.name} -{" "}
                               {formatRupiah(parseFloat(pkg.price) || 0)}
@@ -375,7 +410,9 @@ export default function CreateJamaahPage() {
                 <Label>Note Paket</Label>
                 <Select
                   value={watch("notePaket")}
-                  onValueChange={(val: any) => setValue("notePaket", val)}
+                  onValueChange={(val) =>
+                    setValue("notePaket", val as CreateJamaahForm["notePaket"])
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -401,8 +438,11 @@ export default function CreateJamaahPage() {
                 <div className="space-y-2">
                   <Label>Kamar Makkah</Label>
                   <Select
-                    onValueChange={(val: any) =>
-                      setValue("roomTypeMakkah", val)
+                    onValueChange={(val) =>
+                      setValue(
+                        "roomTypeMakkah",
+                        val as CreateJamaahForm["roomTypeMakkah"],
+                      )
                     }
                   >
                     <SelectTrigger>
@@ -420,8 +460,11 @@ export default function CreateJamaahPage() {
                 <div className="space-y-2">
                   <Label>Kamar Madinah</Label>
                   <Select
-                    onValueChange={(val: any) =>
-                      setValue("roomTypeMadinah", val)
+                    onValueChange={(val) =>
+                      setValue(
+                        "roomTypeMadinah",
+                        val as CreateJamaahForm["roomTypeMadinah"],
+                      )
                     }
                   >
                     <SelectTrigger>
@@ -522,7 +565,7 @@ export default function CreateJamaahPage() {
                 </>
               )}
             </Button>
-            <Link href="/admin/jamaah" className="flex-1">
+            <Link href={jamaahBasePath} className="flex-1">
               <Button
                 type="button"
                 variant="outline"

@@ -1,8 +1,11 @@
 // backend/src/utils/email.js
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { logger } from "./logger.js";
 
 dotenv.config();
+
+const isTestEnv = process.env.NODE_ENV === "test";
 
 // =====================================================
 // NODEMAILER TRANSPORTER (MAILTRAP)
@@ -16,20 +19,53 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Test connection
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Email service error:", error);
-  } else {
-    console.log("✅ Email service ready");
-  }
-});
+const shouldVerifyTransportOnBoot =
+  process.env.EMAIL_VERIFY_ON_BOOT === "true";
+
+if (shouldVerifyTransportOnBoot) {
+  transporter.verify((error) => {
+    if (error) {
+      logger.error("Email service error", error);
+    } else {
+      logger.info("Email service ready");
+    }
+  });
+}
 
 // =====================================================
 // SEND EMAIL FUNCTION
 // =====================================================
-export const sendEmail = async ({ to, subject, text, html }) => {
+
+// Check if email queue is enabled (default: true for async)
+const isQueueEnabled = !isTestEnv && process.env.EMAIL_QUEUE_ENABLED !== "false";
+
+// Lazy load to avoid circular dependency
+let emailQueueModule = null;
+const getEmailQueue = () => {
+  if (!emailQueueModule) {
+    emailQueueModule = import("./queue/index.js");
+  }
+  return emailQueueModule;
+};
+
+export const sendEmail = async ({ to, subject, text, html, queue = isQueueEnabled }) => {
   try {
+    if (isTestEnv) {
+      return {
+        success: true,
+        queued: false,
+        messageId: `test-email-${Date.now()}`,
+      };
+    }
+
+    if (queue) {
+      const { addToEmailQueue } = await getEmailQueue();
+      const jobId = addToEmailQueue({ to, subject, text, html });
+      logger.debug("Email added to queue", { jobId, to });
+      return { success: true, queued: true, jobId };
+    }
+
+    // Sync sending (legacy)
     const info = await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to,
@@ -38,18 +74,54 @@ export const sendEmail = async ({ to, subject, text, html }) => {
       html,
     });
 
-    console.log("📧 Email sent:", info.messageId);
+    logger.info("Email sent", { messageId: info.messageId });
 
     // Mailtrap preview URL (development only)
     if (process.env.NODE_ENV === "development") {
-      console.log("🔗 Preview URL:", nodemailer.getTestMessageUrl(info));
+      logger.debug("Email preview URL", { preview: nodemailer.getTestMessageUrl(info) });
     }
 
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("❌ Email sending failed:", error);
+    logger.error("Email sending failed", error);
     return { success: false, error: error.message };
   }
+};
+
+// Sync version for critical emails that need immediate delivery
+export const sendEmailSync = async ({ to, subject, text, html }) => {
+  try {
+    if (isTestEnv) {
+      return {
+        success: true,
+        messageId: `test-email-sync-${Date.now()}`,
+      };
+    }
+
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM,
+      to,
+      subject,
+      text,
+      html,
+    });
+
+    logger.info("Email sent (sync)", { messageId: info.messageId });
+
+    if (process.env.NODE_ENV === "development") {
+      logger.debug("Email preview URL", { preview: nodemailer.getTestMessageUrl(info) });
+    }
+
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    logger.error("Email sending failed (sync)", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getEmailStats = async () => {
+  const { getEmailQueueStats } = await getEmailQueue();
+  return getEmailQueueStats();
 };
 
 // =====================================================

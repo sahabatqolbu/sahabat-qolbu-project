@@ -44,9 +44,36 @@ import {
   Loader2,
   Star,
   CheckCircle,
-  DollarSign,
 } from "lucide-react";
 import Link from "next/link";
+
+interface AgentLevelItem {
+  id: number;
+  name: string;
+  star: number;
+  price: string;
+  minClosing?: number | null;
+  maxPeriod?: number | null;
+  benefits?: Array<{ id?: number; title?: string }>;
+  isActive: boolean;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    message?: string;
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || payload.message || "Terjadi kesalahan";
+};
 
 export default function AgentLevelsPage() {
   const router = useRouter();
@@ -54,7 +81,7 @@ export default function AgentLevelsPage() {
   const queryClient = useQueryClient();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState<any>(null);
+  const [selectedLevel, setSelectedLevel] = useState<AgentLevelItem | null>(null);
 
   // ===== FETCH LEVELS =====
   const { data, isLoading, error } = useQuery({
@@ -65,7 +92,9 @@ export default function AgentLevelsPage() {
     },
   });
 
-  const levels = data?.data || [];
+  const levels: AgentLevelItem[] = Array.isArray(data?.data)
+    ? (data.data as AgentLevelItem[])
+    : [];
 
   // ===== DELETE MUTATION =====
   const deleteMutation = useMutation({
@@ -78,11 +107,11 @@ export default function AgentLevelsPage() {
         description: "Level agen berhasil dihapus",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Hapus Level",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -127,7 +156,7 @@ export default function AgentLevelsPage() {
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-red-500">Error: {(error as any).message}</p>
+              <p className="text-red-500">Error: {getErrorMessage(error)}</p>
             </div>
           ) : levels.length === 0 ? (
             <div className="text-center py-12">
@@ -149,7 +178,7 @@ export default function AgentLevelsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {levels.map((level: any) => (
+                  {levels.map((level) => (
                     <TableRow key={level.id}>
                       <TableCell className="font-medium">
                         {level.name}

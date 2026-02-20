@@ -18,6 +18,9 @@ import { logger } from "../utils/logger.js";
  */
 const normalizeEmail = (email) => email?.toLowerCase().trim();
 
+const isBcryptHash = (value) =>
+  typeof value === "string" && /^\$2[abyx]\$\d{2}\$/.test(value);
+
 const getAuthCookieOptions = (req) => {
   const cookieSecureOverride = process.env.COOKIE_SECURE;
   const forwardedProto = req?.get?.("x-forwarded-proto")?.split(",")?.[0]?.trim();
@@ -40,19 +43,45 @@ const getAuthCookieOptions = (req) => {
 };
 
 const findUserByEmail = async (email) => {
-  const [row] = await db.execute(
-    sql`SELECT id, email, password, role, full_name AS fullName, phone, otp, otp_expiry AS otpExpiry, is_active AS isActive, is_email_verified AS isEmailVerified, last_login AS lastLogin, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE email = ${email} LIMIT 1`
-  );
-
-  return row || null;
+  return db.query.users.findFirst({
+    where: sql`LOWER(TRIM(email)) = LOWER(TRIM(${email}))`,
+    columns: {
+      id: true,
+      email: true,
+      password: true,
+      role: true,
+      fullName: true,
+      phone: true,
+      otp: true,
+      otpExpiry: true,
+      isActive: true,
+      isEmailVerified: true,
+      lastLogin: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 };
 
 const findUserById = async (userId) => {
-  const [row] = await db.execute(
-    sql`SELECT id, email, password, role, full_name AS fullName, phone, otp, otp_expiry AS otpExpiry, is_active AS isActive, is_email_verified AS isEmailVerified, last_login AS lastLogin, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE id = ${userId} LIMIT 1`
-  );
-
-  return row || null;
+  return db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: {
+      id: true,
+      email: true,
+      password: true,
+      role: true,
+      fullName: true,
+      phone: true,
+      otp: true,
+      otpExpiry: true,
+      isActive: true,
+      isEmailVerified: true,
+      lastLogin: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 };
 
 // =====================================================
@@ -67,15 +96,45 @@ export const login = async (req, res, next) => {
 
     // Find user by email
     const user = await findUserByEmail(normalizedEmail);
+    logger.debug("Login lookup result", {
+      email: normalizedEmail,
+      found: Boolean(user),
+    });
 
     if (!user) {
       logger.security("Login failed - user not found", { email: normalizedEmail });
       return unauthorizedResponse(res, "Email atau password salah");
     }
 
-    // Check password
-    const isPasswordValid = await comparePassword(password, user.password);
+    // Check password (supports bcrypt variants + legacy plain-text records once)
+    let isPasswordValid = false;
+
+    if (isBcryptHash(user.password)) {
+      logger.debug("Login password mode", { userId: user.id, mode: "bcrypt" });
+      isPasswordValid = await comparePassword(password, user.password);
+    } else {
+      logger.debug("Login password mode", { userId: user.id, mode: "legacy-plain" });
+      isPasswordValid = password === user.password;
+
+      if (isPasswordValid) {
+        const migratedHash = await hashPassword(password);
+        await db
+          .update(users)
+          .set({
+            password: migratedHash,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, user.id));
+
+        logger.security("Legacy password hash migrated", {
+          userId: user.id,
+          email: normalizedEmail,
+        });
+      }
+    }
+
     if (!isPasswordValid) {
+      logger.debug("Login password check failed", { userId: user.id });
       logger.security("Login failed - invalid password", { 
         userId: user.id,
         email: normalizedEmail 
@@ -110,15 +169,16 @@ export const login = async (req, res, next) => {
       })
       .where(eq(users.id, user.id));
 
-    // Send OTP via email
-    const emailSent = await sendOTPEmail(user, otp);
+    // Send OTP via email (async via queue)
+    const emailResult = await sendOTPEmail(user, otp);
     
-    if (!emailSent.success) {
-      logger.error("Failed to send OTP email", emailSent.error, { userId: user.id });
+    if (!emailResult.success) {
+      logger.error("Failed to send OTP email", emailResult.error, { userId: user.id });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
-    logger.info("OTP sent successfully", { userId: user.id });
+    const emailStatus = emailResult.queued ? "queued" : "sent";
+    logger.info(`OTP email ${emailStatus} successfully`, { userId: user.id, jobId: emailResult.jobId });
 
     return successResponse(
       res,
@@ -188,7 +248,6 @@ export const verifyOTPLogin = async (req, res, next) => {
     return successResponse(
       res,
       {
-        token,
         user: {
           id: user.id,
           email: user.email,
@@ -238,14 +297,15 @@ export const requestOTP = async (req, res, next) => {
       .where(eq(users.id, user.id));
 
     // Send OTP
-    const emailSent = await sendOTPEmail(user, otp);
+    const emailResult = await sendOTPEmail(user, otp);
     
-    if (!emailSent.success) {
-      logger.error("Failed to send OTP email", emailSent.error, { userId: user.id });
+    if (!emailResult.success) {
+      logger.error("Failed to send OTP email", emailResult.error, { userId: user.id });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
-    logger.info("New OTP requested", { userId: user.id });
+    const emailStatus = emailResult.queued ? "queued" : "sent";
+    logger.info(`OTP email ${emailStatus}`, { userId: user.id, jobId: emailResult.jobId });
 
     return successResponse(
       res,
@@ -266,9 +326,21 @@ export const requestOTP = async (req, res, next) => {
 // =====================================================
 export const getCurrentUser = async (req, res, next) => {
   try {
-    const [user] = await db.execute(
-      sql`SELECT id, email, role, full_name AS fullName, phone, is_active AS isActive, is_email_verified AS isEmailVerified, last_login AS lastLogin, created_at AS createdAt, updated_at AS updatedAt FROM users WHERE id = ${req.user.userId} LIMIT 1`
-    );
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, req.user.userId),
+      columns: {
+        id: true,
+        email: true,
+        role: true,
+        fullName: true,
+        phone: true,
+        isActive: true,
+        isEmailVerified: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     if (!user) {
       return errorResponse(res, "User tidak ditemukan", 404);
@@ -308,15 +380,16 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
       })
       .where(eq(users.id, userId));
 
-    // Send OTP via email
-    const emailSent = await sendOTPEmail(user, otp);
+    // Send OTP via email (async via queue)
+    const emailResult = await sendOTPEmail(user, otp);
     
-    if (!emailSent.success) {
-      logger.error("Failed to send password change OTP", emailSent.error, { userId });
+    if (!emailResult.success) {
+      logger.error("Failed to send password change OTP", emailResult.error, { userId });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
-    logger.info("Password change OTP sent", { userId });
+    const emailStatus = emailResult.queued ? "queued" : "sent";
+    logger.info(`Password change OTP ${emailStatus}`, { userId, jobId: emailResult.jobId });
 
     // Mask email for response
     const [local, domain] = user.email.split("@");
@@ -409,15 +482,16 @@ export const requestEmailChangeOTP = async (req, res, next) => {
       })
       .where(eq(users.id, userId));
 
-    // Send OTP via email to current email
-    const emailSent = await sendOTPEmail(user, otp);
+    // Send OTP via email to current email (async via queue)
+    const emailResult = await sendOTPEmail(user, otp);
     
-    if (!emailSent.success) {
-      logger.error("Failed to send email change OTP", emailSent.error, { userId });
+    if (!emailResult.success) {
+      logger.error("Failed to send email change OTP", emailResult.error, { userId });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
-    logger.info("Email change OTP sent", { userId });
+    const emailStatus = emailResult.queued ? "queued" : "sent";
+    logger.info(`Email change OTP ${emailStatus}`, { userId, jobId: emailResult.jobId });
 
     // Mask email for response
     const [local, domain] = user.email.split("@");

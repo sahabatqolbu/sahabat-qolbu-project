@@ -6,6 +6,35 @@ import { eq, and, desc, inArray, sql, or, gte } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { logger } from "../utils/logger.js";
 
+const parsePositiveInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const SAFE_USER_COLUMNS = {
+  id: true,
+  fullName: true,
+  email: true,
+  phone: true,
+  role: true,
+  isActive: true,
+  isEmailVerified: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const getAgenOwnershipCondition = async (agenUserId) => {
+  const agent = await db.query.agentData.findFirst({
+    where: eq(agentData.userId, agenUserId),
+    columns: { id: true },
+  });
+
+  return agent
+    ? or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id))
+    : eq(jamaahData.agenId, agenUserId);
+};
+
 // =====================================================
 // HELPER: Create Notification
 // =====================================================
@@ -118,6 +147,7 @@ export const getMyNotifications = async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const { limit = 20, unreadOnly = false } = req.query;
+    const parsedLimit = Math.min(Math.max(parsePositiveInt(limit) || 20, 1), 100);
 
     const conditions = [eq(notifications.userId, userId)];
 
@@ -128,7 +158,7 @@ export const getMyNotifications = async (req, res, next) => {
     const result = await db.query.notifications.findMany({
       where: and(...conditions),
       orderBy: [desc(notifications.createdAt)],
-      limit: parseInt(limit),
+      limit: parsedLimit,
     });
 
     const unreadCountResult = await db
@@ -170,6 +200,48 @@ export const getUnreadCount = async (req, res, next) => {
   } catch (error) {
     logger.error("Get unread count error", error, { userId: req.user?.userId });
     next(error);
+  }
+};
+
+// =====================================================
+// HELPER: Send to Admin + Staff
+// =====================================================
+export const notifyAdminAndStaff = async ({
+  type,
+  title,
+  message,
+  link = null,
+  referenceId = null,
+  referenceType = null,
+}) => {
+  try {
+    const recipients = await db.query.users.findMany({
+      where: and(
+        inArray(users.role, ["ADMIN", "STAFF"]),
+        eq(users.isActive, true),
+      ),
+    });
+
+    for (const user of recipients) {
+      await createNotification({
+        userId: user.id,
+        type,
+        title,
+        message,
+        link,
+        referenceId,
+        referenceType,
+      });
+    }
+
+    logger.info("Notification sent to admin+staff", {
+      count: recipients.length,
+      type,
+    });
+    return true;
+  } catch (error) {
+    logger.error("Failed to notify admin+staff", error, { type });
+    return false;
   }
 };
 
@@ -217,10 +289,15 @@ export const markAsRead = async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const { id } = req.params;
+    const parsedId = parsePositiveInt(id);
+
+    if (!parsedId) {
+      return errorResponse(res, "ID notifikasi tidak valid", 400);
+    }
 
     const notification = await db.query.notifications.findFirst({
       where: and(
-        eq(notifications.id, parseInt(id)),
+        eq(notifications.id, parsedId),
         eq(notifications.userId, userId),
       ),
     });
@@ -235,7 +312,7 @@ export const markAsRead = async (req, res, next) => {
         isRead: true,
         readAt: new Date(),
       })
-      .where(eq(notifications.id, parseInt(id)));
+      .where(eq(notifications.id, parsedId));
 
     return successResponse(res, null, "Notifikasi ditandai sudah dibaca");
   } catch (error) {
@@ -275,10 +352,15 @@ export const deleteNotification = async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const { id } = req.params;
+    const parsedId = parsePositiveInt(id);
+
+    if (!parsedId) {
+      return errorResponse(res, "ID notifikasi tidak valid", 400);
+    }
 
     const notification = await db.query.notifications.findFirst({
       where: and(
-        eq(notifications.id, parseInt(id)),
+        eq(notifications.id, parsedId),
         eq(notifications.userId, userId),
       ),
     });
@@ -287,7 +369,7 @@ export const deleteNotification = async (req, res, next) => {
       return errorResponse(res, "Notifikasi tidak ditemukan", 404);
     }
 
-    await db.delete(notifications).where(eq(notifications.id, parseInt(id)));
+    await db.delete(notifications).where(eq(notifications.id, parsedId));
 
     return successResponse(res, null, "Notifikasi dihapus");
   } catch (error) {
@@ -583,6 +665,7 @@ export const sendReminder = async (req, res, next) => {
   try {
     const { userId, type, title, message, referenceId, referenceType } =
       req.body;
+    const parsedUserId = parsePositiveInt(userId);
 
     if (!userId || !type || !title || !message) {
       return errorResponse(
@@ -602,8 +685,12 @@ export const sendReminder = async (req, res, next) => {
       return errorResponse(res, "Type tidak valid", 400);
     }
 
+    if (!parsedUserId) {
+      return errorResponse(res, "userId tidak valid", 400);
+    }
+
     const user = await db.query.users.findFirst({
-      where: eq(users.id, parseInt(userId)),
+      where: eq(users.id, parsedUserId),
     });
 
     if (!user) {
@@ -618,7 +705,7 @@ export const sendReminder = async (req, res, next) => {
     }
 
     await db.insert(notifications).values({
-      userId: parseInt(userId),
+      userId: parsedUserId,
       type,
       title,
       message,
@@ -628,7 +715,7 @@ export const sendReminder = async (req, res, next) => {
       isRead: false,
     });
 
-    logger.info("Reminder sent", { userId: parseInt(userId) });
+    logger.info("Reminder sent", { userId: parsedUserId });
 
     return successResponse(res, null, "Pengingat berhasil dikirim");
   } catch (error) {
@@ -643,6 +730,9 @@ export const sendReminder = async (req, res, next) => {
 export const sendBulkReminder = async (req, res, next) => {
   try {
     const { userIds, type, title, message } = req.body;
+    const parsedUserIds = Array.isArray(userIds)
+      ? userIds.map(parsePositiveInt).filter((id) => id !== null)
+      : [];
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return errorResponse(
@@ -650,6 +740,10 @@ export const sendBulkReminder = async (req, res, next) => {
         "userIds harus berupa array dan tidak boleh kosong",
         400,
       );
+    }
+
+    if (parsedUserIds.length === 0) {
+      return errorResponse(res, "userIds tidak valid", 400);
     }
 
     if (!type || !title || !message) {
@@ -667,10 +761,7 @@ export const sendBulkReminder = async (req, res, next) => {
     }
 
     const userList = await db.query.users.findMany({
-      where: inArray(
-        users.id,
-        userIds.map((id) => parseInt(id)),
-      ),
+      where: inArray(users.id, parsedUserIds),
     });
 
     if (userList.length === 0) {
@@ -852,6 +943,7 @@ export const agenSendReminderToJamaah = async (req, res, next) => {
   try {
     const agenUserId = req.user.userId;
     const { jamaahUserId, type, title, message } = req.body;
+    const parsedJamaahUserId = parsePositiveInt(jamaahUserId);
 
     if (!jamaahUserId || !type || !title || !message) {
       return errorResponse(
@@ -861,13 +953,18 @@ export const agenSendReminderToJamaah = async (req, res, next) => {
       );
     }
 
+    if (!parsedJamaahUserId) {
+      return errorResponse(res, "jamaahUserId tidak valid", 400);
+    }
+
+    const ownershipCondition = await getAgenOwnershipCondition(agenUserId);
+
     const jamaah = await db.query.jamaahData.findFirst({
-      where: and(
-        eq(jamaahData.userId, parseInt(jamaahUserId)),
-        eq(jamaahData.agenId, agenUserId),
-      ),
+      where: and(eq(jamaahData.userId, parsedJamaahUserId), ownershipCondition),
       with: {
-        user: true,
+        user: {
+          columns: SAFE_USER_COLUMNS,
+        },
       },
     });
 
@@ -880,7 +977,7 @@ export const agenSendReminderToJamaah = async (req, res, next) => {
     }
 
     await db.insert(notifications).values({
-      userId: parseInt(jamaahUserId),
+      userId: parsedJamaahUserId,
       type,
       title,
       message,
@@ -892,7 +989,7 @@ export const agenSendReminderToJamaah = async (req, res, next) => {
 
     logger.info("Agen sent reminder to jamaah", {
       agenUserId,
-      jamaahUserId: parseInt(jamaahUserId),
+      jamaahUserId: parsedJamaahUserId,
     });
 
     return successResponse(res, null, "Pengingat berhasil dikirim ke jamaah");

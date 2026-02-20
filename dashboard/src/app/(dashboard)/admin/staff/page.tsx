@@ -328,7 +328,11 @@ export default function StaffPage() {
                   </TableRow>
                 ) : (
                   staffData?.data?.map((staff: Staff) => (
-                    <TableRow key={staff.id}>
+                    <TableRow
+                      key={staff.id}
+                      className="hover:bg-gray-50/50 cursor-pointer group"
+                      onClick={() => router.push(`/admin/staff/${staff.id}`)}
+                    >
                       <TableCell className="font-medium">
                         {staff.fullName}
                       </TableCell>
@@ -360,7 +364,10 @@ export default function StaffPage() {
                           locale: localeId,
                         })}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell
+                        className="text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">

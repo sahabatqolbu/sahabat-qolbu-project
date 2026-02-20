@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ChangeEvent, ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
@@ -67,6 +68,54 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import * as XLSX from "xlsx";
 
+interface AgentListQueryParams {
+  search?: string;
+  star?: number;
+  status?: string;
+}
+
+interface AgentData {
+  status?: "DRAFT" | "PENDING" | "APPROVED" | "REJECTED";
+  currentStar?: number;
+  isComplete?: boolean;
+  nickname?: string;
+}
+
+interface AdminAgent {
+  id: number;
+  fullName: string;
+  email: string;
+  phone?: string;
+  createdAt?: string;
+  totalJamaah?: number;
+  agentData?: AgentData;
+}
+
+interface ImportUsersResult {
+  success: boolean;
+  data?: {
+    success?: number;
+    failed?: number;
+  };
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    message?: string;
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || payload.message || "Terjadi kesalahan";
+};
+
 export default function AdminAgenPage() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -78,7 +127,7 @@ export default function AdminAgenPage() {
   const [starFilter, setStarFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<any>(null);
+  const [selectedAgent, setSelectedAgent] = useState<AdminAgent | null>(null);
 
   // ✅ IMPORT STATE
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -88,29 +137,28 @@ export default function AdminAgenPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["agents", search, starFilter, statusFilter],
     queryFn: async () => {
-      const params: any = {};
+      const params: AgentListQueryParams = {};
       if (search) params.search = search;
       if (starFilter !== "all") params.star = parseInt(starFilter);
       if (statusFilter !== "all") params.status = statusFilter;
 
-      const response = await adminService.agen.getAll(params);
+      const response = (await adminService.agen.getAll(params)) as {
+        data?: AdminAgent[];
+      };
       return response;
     },
   });
 
-  const agents = data?.data || [];
+  const agents: AdminAgent[] = data?.data || [];
 
   // ===== STATS =====
   const stats = {
     total: agents.length,
-    pending: agents.filter((a: any) => a.agentData?.status === "PENDING")
+    pending: agents.filter((a) => a.agentData?.status === "PENDING")
       .length,
-    approved: agents.filter((a: any) => a.agentData?.status === "APPROVED")
+    approved: agents.filter((a) => a.agentData?.status === "APPROVED")
       .length,
-    totalJamaah: agents.reduce(
-      (sum: number, a: any) => sum + (a.totalJamaah || 0),
-      0
-    ),
+    totalJamaah: agents.reduce((sum, a) => sum + (a.totalJamaah || 0), 0),
   };
 
   // ===== DELETE MUTATION =====
@@ -124,11 +172,11 @@ export default function AdminAgenPage() {
         description: "Agen berhasil dihapus dari sistem",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Hapus Agen",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -151,7 +199,10 @@ export default function AdminAgenPage() {
 
   // Helper: Get Status Badge
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { bg: string; text: string; icon: any }> = {
+    const variants: Record<
+      string,
+      { bg: string; text: string; icon: ComponentType<{ className?: string }> }
+    > = {
       DRAFT: { bg: "bg-gray-100", text: "text-gray-800", icon: Clock },
       PENDING: { bg: "bg-yellow-100", text: "text-yellow-800", icon: Clock },
       APPROVED: {
@@ -182,7 +233,7 @@ export default function AdminAgenPage() {
     XLSX.writeFile(workbook, "Template_Import_Agen.xlsx");
   };
 
-  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportExcel = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -201,7 +252,9 @@ export default function AdminAgenPage() {
           return;
         }
 
-        const response = await adminService.users.importUsers(data);
+        const response = (await adminService.users.importUsers(
+          data as Record<string, unknown>[],
+        )) as ImportUsersResult;
 
         if (response.success) {
           toast({
@@ -211,11 +264,11 @@ export default function AdminAgenPage() {
           queryClient.invalidateQueries({ queryKey: ["agents"] });
           setImportDialogOpen(false);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         toast({
           variant: "destructive",
           title: "❌ Gagal Import",
-          description: error.response?.data?.message || "Terjadi kesalahan sistem",
+          description: getErrorMessage(error),
         });
       } finally {
         setIsImporting(false);
@@ -380,7 +433,7 @@ export default function AdminAgenPage() {
           ) : error ? (
             <div className="text-center py-12">
               <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <p className="text-red-500">Error: {(error as any).message}</p>
+              <p className="text-red-500">Error: {getErrorMessage(error)}</p>
             </div>
           ) : agents.length === 0 ? (
             <div className="text-center py-12">
@@ -405,7 +458,7 @@ export default function AdminAgenPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {agents.map((agent: any) => {
+                  {agents.map((agent) => {
                     const starConfig = getStarBadge(
                       agent.agentData?.currentStar || 0
                     );
@@ -415,7 +468,11 @@ export default function AdminAgenPage() {
                     const StatusIcon = statusConfig.icon;
 
                     return (
-                      <TableRow key={agent.id}>
+                      <TableRow
+                        key={agent.id}
+                        className="hover:bg-gray-50/50 cursor-pointer group"
+                        onClick={() => router.push(`/admin/agen/${agent.id}`)}
+                      >
                         {/* Nama */}
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
@@ -518,7 +575,10 @@ export default function AdminAgenPage() {
                         </TableCell>
 
                         {/* Aksi */}
-                        <TableCell className="text-right">
+                        <TableCell
+                          className="text-right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">

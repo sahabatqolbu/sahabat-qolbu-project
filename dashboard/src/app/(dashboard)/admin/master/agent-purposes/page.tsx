@@ -35,6 +35,37 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Target, Plus, Edit, Trash2, Loader2, CheckCircle } from "lucide-react";
 
+interface AgentPurposeItem {
+  id: number;
+  title: string;
+  slug: string;
+  order: number;
+  isActive: boolean;
+}
+
+interface AgentPurposeFormData {
+  title: string;
+  slug: string;
+  order: number;
+  isActive: boolean;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function AgentPurposesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,9 +73,9 @@ export default function AgentPurposesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<AgentPurposeItem | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AgentPurposeFormData>({
     title: "",
     slug: "",
     order: 0,
@@ -57,7 +88,9 @@ export default function AgentPurposesPage() {
     queryFn: () => adminService.agentPurposes.getAll(),
   });
 
-  const purposes = data?.data || [];
+  const purposes: AgentPurposeItem[] = Array.isArray(data?.data)
+    ? (data.data as AgentPurposeItem[])
+    : [];
 
   // ===== AUTO GENERATE SLUG =====
   const generateSlug = (text: string) => {
@@ -77,36 +110,37 @@ export default function AgentPurposesPage() {
 
   // ===== CREATE =====
   const createMutation = useMutation({
-    mutationFn: (data: any) => adminService.agentPurposes.create(data),
+    mutationFn: (data: AgentPurposeFormData) =>
+      adminService.agentPurposes.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-purposes"] });
       setCreateDialogOpen(false);
       setFormData({ title: "", slug: "", order: 0, isActive: true });
       toast({ title: "✅ Tujuan berhasil ditambahkan" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
 
   // ===== UPDATE =====
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) =>
+    mutationFn: ({ id, data }: { id: number; data: AgentPurposeFormData }) =>
       adminService.agentPurposes.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-purposes"] });
       setEditDialogOpen(false);
       toast({ title: "✅ Tujuan berhasil diupdate" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -119,11 +153,11 @@ export default function AgentPurposesPage() {
       setDeleteDialogOpen(false);
       toast({ title: "✅ Tujuan berhasil dihapus" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -144,7 +178,7 @@ export default function AgentPurposesPage() {
     }
   };
 
-  const openEditDialog = (item: any) => {
+  const openEditDialog = (item: AgentPurposeItem) => {
     setSelectedItem(item);
     setFormData({
       title: item.title,
@@ -209,7 +243,7 @@ export default function AgentPurposesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {purposes.map((item: any, index: number) => (
+                {purposes.map((item, index) => (
                   <TableRow key={item.id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell className="font-medium">{item.title}</TableCell>

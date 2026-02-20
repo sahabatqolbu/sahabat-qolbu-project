@@ -19,6 +19,14 @@ export function Sidebar() {
   if (!user) return null;
 
   const menuItems = getMenuByRole(user.role);
+  const homeByRole: Record<string, string> = {
+    ADMIN: "/admin",
+    FINANCE: "/finance",
+    STAFF: "/staff",
+    AGEN: "/agen",
+    JAMAAH: "/jamaah",
+  };
+  const homeHref = homeByRole[user.role] || "/";
 
   // Toggle collapse
   const toggleCollapse = (label: string) => {
@@ -50,7 +58,7 @@ export function Sidebar() {
     <aside className="hidden md:flex md:flex-col w-64 bg-white border-r border-gray-200 fixed left-0 top-0 h-screen">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
-        <Link href="/admin" className="flex items-center gap-3">
+        <Link href={homeHref} className="flex items-center gap-3">
           <div className="w-10 h-10 flex items-center justify-center">
             <img src="/images/icon.png" alt="" />
           </div>

@@ -26,6 +26,7 @@ import { id } from "date-fns/locale";
 
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
+  const isFinanceReadOnly = user?.role === "FINANCE";
 
   // ✅ Single query untuk semua stats
   const { data: statsData, isLoading } = useQuery({
@@ -87,20 +88,22 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        <Link href="/admin/users/create">
-          <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Tambah User
-          </Button>
-        </Link>
-        <Link href="/admin/packages/create">
-          <Button variant="outline">
-            <PackagePlus className="h-4 w-4 mr-2" />
-            Tambah Paket
-          </Button>
-        </Link>
-      </div>
+      {!isFinanceReadOnly && (
+        <div className="flex flex-wrap gap-3">
+          <Link href="/admin/users/create">
+            <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Tambah User
+            </Button>
+          </Link>
+          <Link href="/admin/packages/create">
+            <Button variant="outline">
+              <PackagePlus className="h-4 w-4 mr-2" />
+              Tambah Paket
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Stats Grid */}
       {isLoading ? (

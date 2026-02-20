@@ -73,6 +73,7 @@ export default function RootLayout({
         />
       </head>
       <body
+        suppressHydrationWarning
         className={`${poppins.variable} ${playfair.variable} font-sans antialiased`}
       >
         <QueryProvider>

@@ -1,7 +1,7 @@
 // dashboard/src/app/(mobile)/agen/profile/edit/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { BottomNav } from "@/components/mobile/BottomNav";
+import { getImageUrl } from "@/lib/utils";
 
 interface EditFormData {
   fullName: string;
@@ -48,6 +49,9 @@ export default function EditProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
+  const hasRedirectedRef = useRef(false);
 
   const {
     register,
@@ -104,6 +108,42 @@ export default function EditProfilePage() {
     },
   });
 
+  const uploadPhotoMutation = useMutation({
+    mutationFn: (file: File) => adminService.agenProfile.uploadProfilePhoto(file),
+    onSuccess: (response: any) => {
+      const returnedAgentData = response?.data?.agent?.agentData;
+      const uploadedUrl = response?.data?.url;
+
+      queryClient.setQueryData(["agen-profile"], (prev: any) => {
+        if (!prev?.data) return prev;
+        return {
+          ...prev,
+          data: {
+            ...prev.data,
+            agentData: {
+              ...prev.data.agentData,
+              ...(returnedAgentData || {}),
+              profilePhoto:
+                uploadedUrl || returnedAgentData?.profilePhoto || prev.data.agentData?.profilePhoto,
+              updatedAt: returnedAgentData?.updatedAt || new Date().toISOString(),
+            },
+          },
+        };
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["agen-profile"] });
+      toast({ title: "Foto profil berhasil diupload" });
+      setProfilePhotoFile(null);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Gagal upload foto",
+        description: error.response?.data?.message || "Terjadi kesalahan",
+      });
+    },
+  });
+
   const onSubmit = (data: EditFormData) => {
     updateMutation.mutate(data);
   };
@@ -116,10 +156,21 @@ export default function EditProfilePage() {
     );
   }
 
-  // Redirect if not approved
-  if (agentData?.status !== "APPROVED") {
-    router.push("/agen/profile");
-    return null;
+  useEffect(() => {
+    if (!agentData || agentData.status === "APPROVED" || hasRedirectedRef.current) {
+      return;
+    }
+
+    hasRedirectedRef.current = true;
+    router.replace("/agen/profile");
+  }, [agentData, router]);
+
+  if (!agentData || agentData.status !== "APPROVED") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -153,6 +204,83 @@ export default function EditProfilePage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="px-4 py-4 space-y-4">
+        {/* Foto Profil */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-primary">
+              <User className="h-4 w-4" />
+              Foto Profil
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center">
+                {agentData?.profilePhoto ? (
+                  <img
+                    src={`${getImageUrl(agentData.profilePhoto)}${getImageUrl(agentData.profilePhoto).includes("?") ? "&" : "?"}v=${agentData?.updatedAt ? new Date(agentData.updatedAt).getTime() : Date.now()}`}
+                    alt="Foto Profil"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl font-bold text-primary">
+                    {(profile?.fullName || "A").charAt(0)}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label className="text-sm text-gray-600">Upload Foto</Label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setProfilePhotoFile(file);
+                    if (file) {
+                      toast({
+                        title: "File dipilih",
+                        description: file.name,
+                      });
+                    }
+                  }}
+                />
+                {profilePhotoFile && (
+                  <p className="text-xs text-gray-500">
+                    Dipilih: <span className="font-medium">{profilePhotoFile.name}</span>
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  onClick={() => {
+                    console.log("🟦 Upload Foto clicked", {
+                      hasFile: Boolean(profilePhotoFile),
+                      fileName: profilePhotoFile?.name,
+                    });
+                    if (!profilePhotoFile) {
+                      toast({
+                        variant: "destructive",
+                        title: "Pilih foto dulu",
+                        description: "Silakan pilih file gambar untuk diupload.",
+                      });
+                      return;
+                    }
+                    uploadPhotoMutation.mutate(profilePhotoFile);
+                  }}
+                  disabled={!profilePhotoFile || uploadPhotoMutation.isPending}
+                >
+                  {uploadPhotoMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Mengupload...
+                    </>
+                  ) : (
+                    "Upload Foto"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Nama & Kontak */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">

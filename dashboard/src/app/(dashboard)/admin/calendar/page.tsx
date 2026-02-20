@@ -28,13 +28,45 @@ import {
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, addDays, subDays } from "date-fns";
 
+interface CalendarEventItem {
+  id: number;
+  title: string;
+  type: string;
+  startDate: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  color: string;
+  icon: string;
+  description?: string;
+  location?: string;
+  packageId?: number;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Unknown error";
+  }
+
+  const payload = error as {
+    message?: string;
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || payload.message || "Unknown error";
+};
+
 export default function AdminCalendarPage() {
   // =====================================================
   // 1. STATE
   // =====================================================
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -66,14 +98,17 @@ export default function AdminCalendarPage() {
   // =====================================================
   // 4. EXTRACT EVENTS FROM DATA
   // =====================================================
-  const events = data?.data || [];
+  const events = useMemo<CalendarEventItem[]>(() => {
+    if (!Array.isArray(data?.data)) return [];
+    return data.data as CalendarEventItem[];
+  }, [data]);
 
   // =====================================================
   // 5. FILTER EVENTS
   // =====================================================
   const filteredEvents = useMemo(() => {
     if (typeFilter === "all") return events;
-    return events.filter((e: any) => e.type === typeFilter);
+    return events.filter((e) => e.type === typeFilter);
   }, [events, typeFilter]);
 
   // =====================================================
@@ -82,10 +117,10 @@ export default function AdminCalendarPage() {
   const stats = useMemo(() => {
     return {
       total: events.length,
-      packages: events.filter((e: any) => e.type === "PACKAGE").length,
-      deadlines: events.filter((e: any) => e.type === "DEADLINE").length,
+      packages: events.filter((e) => e.type === "PACKAGE").length,
+      deadlines: events.filter((e) => e.type === "DEADLINE").length,
       events: events.filter(
-        (e: any) => !["PACKAGE", "DEADLINE", "ITINERARY"].includes(e.type),
+        (e) => !["PACKAGE", "DEADLINE", "ITINERARY"].includes(e.type),
       ).length,
     };
   }, [events]);
@@ -93,10 +128,6 @@ export default function AdminCalendarPage() {
   // =====================================================
   // 7. DEBUG LOGS (SETELAH semua deklarasi!)
   // =====================================================
-  console.log("📅 Date Range:", dateRange);
-  console.log("📅 Events:", events);
-  console.log("📅 Stats:", stats);
-
   // =====================================================
   // 8. HANDLERS
   // =====================================================
@@ -104,7 +135,7 @@ export default function AdminCalendarPage() {
     setSelectedDate(date);
   };
 
-  const handleEventClick = (event: any) => {
+  const handleEventClick = (event: CalendarEventItem) => {
     if (event.type === "PACKAGE") {
       // Package events can't be edited directly
       return;
@@ -287,7 +318,7 @@ export default function AdminCalendarPage() {
         <div className="text-center py-20">
           <p className="text-red-500">Gagal memuat kalender</p>
           <p className="text-sm text-gray-500 mt-2">
-            {(error as any)?.message || "Unknown error"}
+            {getErrorMessage(error)}
           </p>
         </div>
       ) : viewMode === "calendar" ? (

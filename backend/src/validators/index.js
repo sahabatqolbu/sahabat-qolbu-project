@@ -1,4 +1,6 @@
 import z from "zod";
+import { isPaymentProofPathValid } from "../utils/paymentProofPolicy.js";
+import { errorResponse } from "../utils/response.js";
 
 // Re-export z for use in other files
 export { z };
@@ -142,6 +144,31 @@ export const adminUserSchemas = {
   }),
 };
 
+export const staffSchemas = {
+  create: z.object({
+    email: z
+      .string()
+      .min(1, messages.email.required)
+      .email(messages.email.invalid)
+      .transform((val) => val.toLowerCase().trim()),
+    fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
+    phone: z
+      .string()
+      .regex(patterns.phone, "Format nomor telepon tidak valid")
+      .optional()
+      .nullable(),
+  }),
+  update: z.object({
+    fullName: z.string().min(2).max(255).optional(),
+    phone: z
+      .string()
+      .regex(patterns.phone, "Format nomor telepon tidak valid")
+      .optional()
+      .nullable(),
+    isActive: z.boolean().optional(),
+  }),
+};
+
 /**
  * Jamaah validation schemas
  */
@@ -166,6 +193,111 @@ export const jamaahSchemas = {
     amount: z.number().positive("Jumlah harus positif"),
     method: z.enum(["TRANSFER", "CASH", "DEBIT", "CREDIT"]),
     notes: z.string().max(500).optional(),
+  }),
+};
+
+export const jamaahAdminSchemas = {
+  bookingParams: z.object({
+    bookingNumber: z.string().min(3).max(50),
+  }),
+
+  paymentParams: z.object({
+    paymentId: z.coerce.number().int().positive(),
+  }),
+
+  rejectPayment: z.object({
+    reason: z
+      .string()
+      .min(3, "Alasan penolakan minimal 3 karakter")
+      .max(500, "Alasan penolakan maksimal 500 karakter"),
+  }),
+
+  create: z.object({
+    userId: z.union([z.string(), z.number()]).optional().nullable(),
+    packageId: z.union([z.string(), z.number()]).optional().nullable(),
+    namaMitra: z.string().max(255).optional().nullable(),
+    notePaket: z.string().max(100).optional().nullable(),
+    roomTypeMakkah: z.string().max(50).optional().nullable(),
+    roomTypeMadinah: z.string().max(50).optional().nullable(),
+    hargaPaket: z.union([z.string(), z.number()]).optional().nullable(),
+    potonganFeeAgen: z.union([z.string(), z.number()]).optional().nullable(),
+    potonganPoinAgen: z.union([z.string(), z.number()]).optional().nullable(),
+    potonganCashbackKK: z
+      .union([z.string(), z.number()])
+      .optional()
+      .nullable(),
+  }),
+
+  update: z.object({
+    namaPaspor: z.string().max(255).optional().nullable(),
+    nik: z.string().max(32).optional().nullable(),
+    birthPlace: z.string().max(100).optional().nullable(),
+    birthDate: z.union([z.string(), z.date()]).optional().nullable(),
+    gender: z.enum(["PRIA", "WANITA"]).optional().nullable(),
+    maritalStatus: z
+      .enum(["BELUM_MENIKAH", "MENIKAH", "CERAI", "DUDA_JANDA"])
+      .optional()
+      .nullable(),
+    address: z.string().max(500).optional().nullable(),
+    province: z.string().max(100).optional().nullable(),
+    city: z.string().max(100).optional().nullable(),
+    district: z.string().max(100).optional().nullable(),
+    postalCode: z.string().max(20).optional().nullable(),
+    passportNumber: z.string().max(50).optional().nullable(),
+    passportIssueDate: z.union([z.string(), z.date()]).optional().nullable(),
+    passportExpiry: z.union([z.string(), z.date()]).optional().nullable(),
+    passportIssuePlace: z.string().max(100).optional().nullable(),
+    emergencyName: z.string().max(255).optional().nullable(),
+    emergencyPhone: z.string().max(30).optional().nullable(),
+    emergencyRelation: z.string().max(100).optional().nullable(),
+    packageId: z.union([z.string(), z.number()]).optional().nullable(),
+    agenId: z.union([z.string(), z.number()]).optional().nullable(),
+    namaMitra: z.string().max(255).optional().nullable(),
+    notePaket: z.string().max(100).optional().nullable(),
+    roomTypeMakkah: z.string().max(50).optional().nullable(),
+    roomTypeMadinah: z.string().max(50).optional().nullable(),
+    hargaPaket: z.union([z.string(), z.number()]).optional().nullable(),
+    potonganFeeAgen: z.union([z.string(), z.number()]).optional().nullable(),
+    potonganPoinAgen: z.union([z.string(), z.number()]).optional().nullable(),
+    potonganCashbackKK: z
+      .union([z.string(), z.number()])
+      .optional()
+      .nullable(),
+    registrationStatus: z
+      .enum([
+        "DRAFT",
+        "PENDING_DOCUMENT",
+        "PENDING_PAYMENT",
+        "VERIFIED",
+        "APPROVED",
+        "REJECTED",
+      ])
+      .optional(),
+    mahramId: z.union([z.string(), z.number()]).optional().nullable(),
+    mahramRelation: z.string().max(100).optional().nullable(),
+    notes: z.string().max(1000).optional().nullable(),
+  }),
+
+  addPayment: z.object({
+    amount: z.coerce.number().positive("Jumlah pembayaran harus positif"),
+    bankId: z.coerce.number().int().positive().optional().nullable(),
+    paidBy: z.string().max(255).optional().nullable(),
+    paymentDate: z.union([z.string(), z.date()]).optional().nullable(),
+    proofUrl: z.string().max(500).optional().nullable(),
+    notes: z.string().max(1000).optional().nullable(),
+  }).superRefine((data, ctx) => {
+    if (data.proofUrl && !isPaymentProofPathValid(data.proofUrl)) {
+      ctx.addIssue({
+        path: ["proofUrl"],
+        code: z.ZodIssueCode.custom,
+        message:
+          "proofUrl tidak valid. Gunakan path bukti pembayaran dari folder /uploads/payments",
+      });
+    }
+  }),
+
+  approveRejectRevert: z.object({
+    reason: z.string().max(500).optional(),
   }),
 };
 
@@ -201,6 +333,15 @@ export const transactionSchemas = {
       "REFUNDED",
     ]),
     remarks: z.string().max(500).optional(),
+  }).superRefine((data, ctx) => {
+    const requiresReason = ["CANCELLED", "REFUNDED"];
+    if (requiresReason.includes(data.status) && (!data.remarks || data.remarks.trim() === "")) {
+      ctx.addIssue({
+        path: ["remarks"],
+        code: z.ZodIssueCode.custom,
+        message: `Alasan wajib diisi untuk status ${data.status}`,
+      });
+    }
   }),
 };
 
@@ -239,11 +380,13 @@ export const validate = (schema) => {
           code: err.code,
         }));
         
-        return res.status(400).json({
-          success: false,
-          message: "Validasi gagal. Periksa kembali input Anda.",
+        return errorResponse(
+          res,
+          "Validasi gagal. Periksa kembali input Anda.",
+          400,
           errors,
-        });
+          "VALIDATION_FAILED"
+        );
       }
       
       // Unexpected error
@@ -269,11 +412,13 @@ export const validateQuery = (schema) => {
           message: err.message,
         }));
         
-        return res.status(400).json({
-          success: false,
-          message: "Parameter query tidak valid",
+        return errorResponse(
+          res,
+          "Parameter query tidak valid",
+          400,
           errors,
-        });
+          "VALIDATION_FAILED"
+        );
       }
       next(error);
     }
@@ -297,11 +442,13 @@ export const validateParams = (schema) => {
           message: err.message,
         }));
         
-        return res.status(400).json({
-          success: false,
-          message: "Parameter URL tidak valid",
+        return errorResponse(
+          res,
+          "Parameter URL tidak valid",
+          400,
           errors,
-        });
+          "VALIDATION_FAILED"
+        );
       }
       next(error);
     }

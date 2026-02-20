@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/landing/">
+  <title>Sahabat Qolbu Cahaya Baitullah - Tour & Travel</title>
+  
+  <title>Travel Umroh Sunnah Cileungsi & Haji - Sahabat Qolbu</title>
+  
+   <!-- DESCRIPTION: Menjelaskan posisi (Cileungsi) dan jangkauan (Nasional) -->
+  <meta name="description" content="Pusat Travel Umroh Sunnah & Haji Furoda di Cileungsi, Bogor. Resmi Kemenag & Amanah. Melayani pendaftaran jamaah dari seluruh Indonesia sesuai tuntunan.">
+  
+  <!-- KEYWORDS: Keyword lokal & umum digabung -->
+  <meta name="keywords" content="travel umroh sunnah cileungsi, travel umroh bogor, haji furoda, travel umroh resmi kemenag, paket umroh sunnah 2026, sahabat qolbu, umroh sesuai sunnah">
+  
+  <meta name="author" content="Sahabat Qolbu Cahaya Baitullah">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Geo Tags: Tetap Cileungsi (Untuk Google Maps Local Pack) -->
+  <meta name="geo.region" content="ID-JB" />
+  <meta name="geo.placename" content="Cileungsi" />
+  <meta name="geo.position" content="-6.4035;106.9686" />
+  <meta name="ICBM" content="-6.4035, 106.9686" />
+  
+  <!-- Open Graph / WA -->
+  <meta property="og:type" content="business.business">
+  <meta property="og:title" content="Travel Umroh Sunnah Cileungsi & Haji Plus - Resmi Kemenag">
+  <meta property="og:description" content="Pusat pendaftaran Umroh Sunnah & Haji. Berbasis di Cileungsi, Melayani Jamaah Se-Indonesia.">
+  
+  <!-- Image Tetap Logo WebP -->
+  <meta property="og:image" content="https://www.sahabatqolbu.com/images/og-image.jpg">
+  <meta property="og:image:secure_url" content="https://www.sahabatqolbu.com/images/og-image.jpg">
+  <meta property="og:image:type" content="image/jpg">
+  <meta property="og:image:width" content="300">
+  <meta property="og:image:height" content="300">
+  
+  <meta property="og:url" content="https://sahabatqolbu.com">
+  <meta property="og:site_name" content="Sahabat Qolbu Travel">
+  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Travel Umroh Sunnah Cileungsi - Sahabat Qolbu">
+  <meta name="twitter:image" content="https://www.sahabatqolbu.com/images/og-image.jpg">
+  
+  <link rel="canonical" href="https://sahabatqolbu.com">
+  <link rel="icon" type="image/png" href="/images/icon.png">
+  
+  
+  <!-- Tailwind CSS 4 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0A2C45',
+            secondary: '#133C5A',
+            gold: '#FFC107',
+            'gold-dark': '#E6AC00',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .gradient-overlay {
+      background: linear-gradient(135deg, rgba(10,44,69,0.9) 0%, rgba(10,44,69,0.7) 100%);
+    }
+    .gold-gradient {
+      background: linear-gradient(135deg, #FFC107 0%, #FFD54F 100%);
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+  </style>
+</head>
+<body class="bg-white text-gray-800 antialiased">
+
+  <!-- HEADER / NAVIGATION -->
+<header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" id="header">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav class="flex items-center justify-between h-16 md:h-20">
+        <!-- Logo -->
+        <a href="/landing/" data-logo-link class="flex items-center gap-2 md:gap-3">
+            <div class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
+                <img src="./images/icon.png" alt="Logo Sahabat Qolbu" class="w-full h-full object-contain">
+            </div>
+            <div>
+                <span class="text-lg md:text-xl font-bold">
+                <span id="logoSahabat" class="js-logo-sahabat text-white transition-colors duration-300">Sahabat</span>
+                <span id="logoQolbu" class="js-logo-qolbu text-gold transition-colors duration-300">Qolbu</span>
+                </span>
+                <span id="logoTagline" class="js-company-tagline hidden sm:block text-xs text-gray-300 transition-colors duration-300">Cahaya Baitullah</span>
+            </div>
+        </a>
+        
+        <!-- Desktop Menu -->
+        <div class="hidden md:flex items-center gap-8">
+        <a href="#beranda" class="nav-link text-white hover:text-gold transition-colors font-medium">Beranda</a>
+        <a href="#tentang" class="nav-link text-white hover:text-gold transition-colors font-medium">Tentang</a>
+        <a href="#paket" class="nav-link text-white hover:text-gold transition-colors font-medium">Paket</a>
+        <a href="#testimoni" class="nav-link text-white hover:text-gold transition-colors font-medium">Testimoni</a>
+        <a href="https://wa.me/6281255871984?text=Assalamualaikum,%20saya%20lihat%20di%20website%20sahabatqolbu.com%20%20dan%20tertarik%20konsultasi%20tentang%20paket%20umroh" 
+            target="_blank"
+            rel="noopener noreferrer"
+            class="gold-gradient text-primary font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity">
+            Hubungi Kami
+        </a>
+        </div>
+        
+        <!-- Mobile Menu Button -->
+        <button type="button" 
+                class="md:hidden p-2 text-white hover:text-gold transition-colors"
+                id="mobileMenuBtn"
+                aria-label="Buka menu navigasi"
+                aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        </button>
+    </nav>
+    </div>
+    
+    <!-- Mobile Menu -->
+    <div class="md:hidden hidden bg-primary border-t border-white/10" id="mobileMenu">
+    <div class="px-4 py-4 space-y-3">
+        <a href="#beranda" class="block text-white hover:text-gold py-2 transition-colors">Beranda</a>
+        <a href="#tentang" class="block text-white hover:text-gold py-2 transition-colors">Tentang</a>
+        <a href="#paket" class="block text-white hover:text-gold py-2 transition-colors">Paket</a>
+        <a href="#testimoni" class="block text-white hover:text-gold py-2 transition-colors">Testimoni</a>
+        <a href="https://wa.me/6281255871984?text=Assalamualaikum,%20saya%20lihat%20di%20website%20sahabatqolbu.com%20%20dan%20tertarik%20konsultasi%20tentang%20paket%20umroh" 
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block gold-gradient text-primary font-semibold px-5 py-3 rounded-full text-center mt-4">
+        Hubungi Kami
+        </a>
+    </div>
+    </div>
+</header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section id="beranda" class="relative min-h-screen flex items-center">
+      <!-- Background Image -->
+      <div class="absolute inset-0">
+        <img src="https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80" 
+             alt="Ka'bah Masjidil Haram" 
+             class="w-full h-full object-cover"
+             loading="eager">
+        <div class="gradient-overlay absolute inset-0"></div>
+      </div>
+      
+      <!-- Content -->
+      <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40">
+        <div class="max-w-3xl animate-fade-in">
+          <!-- Badge PPIU -->
+          <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/20">
+            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+            <span class="text-white text-sm font-medium">Izin PPIU: 12112100038690008</span>
+          </div>
+          
+          <!-- Headline -->
+          <!-- Headline -->
+            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
+                Travel Umroh Sunnah
+                <!-- Span diganti biar lebih 'menjual' ke umum & menegaskan legalitas -->
+                <span class="text-gold block mt-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
+                    Resmi Kemenag & Melayani Se-Indonesia
+                </span>
+            </h1>
+          
+          <!-- Subheadline -->
+          <p class="text-lg sm:text-xl text-gray-200 mb-8 max-w-2xl leading-relaxed">
+            Sahabat Qolbu Cahaya Baitullah siap melayani perjalanan ibadah Anda sesuai Al-Qur'an & Sunnah. 
+            Dapatkan harga terbaik dengan fasilitas penerbangan langsung tanpa transit.
+          </p>
+          
+          <!-- Promo Badge -->
+          <div class="mb-8 inline-block bg-white text-primary px-6 py-3 rounded-lg font-bold transform -rotate-1 shadow-lg">
+            ✨ DP Mulai 5 Jutaan Langsung Berangkat!
+          </div>
+
+          <!-- CTA Buttons -->
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a href="https://wa.me/6281255871984?text=Assalamualaikum,%20saya%20lihat%20di%20website%20sahabatqolbu.com%20%20dan%20ingin%20booking%20seat%20umroh%20promo%20DP%205jt" 
+               target="_blank"
+               rel="noopener noreferrer"
+               class="gold-gradient text-primary font-bold px-8 py-4 rounded-full text-center hover:opacity-90 transition-all hover:scale-105 inline-flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              Booking Seat Sekarang
+            </a>
+            <a href="#paket" 
+               class="border-2 border-white text-white font-semibold px-8 py-4 rounded-full text-center hover:bg-white hover:text-primary transition-all inline-flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+              </svg>
+              Lihat Paket
+            </a>
+          </div>
+          
+          <!-- Trust Indicators (Updated for 1.5 Years) -->
+          <div class="flex flex-wrap items-center gap-6 mt-12 pt-8 border-t border-white/20">
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-white font-semibold">Ratusan</p>
+                <p class="text-gray-400 text-xs">Jamaah Puas</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-white font-semibold">Resmi</p>
+                <p class="text-gray-400 text-xs">Kemenag RI</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-white font-semibold">Profesional</p>
+                <p class="text-gray-400 text-xs">Tim Berpengalaman</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Scroll Indicator -->
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <svg class="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- TENTANG KAMI -->
+    <section id="tentang" class="py-16 md:py-24 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <!-- Image -->
+          <div class="relative">
+            <div class="aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
+              <img src="images/about-1.webp" 
+                   alt="Jamaah umroh Sahabat Qolbu" 
+                   class="w-full h-full object-cover"
+                   loading="lazy">
+            </div>
+            <!-- Floating Card -->
+            <div class="absolute -bottom-6 -right-6 bg-white rounded-xl shadow-lg p-5 hidden sm:block">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 gold-gradient rounded-full flex items-center justify-center">
+                  <svg class="w-7 h-7 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-2xl font-bold text-primary">100%</p>
+                  <p class="text-gray-500 text-sm">Amanah & Resmi</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Content -->
+          <div>
+            <span class="text-gold font-semibold text-sm uppercase tracking-wider">Tentang Kami</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-primary mt-2 mb-6">
+              Mitra Perjalanan Ibadah Anda yang Amanah
+            </h2>
+            <div class="prose text-gray-600 mb-8 leading-relaxed">
+              <p class="mb-4">
+                <strong>Sahabat Qolbu Cahaya Baitullah</strong> adalah perusahaan Travel Haji dan Umroh yang telah memiliki <strong>IZIN RESMI dari Kementrian Agama Republik Indonesia</strong> (No. PPIU 12112100038690008).
+              </p>
+              <p class="mb-4">
+                Selama 1.5 tahun melayani jamaah, kami berkomitmen memberikan pelayanan terbaik. Dengan pengalaman yang tim kami miliki, Anda akan mendapatkan pelayanan prima dalam segi:
+              </p>
+              <ul class="list-none space-y-2 ml-1">
+                <li class="flex items-center gap-2">✓ Penerbangan Langsung (Tanpa Transit)</li>
+                <li class="flex items-center gap-2">✓ Akomodasi Hotel Dekat Masjid</li>
+                <li class="flex items-center gap-2">✓ Makan & Transportasi Nyaman</li>
+                <li class="flex items-center gap-2">✓ Muthawif/Pemandu Berpengalaman</li>
+              </ul>
+              <p class="mt-4 italic">
+                "Sehingga Jamaah khusyu dalam menjalankan Ibadah Haji dan Umroh sesuai Qur'an & Sunnah."
+              </p>
+            </div>
+            
+            <!-- Features Grid -->
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm">
+                <div class="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-gold" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M22 10l-6-6H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V10zm-2 0v8H4V6h10l6 4z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-primary">Izin Resmi PPIU</h3>
+                  <p class="text-gray-500 text-sm">Terdaftar di Kemenag</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm">
+                <div class="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-primary">Direct Flight</h3>
+                  <p class="text-gray-500 text-sm">Langsung ke Jeddah/Madinah</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KEUNGGULAN (Why Choose Us) -->
+    <section class="py-16 md:py-24 bg-primary text-white relative overflow-hidden">
+        <!-- Pattern Background -->
+        <div class="absolute inset-0 opacity-5">
+          <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.5"/>
+            </pattern>
+            <rect width="100" height="100" fill="url(#grid)"/>
+          </svg>
+        </div>
+        
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <!-- Header -->
+          <div class="text-center max-w-2xl mx-auto mb-12">
+            <span class="text-gold font-semibold text-sm uppercase tracking-wider">Keunggulan Kami</span>
+            <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">
+              Mengapa Sahabat Qolbu?
+            </h2>
+            <p class="text-gray-300">
+              KAMI PASTIKAN pelayanan terbaik untuk kenyamanan ibadah Anda
+            </p>
+          </div>
+          
+          <!-- Features Grid -->
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            <div class="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div class="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Harga Terbaik</h3>
+              <p class="text-gray-300 text-sm">Paket Umroh dan Haji dengan fasilitas terbaik di kelasnya.</p>
+            </div>
+            
+            <div class="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div class="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Sesuai Syariat</h3>
+              <p class="text-gray-300 text-sm">Kegiatan ibadah InsyaAllah sesuai Al-Quran & Sunnah.</p>
+            </div>
+            
+            <div class="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div class="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Hotel Dekat</h3>
+              <p class="text-gray-300 text-sm">Hotel dekat dengan Masjid untuk memudahkan ibadah Anda.</p>
+            </div>
+            
+            <div class="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div class="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Jadwal Tepat</h3>
+              <p class="text-gray-300 text-sm">Tanggal berangkat, nomor pesawat & itinerary sudah tertera.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+<!-- PAKET UMROH - HOMEPAGE -->
+<section id="paket" class="py-16 md:py-24">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <span class="text-gold font-semibold text-sm uppercase tracking-wider">Paket Umroh</span>
+      <h2 class="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
+        Seat Terbatas! Booking Sekarang
+      </h2>
+      <p class="text-gray-600 font-medium">
+        Rasakan Kekhusyukan Saat Beribadah bersama Sahabat Qolbu
+      </p>
+      <div class="mt-4 bg-primary/5 inline-block px-4 py-2 rounded-lg">
+         <span class="text-primary font-bold">📢 DP Mulai 5 Juta-an, Anda sudah bisa umroh!</span>
+      </div>
+    </div>
+    
+    <!-- Cards -->
+    <div id="paket-home" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Loading -->
+      <div class="col-span-full flex justify-center py-12">
+        <div class="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    </div>
+    
+    <!-- Lihat Semua Button -->
+    <div class="text-center mt-10">
+      <a href="/landing/paket" 
+         class="inline-flex items-center gap-2 bg-primary text-white font-semibold px-8 py-4 rounded-full hover:bg-secondary transition-colors">
+        <span>Lihat Semua Paket</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </a>
+    </div>
+    
+    <!-- Urgency Alert -->
+    <div class="mt-10 p-4 bg-red-50 border border-red-100 rounded-xl max-w-2xl mx-auto text-center animate-pulse">
+       <p class="text-red-600 font-bold">⚠️ Segera booking seat sebelum kehabisan!</p>
+       <p class="text-sm text-red-500">Kuota setiap keberangkatan terbatas untuk menjaga kenyamanan jamaah.</p>
+    </div>
+  </div>
+</section>
+
+    <!-- CTA SECTION -->
+    <section class="py-16 md:py-24 bg-gradient-to-br from-primary to-secondary relative overflow-hidden">
+      <!-- Decorative Elements -->
+      <div class="absolute top-0 right-0 w-64 h-64 bg-gold/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+      <div class="absolute bottom-0 left-0 w-48 h-48 bg-gold/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+      
+      <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
+          Wujudkan Rindu Baitullah Bersama Kami
+        </h2>
+        <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          "Rasakan Kekhusyukan Saat Beribadah". Segera amankan seat Anda dengan DP mulai 5 Juta.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://wa.me/6281255871984?text=Assalamualaikum,%20saya%20lihat%20di%20website%20sahabatqolbu.com%20%20dan%20tertarik%20mendaftar%20umroh%20bersama%20Sahabat%20Qolbu" 
+             target="_blank"
+             rel="noopener noreferrer"
+             class="gold-gradient text-primary font-bold px-10 py-4 rounded-full text-lg hover:opacity-90 transition-all hover:scale-105 inline-flex items-center justify-center gap-3">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Hubungi via WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-primary text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Main Footer -->
+      <div class="py-12 md:py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Company Info -->
+        <div class="lg:col-span-2">
+          <div class="flex items-center gap-3 mb-4">
+            <a href="/landing/" data-logo-link class="flex items-center gap-2 md:gap-3">
+                <div class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
+                    <img src="./images/icon.png" alt="Logo Sahabat Qolbu" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <span class="text-lg md:text-xl font-bold">
+                    <span id="logoSahabat" class="js-logo-sahabat text-white transition-colors duration-300">Sahabat</span>
+                    <span id="logoQolbu" class="js-logo-qolbu text-gold transition-colors duration-300">Qolbu</span>
+                    </span>
+                    <span id="logoTagline" class="js-company-tagline hidden sm:block text-xs text-gray-300 transition-colors duration-300">Cahaya Baitullah</span>
+                </div>
+            </a>
+          </div>
+          <p id="company-description" class="text-gray-300 mb-6 max-w-md leading-relaxed">
+            Sahabat Qolbu Cahaya Baitullah adalah perusahaan Travel Haji dan Umroh yang telah memiliki IZIN RESMI dari Kementrian Agama Republik Indonesia (No. PPIU 12112100038690008).
+          </p>
+          <!-- Social Links -->
+          <div class="flex items-center gap-4">
+            <a href="https://www.instagram.com/sahabatqolbu.ofc/" 
+               target="_blank"
+               rel="noopener noreferrer"
+               class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-gold hover:text-primary transition-all"
+               aria-label="Instagram Sahabat Qolbu">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+              </svg>
+            </a>
+            <a href="https://www.facebook.com/sahabatqolbu.ofc" 
+               target="_blank"
+               rel="noopener noreferrer"
+               class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-gold hover:text-primary transition-all"
+               aria-label="Facebook Sahabat Qolbu">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+            </a>
+            <a href="https://wa.me/6281255871984" 
+               target="_blank"
+               rel="noopener noreferrer"
+               class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-gold hover:text-primary transition-all"
+               aria-label="WhatsApp Sahabat Qolbu">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Quick Links -->
+        <div>
+          <h3 class="text-lg font-bold mb-4">Menu</h3>
+          <ul class="space-y-3">
+            <li><a href="#beranda" class="text-gray-300 hover:text-gold transition-colors">Beranda</a></li>
+            <li><a href="#tentang" class="text-gray-300 hover:text-gold transition-colors">Tentang Kami</a></li>
+            <li><a href="#paket" class="text-gray-300 hover:text-gold transition-colors">Paket umroh</a></li>
+            <li><a href="#testimoni" class="text-gray-300 hover:text-gold transition-colors">Testimoni</a></li>
+          </ul>
+        </div>
+        
+        <!-- Contact Info -->
+        <div>
+          <h3 class="text-lg font-bold mb-4">Kontak</h3>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-gold mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span id="company-address" class="text-gray-300 text-sm">
+                <p>
+                    Ruko Jl. Ebony, Metland Transyogi No.11, 
+                    <strong>Kec. Cileungsi, Kab. Bogor</strong>, Jawa Barat 16820
+                </p>
+              </span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+              </svg>
+              <a id="company-whatsapp-text" href="https://wa.me/6281255871984?text=Assalamualaikum,%20saya%20lihat%20di%20website%20sahabatqolbu.com%20%20dan%20tertarik%20mendaftar%20umroh%20bersama%20Sahabat%20Qolbu" class="text-gray-300 hover:text-gold transition-colors">
+                0812-5587-1984
+              </a>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+              <a id="company-email-text" href="mailto:Sahabatqolbucahayabaitullah@gmail.com" class="text-gray-300 hover:text-gold transition-colors text-sm break-all">
+                Sahabatqolbucahayabaitullah@gmail.com
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Bottom Footer -->
+      <div class="py-6 border-t border-white/10 text-center">
+        <p id="company-copyright" class="text-gray-400 text-sm">
+          © 2026 Sahabat Qolbu Cahaya Baitullah. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp Button -->
+  <a href="https://wa.me/6281255871984?text=Assalamualaikum,%20saya%20lihat%20di%20website%20sahabatqolbu.com%20%20dan%20knosultasi%20umroh%20bersama%20Sahabat%20Qolbu" 
+     target="_blank"
+     rel="noopener noreferrer"
+     class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors hover:scale-110"
+     aria-label="Hubungi via WhatsApp">
+    <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+
+  <!-- JavaScript -->
+  <script>
+    // Mobile Menu Toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    mobileMenuBtn.addEventListener('click', () => {
+      const isOpen = !mobileMenu.classList.contains('hidden');
+      mobileMenu.classList.toggle('hidden');
+      mobileMenuBtn.setAttribute('aria-expanded', !isOpen);
+    });
+    
+    // Close mobile menu when clicking on links
+    mobileMenu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        mobileMenuBtn.setAttribute('aria-expanded', 'false');
+      });
+    });
+    
+    // Header background on scroll
+    const header = document.getElementById('header');
+    
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        header.classList.add('bg-primary', 'shadow-lg');
+      } else {
+        header.classList.remove('bg-primary', 'shadow-lg');
+      }
+    });
+    
+    // Initialize header state
+    if (window.scrollY > 50) {
+      header.classList.add('bg-primary', 'shadow-lg');
+    }
+  </script>
+  
+  <!-- Structured Data for SEO -->
+  <script id="company-jsonld" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TravelAgency",
+    "name": "Sahabat Qolbu Cahaya Baitullah",
+    "description": "Biro perjalanan umroh amanah dan terpercaya di Bogor. Pendampingan ibadah profesional, harga transparan, dan pelayanan ramah.",
+    "url": "https://sahabatqolbu.com",
+    "telephone": "+6281255871984",
+    "email": "Sahabatqolbucahayabaitullah@gmail.com",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Ruko Jl. Ebony, Metland Transyogi No.11",
+      "addressLocality": "Cileungsi",
+      "addressRegion": "Jawa Barat",
+      "postalCode": "16820",
+      "addressCountry": "ID"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "-6.3889",
+      "longitude": "106.9530"
+    },
+    "sameAs": [
+      "https://www.instagram.com/sahabatqolbu.ofc/",
+      "https://www.facebook.com/sahabatqolbu.ofc"
+    ],
+    "openingHours": "Mo-Sa 08:00-17:00",
+    "priceRange": "$$"
+  }
+  </script>
+  <!-- Package Data & Renderer -->
+<script src="./js/packages-data.js"></script>
+<script src="./js/packages-renderer.js"></script>
+<script src="./js/company-sync.js"></script>
+</body>
+</html>

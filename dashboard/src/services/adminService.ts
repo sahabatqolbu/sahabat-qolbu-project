@@ -47,9 +47,7 @@ export const adminService = {
       role: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH"; // ✅ TAMBAH STAFF
       packageId?: number | null; // ✅ TAMBAH INI (optional untuk JAMAAH)
     }) => {
-      console.log("🚀 adminService.createUser called with:", data); // ✅ DEBUG
       const response = await api.post("/admin/users", data);
-      console.log("✅ Response:", response.data); // ✅ DEBUG
       return response.data;
     },
 
@@ -76,8 +74,10 @@ export const adminService = {
       return response.data;
     },
 
-    importUsers: async (users: any[]) => {
-      const response = await api.post("/admin/users/import", { users });
+    importUsers: async (users: unknown[]) => {
+      const response = await api.post("/admin/users/import", {
+        users: users as Record<string, unknown>[],
+      });
       return response.data;
     },
     bulkDelete: async (ids: number[]) => {
@@ -100,12 +100,12 @@ export const adminService = {
       obtainedBy?: string;
       search?: string;
     }) => {
-      const response = await api.get("/admin/agen", { params });
+      const response = await api.get("/agen/admin", { params });
       return response.data;
     },
 
     getById: async (id: number) => {
-      const response = await api.get(`/admin/agen/${id}`);
+      const response = await api.get(`/agen/admin/${id}`);
       return response.data;
     },
 
@@ -134,24 +134,53 @@ export const adminService = {
         isComplete?: boolean;
       },
     ) => {
-      const response = await api.put(`/admin/agen/${id}`, data);
+      const response = await api.put(`/agen/admin/${id}`, data);
       return response.data;
     },
 
     approve: async (id: number) => {
-      const response = await api.post(`/admin/agen/${id}/approve`);
+      const response = await api.post(`/agen/admin/${id}/approve`);
       return response.data;
     },
 
     reject: async (id: number, rejectionNote: string) => {
-      const response = await api.post(`/admin/agen/${id}/reject`, {
+      const response = await api.post(`/agen/admin/${id}/reject`, {
         rejectionNote,
       });
       return response.data;
     },
 
+    requestKtpReupload: async (id: number, note?: string) => {
+      const response = await api.post(`/agen/admin/${id}/request-ktp-reupload`, {
+        note,
+      });
+      return response.data;
+    },
+
+    uploadCertificatePdf: async (id: number, file: File) => {
+      const formData = new FormData();
+      formData.append("certificate", file);
+      const response = await api.post(`/agen/admin/${id}/upload-certificate`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
+
+    uploadIdCardDesignPdf: async (id: number, file: File) => {
+      const formData = new FormData();
+      formData.append("idCardDesign", file);
+      const response = await api.post(
+        `/agen/admin/${id}/upload-id-card-design`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+      return response.data;
+    },
+
     delete: async (id: number) => {
-      const response = await api.delete(`/admin/agen/${id}`);
+      const response = await api.delete(`/agen/admin/${id}`);
       return response.data;
     },
   },
@@ -351,6 +380,9 @@ export const adminService = {
     },
 
     updateMyProfile: async (data: {
+      fullName?: string;
+      email?: string;
+      phone?: string;
       fullNameKtp?: string;
       nickname?: string;
       birthPlace?: string;
@@ -363,6 +395,10 @@ export const adminService = {
       instagram?: string;
       facebook?: string; // ✅ TAMBAH INI
       tiktok?: string;
+      youtube?: string;
+      landingLogo?: string;
+      landingPrimaryColor?: string;
+      landingAccentColor?: string;
       accountName?: string;
       accountNumber?: string;
       bankName?: string;
@@ -379,9 +415,12 @@ export const adminService = {
       return response.data;
     },
 
-    uploadKtp: async (file: File) => {
+    uploadKtp: async (file: File, notificationId?: number) => {
       const formData = new FormData();
       formData.append("ktp", file); // ✅ HARUS "ktp" (sesuai backend)
+      if (notificationId) {
+        formData.append("notificationId", notificationId.toString());
+      }
 
       const response = await api.post("/agen/profile/upload-ktp", formData, {
         headers: {
@@ -401,6 +440,34 @@ export const adminService = {
           headers: { "Content-Type": "multipart/form-data" },
         },
       );
+      return response.data;
+    },
+
+    uploadProfilePhoto: async (file: File) => {
+      console.log("📸 uploadProfilePhoto called", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+      const formData = new FormData();
+      formData.append("photo", file);
+      const response = await api.post("/agen/profile/upload-photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
+
+    uploadLandingLogo: async (file: File) => {
+      const formData = new FormData();
+      formData.append("logo", file);
+      const response = await api.post("/agen/profile/upload-landing-logo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
+
+    requestDocsCreation: async () => {
+      const response = await api.post("/agen/profile/request-docs");
       return response.data;
     },
   },
@@ -446,48 +513,46 @@ export const adminService = {
       return response.data;
     },
 
-    // ✅ TAMBAH INI
     getJamaahNeedingReminder: async (type?: "document" | "payment") => {
-      const response = await api.get("/admin/reminders/jamaah", {
-        params: { type },
+      const response = await api.get("/notifications/admin/reminders/jamaah", {
+        params: { filter: type },
       });
       return response.data;
     },
 
     sendReminder: async (data: {
-      jamaahId: number;
+      userId: number;
       type: "REMINDER_DOCUMENT" | "REMINDER_PAYMENT" | "REMINDER_GENERAL";
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/admin/reminders/send", data);
+      const response = await api.post("/notifications/admin/reminders/send", data);
       return response.data;
     },
 
     sendBulkReminder: async (data: {
-      jamaahIds: number[];
+      userIds: number[];
       type: "REMINDER_DOCUMENT" | "REMINDER_PAYMENT" | "REMINDER_GENERAL";
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/admin/reminders/send-bulk", data);
+      const response = await api.post("/notifications/admin/reminders/send-bulk", data);
       return response.data;
     },
+
   },
 
-  // =====================================================
-  // REMINDERS
-  // =====================================================
+  // Backward-compatible reminders alias
   reminders: {
     getJamaahList: async (filter?: string) => {
-      const response = await api.get("/admin/reminders/jamaah", {
+      const response = await api.get("/notifications/admin/reminders/jamaah", {
         params: { filter },
       });
       return response.data;
     },
 
     getAgenList: async (filter?: string) => {
-      const response = await api.get("/admin/reminders/agen", {
+      const response = await api.get("/notifications/admin/reminders/agen", {
         params: { filter },
       });
       return response.data;
@@ -496,28 +561,28 @@ export const adminService = {
     send: async (data: {
       userId: number;
       type:
-      | "REMINDER_DOCUMENT"
-      | "REMINDER_PAYMENT"
-      | "REMINDER_PROFILE"
-      | "REMINDER_GENERAL";
+        | "REMINDER_DOCUMENT"
+        | "REMINDER_PAYMENT"
+        | "REMINDER_PROFILE"
+        | "REMINDER_GENERAL";
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/admin/reminders/send", data);
+      const response = await api.post("/notifications/admin/reminders/send", data);
       return response.data;
     },
 
     sendBulk: async (data: {
       userIds: number[];
       type:
-      | "REMINDER_DOCUMENT"
-      | "REMINDER_PAYMENT"
-      | "REMINDER_PROFILE"
-      | "REMINDER_GENERAL";
+        | "REMINDER_DOCUMENT"
+        | "REMINDER_PAYMENT"
+        | "REMINDER_PROFILE"
+        | "REMINDER_GENERAL";
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/admin/reminders/send-bulk", data);
+      const response = await api.post("/notifications/admin/reminders/send-bulk", data);
       return response.data;
     },
   },

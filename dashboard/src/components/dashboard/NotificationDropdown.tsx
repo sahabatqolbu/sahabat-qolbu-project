@@ -51,6 +51,7 @@ const notificationIcons: Record<string, any> = {
   REMINDER_PAYMENT: CreditCard,
   REMINDER_PROFILE: UserPlus,
   REMINDER_GENERAL: Bell,
+  AGENT_DOCS_REQUEST: FileText,
 };
 
 // Color mapping
@@ -70,6 +71,7 @@ const notificationColors: Record<string, string> = {
   REMINDER_PAYMENT: "bg-red-100 text-red-600",
   REMINDER_PROFILE: "bg-blue-100 text-blue-600",
   REMINDER_GENERAL: "bg-gray-100 text-gray-600",
+  AGENT_DOCS_REQUEST: "bg-indigo-100 text-indigo-600",
 };
 
 interface Notification {
@@ -86,8 +88,9 @@ export function NotificationDropdown() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuthStore();
-  const isAdmin = user?.role === "ADMIN";
-  const canUseAdminNotifFeatures = user?.role === "ADMIN" || user?.role === "STAFF";
+  const rolePrefix = user?.role === "FINANCE" ? "/finance" : user?.role === "STAFF" ? "/staff" : "/admin";
+  const canUseAdminNotifFeatures =
+    user?.role === "ADMIN" || user?.role === "STAFF" || user?.role === "FINANCE";
 
   // Fetch notifications
   const { data, isLoading } = useQuery({
@@ -219,7 +222,7 @@ export function NotificationDropdown() {
       <DropdownMenuContent align="end" className="w-80 md:w-96">
         {canUseAdminNotifFeatures && pendingApprovals > 0 && (
           <>
-            <Link href="/admin/agen" onClick={() => setIsOpen(false)}>
+            <Link href={`${rolePrefix}/agen`} onClick={() => setIsOpen(false)}>
               <div className="px-4 py-3 bg-gradient-to-r from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 transition-colors cursor-pointer border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -251,7 +254,7 @@ export function NotificationDropdown() {
         {/* ✅ REMINDER SHORTCUT - BAGIAN PALING ATAS */}
         {canUseAdminNotifFeatures && totalReminders > 0 && (
           <>
-            <Link href="/admin/reminders" onClick={() => setIsOpen(false)}>
+            <Link href={`${rolePrefix}/reminders`} onClick={() => setIsOpen(false)}>
               <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -392,7 +395,7 @@ export function NotificationDropdown() {
             <DropdownMenuSeparator />
             <div className="p-2">
               <Link
-                href="/admin/notifications"
+                href={`${rolePrefix}/notifications`}
                 onClick={() => setIsOpen(false)}
               >
                 <Button variant="ghost" className="w-full text-sm">

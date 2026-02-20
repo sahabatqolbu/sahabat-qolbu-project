@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getImageUrl } from "@/lib/utils"; // ✅ TAMBAHKAN
+import { getImageUrl } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -45,10 +45,10 @@ export default function CompanyProfilePage() {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   // ===== FETCH COMPANY PROFILE =====
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["company-profile"],
     queryFn: async () => {
-      const res = await api.get("/company");
+      const res = await api.get("/master/company");
       return res.data;
     },
   });
@@ -60,16 +60,8 @@ export default function CompanyProfilePage() {
 
       if (data.data.logo) {
         const logoPath = data.data.logo; // /uploads/company/xxx.webp
-
-        // ✅ FIX: Hardcode tanpa /api
-        const logoUrl = `http://localhost:5000${logoPath}`;
-
-        // console.log("🖼️ Logo Path from DB:", logoPath);
-        // console.log("🖼️ Logo URL:", logoUrl);
-
-        setLogoPreview(logoUrl);
+        setLogoPreview(getImageUrl(logoPath));
       } else {
-        // console.log("⚠️ No logo in database");
         setLogoPreview("");
       }
     }
@@ -77,7 +69,7 @@ export default function CompanyProfilePage() {
 
   // ===== UPDATE MUTATION =====
   const updateMutation = useMutation({
-    mutationFn: (data: any) => api.put("/company", data),
+    mutationFn: (data: any) => api.put("/master/company", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-profile"] });
 
@@ -104,7 +96,7 @@ export default function CompanyProfilePage() {
       const fd = new FormData();
       fd.append("logo", file);
 
-      const res = await api.post("/company/logo", fd, {
+      const res = await api.post("/master/company/logo", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;
@@ -112,14 +104,8 @@ export default function CompanyProfilePage() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["company-profile"] });
 
-      // ✅ FIX: Hardcode tanpa /api
       const newLogoPath = response.data.logo; // /uploads/company/xxx.webp
-      const newLogoUrl = `http://localhost:5000${newLogoPath}`;
-
-      console.log("✅ New Logo Path:", newLogoPath);
-      console.log("✅ New Logo URL:", newLogoUrl);
-
-      setLogoPreview(newLogoUrl);
+      setLogoPreview(getImageUrl(newLogoPath));
       setLogoFile(null);
 
       setShowSuccessAlert(true);
@@ -190,6 +176,18 @@ export default function CompanyProfilePage() {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-4">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Gagal memuat data profil perusahaan: {(error as any)?.response?.data?.message || (error as Error)?.message || "Terjadi kesalahan"}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

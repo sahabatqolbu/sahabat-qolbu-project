@@ -459,9 +459,13 @@ export default function UsersPage() {
                 </TableHeader>
                 <TableBody>
                   {displayedUsers.map((user: any) => (
-                    <TableRow key={user.id} className={selectedIds.includes(user.id) ? "bg-primary/5" : ""}>
+                    <TableRow
+                      key={user.id}
+                      className={`${selectedIds.includes(user.id) ? "bg-primary/5" : ""} hover:bg-gray-50/50 cursor-pointer group`}
+                      onClick={() => router.push(`/admin/users/${user.id}`)}
+                    >
                       {!isReadOnlyRole && (
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selectedIds.includes(user.id)}
                             onCheckedChange={(checked) => handleSelectOne(user.id, !!checked)}
@@ -494,7 +498,11 @@ export default function UsersPage() {
                         {user.registeredBy ? (
                           <div className="flex flex-col">
                             <span className="font-medium text-gray-900">{user.registeredBy.fullName}</span>
-                            <span className="text-xs text-gray-500">{user.registeredBy.role}</span>
+                            <span className="text-xs text-gray-500">
+                              {user.registeredBy.role === "UNKNOWN"
+                                ? "Role tidak diketahui"
+                                : user.registeredBy.role}
+                            </span>
                           </div>
                         ) : (
                           "-"
@@ -529,7 +537,7 @@ export default function UsersPage() {
                           })
                           : "-"}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">

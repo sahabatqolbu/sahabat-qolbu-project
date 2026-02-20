@@ -1,5 +1,5 @@
 // backend/src/middlewares/roleMiddleware.js
-import { forbiddenResponse } from "../utils/response.js";
+import { forbiddenResponse, unauthorizedResponse } from "../utils/response.js";
 
 // =====================================================
 // ROLE-BASED ACCESS CONTROL
@@ -7,7 +7,7 @@ import { forbiddenResponse } from "../utils/response.js";
 export const authorize = (allowedRoles = []) => {
   return (req, res, next) => {
     if (!req.user) {
-      return forbiddenResponse(res, "Authentication required");
+      return unauthorizedResponse(res, "Authentication required");
     }
 
     // Convert single role to array

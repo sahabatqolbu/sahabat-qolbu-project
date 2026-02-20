@@ -1,0 +1,46 @@
+name: Uploads Restore Drill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 20 1 * *"
+
+jobs:
+  restore-drill:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Prepare uploads backup snapshot
+        run: |
+          cd backend
+          npm run backup:uploads
+        env:
+          BACKUP_OUTPUT_DIR: ${{ vars.BACKUP_OUTPUT_DIR || 'backups/uploads' }}
+          BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS || '14' }}
+
+      - name: Run restore drill (latest backup)
+        run: |
+          cd backend
+          npm run restore:uploads
+        env:
+          BACKUP_OUTPUT_DIR: ${{ vars.BACKUP_OUTPUT_DIR || 'backups/uploads' }}
+          BACKUP_NAME: latest
+
+      - name: Run restore smoke check
+        run: |
+          cd backend
+          npm run restore:smoke

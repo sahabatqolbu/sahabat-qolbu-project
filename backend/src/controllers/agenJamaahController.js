@@ -8,18 +8,35 @@ import {
   agentData,
 } from "../db/schema.js";
 import { eq, like, or, and, desc, sql } from "drizzle-orm";
-import bcrypt from "bcrypt"; // atau bcryptjs
 import { sendCredentialsEmail } from "../utils/email.js"; // ✅ TAMBAH INI
+import { hashPassword, generatePassword } from "../utils/password.js";
+import {
+  successResponse,
+  errorResponse,
+  createdResponse,
+  notFoundResponse,
+} from "../utils/response.js";
+import { logger } from "../utils/logger.js";
 
-// ===== HELPER: Generate Random Password =====
-const generateRandomPassword = (length = 8) => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
+const parsePositiveInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
+
+const SAFE_USER_COLUMNS = {
+  id: true,
+  fullName: true,
+  email: true,
+  phone: true,
+  role: true,
+  isActive: true,
+  isEmailVerified: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+// Prefer shared secure password generator
 
 // ===== HELPER: Generate Booking Number =====
 const generateBookingNumber = async () => {
@@ -128,15 +145,13 @@ export const getMyJamaah = async (req, res, next) => {
     const userId = req.user.userId; // ✅ users.id = 3
     const { search, status, page = 1, limit = 20 } = req.query;
 
-    console.log("📥 AGEN GET MY JAMAAH - UserId:", userId);
+    logger.debug("Agen get my jamaah", { userId });
 
     // ❌ HAPUS LOOKUP agent_data - tidak perlu lagi!
     // const agent = await db.query.agentData.findFirst({
     //   where: eq(agentData.userId, agenUserId),
     // });
     // if (!agent) { ... }
-    // console.log("📥 Agent ID:", agent.id);
-
     // NOTE:
     // Sebagian data lama masih menyimpan agen_id = agent_data.id,
     // sedangkan data baru menyimpan agen_id = users.id.
@@ -182,7 +197,7 @@ export const getMyJamaah = async (req, res, next) => {
       orderBy: [desc(jamaahData.createdAt)],
     });
 
-    console.log(`✅ Found ${jamaahList.length} jamaah for userId: ${userId}`);
+    logger.info("Agen jamaah list loaded", { userId, count: jamaahList.length });
 
     let filteredList = jamaahList;
     if (search && search.trim() !== "") {
@@ -262,9 +277,7 @@ export const getMyJamaah = async (req, res, next) => {
         .length,
     };
 
-    return res.json({
-      success: true,
-      data: {
+    return successResponse(res, {
         jamaah: paginatedResult,
         stats,
         pagination: {
@@ -273,10 +286,9 @@ export const getMyJamaah = async (req, res, next) => {
           limit: parseInt(limit),
           totalPages,
         },
-      },
     });
   } catch (error) {
-    console.error("❌ AGEN GET MY JAMAAH ERROR:", error);
+    logger.error("Agen get my jamaah error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -289,7 +301,7 @@ export const getJamaahById = async (req, res, next) => {
     const userId = req.user.userId; // ✅ users.id
     const { id } = req.params;
 
-    console.log("📥 AGEN GET JAMAAH BY ID:", id, "- UserId:", userId);
+    logger.debug("Agen get jamaah by id", { userId, id });
 
     // ❌ HAPUS lookup agent_data
     // const agent = await db.query.agentData.findFirst({...});
@@ -309,7 +321,9 @@ export const getJamaahById = async (req, res, next) => {
         ownershipCondition,
       ),
       with: {
-        user: true,
+        user: {
+          columns: SAFE_USER_COLUMNS,
+        },
         package: {
           with: {
             hotelMakkah: true,
@@ -331,13 +345,10 @@ export const getJamaahById = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan atau bukan milik Anda",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan atau bukan milik Anda");
     }
 
-    return res.json({ success: true, data: jamaah });
+    return successResponse(res, jamaah);
   } catch (error) {
     next(error);
   }
@@ -351,19 +362,11 @@ export const createJamaah = async (req, res, next) => {
     const agenUserId = req.user.userId;
     const { fullName, email, phone, packageId, roomType } = req.body;
 
-    console.log("📥 AGEN CREATE JAMAAH:", {
-      fullName,
-      email,
-      phone,
-      packageId,
-    });
+    // logger.debug("Agen create jamaah", { packageId });
 
     // Validasi input
     if (!fullName || !email || !phone) {
-      return res.status(400).json({
-        success: false,
-        message: "Nama, email, dan nomor HP wajib diisi",
-      });
+      return errorResponse(res, "Nama, email, dan nomor HP wajib diisi", 400);
     }
 
     // Cari agent data
@@ -372,17 +375,15 @@ export const createJamaah = async (req, res, next) => {
     });
 
     if (!agent) {
-      return res.status(404).json({
-        success: false,
-        message: "Data agen tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data agen tidak ditemukan");
     }
 
     if (agent.status !== "APPROVED") {
-      return res.status(403).json({
-        success: false,
-        message: "Agen belum diapprove. Tidak dapat mendaftarkan jamaah.",
-      });
+      return errorResponse(
+        res,
+        "Agen belum diapprove. Tidak dapat mendaftarkan jamaah.",
+        403
+      );
     }
 
     // Cek email existing
@@ -399,18 +400,19 @@ export const createJamaah = async (req, res, next) => {
         where: eq(jamaahData.userId, existingUser.id),
       });
 
-      if (existingJamaah) {
-        return res.status(400).json({
-          success: false,
-          message: "Email sudah terdaftar sebagai jamaah",
-          bookingNumber: existingJamaah.bookingNumber,
-        });
+        if (existingJamaah) {
+        return errorResponse(
+          res,
+          "Email sudah terdaftar sebagai jamaah",
+          400,
+          { bookingNumber: existingJamaah.bookingNumber }
+        );
       }
       jamaahUserId = existingUser.id;
     } else {
       // Generate password
-      generatedPassword = generateRandomPassword(8);
-      const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+      generatedPassword = generatePassword(12);
+      const hashedPassword = await hashPassword(generatedPassword);
 
       const [newUser] = await db
         .insert(users)
@@ -427,7 +429,7 @@ export const createJamaah = async (req, res, next) => {
 
       jamaahUserId = newUser.id;
       isNewUser = true;
-      console.log("✅ New user created:", jamaahUserId);
+      // logger.security("Jamaah user created", { userId: jamaahUserId, createdBy: agenUserId });
     }
 
     // Get package price
@@ -463,48 +465,22 @@ export const createJamaah = async (req, res, next) => {
         outstanding: hargaPaket.toString(),
       })
     );
-
-
-console.log("✅ Created jamaah:", bookingNumber, "by agent:", agent.id);
-
-// ✅ KIRIM EMAIL KREDENSIAL
-if (isNewUser && generatedPassword) {
-  console.log("📧 Attempting to send credentials email to:", email);
-
-  try {
-    const emailResult = await sendCredentialsEmail(
-      email.toLowerCase(),
-      fullName.toUpperCase(),
-      generatedPassword,
-    );
-
-    if (emailResult && emailResult.success) {
-      console.log(
-        "✅ Email sent successfully! MessageId:",
-        emailResult.messageId,
-      );
-    } else {
-      console.error("❌ Email failed:", emailResult?.error || "Unknown error");
+    // Send credentials email for new accounts (best-effort)
+    if (isNewUser && generatedPassword) {
+      try {
+        await sendCredentialsEmail(
+          email.toLowerCase(),
+          fullName.toUpperCase(),
+          generatedPassword
+        );
+      } catch {
+        // ignore email errors
+      }
     }
-  } catch (emailError) {
-    console.error("❌ Email exception:", emailError.message);
-    console.error("❌ Full error:", emailError);
-  }
-} else {
-  console.log(
-    "⏭️ Skipping email - isNewUser:",
-    isNewUser,
-    "hasPassword:",
-    !!generatedPassword,
-  );
-}
 
-    return res.status(201).json({
-      success: true,
-      message: isNewUser
-        ? "Jamaah berhasil didaftarkan. Kredensial login telah dikirim ke email."
-        : "Jamaah berhasil didaftarkan dengan akun yang sudah ada.",
-      data: {
+    return createdResponse(
+      res,
+      {
         id: newJamaah.id,
         bookingNumber,
         userId: jamaahUserId,
@@ -512,9 +488,11 @@ if (isNewUser && generatedPassword) {
         isNewUser,
         emailSent: isNewUser,
       },
-    });
+      isNewUser
+        ? "Jamaah berhasil didaftarkan. Kredensial login telah dikirim ke email."
+        : "Jamaah berhasil didaftarkan dengan akun yang sudah ada."
+    );
   } catch (error) {
-    console.error("❌ AGEN CREATE JAMAAH ERROR:", error);
     next(error);
   }
 };
@@ -528,31 +506,30 @@ export const updateJamaah = async (req, res, next) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    console.log("📥 AGEN UPDATE JAMAAH:", id, updateData);
+    logger.debug("Agen update jamaah", { agenUserId, id });
+
+    const parsedId = parsePositiveInt(id);
+    if (!parsedId) {
+      return errorResponse(res, "ID jamaah tidak valid", 400);
+    }
 
     const agent = await db.query.agentData.findFirst({
       where: eq(agentData.userId, agenUserId),
     });
 
     if (!agent) {
-      return res.status(404).json({
-        success: false,
-        message: "Data agen tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data agen tidak ditemukan");
     }
 
     const existing = await db.query.jamaahData.findFirst({
       where: and(
-        eq(jamaahData.id, parseInt(id)),
+        eq(jamaahData.id, parsedId),
         or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id)),
       ),
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan atau bukan milik Anda",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan atau bukan milik Anda");
     }
 
     const allowedFields = [
@@ -587,7 +564,7 @@ export const updateJamaah = async (req, res, next) => {
       if (updateData[key] !== undefined) {
         if (key === "packageId" || key === "mahramId") {
           filteredData[key] = updateData[key]
-            ? parseInt(updateData[key])
+            ? parsePositiveInt(updateData[key])
             : null;
         } else {
           filteredData[key] = updateData[key];
@@ -597,7 +574,7 @@ export const updateJamaah = async (req, res, next) => {
 
     if (updateData.packageId && updateData.packageId !== existing.packageId) {
       const pkg = await db.query.packages.findFirst({
-        where: eq(packages.id, parseInt(updateData.packageId)),
+        where: eq(packages.id, parsePositiveInt(updateData.packageId)),
       });
       if (pkg) {
         const harga = parseFloat(pkg.discountPrice || pkg.price) || 0;
@@ -615,16 +592,13 @@ export const updateJamaah = async (req, res, next) => {
         ...filteredData,
         updatedAt: new Date(),
       })
-      .where(eq(jamaahData.id, parseInt(id)));
+      .where(eq(jamaahData.id, parsedId));
 
-    console.log("✅ Updated jamaah:", id);
+    logger.info("Agen jamaah updated", { agenUserId, jamaahId: parsedId });
 
-    return res.json({
-      success: true,
-      message: "Data jamaah berhasil diupdate",
-    });
+    return successResponse(res, null, "Data jamaah berhasil diupdate");
   } catch (error) {
-    console.error("❌ AGEN UPDATE JAMAAH ERROR:", error);
+    logger.error("Agen update jamaah error", error, { userId: req.user?.userId });
     next(error);
   }
 };
@@ -641,10 +615,7 @@ export const getDashboardStats = async (req, res, next) => {
     });
 
     if (!agent) {
-      return res.status(404).json({
-        success: false,
-        message: "Data agen tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data agen tidak ditemukan");
     }
 
     const jamaahList = await db.query.jamaahData.findMany({
@@ -673,19 +644,16 @@ export const getDashboardStats = async (req, res, next) => {
       .filter((j) => j.statusPayment === "LUNAS")
       .reduce((sum, j) => sum + parseFloat(j.hargaFinal || "0"), 0);
 
-    return res.json({
-      success: true,
-      data: {
+    return successResponse(res, {
         totalJamaah,
         totalLunas,
         totalCicilan,
         totalBelumBayar,
         totalRevenue,
         totalClosing: totalLunas,
-      },
     });
   } catch (error) {
-    console.error("❌ AGEN DASHBOARD STATS ERROR:", error);
+    logger.error("Agen dashboard stats error", error, { userId: req.user?.userId });
     next(error);
   }
 };

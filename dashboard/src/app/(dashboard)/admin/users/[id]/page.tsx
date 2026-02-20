@@ -4,6 +4,7 @@
 import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
+import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,8 @@ interface PageProps {
 export default function UserDetailPage({ params }: PageProps) {
   const { id: userId } = use(params);
   const { toast } = useToast();
+  const { user: authUser } = useAuthStore();
+  const isFinanceReadOnly = authUser?.role === "FINANCE";
 
   // ✅ FIX: Tambah staleTime & cacheTime untuk percepat loading
   const { data, isLoading, error } = useQuery({
@@ -121,12 +124,14 @@ export default function UserDetailPage({ params }: PageProps) {
             <p className="text-gray-600 mt-1">Informasi lengkap user</p>
           </div>
         </div>
-        <Link href={`/admin/users/${userId}/edit`}>
-          <Button className="bg-secondary hover:bg-secondary/90">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit User
-          </Button>
-        </Link>
+        {!isFinanceReadOnly && (
+          <Link href={`/admin/users/${userId}/edit`}>
+            <Button className="bg-secondary hover:bg-secondary/90">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit User
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Profile Card */}

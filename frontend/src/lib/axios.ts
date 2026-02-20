@@ -1,5 +1,7 @@
 import axios, {
   AxiosError,
+  AxiosRequestConfig,
+  AxiosProgressEvent,
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
@@ -55,7 +57,7 @@ api.interceptors.response.use(
     // Handle different error scenarios
     if (error.response) {
       const status = error.response.status;
-      const data: any = error.response.data;
+      const data = error.response.data as ApiErrorPayload | undefined;
 
       // Log error
       console.error("❌ API Error:", {
@@ -107,37 +109,42 @@ api.interceptors.response.use(
 export default api;
 
 // Type-safe API Response
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
   errors?: Record<string, string[]>;
 }
 
+interface ApiErrorPayload {
+  message?: string;
+  errors?: unknown;
+}
+
 // API Helper Functions
 export const apiClient = {
   // GET request
-  get: <T = any>(url: string, config?: any) =>
+  get: <T = unknown>(url: string, config?: AxiosRequestConfig) =>
     api.get<ApiResponse<T>>(url, config),
 
   // POST request
-  post: <T = any>(url: string, data?: any, config?: any) =>
+  post: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     api.post<ApiResponse<T>>(url, data, config),
 
   // PUT request
-  put: <T = any>(url: string, data?: any, config?: any) =>
+  put: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     api.put<ApiResponse<T>>(url, data, config),
 
   // PATCH request
-  patch: <T = any>(url: string, data?: any, config?: any) =>
+  patch: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     api.patch<ApiResponse<T>>(url, data, config),
 
   // DELETE request
-  delete: <T = any>(url: string, config?: any) =>
+  delete: <T = unknown>(url: string, config?: AxiosRequestConfig) =>
     api.delete<ApiResponse<T>>(url, config),
 
   // Upload file
-  upload: <T = any>(
+  upload: <T = unknown>(
     url: string,
     file: File,
     onProgress?: (progress: number) => void
@@ -149,7 +156,7 @@ export const apiClient = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-      onUploadProgress: (progressEvent) => {
+      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
         if (onProgress && progressEvent.total) {
           const progress = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total

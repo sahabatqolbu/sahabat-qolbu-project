@@ -3,7 +3,7 @@
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { adminService } from "@/services/adminService";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,22 @@ interface FormData {
   isComplete: boolean;
 }
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function EditAgenPage({ params }: PageProps) {
   const { id: agentId } = use(params);
   const router = useRouter();
@@ -63,12 +79,10 @@ export default function EditAgenPage({ params }: PageProps) {
   const queryClient = useQueryClient();
 
   const {
+    control,
     register,
     handleSubmit,
-    setValue,
-    watch,
     reset,
-    formState: { errors },
   } = useForm<FormData>();
 
   // ===== FETCH AGENT =====
@@ -123,11 +137,11 @@ export default function EditAgenPage({ params }: PageProps) {
       });
       router.push(`/admin/agen/${agentId}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Update Data",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -219,10 +233,16 @@ export default function EditAgenPage({ params }: PageProps) {
                   Agen nonaktif tidak dapat login
                 </p>
               </div>
-              <Switch
-                checked={watch("isActive")}
-                onCheckedChange={(checked) => setValue("isActive", checked)}
-                disabled={updateMutation.isPending}
+              <Controller
+                control={control}
+                name="isActive"
+                render={({ field }) => (
+                  <Switch
+                    checked={Boolean(field.value)}
+                    onCheckedChange={field.onChange}
+                    disabled={updateMutation.isPending}
+                  />
+                )}
               />
             </div>
           </CardContent>
@@ -410,41 +430,51 @@ export default function EditAgenPage({ params }: PageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Bintang</Label>
-                <Select
-                  value={watch("currentStar")?.toString()}
-                  onValueChange={(value) =>
-                    setValue("currentStar", parseInt(value))
-                  }
-                  disabled={updateMutation.isPending}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Pra-Agent</SelectItem>
-                    <SelectItem value="1">Bintang 1</SelectItem>
-                    <SelectItem value="2">Bintang 2</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="currentStar"
+                  render={({ field }) => (
+                    <Select
+                      value={String(field.value ?? 0)}
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      disabled={updateMutation.isPending}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Pra-Agent</SelectItem>
+                        <SelectItem value="1">Bintang 1</SelectItem>
+                        <SelectItem value="2">Bintang 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Status Approval</Label>
-                <Select
-                  value={watch("status")}
-                  onValueChange={(value) => setValue("status", value)}
-                  disabled={updateMutation.isPending}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="APPROVED">Approved</SelectItem>
-                    <SelectItem value="REJECTED">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={updateMutation.isPending}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DRAFT">Draft</SelectItem>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="APPROVED">Approved</SelectItem>
+                        <SelectItem value="REJECTED">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
 
@@ -455,10 +485,16 @@ export default function EditAgenPage({ params }: PageProps) {
                   Tandai jika semua data sudah lengkap
                 </p>
               </div>
-              <Switch
-                checked={watch("isComplete")}
-                onCheckedChange={(checked) => setValue("isComplete", checked)}
-                disabled={updateMutation.isPending}
+              <Controller
+                control={control}
+                name="isComplete"
+                render={({ field }) => (
+                  <Switch
+                    checked={Boolean(field.value)}
+                    onCheckedChange={field.onChange}
+                    disabled={updateMutation.isPending}
+                  />
+                )}
               />
             </div>
           </CardContent>

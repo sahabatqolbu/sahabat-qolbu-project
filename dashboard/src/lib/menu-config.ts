@@ -23,6 +23,7 @@ import {
   User,
   UserCog,
   Briefcase,
+  Globe,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -169,22 +170,22 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
     },
     {
       label: "Kelola User",
-      href: "/admin/users",
+      href: "/finance/users",
       icon: Users,
     },
     {
       label: "Paket Umrah",
-      href: "/admin/packages",
+      href: "/finance/packages",
       icon: Package,
     },
     {
       label: "Kelola Jamaah",
-      href: "/admin/jamaah",
+      href: "/finance/jamaah",
       icon: UserCheck,
     },
     {
       label: "Kelola Agen",
-      href: "/admin/agen",
+      href: "/finance/agen",
       icon: UserCog,
     },
     {
@@ -194,12 +195,12 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
     },
     {
       label: "Transaksi",
-      href: "/admin/transactions",
+      href: "/finance/transactions",
       icon: Wallet,
     },
     {
       label: "Laporan",
-      href: "/admin/reports",
+      href: "/finance/reports",
       icon: FileText,
     },
   ],
@@ -235,6 +236,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Komisi Saya",
       href: "/agen/commissions",
       icon: Wallet,
+    },
+    {
+      label: "Kelola Website",
+      href: "/agen/website",
+      icon: Globe,
     },
     {
       label: "Paket Tersedia",
@@ -284,22 +290,22 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
     },
     {
       label: "Kelola User",
-      href: "/admin/users",
+      href: "/staff/users",
       icon: Users,
     },
     {
       label: "Paket Umrah",
-      href: "/admin/packages",
+      href: "/staff/packages",
       icon: Package,
     },
     {
       label: "Kelola Jamaah",
-      href: "/admin/jamaah",
+      href: "/staff/jamaah",
       icon: UserCheck,
     },
     {
       label: "Kelola Agen",
-      href: "/admin/agen",
+      href: "/staff/agen",
       icon: UserCog,
     },
     {
@@ -308,42 +314,42 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       children: [
         {
           label: "Hotel",
-          href: "/admin/master/hotels",
+          href: "/staff/master/hotels",
           icon: Building2,
         },
         {
           label: "Maskapai",
-          href: "/admin/master/airlines",
+          href: "/staff/master/airlines",
           icon: Plane,
         },
         {
           label: "Bandara",
-          href: "/admin/master/airports",
+          href: "/staff/master/airports",
           icon: MapPin,
         },
         {
           label: "Bank",
-          href: "/admin/master/banks",
+          href: "/staff/master/banks",
           icon: Landmark,
         },
         {
           label: "Level Agen",
-          href: "/admin/master/agent-levels",
+          href: "/staff/master/agent-levels",
           icon: Shield,
         },
         {
           label: "Persyaratan Agen",
-          href: "/admin/master/agent-requirements",
+          href: "/staff/master/agent-requirements",
           icon: FileCheck,
         },
         {
           label: "Tujuan Bergabung",
-          href: "/admin/master/agent-purposes",
+          href: "/staff/master/agent-purposes",
           icon: Target,
         },
         {
           label: "Periode Closing",
-          href: "/admin/master/periods",
+          href: "/staff/master/periods",
           icon: Calendar,
         },
       ],
@@ -354,24 +360,24 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       children: [
         {
           label: "Testimonial",
-          href: "/admin/content/testimonials",
+          href: "/staff/content/testimonials",
           icon: MessageSquare,
         },
         {
           label: "FAQ",
-          href: "/admin/content/faqs",
+          href: "/staff/content/faqs",
           icon: HelpCircle,
         },
         {
           label: "Gallery",
-          href: "/admin/content/gallery",
+          href: "/staff/content/gallery",
           icon: ImageIcon,
         },
       ],
     },
     {
       label: "Profil Saya",
-      href: "/admin/profile",
+      href: "/staff/profile",
       icon: User,
     },
 

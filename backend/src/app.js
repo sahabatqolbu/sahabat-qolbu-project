@@ -15,12 +15,33 @@ import {
 import cors from "cors";
 import helmet from "helmet";
 import { apiLimiter } from "./middlewares/rateLimiter.js";
+import {
+  forbiddenResponse,
+  notFoundResponse,
+} from "./utils/response.js";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+
+// Ensure req.ip uses X-Forwarded-For behind a proxy (nginx/vercel/etc.)
+// Configure via env TRUST_PROXY ("true", "false", or a number like "1").
+const trustProxyEnv = process.env.TRUST_PROXY;
+if (trustProxyEnv === "true") {
+  app.set("trust proxy", true);
+} else if (trustProxyEnv === "false") {
+  app.set("trust proxy", false);
+} else if (trustProxyEnv) {
+  const hopCount = Number.parseInt(trustProxyEnv, 10);
+  if (Number.isFinite(hopCount)) {
+    app.set("trust proxy", hopCount);
+  }
+} else if (process.env.NODE_ENV === "production") {
+  // Sensible default for typical single reverse-proxy setups.
+  app.set("trust proxy", 1);
+}
 
 logger.info("🚀 Application starting...");
 
@@ -52,16 +73,6 @@ if (process.env.NODE_ENV === "development") {
 const uploadsPath = path.join(__dirname, "../public/uploads");
 logger.info("Static files path configured", { path: path.resolve(uploadsPath) });
 
-const publicUploadFolders = new Set([
-  "company",
-  "hotels",
-  "airlines",
-  "packages",
-  "itinerary",
-  "jamaah",
-  "general",
-]);
-
 const csrfProtectedMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 const csrfProtection = (req, res, next) => {
@@ -79,39 +90,102 @@ const csrfProtection = (req, res, next) => {
   const fetchSite = req.get("sec-fetch-site");
 
   if (fetchSite && !["same-origin", "same-site", "none"].includes(fetchSite)) {
-    return res.status(403).json({
-      success: false,
-      message: "Permintaan ditolak karena sumber request tidak valid",
-    });
+    return forbiddenResponse(
+      res,
+      "Permintaan ditolak karena sumber request tidak valid",
+      "SECURITY_INVALID_ORIGIN"
+    );
   }
 
   if (!origin && !referer) {
-    return next();
+    return forbiddenResponse(
+      res,
+      "Permintaan ditolak karena origin/referer tidak tersedia",
+      "SECURITY_ORIGIN_REQUIRED"
+    );
   }
 
   if (isTrustedOrigin(origin) || isTrustedOrigin(referer)) {
     return next();
   }
 
-  return res.status(403).json({
-    success: false,
-    message: "Permintaan ditolak karena validasi keamanan origin gagal",
-  });
+  return forbiddenResponse(
+    res,
+    "Permintaan ditolak karena validasi keamanan origin gagal",
+    "SECURITY_INVALID_ORIGIN"
+  );
 };
 
 app.use(csrfProtection);
 
-const publicUploadsOnly = (req, res, next) => {
-  const [folder] = req.path.split("/").filter(Boolean);
+const blockApiDocsExposure = (req, res, next) => {
+  const lowerPath = String(req.path || "").toLowerCase();
+  const blockedPrefixes = [
+    "/api/openapi",
+    "/api/docs",
+    "/api/swagger",
+    "/api/v1/openapi",
+    "/api/v1/docs",
+    "/api/v1/swagger",
+  ];
 
-  if (!folder || !publicUploadFolders.has(folder)) {
-    return res.status(403).json({
-      success: false,
-      message: "Akses file ditolak",
-    });
+  if (blockedPrefixes.some((prefix) => lowerPath.startsWith(prefix))) {
+    return forbiddenResponse(
+      res,
+      "Dokumentasi API publik dinonaktifkan",
+      "SECURITY_DOCS_DISABLED"
+    );
   }
 
-  next();
+  return next();
+};
+
+app.use(blockApiDocsExposure);
+
+const publicUploadsOnly = (req, res, next) => {
+  // Restrict static access to public asset folders only.
+  // Sensitive folders (agents/jamaah/documents/payments/profiles) must be served
+  // via authenticated endpoints.
+  const normalizedPath = String(req.path || "/").replace(/^\/+/, "");
+  const folder = normalizedPath.split("/")[0].toLowerCase();
+
+  // Route prefix differences:
+  // - /uploads/*  -> req.path starts with "folder/..."
+  // - /api/uploads/* -> req.path may start with "uploads/folder/..."
+  const effectiveFolder =
+    folder === "uploads"
+      ? normalizedPath.split("/")[1]?.toLowerCase() || ""
+      : folder;
+
+  const publicFolders = new Set([
+    "company",
+    "hotels",
+    "airlines",
+    "packages",
+    "itinerary",
+    "general",
+  ]);
+
+  const protectedFolders = new Set([
+    "profiles",
+    "jamaah",
+    "agents",
+    "documents",
+    "payments",
+  ]);
+
+  if (!effectiveFolder || publicFolders.has(effectiveFolder)) {
+    return next();
+  }
+
+  if (protectedFolders.has(effectiveFolder)) {
+    return forbiddenResponse(
+      res,
+      "Akses file sensitif wajib melalui endpoint terproteksi"
+    );
+  }
+
+  return forbiddenResponse(res, "Akses folder upload tidak diizinkan");
 };
 
 // ✅ Serve untuk /uploads (tanpa /api)
@@ -135,12 +209,28 @@ app.use(
 );
 
 // 8. Health check
+import { getEmailStats } from "./utils/email.js";
+
 app.get("/health", (req, res) => res.json({ status: "OK" }));
+
+app.get("/health/detailed", async (req, res) => {
+  const emailQueueStats = await getEmailStats();
+  res.json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    emailQueue: emailQueueStats,
+  });
+});
+
 app.get("/api", (req, res) => res.json({ message: "Sahabat Qolbu API" }));
 
 // ===== 9. API ROUTES (INI YANG PENTING!) =====
 import apiRoutes from "./routes/api.js";
+import protectedUploadsRoutes from "./routes/protectedUploads.js";
 app.use("/api", apiRoutes);
+app.use("/api/protected-uploads", protectedUploadsRoutes);
+app.use("/api/v1", apiRoutes);
+app.use("/api/v1/protected-uploads", protectedUploadsRoutes);
 
 // ===== 10. 404 HANDLER =====
 app.use((req, res) => {
@@ -149,10 +239,7 @@ app.use((req, res) => {
     path: req.path,
     requestId: req.id 
   });
-  res.status(404).json({
-    success: false,
-    message: `Endpoint ${req.method} ${req.path} tidak ditemukan`,
-  });
+  return notFoundResponse(res, `Endpoint ${req.method} ${req.path} tidak ditemukan`);
 });
 
 // ===== 11. ERROR HANDLER (MUST BE LAST) =====

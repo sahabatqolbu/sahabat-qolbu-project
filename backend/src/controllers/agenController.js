@@ -5,6 +5,7 @@ import {
   jamaahData,
   packages,
   agentData,
+  notifications,
   agentLevels,
   agentBenefits,
   agentRequirements,
@@ -14,10 +15,31 @@ import {
   periods,
 } from "../db/schema.js";
 import { eq, and, gte, lte, desc, asc, count, sql } from "drizzle-orm";
-import { hashPassword } from "../utils/password.js";
+import { hashPassword, generatePassword } from "../utils/password.js";
+import { upload as uploadMemory, optimizeImage } from "../utils/upload.js";
+import crypto from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { sendWelcomeEmail } from "../utils/email.js";
-import { notifyAdmins } from "./notificationController.js";
+import {
+  createNotification,
+  notifyAdmins,
+  notifyAdminAndStaff,
+} from "./notificationController.js";
+
+const KTP_REUPLOAD_EXPIRY_HOURS = Number.parseInt(
+  process.env.AGENT_KTP_REUPLOAD_EXPIRY_HOURS || "72",
+  10
+);
+
+const isKtpReuploadRequestExpired = (createdAt) => {
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(created)) return true;
+  const expiresAt = created + KTP_REUPLOAD_EXPIRY_HOURS * 60 * 60 * 1000;
+  return Date.now() > expiresAt;
+};
 
 const getBookedSeats = async (packageId) => {
   const [result] = await db
@@ -76,8 +98,8 @@ export const createJamaahAccount = async (req, res, next) => {
       return errorResponse(res, "Email sudah terdaftar", 409);
     }
 
-    // Generate random password
-    const randomPassword = Math.random().toString(36).slice(-8) + "Aa1!";
+    // Generate secure random password
+    const randomPassword = generatePassword(12);
     const hashedPassword = await hashPassword(randomPassword);
 
     // Start transaction
@@ -134,7 +156,6 @@ export const createJamaahAccount = async (req, res, next) => {
         userId: result.userId,
         jamaahId: result.jamaahId,
         email: email,
-        temporaryPassword: randomPassword,
         message:
           "Akun jamaah berhasil dibuat. Credentials telah dikirim via email.",
       },
@@ -154,7 +175,7 @@ export const getMyJamaahList = async (req, res, next) => {
     // ✅ jamaah_data.agen_id = users.id (bukan agent_data.id!)
     const userId = req.user.userId;
 
-    console.log("📥 AGEN GET MY JAMAAH - UserId:", userId);
+    // logger.debug("Agen get my jamaah", { userId });
     // ❌ HAPUS LOG "Agent ID" - tidak perlu lookup agent_data lagi!
 
     // ✅ Query langsung dengan userId
@@ -173,11 +194,11 @@ export const getMyJamaahList = async (req, res, next) => {
       orderBy: [desc(jamaahData.createdAt)],
     });
 
-    console.log(`✅ Found ${jamaahList.length} jamaah for userId: ${userId}`);
+    // logger.debug("Agen jamaah count", { count: jamaahList.length, userId });
 
     return successResponse(res, jamaahList);
   } catch (error) {
-    console.error("❌ getMyJamaahList error:", error);
+    // Let global error handler log details
     next(error);
   }
 };
@@ -503,6 +524,50 @@ export const reject = async (req, res, next) => {
 };
 
 // =====================================================
+// ADMIN: REQUEST KTP REUPLOAD
+// =====================================================
+export const requestKtpReupload = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const agent = await db.query.users.findFirst({
+      where: and(eq(users.id, parseInt(id, 10)), eq(users.role, "AGEN")),
+      with: {
+        agentData: true,
+      },
+    });
+
+    if (!agent || !agent.agentData) {
+      return errorResponse(res, "Agen tidak ditemukan", 404);
+    }
+
+    const requestNote =
+      typeof note === "string" && note.trim()
+        ? `Catatan admin: ${note.trim()}`
+        : "Mohon upload ulang foto KTP dengan gambar yang jelas dan tidak blur.";
+
+    await createNotification({
+      userId: agent.id,
+      type: "AGENT_KTP_REUPLOAD",
+      title: "Permintaan Upload Ulang Foto KTP",
+      message: `${requestNote}\nBatas upload: ${KTP_REUPLOAD_EXPIRY_HOURS} jam sejak notifikasi ini dibuat.`,
+      link: "/agen/profile",
+      referenceId: agent.id,
+      referenceType: "AGENT_KTP_REUPLOAD",
+    });
+
+    return successResponse(
+      res,
+      null,
+      "Permintaan upload ulang KTP berhasil dikirim ke agen"
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =====================================================
 // ADMIN: DELETE AGENT
 // =====================================================
 export const deleteAgent = async (req, res, next) => {
@@ -605,6 +670,10 @@ export const updateMyProfile = async (req, res, next) => {
       instagram,
       facebook, // ✅ TAMBAH INI
       tiktok,
+      youtube,
+      landingLogo,
+      landingPrimaryColor,
+      landingAccentColor,
       accountName,
       accountNumber,
       bankName,
@@ -656,6 +725,10 @@ export const updateMyProfile = async (req, res, next) => {
         instagram,
         facebook, // ✅ TAMBAH INI
         tiktok,
+        youtube,
+        landingLogo,
+        landingPrimaryColor,
+        landingAccentColor,
         accountName,
         accountNumber,
         bankName,
@@ -767,83 +840,92 @@ export const submitForApproval = async (req, res, next) => {
 };
 
 
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+// NOTE: File upload uses shared secure utilities in ../utils/upload.js
 
-// ===== MULTER CONFIG =====
-const storage = multer.diskStorage({
+const agentDocsStorage = {
   destination: (req, file, cb) => {
-    const uploadPath = path.join(process.cwd(), "public", "uploads", "agents");
+    const uploadPath = path.join(process.cwd(), "public", "uploads", "documents");
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
+    const ext = path.extname(file.originalname).toLowerCase();
+    const safeExt = ext === ".pdf" ? ".pdf" : ".pdf";
+    const id = crypto.randomBytes(8).toString("hex");
+    cb(null, `${file.fieldname}-${Date.now()}-${id}${safeExt}`);
   },
-});
+};
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // ✅ Naikkan jadi 5MB
+const uploadAgentDocs = multer({
+  storage: multer.diskStorage(agentDocsStorage),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    console.log("📸 UPLOAD FILE:", {
-      fieldname: file.fieldname,
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-    });
-
-    // ✅ PERBAIKI REGEX (case-insensitive)
-    const allowedMimes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp", // ✅ Tambah webp (modern browser)
-    ];
-
-    const allowedExts = /\.(jpeg|jpg|png|webp)$/i;
-
+    const allowedMimes = ["application/pdf"];
+    const allowedExts = /\.pdf$/i;
     const mimeValid = allowedMimes.includes(file.mimetype);
     const extValid = allowedExts.test(file.originalname.toLowerCase());
 
-    console.log("✅ Validation:", { mimeValid, extValid });
-
     if (mimeValid && extValid) {
       return cb(null, true);
-    } else {
-      console.error("❌ REJECTED:", file.mimetype, file.originalname);
-      cb(
-        new Error(
-          `File tidak valid. Mimetype: ${file.mimetype}, Filename: ${file.originalname}`
-        )
-      );
     }
+
+    cb(new Error("File harus berformat PDF"));
   },
 });
 
 // ===== UPLOAD KTP =====
 export const uploadKtp = [
-  upload.single("ktp"),
+  uploadMemory.single("ktp"),
+  optimizeImage("documents"),
   async (req, res, next) => {
     try {
       const userId = req.user.userId;
+      const notificationId = req.body?.notificationId
+        ? parseInt(req.body.notificationId, 10)
+        : null;
 
-      if (!req.file) {
+      if (!req.uploadedFile?.path) {
         return errorResponse(res, "File KTP tidak ditemukan", 400);
       }
 
-      // ✅ GANTI INI - return FULL URL
-      const baseUrl = process.env.BACKEND_URL || `http://localhost:5000`;
-      const fileUrl = `${baseUrl}/uploads/agents/${req.file.filename}`;
+      if (notificationId && !Number.isNaN(notificationId)) {
+        const requestNotif = await db.query.notifications.findFirst({
+          where: and(
+            eq(notifications.id, notificationId),
+            eq(notifications.userId, userId),
+            eq(notifications.referenceType, "AGENT_KTP_REUPLOAD")
+          ),
+        });
 
-      console.log("✅ KTP UPLOADED:", fileUrl); // ✅ Debug
+        if (!requestNotif) {
+          return errorResponse(
+            res,
+            "Permintaan upload ulang tidak ditemukan",
+            404
+          );
+        }
+
+        if (requestNotif.isRead) {
+          return errorResponse(
+            res,
+            "Permintaan upload ulang ini sudah digunakan",
+            400
+          );
+        }
+
+        if (isKtpReuploadRequestExpired(requestNotif.createdAt)) {
+          return errorResponse(
+            res,
+            "Permintaan upload ulang sudah kedaluwarsa",
+            400
+          );
+        }
+      }
+
+      // ✅ GANTI INI - return FULL URL
+      const fileUrl = req.uploadedFile.path;
 
       // Update agent data
       await db
@@ -851,7 +933,31 @@ export const uploadKtp = [
         .set({ ktpPhoto: fileUrl })
         .where(eq(agentData.userId, userId));
 
-      return successResponse(res, { url: fileUrl }, "KTP berhasil diupload");
+      const updatedAgent = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        with: { agentData: true },
+      });
+
+      if (notificationId && !Number.isNaN(notificationId)) {
+        await db
+          .update(notifications)
+          .set({
+            isRead: true,
+            readAt: new Date(),
+          })
+          .where(
+            and(
+              eq(notifications.id, notificationId),
+              eq(notifications.userId, userId)
+            )
+          );
+      }
+
+      return successResponse(
+        res,
+        { url: fileUrl, agent: updatedAgent },
+        "KTP berhasil diupload"
+      );
     } catch (error) {
       next(error);
     }
@@ -860,18 +966,17 @@ export const uploadKtp = [
 
 // ===== UPLOAD PAYMENT PROOF =====
 export const uploadPaymentProof = [
-  upload.single("proof"),
+  uploadMemory.single("proof"),
+  optimizeImage("payments"),
   async (req, res, next) => {
     try {
       const userId = req.user.userId;
 
-      if (!req.file) {
+      if (!req.uploadedFile?.path) {
         return errorResponse(res, "File bukti pembayaran tidak ditemukan", 400);
       }
 
-      // ✅ SAMA - return FULL URL
-      const baseUrl = process.env.BACKEND_URL || `http://localhost:5000`;
-      const fileUrl = `${baseUrl}/uploads/agents/${req.file.filename}`;
+      const fileUrl = req.uploadedFile.path;
 
       // Update agent data
       await db
@@ -889,3 +994,185 @@ export const uploadPaymentProof = [
     }
   },
 ];
+
+// ===== ADMIN/STAFF: UPLOAD AGENT CERTIFICATE PDF =====
+export const uploadCertificatePdf = [
+  uploadAgentDocs.single("certificate"),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return errorResponse(res, "File sertifikat tidak ditemukan", 400);
+      }
+
+      const agent = await db.query.users.findFirst({
+        where: and(eq(users.id, parseInt(id, 10)), eq(users.role, "AGEN")),
+        with: { agentData: true },
+      });
+
+      if (!agent || !agent.agentData) {
+        return errorResponse(res, "Agen tidak ditemukan", 404);
+      }
+
+      const baseUrl = process.env.BACKEND_URL || "http://localhost:5000";
+      const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
+
+      await db
+        .update(agentData)
+        .set({ certificateFile: fileUrl })
+        .where(eq(agentData.userId, parseInt(id, 10)));
+
+      await createNotification({
+        userId: agent.id,
+        type: "SYSTEM",
+        title: "Sertifikat Agen Tersedia",
+        message: "Sertifikat agen kamu sudah diupload. Silakan cek di halaman profil.",
+        link: "/agen/profile",
+        referenceId: agent.id,
+        referenceType: "agent_certificate",
+      });
+
+      return successResponse(res, { url: fileUrl }, "Sertifikat berhasil diupload");
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
+// ===== UPLOAD PROFILE PHOTO =====
+export const uploadProfilePhoto = [
+  uploadMemory.single("photo"),
+  optimizeImage("profiles"),
+  async (req, res, next) => {
+    try {
+      const userId = req.user.userId;
+
+      if (!req.uploadedFile?.path) {
+        return errorResponse(res, "File foto profil tidak ditemukan", 400);
+      }
+
+      const fileUrl = req.uploadedFile.path;
+
+      await db
+        .update(agentData)
+        .set({ profilePhoto: fileUrl })
+        .where(eq(agentData.userId, userId));
+
+      const updatedAgent = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        with: { agentData: true },
+      });
+
+      return successResponse(
+        res,
+        { url: fileUrl, agent: updatedAgent },
+        "Foto profil berhasil diupload"
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
+export const uploadLandingLogo = [
+  uploadMemory.single("logo"),
+  optimizeImage("general", { outputFormat: "png" }),
+  async (req, res, next) => {
+    try {
+      const userId = req.user.userId;
+
+      if (!req.uploadedFile?.path) {
+        return errorResponse(res, "File logo landing tidak ditemukan", 400);
+      }
+
+      const fileUrl = req.uploadedFile.path;
+
+      await db
+        .update(agentData)
+        .set({ landingLogo: fileUrl })
+        .where(eq(agentData.userId, userId));
+
+      return successResponse(res, { url: fileUrl }, "Logo landing berhasil diupload");
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
+// ===== ADMIN/STAFF: UPLOAD AGENT ID CARD DESIGN PDF =====
+export const uploadIdCardDesignPdf = [
+  uploadAgentDocs.single("idCardDesign"),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.file) {
+        return errorResponse(res, "File desain ID card tidak ditemukan", 400);
+      }
+
+      const agent = await db.query.users.findFirst({
+        where: and(eq(users.id, parseInt(id, 10)), eq(users.role, "AGEN")),
+        with: { agentData: true },
+      });
+
+      if (!agent || !agent.agentData) {
+        return errorResponse(res, "Agen tidak ditemukan", 404);
+      }
+
+      const baseUrl = process.env.BACKEND_URL || "http://localhost:5000";
+      const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
+
+      await db
+        .update(agentData)
+        .set({ idCardDesignFile: fileUrl })
+        .where(eq(agentData.userId, parseInt(id, 10)));
+
+      await createNotification({
+        userId: agent.id,
+        type: "SYSTEM",
+        title: "Desain ID Card Agen Tersedia",
+        message: "Desain ID card kamu sudah diupload. Silakan cek di halaman profil.",
+        link: "/agen/profile",
+        referenceId: agent.id,
+        referenceType: "agent_id_card_design",
+      });
+
+      return successResponse(
+        res,
+        { url: fileUrl },
+        "Desain ID card berhasil diupload"
+      );
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
+// ===== AGEN: REQUEST ADMIN/STAFF TO CREATE DOCS =====
+export const requestAgentDocs = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const agent = await db.query.users.findFirst({
+      where: and(eq(users.id, userId), eq(users.role, "AGEN")),
+      with: { agentData: true },
+    });
+
+    if (!agent || !agent.agentData) {
+      return errorResponse(res, "Data agen tidak ditemukan", 404);
+    }
+
+    await notifyAdminAndStaff({
+      type: "AGENT_DOCS_REQUEST",
+      title: "Permintaan Pembuatan Dokumen Agen",
+      message: `${agent.fullName} meminta pembuatan sertifikat dan desain ID card.`,
+      link: `/admin/agen/${agent.id}`,
+      referenceId: agent.id,
+      referenceType: "agent_docs_request",
+    });
+
+    return successResponse(res, null, "Permintaan berhasil dikirim ke admin dan staff");
+  } catch (error) {
+    next(error);
+  }
+};

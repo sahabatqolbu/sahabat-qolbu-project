@@ -35,6 +35,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { BottomNav } from "@/components/mobile/BottomNav";
 
@@ -65,6 +66,12 @@ export default function AgenProfilePage() {
 
   const profile = profileData?.data;
   const agentData = profile?.agentData;
+  const profilePhotoSrc = agentData?.profilePhoto
+    ? `${getImageUrl(agentData.profilePhoto)}${getImageUrl(agentData.profilePhoto).includes("?") ? "&" : "?"}v=${agentData?.updatedAt ? new Date(agentData.updatedAt).getTime() : Date.now()}`
+    : null;
+  const ktpImageSrc = agentData?.ktpPhoto
+    ? `${getImageUrl(agentData.ktpPhoto)}${getImageUrl(agentData.ktpPhoto).includes("?") ? "&" : "?"}v=${agentData?.updatedAt ? new Date(agentData.updatedAt).getTime() : Date.now()}`
+    : null;
   const levels = levelsData?.data || [];
   const purposes = purposesData?.data || [];
 
@@ -173,12 +180,20 @@ export default function AgenProfilePage() {
           <CardContent className="p-6">
             {/* Avatar & Name */}
             <div className="flex items-center gap-4 mb-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">
-                  {(profile?.fullName || agentData?.fullNameKtp || "A").charAt(
-                    0,
-                  )}
-                </span>
+              <div className="h-16 w-16 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center">
+                {profilePhotoSrc ? (
+                  <img
+                    src={profilePhotoSrc}
+                    alt="Foto Profil"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-primary">
+                    {(profile?.fullName || agentData?.fullNameKtp || "A").charAt(
+                      0,
+                    )}
+                  </span>
+                )}
               </div>
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-gray-900">
@@ -498,11 +513,13 @@ export default function AgenProfilePage() {
             <CardContent>
               <div className="flex items-center gap-3">
                 <div className="h-16 w-24 rounded-lg overflow-hidden border">
-                  <img
-                    src={agentData.ktpPhoto}
-                    alt="KTP"
-                    className="w-full h-full object-cover"
-                  />
+                  {ktpImageSrc && (
+                    <img
+                      src={ktpImageSrc}
+                      alt="KTP"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <div>
                   <Badge className="bg-green-100 text-green-700 border-0">
@@ -517,6 +534,67 @@ export default function AgenProfilePage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Sertifikat & Desain ID Card */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Sertifikat & ID Card
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              disabled={!agentData?.certificateFile}
+              onClick={() => {
+                if (agentData?.certificateFile) {
+                  window.open(getImageUrl(agentData.certificateFile), "_blank");
+                }
+              }}
+            >
+              <span className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Lihat Sertifikat (PDF)
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              disabled={!agentData?.idCardDesignFile}
+              onClick={() => {
+                if (agentData?.idCardDesignFile) {
+                  window.open(getImageUrl(agentData.idCardDesignFile), "_blank");
+                }
+              }}
+            >
+              <span className="flex items-center gap-2">
+                <IdCard className="h-4 w-4" />
+                Lihat Desain ID Card (PDF)
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            {(!agentData?.certificateFile || !agentData?.idCardDesignFile) && (
+              <Button
+                className="w-full"
+                onClick={async () => {
+                  try {
+                    await adminService.agenProfile.requestDocsCreation();
+                    alert("Permintaan berhasil dikirim ke admin/staff");
+                  } catch (e: any) {
+                    alert(e?.response?.data?.message || "Gagal mengirim permintaan");
+                  }
+                }}
+              >
+                Minta Dibuatkan
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Referral Info */}
         {(agentData?.recruiterCode || agentData?.referralCode) && (

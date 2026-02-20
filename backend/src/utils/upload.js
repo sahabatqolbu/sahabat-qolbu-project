@@ -6,6 +6,7 @@ import { promises as fs } from "fs";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 import { logger } from "./logger.js";
+import { errorResponse } from "./response.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,7 +71,7 @@ export const upload = multer({
 // =====================================================
 // OPTIMIZE IMAGE (SINGLE) - WITH JIMP
 // =====================================================
-export const optimizeImage = (folder) => async (req, res, next) => {
+export const optimizeImage = (folder, options = {}) => async (req, res, next) => {
   if (!req.file || !req.file.buffer) {
     logger.debug("No file to optimize, skipping...");
     return next();
@@ -93,13 +94,28 @@ export const optimizeImage = (folder) => async (req, res, next) => {
 
     if (!validFolders.includes(folder)) {
       logger.security("Invalid upload folder attempted", { folder, ip: req.ip });
-      return res.status(400).json({
-        success: false,
-        message: "Folder upload tidak valid",
-      });
+      return errorResponse(
+        res,
+        "Folder upload tidak valid",
+        400,
+        null,
+        "VALIDATION_FAILED"
+      );
     }
 
-    const filename = generateSafeFilename(".jpg");
+    const outputFormat = (options.outputFormat || "jpg").toLowerCase();
+    const allowedOutputFormats = ["jpg", "jpeg", "png", "webp"];
+    const normalizedFormat = allowedOutputFormats.includes(outputFormat)
+      ? outputFormat
+      : "jpg";
+    const extension = normalizedFormat === "jpeg" ? "jpg" : normalizedFormat;
+    const mimeTypeMap = {
+      jpg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+    };
+
+    const filename = generateSafeFilename(`.${extension}`);
     const uploadDir = path.join(UPLOAD_BASE, folder);
     const outputPath = path.join(uploadDir, filename);
 
@@ -112,18 +128,18 @@ export const optimizeImage = (folder) => async (req, res, next) => {
     const image = await Jimp.read(req.file.buffer);
 
     // Resize if larger than 1000px
-    if (image.getWidth() > 1000 || image.getHeight() > 1000) {
-      image.scaleToFit(1000, 1000);
+    if (image.width > 1000 || image.height > 1000) {
+      image.scaleToFit({ w: 1000, h: 1000 });
     }
 
-    // Compress & save as JPEG
-    await image.quality(80).writeAsync(outputPath);
+    // Save as JPEG
+    await image.write(outputPath);
 
     req.uploadedFile = {
       filename: filename,
       path: `/uploads/${folder}/${filename}`,
       size: req.file.size,
-      mimeType: "image/jpeg",
+      mimeType: mimeTypeMap[extension] || "image/jpeg",
       originalName: sanitizeFilename(req.file.originalname),
     };
 
@@ -131,10 +147,13 @@ export const optimizeImage = (folder) => async (req, res, next) => {
     next();
   } catch (error) {
     logger.error("Image optimization error", error);
-    return res.status(500).json({
-      success: false,
-      message: "Gagal mengoptimasi gambar",
-    });
+    return errorResponse(
+      res,
+      "Gagal mengoptimasi gambar",
+      500,
+      null,
+      "UPLOAD_OPTIMIZATION_FAILED"
+    );
   }
 };
 
@@ -165,10 +184,13 @@ export const optimizeMultipleImages = (folder = "general") => {
           folder,
           ip: req.ip,
         });
-        return res.status(400).json({
-          success: false,
-          message: "Folder upload tidak valid",
-        });
+        return errorResponse(
+          res,
+          "Folder upload tidak valid",
+          400,
+          null,
+          "VALIDATION_FAILED"
+        );
       }
 
       const uploadDir = path.join(UPLOAD_BASE, folder);
@@ -182,11 +204,11 @@ export const optimizeMultipleImages = (folder = "general") => {
 
         const image = await Jimp.read(file.buffer);
 
-        if (image.getWidth() > 1000 || image.getHeight() > 1000) {
-          image.scaleToFit(1000, 1000);
+        if (image.width > 1000 || image.height > 1000) {
+          image.scaleToFit({ w: 1000, h: 1000 });
         }
 
-        await image.quality(80).writeAsync(filepath);
+        await image.write(filepath);
 
         uploadedFiles.push({
           filename: filename,
@@ -319,10 +341,13 @@ export const saveDocument = (folder = "documents") => {
           folder,
           ip: req.ip,
         });
-        return res.status(400).json({
-          success: false,
-          message: "Folder dokumen tidak valid",
-        });
+        return errorResponse(
+          res,
+          "Folder dokumen tidak valid",
+          400,
+          null,
+          "VALIDATION_FAILED"
+        );
       }
 
       const uploadDir = path.join(UPLOAD_BASE, folder);
@@ -340,11 +365,11 @@ export const saveDocument = (folder = "documents") => {
 
         const image = await Jimp.read(req.file.buffer);
 
-        if (image.getWidth() > 1500 || image.getHeight() > 1500) {
-          image.scaleToFit(1500, 1500);
+        if (image.width > 1500 || image.height > 1500) {
+          image.scaleToFit({ w: 1500, h: 1500 });
         }
 
-        await image.quality(85).writeAsync(filepath);
+        await image.write(filepath);
       }
 
       req.uploadedFile = {

@@ -1,10 +1,10 @@
 "use client";
 
 import { use, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -30,15 +29,12 @@ import {
   ArrowLeft,
   Edit,
   Mail,
-  Phone,
   Calendar,
   MapPin,
-  CreditCard,
   CheckCircle,
   XCircle,
   Star,
   Users,
-  DollarSign,
   Instagram,
   Video,
   FileText,
@@ -49,7 +45,6 @@ import {
   Award,
   Image as ImageIcon,
   IdCard,
-  Receipt,
   Building2,
   Target,
   FileCheck,
@@ -57,21 +52,47 @@ import {
 import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import Image from "next/image";
+import { getImageUrl } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+interface LookupItem {
+  id: number;
+  title: string;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function DetailAgenPage({ params }: PageProps) {
   const { id: agentId } = use(params);
-  const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const isFinanceReadOnly = user?.role === "FINANCE";
 
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [reuploadDialogOpen, setReuploadDialogOpen] = useState(false);
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const [idCardDesignFile, setIdCardDesignFile] = useState<File | null>(null);
   const [rejectionNote, setRejectionNote] = useState("");
+  const [reuploadNote, setReuploadNote] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // ===== FETCH AGENT =====
@@ -93,8 +114,21 @@ export default function DetailAgenPage({ params }: PageProps) {
 
   const agent = data?.data;
   const agentData = agent?.agentData;
-  const purposes = purposesData?.data || [];
-  const requirements = requirementsData?.data || [];
+  const imageVersion = agentData?.updatedAt
+    ? new Date(agentData.updatedAt).getTime()
+    : 0;
+  const ktpImageSrc = agentData?.ktpPhoto
+    ? `${getImageUrl(agentData.ktpPhoto)}${getImageUrl(agentData.ktpPhoto).includes("?") ? "&" : "?"}v=${imageVersion}`
+    : null;
+  const paymentProofSrc = agentData?.paymentProof
+    ? `${getImageUrl(agentData.paymentProof)}${getImageUrl(agentData.paymentProof).includes("?") ? "&" : "?"}v=${imageVersion}`
+    : null;
+  const purposes = Array.isArray(purposesData?.data)
+    ? (purposesData.data as LookupItem[])
+    : [];
+  const requirements = Array.isArray(requirementsData?.data)
+    ? (requirementsData.data as LookupItem[])
+    : [];
 
   // ===== MUTATIONS =====
   const approveMutation = useMutation({
@@ -108,11 +142,11 @@ export default function DetailAgenPage({ params }: PageProps) {
         description: "Agen telah disetujui dan aktif",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Approve",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -130,11 +164,74 @@ export default function DetailAgenPage({ params }: PageProps) {
         description: "Agen telah ditolak",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Reject",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
+      });
+    },
+  });
+
+  const requestReuploadMutation = useMutation({
+    mutationFn: (note: string) =>
+      adminService.agen.requestKtpReupload(
+        parseInt(agentId),
+        note?.trim() || undefined,
+      ),
+    onSuccess: () => {
+      setReuploadDialogOpen(false);
+      setReuploadNote("");
+      toast({
+        title: "✅ Permintaan Terkirim",
+        description: "Agen sudah menerima notifikasi upload ulang KTP",
+      });
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal Mengirim",
+        description: getErrorMessage(error),
+      });
+    },
+  });
+
+  const uploadCertificateMutation = useMutation({
+    mutationFn: (file: File) =>
+      adminService.agen.uploadCertificatePdf(parseInt(agentId), file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
+      toast({
+        title: "✅ Sertifikat Terupload",
+        description: "Sertifikat PDF berhasil diupload",
+      });
+      setCertificateFile(null);
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal Upload",
+        description: getErrorMessage(error),
+      });
+    },
+  });
+
+  const uploadIdCardDesignMutation = useMutation({
+    mutationFn: (file: File) =>
+      adminService.agen.uploadIdCardDesignPdf(parseInt(agentId), file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
+      toast({
+        title: "✅ Desain ID Card Terupload",
+        description: "Desain ID card PDF berhasil diupload",
+      });
+      setIdCardDesignFile(null);
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal Upload",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -166,27 +263,29 @@ export default function DetailAgenPage({ params }: PageProps) {
   };
 
   // Helper: Parse JSON field safely
-  const parseJSON = (field: any) => {
+  const parseJSON = <T,>(field: unknown): T[] => {
     if (!field) return [];
     if (Array.isArray(field)) return field;
+    if (typeof field !== "string") return [];
     try {
-      return JSON.parse(field);
+      const parsed = JSON.parse(field);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
   };
 
   // Get selected purposes titles
-  const selectedPurposes = parseJSON(agentData?.purposes);
+  const selectedPurposes = parseJSON<number>(agentData?.purposes);
   const purposesTitles = purposes
-    .filter((p: any) => selectedPurposes.includes(p.id))
-    .map((p: any) => p.title);
+    .filter((p) => selectedPurposes.includes(p.id))
+    .map((p) => p.title);
 
   // Get agreed requirements titles
-  const agreedRequirements = parseJSON(agentData?.agreedRequirements);
+  const agreedRequirements = parseJSON<number>(agentData?.agreedRequirements);
   const agreedRequirementsTitles = requirements
-    .filter((r: any) => agreedRequirements.includes(r.id))
-    .map((r: any) => r.title);
+    .filter((r) => agreedRequirements.includes(r.id))
+    .map((r) => r.title);
 
   if (isLoading) {
     return (
@@ -245,13 +344,15 @@ export default function DetailAgenPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex gap-3">
-          <Link href={`/admin/agen/${agentId}/edit`}>
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          </Link>
-          {agentData?.status === "PENDING" && (
+          {!isFinanceReadOnly && (
+            <Link href={`/admin/agen/${agentId}/edit`}>
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </Link>
+          )}
+          {!isFinanceReadOnly && agentData?.status === "PENDING" && (
             <>
               <Button
                 variant="outline"
@@ -269,6 +370,15 @@ export default function DetailAgenPage({ params }: PageProps) {
                 Approve
               </Button>
             </>
+          )}
+          {!isFinanceReadOnly && (
+            <Button
+              variant="outline"
+              onClick={() => setReuploadDialogOpen(true)}
+            >
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Minta Upload Ulang KTP
+            </Button>
           )}
         </div>
       </div>
@@ -606,14 +716,15 @@ export default function DetailAgenPage({ params }: PageProps) {
               {agentData?.ktpPhoto ? (
                 <div
                   className="relative aspect-video rounded-lg border overflow-hidden cursor-pointer hover:opacity-80 transition"
-                  onClick={() => setPreviewImage(agentData.ktpPhoto)}
+                  onClick={() => ktpImageSrc && setPreviewImage(ktpImageSrc)}
                 >
-                  {/* ✅ Ganti Image ke img */}
-                  <img
-                    src={agentData.ktpPhoto}
-                    alt="KTP"
-                    className="w-full h-full object-cover"
-                  />
+                  {ktpImageSrc && (
+                    <img
+                      src={ktpImageSrc}
+                      alt="KTP"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="aspect-video rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -640,18 +751,127 @@ export default function DetailAgenPage({ params }: PageProps) {
               {agentData?.paymentProof ? (
                 <div
                   className="relative aspect-video rounded-lg border overflow-hidden cursor-pointer hover:opacity-80 transition"
-                  onClick={() => setPreviewImage(agentData.paymentProof)}
+                  onClick={() => paymentProofSrc && setPreviewImage(paymentProofSrc)}
                 >
-                  {/* ✅ Ganti Image ke img */}
-                  <img
-                    src={agentData.paymentProof}
-                    alt="Bukti Transfer"
-                    className="w-full h-full object-cover"
-                  />
+                  {paymentProofSrc && (
+                    <img
+                      src={paymentProofSrc}
+                      alt="Bukti Transfer"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="aspect-video rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
                   <p className="text-sm text-gray-500">Tidak ada bukti</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 6B. DOKUMEN OUTPUT (SERTIFIKAT & DESAIN ID CARD) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Award className="h-5 w-5" />
+            Dokumen Agen (PDF)
+          </CardTitle>
+          <CardDescription>
+            Upload sertifikat dan desain ID card untuk agen
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-700">Sertifikat</p>
+                {agentData?.certificateFile ? (
+                  <Badge className="bg-green-100 text-green-800">Tersedia</Badge>
+                ) : (
+                  <Badge variant="secondary">Belum ada</Badge>
+                )}
+              </div>
+              {agentData?.certificateFile && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() =>
+                    window.open(getImageUrl(agentData.certificateFile), "_blank")
+                  }
+                >
+                  Lihat Sertifikat (PDF)
+                </Button>
+              )}
+              {!isFinanceReadOnly && (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) =>
+                      setCertificateFile(e.target.files?.[0] || null)
+                    }
+                  />
+                  <Button
+                    onClick={() =>
+                      certificateFile &&
+                      uploadCertificateMutation.mutate(certificateFile)
+                    }
+                    disabled={!certificateFile || uploadCertificateMutation.isPending}
+                  >
+                    {uploadCertificateMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Upload"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-700">Desain ID Card</p>
+                {agentData?.idCardDesignFile ? (
+                  <Badge className="bg-green-100 text-green-800">Tersedia</Badge>
+                ) : (
+                  <Badge variant="secondary">Belum ada</Badge>
+                )}
+              </div>
+              {agentData?.idCardDesignFile && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() =>
+                    window.open(getImageUrl(agentData.idCardDesignFile), "_blank")
+                  }
+                >
+                  Lihat Desain ID Card (PDF)
+                </Button>
+              )}
+              {!isFinanceReadOnly && (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) =>
+                      setIdCardDesignFile(e.target.files?.[0] || null)
+                    }
+                  />
+                  <Button
+                    onClick={() =>
+                      idCardDesignFile &&
+                      uploadIdCardDesignMutation.mutate(idCardDesignFile)
+                    }
+                    disabled={!idCardDesignFile || uploadIdCardDesignMutation.isPending}
+                  >
+                    {uploadIdCardDesignMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Upload"
+                    )}
+                  </Button>
                 </div>
               )}
             </div>
@@ -670,8 +890,7 @@ export default function DetailAgenPage({ params }: PageProps) {
         <CardContent>
           {purposesTitles.length > 0 ? (
             <ul className="space-y-2">
-              {/* FIXED: added :any and :number for idx */}
-              {purposesTitles.map((title: any, idx: number) => (
+              {purposesTitles.map((title, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                   <span>{title}</span>
@@ -703,8 +922,7 @@ export default function DetailAgenPage({ params }: PageProps) {
           {agreedRequirementsTitles.length > 0 ? (
             <>
               <ul className="space-y-2">
-                {/* FIXED: added :any and :number for idx */}
-                {agreedRequirementsTitles.map((title: any, idx: number) => (
+                {agreedRequirementsTitles.map((title, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                     <span className="text-sm">{title}</span>
@@ -933,6 +1151,53 @@ export default function DetailAgenPage({ params }: PageProps) {
                   <ThumbsDown className="h-4 w-4 mr-2" />
                   Ya, Reject
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* REQUEST KTP REUPLOAD DIALOG */}
+      <Dialog open={reuploadDialogOpen} onOpenChange={setReuploadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Minta Upload Ulang KTP</DialogTitle>
+            <DialogDescription>
+              Agen akan menerima notifikasi untuk upload ulang foto KTP (dengan
+              batas waktu).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="reupload-note">Catatan (opsional)</Label>
+            <Textarea
+              id="reupload-note"
+              placeholder="Contoh: Foto blur, mohon upload ulang dengan pencahayaan lebih baik."
+              rows={3}
+              value={reuploadNote}
+              onChange={(e) => setReuploadNote(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReuploadDialogOpen(false);
+                setReuploadNote("");
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={() => requestReuploadMutation.mutate(reuploadNote)}
+              disabled={requestReuploadMutation.isPending}
+            >
+              {requestReuploadMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Mengirim...
+                </>
+              ) : (
+                "Kirim Permintaan"
               )}
             </Button>
           </DialogFooter>

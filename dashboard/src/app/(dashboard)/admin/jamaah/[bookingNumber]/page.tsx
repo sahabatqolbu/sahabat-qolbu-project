@@ -2,12 +2,15 @@
 
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jamaahService } from "@/services/jamaahService";
 import { adminService } from "@/services/adminService";
+import { packageService } from "@/services/packageService";
+import { masterService } from "@/services/masterService";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
+import { useAuthStore } from "@/stores/authStore";
+import { ComponentType, useEffect, useState } from "react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -105,15 +108,163 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+interface InlineFormState {
+  namaPaspor: string;
+  nik: string;
+  birthPlace: string;
+  birthDate: string;
+  gender: string;
+  packageId: string;
+  agenId: string;
+  notePaket: string;
+  roomTypeMakkah: string;
+  roomTypeMadinah: string;
+  hargaPaket: string;
+  potonganFeeAgen: string;
+  potonganPoinAgen: string;
+  potonganCashbackKK: string;
+  registrationStatus: string;
+  notes: string;
+  address?: string;
+}
+
+interface PackageOption {
+  id: number;
+  name: string;
+  type?: string;
+  price?: string;
+  discountPrice?: string;
+  hotelMakkahDouble?: number;
+  hotelMakkahTriple?: number;
+  hotelMakkahQuad?: number;
+  hotelMakkahQuint?: number;
+  hotelMadinahDouble?: number;
+  hotelMadinahTriple?: number;
+  hotelMadinahQuad?: number;
+  hotelMadinahQuint?: number;
+}
+
+interface AgentOption {
+  id: number;
+  fullName: string;
+  currentStar?: number;
+}
+
+interface BankOption {
+  id: number;
+  bankName: string;
+  accountNumber: string;
+}
+
+interface PaymentItem {
+  id: number;
+  paymentNumber?: string;
+  paymentDate?: string;
+  paidBy?: string;
+  amount?: string | number;
+  proofStatus?: "UPLOADED" | "VERIFIED" | "REJECTED" | string;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
+  verifiedAt?: string | null;
+  proofUrl?: string | null;
+  bank?: {
+    bankName?: string;
+  };
+}
+
+interface JamaahRecord {
+  [key: string]: unknown;
+  bookingNumber?: string;
+  namaPaspor?: string;
+  user?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+  };
+  package?: {
+    name?: string;
+    departureDate?: string;
+    returnDate?: string;
+  };
+  agen?: {
+    fullName?: string;
+    currentStar?: number;
+    user?: { fullName?: string };
+  };
+  mahram?: {
+    namaPaspor?: string;
+    user?: { fullName?: string };
+  };
+  profileCompleteness?: {
+    categories?: Record<string, { complete: boolean; passed: number; total: number }>;
+  };
+  hargaFinal?: string;
+  totalPayment?: string;
+  outstanding?: string;
+  statusPayment?: string;
+  registrationStatus?: string;
+  packageId?: number;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  dateOfBooking?: string;
+  notePaket?: string;
+  roomTypeMakkah?: string;
+  roomTypeMadinah?: string;
+  gender?: string;
+  maritalStatus?: string;
+  nik?: string;
+  birthPlace?: string;
+  birthDate?: string;
+  address?: string;
+  province?: string;
+  city?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
+  emergencyRelation?: string;
+  passportNumber?: string;
+  passportIssuePlace?: string;
+  passportIssueDate?: string;
+  passportExpiry?: string;
+  agenId?: number;
+  potonganFeeAgen?: string;
+  potonganPoinAgen?: string;
+  potonganCashbackKK?: string;
+  marhamRelation?: string;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function JamaahDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const bookingNumber = params.bookingNumber as string;
+  const isReadOnlyRole = user?.role !== "ADMIN";
+  const roleBasePath =
+    user?.role === "FINANCE" ? "/finance" : user?.role === "STAFF" ? "/staff" : "/admin";
+  const jamaahBasePath = `${roleBasePath}/jamaah`;
 
   // ===== DIALOG STATES =====
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [rejectPaymentDialogOpen, setRejectPaymentDialogOpen] = useState(false);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
+  const [paymentRejectReason, setPaymentRejectReason] = useState("");
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [revertDialogOpen, setRevertDialogOpen] = useState(false);
@@ -121,7 +272,7 @@ export default function JamaahDetailPage() {
   const [editingSection, setEditingSection] = useState<
     "biodata" | "paket" | null
   >(null);
-  const [inlineForm, setInlineForm] = useState<any>({
+  const [inlineForm, setInlineForm] = useState<InlineFormState>({
     namaPaspor: "",
     nik: "",
     birthPlace: "",
@@ -161,7 +312,7 @@ export default function JamaahDetailPage() {
     enabled: !!bookingNumber,
   });
 
-  const jamaah = jamaahResponse?.data;
+  const jamaah = (jamaahResponse?.data || null) as JamaahRecord | null;
   const profileCompleteness = jamaah?.profileCompleteness;
 
   // =====================================================
@@ -173,45 +324,51 @@ export default function JamaahDetailPage() {
     enabled: !!bookingNumber,
   });
 
-  const payments = paymentsResponse?.data || [];
+  const payments: PaymentItem[] = Array.isArray(paymentsResponse?.data)
+    ? (paymentsResponse.data as PaymentItem[])
+    : [];
 
   const { data: packagesResponse } = useQuery({
     queryKey: ["packages-dropdown-inline"],
-    queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/packages`);
-      return res.json();
-    },
+    queryFn: () => packageService.getAll({ page: 1, limit: 100 }),
   });
 
-  const packages = packagesResponse?.data?.packages || [];
+  const packages: PackageOption[] = Array.isArray(packagesResponse?.data?.packages)
+    ? (packagesResponse.data.packages as PackageOption[])
+    : [];
 
   const { data: agenResponse } = useQuery({
     queryKey: ["agen-dropdown-inline"],
     queryFn: () => adminService.agen.getAll({ status: "APPROVED" }),
   });
 
-  const agenList = agenResponse?.data || [];
+  const agenList: AgentOption[] = Array.isArray(agenResponse?.data)
+    ? (agenResponse.data as AgentOption[])
+    : [];
 
   // =====================================================
   // FETCH BANKS
   // =====================================================
   const { data: banksResponse } = useQuery({
     queryKey: ["banks-active"],
-    queryFn: async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/master/banks/active`,
-      );
-      return res.json();
-    },
+    queryFn: () => masterService.banks.getActive(),
   });
 
-  const banks = banksResponse?.data || [];
+  const banks: BankOption[] = Array.isArray(banksResponse?.data)
+    ? (banksResponse.data as BankOption[])
+    : [];
 
   // =====================================================
   // MUTATIONS
   // =====================================================
   const addPaymentMutation = useMutation({
-    mutationFn: (data: any) => jamaahService.addPayment(bookingNumber, data),
+    mutationFn: (data: {
+      paidBy: string;
+      paymentDate: string;
+      amount: number;
+      bankId?: number;
+      notes?: string;
+    }) => jamaahService.addPayment(bookingNumber, data),
     onSuccess: () => {
       toast({
         title: "✅ Pembayaran Ditambahkan",
@@ -227,11 +384,11 @@ export default function JamaahDetailPage() {
       setPaymentDialogOpen(false);
       resetPaymentForm();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -244,11 +401,36 @@ export default function JamaahDetailPage() {
         queryKey: ["jamaah-payments", bookingNumber],
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Verifikasi",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
+      });
+    },
+  });
+
+  const rejectPaymentMutation = useMutation({
+    mutationFn: (payload: { paymentId: number; reason: string }) =>
+      jamaahService.rejectPayment(payload.paymentId, payload.reason),
+    onSuccess: () => {
+      toast({
+        title: "⚠️ Bukti Pembayaran Ditolak",
+        description: "Status bukti pembayaran berhasil diubah menjadi REJECTED",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["jamaah-payments", bookingNumber],
+      });
+      queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
+      setRejectPaymentDialogOpen(false);
+      setSelectedPaymentId(null);
+      setPaymentRejectReason("");
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal Menolak Bukti",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -267,11 +449,11 @@ export default function JamaahDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
       setApproveDialogOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Approve",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -291,11 +473,11 @@ export default function JamaahDetailPage() {
       setRejectDialogOpen(false);
       setRejectReason("");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Reject",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -314,28 +496,29 @@ export default function JamaahDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
       setRevertDialogOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Revert",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
 
   const updateInlineMutation = useMutation({
-    mutationFn: (payload: any) => jamaahService.update(bookingNumber, payload),
+    mutationFn: (payload: Partial<InlineFormState>) =>
+      jamaahService.update(bookingNumber, payload),
     onSuccess: () => {
       toast({ title: "✅ Data jamaah berhasil diupdate" });
       queryClient.invalidateQueries({ queryKey: ["jamaah-detail", bookingNumber] });
       queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
       setEditingSection(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal update data",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -372,7 +555,14 @@ export default function JamaahDetailPage() {
   }, [jamaah]);
 
   const handleInlineSave = () => {
-    const payload: any = {
+    const payload: Partial<InlineFormState> & {
+      packageId?: number | null;
+      agenId?: number | null;
+      roomTypeMakkah?: string | null;
+      roomTypeMadinah?: string | null;
+      notePaket?: string | null;
+      notes?: string | null;
+    } = {
       ...inlineForm,
       packageId:
         inlineForm.packageId && inlineForm.packageId !== "none"
@@ -414,7 +604,7 @@ export default function JamaahDetailPage() {
   };
 
   const pickDefaultRoomType = (
-    pkg: any,
+    pkg: PackageOption,
     prefix: "hotelMakkah" | "hotelMadinah",
   ) => {
     const candidates = [
@@ -428,7 +618,7 @@ export default function JamaahDetailPage() {
     let maxSeats = -1;
 
     for (const candidate of candidates) {
-      const seats = Number(pkg?.[candidate.key] || 0);
+      const seats = Number(pkg[candidate.key] || 0);
       if (seats > maxSeats) {
         maxSeats = seats;
         selected = candidate.value;
@@ -440,7 +630,7 @@ export default function JamaahDetailPage() {
 
   const applyPackageDefaults = (packageId: string) => {
     if (!packageId || packageId === "none") {
-      setInlineForm((prev: any) => ({
+      setInlineForm((prev) => ({
         ...prev,
         packageId: "none",
         hargaPaket: "0",
@@ -453,9 +643,7 @@ export default function JamaahDetailPage() {
       return;
     }
 
-    const selectedPackage = packages.find(
-      (pkg: any) => pkg.id.toString() === packageId,
-    );
+    const selectedPackage = packages.find((pkg) => pkg.id.toString() === packageId);
 
     if (!selectedPackage) return;
 
@@ -463,7 +651,7 @@ export default function JamaahDetailPage() {
       ? parseFloat(selectedPackage.discountPrice)
       : parseFloat(selectedPackage.price) || 0;
 
-    setInlineForm((prev: any) => ({
+    setInlineForm((prev) => ({
       ...prev,
       packageId,
       notePaket: mapPackageTypeToNotePaket(selectedPackage.type),
@@ -498,6 +686,12 @@ export default function JamaahDetailPage() {
     });
   };
 
+  const openRejectPaymentDialog = (paymentId: number) => {
+    setSelectedPaymentId(paymentId);
+    setPaymentRejectReason("");
+    setRejectPaymentDialogOpen(true);
+  };
+
   // =====================================================
   // HELPERS
   // =====================================================
@@ -529,8 +723,10 @@ export default function JamaahDetailPage() {
   };
 
   const getPaymentStatusBadge = (status: string) => {
-    const config: Record<string, { class: string; label: string; icon: any }> =
-      {
+    const config: Record<
+      string,
+      { class: string; label: string; icon: ComponentType<{ className?: string }> }
+    > = {
         LUNAS: {
           class: "bg-green-100 text-green-800 border-green-200",
           label: "Lunas",
@@ -577,6 +773,35 @@ export default function JamaahDetailPage() {
     };
     const cfg = config[status] || config.DRAFT;
     return <Badge className={cfg.class}>{cfg.label}</Badge>;
+  };
+
+  const getPaymentProofBadge = (payment: PaymentItem) => {
+    const proofStatus = payment.proofStatus || (payment.verifiedAt ? "VERIFIED" : "UPLOADED");
+
+    if (proofStatus === "VERIFIED") {
+      return (
+        <Badge className="bg-green-100 text-green-700">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Verified
+        </Badge>
+      );
+    }
+
+    if (proofStatus === "REJECTED") {
+      return (
+        <Badge variant="outline" className="text-red-600 border-red-300">
+          <XCircle className="h-3 w-3 mr-1" />
+          Rejected
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge variant="outline" className="text-yellow-600 border-yellow-300">
+        <Clock className="h-3 w-3 mr-1" />
+        Uploaded
+      </Badge>
+    );
   };
 
   // Calculate payment progress
@@ -669,10 +894,11 @@ export default function JamaahDetailPage() {
   const profileStatus = jamaah ? checkProfileCompleteness() : null;
 
   // ✅ TAMBAHKAN INI (setelah line 351)
-  const canApprove = jamaah?.registrationStatus === "VERIFIED";
+  const canApprove = !isReadOnlyRole && jamaah?.registrationStatus === "VERIFIED";
   const canRevert =
-    jamaah?.registrationStatus === "APPROVED" ||
-    jamaah?.registrationStatus === "REJECTED";
+    !isReadOnlyRole &&
+    (jamaah?.registrationStatus === "APPROVED" ||
+      jamaah?.registrationStatus === "REJECTED");
 
   // =====================================================
   // LOADING & ERROR STATES
@@ -705,9 +931,9 @@ export default function JamaahDetailPage() {
           Data Tidak Ditemukan
         </h2>
         <p className="text-gray-500 mb-6">
-          Booking number "{bookingNumber}" tidak ditemukan
+          Booking number &quot;{bookingNumber}&quot; tidak ditemukan
         </p>
-        <Link href="/admin/jamaah">
+        <Link href={jamaahBasePath}>
           <Button>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kembali ke Daftar
@@ -893,10 +1119,82 @@ export default function JamaahDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* ===== REJECT PAYMENT PROOF DIALOG ===== */}
+      <Dialog
+        open={rejectPaymentDialogOpen}
+        onOpenChange={(open) => {
+          setRejectPaymentDialogOpen(open);
+          if (!open) {
+            setSelectedPaymentId(null);
+            setPaymentRejectReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <XCircle className="h-5 w-5" />
+              Tolak Bukti Pembayaran
+            </DialogTitle>
+            <DialogDescription>
+              Pembayaran #{selectedPaymentId || "-"} akan ditandai sebagai <strong>REJECTED</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Label htmlFor="payment-reject-reason">
+              Alasan Penolakan <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              id="payment-reject-reason"
+              value={paymentRejectReason}
+              onChange={(e) => setPaymentRejectReason(e.target.value)}
+              placeholder="Contoh: Bukti transfer blur / nominal tidak sesuai"
+              className="min-h-[110px]"
+            />
+            <p className="text-xs text-gray-500">
+              Alasan akan tersimpan pada audit trail agar jamaah/agen dapat melakukan upload ulang dengan benar.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRejectPaymentDialogOpen(false)}
+              disabled={rejectPaymentMutation.isPending}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!selectedPaymentId) return;
+                rejectPaymentMutation.mutate({
+                  paymentId: selectedPaymentId,
+                  reason: paymentRejectReason.trim(),
+                });
+              }}
+              disabled={
+                rejectPaymentMutation.isPending ||
+                !selectedPaymentId ||
+                paymentRejectReason.trim().length < 3
+              }
+            >
+              {rejectPaymentMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              Tolak Bukti
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ===== HEADER ===== */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex items-start gap-4">
-          <Link href="/admin/jamaah">
+          <Link href={jamaahBasePath}>
             <Button variant="ghost" size="icon" className="mt-1">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -955,12 +1253,14 @@ export default function JamaahDetailPage() {
             </Button>
           )}
 
-          <Link href={`/admin/jamaah/${bookingNumber}/edit`}>
-            <Button variant="outline">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Edit Lengkap
-            </Button>
-          </Link>
+          {!isReadOnlyRole && (
+            <Link href={`${jamaahBasePath}/${bookingNumber}/edit`}>
+              <Button variant="outline">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Edit Lengkap
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -1277,7 +1577,7 @@ export default function JamaahDetailPage() {
                         Simpan
                       </Button>
                     </>
-                  ) : (
+                  ) : !isReadOnlyRole ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -1286,7 +1586,7 @@ export default function JamaahDetailPage() {
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </CardHeader>
@@ -1305,7 +1605,7 @@ export default function JamaahDetailPage() {
                         <Input
                           value={inlineForm.namaPaspor}
                           onChange={(e) =>
-                            setInlineForm((prev: any) => ({
+                            setInlineForm((prev) => ({
                               ...prev,
                               namaPaspor: e.target.value,
                             }))
@@ -1332,7 +1632,7 @@ export default function JamaahDetailPage() {
                         <Input
                           value={inlineForm.nik}
                           onChange={(e) =>
-                            setInlineForm((prev: any) => ({
+                            setInlineForm((prev) => ({
                               ...prev,
                               nik: e.target.value,
                             }))
@@ -1361,7 +1661,7 @@ export default function JamaahDetailPage() {
                         <Input
                           value={inlineForm.birthPlace}
                           onChange={(e) =>
-                            setInlineForm((prev: any) => ({
+                            setInlineForm((prev) => ({
                               ...prev,
                               birthPlace: e.target.value,
                             }))
@@ -1389,7 +1689,7 @@ export default function JamaahDetailPage() {
                           type="date"
                           value={inlineForm.birthDate}
                           onChange={(e) =>
-                            setInlineForm((prev: any) => ({
+                            setInlineForm((prev) => ({
                               ...prev,
                               birthDate: e.target.value,
                             }))
@@ -1420,7 +1720,7 @@ export default function JamaahDetailPage() {
                         <Select
                           value={inlineForm.gender || "none"}
                           onValueChange={(value) =>
-                            setInlineForm((prev: any) => ({
+                            setInlineForm((prev) => ({
                               ...prev,
                               gender: value === "none" ? "" : value,
                             }))
@@ -1482,7 +1782,7 @@ export default function JamaahDetailPage() {
                           rows={2}
                           value={inlineForm.address || ""}
                           onChange={(e) =>
-                            setInlineForm((prev: any) => ({
+                            setInlineForm((prev) => ({
                               ...prev,
                               address: e.target.value,
                             }))
@@ -1739,7 +2039,7 @@ export default function JamaahDetailPage() {
                       Simpan
                     </Button>
                   </div>
-                ) : (
+                ) : !isReadOnlyRole ? (
                   <Button
                     size="sm"
                     variant="outline"
@@ -1748,7 +2048,7 @@ export default function JamaahDetailPage() {
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
-                )}
+                ) : null}
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1766,7 +2066,7 @@ export default function JamaahDetailPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Belum pilih paket</SelectItem>
-                          {packages.map((pkg: any) => (
+                          {packages.map((pkg) => (
                             <SelectItem key={pkg.id} value={pkg.id.toString()}>
                               {pkg.name}
                             </SelectItem>
@@ -1798,7 +2098,7 @@ export default function JamaahDetailPage() {
                         <Select
                           value={inlineForm.notePaket || "FULLSERVICE"}
                           onValueChange={(value) =>
-                            setInlineForm((prev: any) => ({ ...prev, notePaket: value }))
+                            setInlineForm((prev) => ({ ...prev, notePaket: value }))
                           }
                         >
                           <SelectTrigger>
@@ -1825,7 +2125,7 @@ export default function JamaahDetailPage() {
                         <Select
                           value={inlineForm.agenId || "none"}
                           onValueChange={(value) =>
-                            setInlineForm((prev: any) => ({ ...prev, agenId: value }))
+                            setInlineForm((prev) => ({ ...prev, agenId: value }))
                           }
                         >
                           <SelectTrigger>
@@ -1833,7 +2133,7 @@ export default function JamaahDetailPage() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Tanpa Agen</SelectItem>
-                            {agenList.map((agen: any) => (
+                            {agenList.map((agen) => (
                               <SelectItem key={agen.id} value={agen.id.toString()}>
                                 {agen.fullName}
                               </SelectItem>
@@ -1889,7 +2189,7 @@ export default function JamaahDetailPage() {
                           <Select
                             value={inlineForm.roomTypeMakkah || "none"}
                             onValueChange={(value) =>
-                              setInlineForm((prev: any) => ({
+                              setInlineForm((prev) => ({
                                 ...prev,
                                 roomTypeMakkah: value === "none" ? "" : value,
                               }))
@@ -1927,7 +2227,7 @@ export default function JamaahDetailPage() {
                           <Select
                             value={inlineForm.roomTypeMadinah || "none"}
                             onValueChange={(value) =>
-                              setInlineForm((prev: any) => ({
+                              setInlineForm((prev) => ({
                                 ...prev,
                                 roomTypeMadinah: value === "none" ? "" : value,
                               }))
@@ -2150,7 +2450,7 @@ export default function JamaahDetailPage() {
                           <SelectValue placeholder="-- Pilih Bank --" />
                         </SelectTrigger>
                         <SelectContent>
-                          {banks.map((bank: any) => (
+                          {banks.map((bank) => (
                             <SelectItem
                               key={bank.id}
                               value={bank.id.toString()}
@@ -2225,7 +2525,7 @@ export default function JamaahDetailPage() {
                     Belum ada pembayaran
                   </p>
                   <p className="text-gray-400 text-sm mt-1">
-                    Klik tombol "Tambah Pembayaran" untuk mencatat pembayaran
+                    Klik tombol &quot;Tambah Pembayaran&quot; untuk mencatat pembayaran
                   </p>
                 </div>
               ) : (
@@ -2243,7 +2543,7 @@ export default function JamaahDetailPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.map((payment: any) => (
+                      {payments.map((payment) => (
                         <TableRow key={payment.id}>
                           <TableCell className="font-medium">
                             {payment.paymentNumber}
@@ -2257,41 +2557,54 @@ export default function JamaahDetailPage() {
                             {formatRupiah(payment.amount)}
                           </TableCell>
                           <TableCell className="text-center">
-                            {payment.verifiedAt ? (
-                              <Badge className="bg-green-100 text-green-700">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Verified
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="text-yellow-600 border-yellow-300"
-                              >
-                                <Clock className="h-3 w-3 mr-1" />
-                                Pending
-                              </Badge>
-                            )}
+                            <div className="space-y-1">
+                              {getPaymentProofBadge(payment)}
+                              {payment.proofStatus === "REJECTED" && payment.rejectionReason && (
+                                <p className="text-xs text-red-600 max-w-[220px] mx-auto break-words">
+                                  {payment.rejectionReason}
+                                </p>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            {!payment.verifiedAt && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-green-600 hover:bg-green-50"
-                                onClick={() =>
-                                  verifyPaymentMutation.mutate(payment.id)
-                                }
-                                disabled={verifyPaymentMutation.isPending}
-                              >
-                                {verifyPaymentMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
+                            {(payment.proofStatus || "UPLOADED") !== "VERIFIED" && (
+                              <div className="flex items-center justify-center gap-2">
+                                {(payment.proofStatus || "UPLOADED") === "UPLOADED" && (
                                   <>
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Verify
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-green-600 hover:bg-green-50"
+                                      onClick={() =>
+                                        verifyPaymentMutation.mutate(payment.id)
+                                      }
+                                      disabled={verifyPaymentMutation.isPending}
+                                    >
+                                      {verifyPaymentMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <CheckCircle className="h-4 w-4 mr-1" />
+                                          Verify
+                                        </>
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-red-600 hover:bg-red-50"
+                                      onClick={() => openRejectPaymentDialog(payment.id)}
+                                      disabled={rejectPaymentMutation.isPending}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Reject
+                                    </Button>
                                   </>
                                 )}
-                              </Button>
+                                {(payment.proofStatus || "UPLOADED") === "REJECTED" && (
+                                  <span className="text-xs text-red-600">Menunggu upload ulang</span>
+                                )}
+                              </div>
                             )}
                           </TableCell>
                         </TableRow>

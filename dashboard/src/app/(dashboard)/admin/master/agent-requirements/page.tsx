@@ -42,6 +42,35 @@ import {
   CheckCircle,
 } from "lucide-react";
 
+interface AgentRequirementItem {
+  id: number;
+  title: string;
+  order: number;
+  isActive: boolean;
+}
+
+interface AgentRequirementFormData {
+  title: string;
+  order: number;
+  isActive: boolean;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function AgentRequirementsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -49,9 +78,9 @@ export default function AgentRequirementsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<AgentRequirementItem | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AgentRequirementFormData>({
     title: "",
     order: 0,
     isActive: true,
@@ -63,40 +92,43 @@ export default function AgentRequirementsPage() {
     queryFn: () => adminService.agentRequirements.getAll(),
   });
 
-  const requirements = data?.data || [];
+  const requirements: AgentRequirementItem[] = Array.isArray(data?.data)
+    ? (data.data as AgentRequirementItem[])
+    : [];
 
   // ===== CREATE =====
   const createMutation = useMutation({
-    mutationFn: (data: any) => adminService.agentRequirements.create(data),
+    mutationFn: (data: AgentRequirementFormData) =>
+      adminService.agentRequirements.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-requirements"] });
       setCreateDialogOpen(false);
       setFormData({ title: "", order: 0, isActive: true });
       toast({ title: "✅ Persyaratan berhasil ditambahkan" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
 
   // ===== UPDATE =====
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) =>
+    mutationFn: ({ id, data }: { id: number; data: AgentRequirementFormData }) =>
       adminService.agentRequirements.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-requirements"] });
       setEditDialogOpen(false);
       toast({ title: "✅ Persyaratan berhasil diupdate" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -109,11 +141,11 @@ export default function AgentRequirementsPage() {
       setDeleteDialogOpen(false);
       toast({ title: "✅ Persyaratan berhasil dihapus" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -134,7 +166,7 @@ export default function AgentRequirementsPage() {
     }
   };
 
-  const openEditDialog = (item: any) => {
+  const openEditDialog = (item: AgentRequirementItem) => {
     setSelectedItem(item);
     setFormData({
       title: item.title,
@@ -199,7 +231,7 @@ export default function AgentRequirementsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requirements.map((item: any, index: number) => (
+                {requirements.map((item, index) => (
                   <TableRow key={item.id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell className="font-medium">{item.title}</TableCell>

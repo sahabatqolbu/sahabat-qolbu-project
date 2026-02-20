@@ -3,6 +3,7 @@ import { db } from "../db/index.js";
 import { jamaahData, packages } from "../db/schema.js";
 import { errorResponse, successResponse } from "../utils/response.js";
 import { createNotification } from "./notificationController.js";
+import { deriveJamaahPaymentState } from "../utils/paymentState.js";
 
 export const assignJamaahToPackage = async (req, res, next) => {
   try {
@@ -30,7 +31,10 @@ export const assignJamaahToPackage = async (req, res, next) => {
 
     const price = parseFloat(selectedPackage.discountPrice || selectedPackage.price || 0);
     const totalPaid = parseFloat(jamaah.totalPayment || "0") || 0;
-    const outstanding = Math.max(price - totalPaid, 0);
+    const paymentState = deriveJamaahPaymentState({
+      hargaFinal: price,
+      totalPayment: totalPaid,
+    });
 
     await db
       .update(jamaahData)
@@ -38,8 +42,8 @@ export const assignJamaahToPackage = async (req, res, next) => {
         packageId: selectedPackage.id,
         hargaPaket: price.toString(),
         hargaFinal: price.toString(),
-        outstanding: outstanding.toString(),
-        statusPayment: totalPaid > 0 ? (outstanding <= 0 ? "LUNAS" : "CICILAN") : "BELUM_BAYAR",
+        outstanding: paymentState.outstanding.toString(),
+        statusPayment: paymentState.statusPayment,
         updatedAt: new Date(),
       })
       .where(eq(jamaahData.bookingNumber, bookingNumber));

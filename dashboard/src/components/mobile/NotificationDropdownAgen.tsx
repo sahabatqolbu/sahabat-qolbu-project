@@ -7,6 +7,13 @@ import { adminService } from "@/services/adminService";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -27,6 +34,7 @@ import {
   Clock,
   ChevronRight,
   X,
+  Upload,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
@@ -45,6 +53,8 @@ const notificationIcons: Record<string, any> = {
   REMINDER_PROFILE: UserPlus,
   REMINDER_GENERAL: Bell,
   SYSTEM: Bell,
+  AGENT_KTP_REUPLOAD: Upload,
+  AGENT_DOCS_REQUEST: FileText,
 };
 
 // Color mapping
@@ -60,6 +70,8 @@ const notificationColors: Record<string, string> = {
   REMINDER_PROFILE: "bg-blue-100 text-blue-600",
   REMINDER_GENERAL: "bg-gray-100 text-gray-600",
   SYSTEM: "bg-gray-100 text-gray-600",
+  AGENT_KTP_REUPLOAD: "bg-amber-100 text-amber-700",
+  AGENT_DOCS_REQUEST: "bg-indigo-100 text-indigo-600",
 };
 
 interface Notification {
@@ -75,6 +87,10 @@ interface Notification {
 export function NotificationDropdownAgen() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [activeUploadNotif, setActiveUploadNotif] = useState<Notification | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Fetch notifications
   const { data, isLoading } = useQuery({
@@ -114,8 +130,58 @@ export function NotificationDropdownAgen() {
     },
   });
 
+  const uploadKtpMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedFile || !activeUploadNotif) {
+        throw new Error("File dan notifikasi wajib dipilih");
+      }
+      return adminService.agenProfile.uploadKtp(selectedFile, activeUploadNotif.id);
+    },
+    onSuccess: (response: any) => {
+      const uploadedUrl = response?.data?.url;
+      const returnedAgentData = response?.data?.agent?.agentData;
+
+      queryClient.setQueryData(["agen-profile"], (prev: any) => {
+        if (!prev?.data) return prev;
+
+        return {
+          ...prev,
+          data: {
+            ...prev.data,
+            agentData: {
+              ...prev.data.agentData,
+              ...(returnedAgentData || {}),
+              ktpPhoto: uploadedUrl || returnedAgentData?.ktpPhoto || prev.data.agentData?.ktpPhoto,
+              updatedAt:
+                returnedAgentData?.updatedAt ||
+                new Date().toISOString(),
+            },
+          },
+        };
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["agen-notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["agen-profile"] });
+      setUploadDialogOpen(false);
+      setActiveUploadNotif(null);
+      setSelectedFile(null);
+      setUploadError(null);
+      setIsOpen(false);
+    },
+    onError: (error: any) => {
+      setUploadError(error.response?.data?.message || error.message || "Gagal upload");
+    },
+  });
+
+  const isKtpReuploadExpired = (notif: Notification): boolean => {
+    const created = new Date(notif.createdAt).getTime();
+    if (Number.isNaN(created)) return true;
+    const expiryHours = 72;
+    return Date.now() > created + expiryHours * 60 * 60 * 1000;
+  };
+
   const handleNotificationClick = (notif: Notification) => {
-    if (!notif.isRead) {
+    if (!notif.isRead && notif.type !== "AGENT_KTP_REUPLOAD") {
       markAsReadMutation.mutate(notif.id);
     }
     if (notif.link) {
@@ -126,7 +192,8 @@ export function NotificationDropdownAgen() {
   const totalBadge = unreadCount + reminderStats.withAnyIssues;
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <button className="relative h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
           <Bell className="h-5 w-5 text-white" />
@@ -252,6 +319,32 @@ export function NotificationDropdownAgen() {
                   </div>
                 );
 
+                if (notif.type === "AGENT_KTP_REUPLOAD") {
+                  const expired = isKtpReuploadExpired(notif) || notif.isRead;
+                  return (
+                    <div key={notif.id}>
+                      <div onClick={(e) => e.stopPropagation()}>{content}</div>
+                      <div className="px-4 pb-4 -mt-2">
+                        <Button
+                          className="w-full"
+                          variant={expired ? "outline" : "default"}
+                          disabled={expired}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveUploadNotif(notif);
+                            setUploadDialogOpen(true);
+                            setUploadError(null);
+                            setSelectedFile(null);
+                          }}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {expired ? "Link Upload Kedaluwarsa" : "Upload Foto KTP"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return notif.link ? (
                   <Link
                     href={notif.link}
@@ -268,6 +361,46 @@ export function NotificationDropdownAgen() {
           )}
         </div>
       </SheetContent>
-    </Sheet>
+      </Sheet>
+
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Ulang Foto KTP</DialogTitle>
+            <DialogDescription>
+              Pilih foto KTP baru. Setelah berhasil, permintaan ini akan otomatis dianggap selesai.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setSelectedFile(file);
+                setUploadError(null);
+              }}
+            />
+            {uploadError && (
+              <p className="text-sm text-red-600">{uploadError}</p>
+            )}
+            <Button
+              className="w-full"
+              onClick={() => uploadKtpMutation.mutate()}
+              disabled={!selectedFile || uploadKtpMutation.isPending}
+            >
+              {uploadKtpMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Mengupload...
+                </>
+              ) : (
+                "Upload"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

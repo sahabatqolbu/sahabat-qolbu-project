@@ -33,6 +33,22 @@ const bankSchema = z.object({
 
 type BankFormData = z.infer<typeof bankSchema>;
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function CreateBankPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -61,11 +77,11 @@ export default function CreateBankPage() {
       });
       router.push("/admin/master/banks");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Menambahkan Rekening",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });

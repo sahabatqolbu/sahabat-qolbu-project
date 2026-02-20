@@ -10,9 +10,49 @@ export function cn(...inputs: ClassValue[]) {
 export function getImageUrl(path: string | null | undefined): string {
   if (!path) return "https://via.placeholder.com/400x300?text=No+Image";
 
+  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+
+  const normalizeSensitivePath = (input: string): string => {
+    try {
+      const parsed = new URL(input);
+      const pathname = parsed.pathname || "";
+      const sensitiveMatch = pathname.match(/^\/uploads\/(profiles|jamaah|agents|documents|payments)\/(.+)$/i);
+      if (!sensitiveMatch) return input;
+
+      const folder = sensitiveMatch[1].toLowerCase();
+      const filename = sensitiveMatch[2].split("/").pop() || "";
+      if (!filename) return input;
+
+      const query = parsed.search || "";
+      return `${SERVER_URL}/api/protected-uploads/${folder}/${filename}${query}`;
+    } catch {
+      const sensitiveMatch = input.match(/^\/uploads\/(profiles|jamaah|agents|documents|payments)\/(.+)$/i);
+      if (!sensitiveMatch) return input;
+
+      const folder = sensitiveMatch[1].toLowerCase();
+      const filename = sensitiveMatch[2].split("/").pop() || "";
+      if (!filename) return input;
+
+      return `${SERVER_URL}/api/protected-uploads/${folder}/${filename}`;
+    }
+  };
+
   // Jika sudah full URL (http/https), return langsung
   if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
+    const maybeSensitive = normalizeSensitivePath(path);
+
+    try {
+      const url = new URL(maybeSensitive);
+      const isLegacyProductionApi = url.hostname === "api.sahabatqolbu.com";
+
+      if (isLegacyProductionApi) {
+        return `${SERVER_URL}${url.pathname}${url.search}`;
+      }
+    } catch {
+      return maybeSensitive;
+    }
+
+    return maybeSensitive;
   }
 
   // ✅ SOLUTION: Langsung ke server root (BYPASS /api)
@@ -20,11 +60,14 @@ export function getImageUrl(path: string | null | undefined): string {
   // Karena baseURL axios = http://localhost:5000/api
   // Kita harus remove /api untuk static files
 
-  const SERVER_URL = "http://localhost:5000"; // ✅ HARDCODE (paling safe)
-
   // Path dari DB: /uploads/hotels/xxx.webp
   // Result: http://localhost:5000/uploads/hotels/xxx.webp
-  return `${SERVER_URL}${path}`;
+  const normalizedPath = normalizeSensitivePath(path);
+  if (normalizedPath.startsWith("http://") || normalizedPath.startsWith("https://")) {
+    return normalizedPath;
+  }
+
+  return `${SERVER_URL}${normalizedPath}`;
 }
 
 // ✅ MAPPING TIPE PAKET (sudah bener, ga usah diubah)

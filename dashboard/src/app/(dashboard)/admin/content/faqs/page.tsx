@@ -53,6 +53,41 @@ import {
   Loader2,
 } from "lucide-react";
 
+type FAQCategory = "UMRAH" | "HAJI" | "PAYMENT" | "GENERAL";
+
+interface FAQItem {
+  id: number;
+  category: FAQCategory;
+  question: string;
+  answer: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+interface FAQFormData {
+  category: FAQCategory;
+  question: string;
+  answer: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 const FAQ_CATEGORIES = [
   { value: "UMRAH", label: "Umrah" },
   { value: "HAJI", label: "Haji" },
@@ -67,10 +102,10 @@ export default function FAQsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<FAQItem | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FAQFormData>({
     category: "GENERAL",
     question: "",
     answer: "",
@@ -82,34 +117,49 @@ export default function FAQsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["faqs", categoryFilter],
     queryFn: async () => {
-      const params: any = {};
+      const params: Record<string, string> = {};
       if (categoryFilter !== "all") params.category = categoryFilter;
       const res = await api.get("/faqs", { params });
       return res.data;
     },
   });
 
-  const faqs = data?.data || [];
+  const faqs: FAQItem[] = Array.isArray(data?.data) ? data.data : [];
 
   // ===== CREATE MUTATION =====
   const createMutation = useMutation({
-    mutationFn: (data: any) => api.post("/faqs", data),
+    mutationFn: (payload: FAQFormData) => api.post("/faqs", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDialogOpen(false);
       resetForm();
       toast({ title: "✅ FAQ berhasil ditambahkan" });
     },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal menambah FAQ",
+        description: getErrorMessage(error),
+      });
+    },
   });
 
   // ===== UPDATE MUTATION =====
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) => api.put(`/faqs/${id}`, data),
+    mutationFn: ({ id, data }: { id: number; data: FAQFormData }) =>
+      api.put(`/faqs/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDialogOpen(false);
       resetForm();
       toast({ title: "✅ FAQ berhasil diupdate" });
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal update FAQ",
+        description: getErrorMessage(error),
+      });
     },
   });
 
@@ -120,6 +170,13 @@ export default function FAQsPage() {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDeleteDialogOpen(false);
       toast({ title: "✅ FAQ berhasil dihapus" });
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal menghapus FAQ",
+        description: getErrorMessage(error),
+      });
     },
   });
 
@@ -133,7 +190,7 @@ export default function FAQsPage() {
     }
   };
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: FAQItem) => {
     setSelectedItem(item);
     setFormData({
       category: item.category,
@@ -240,7 +297,7 @@ export default function FAQsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {faqs.map((item: any) => (
+                {faqs.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       <Badge

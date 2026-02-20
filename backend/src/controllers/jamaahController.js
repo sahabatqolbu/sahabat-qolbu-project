@@ -1,7 +1,48 @@
 // backend/src/controllers/jamaahController.js
 import { db } from "../db/index.js";
-import { jamaahData, users, packages, jamaahPayments } from "../db/schema.js";
-import { eq, like, or, and, desc, sql } from "drizzle-orm";
+import {
+  jamaahData,
+  users,
+  packages,
+  jamaahPayments,
+  agentData,
+  auditLogs,
+} from "../db/schema.js";
+import { eq, like, or, and, desc, sql, count, inArray, isNotNull } from "drizzle-orm";
+import { logger } from "../utils/logger.js";
+import {
+  paginatedResponse,
+  successResponse,
+  createdResponse,
+  errorResponse,
+  notFoundResponse,
+} from "../utils/response.js";
+import { deriveJamaahPaymentState } from "../utils/paymentState.js";
+import { isPaymentProofPathValid } from "../utils/paymentProofPolicy.js";
+
+const SAFE_USER_COLUMNS = {
+  id: true,
+  fullName: true,
+  email: true,
+  phone: true,
+  role: true,
+  isActive: true,
+  isEmailVerified: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const getAgenOwnershipCondition = async (agenUserId) => {
+  const agent = await db.query.agentData.findFirst({
+    where: eq(agentData.userId, agenUserId),
+    columns: { id: true },
+  });
+
+  return agent
+    ? or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id))
+    : eq(jamaahData.agenId, agenUserId);
+};
 
 // ===== HELPER: Generate Booking Number =====
 const generateBookingNumber = async () => {
@@ -54,43 +95,105 @@ const createJamaahRecordWithRetry = async (buildValues, maxRetries = 5) => {
   throw new Error("Gagal membuat booking number unik");
 };
 
+const isPaymentNumberDuplicateError = (error) => {
+  const message = error?.sqlMessage || error?.message || "";
+  return error?.code === "ER_DUP_ENTRY" && message.includes("payment_number");
+};
+
+const createPaymentWithRetry = async (jamaahId, buildValues, maxRetries = 5) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const latestPayment = await db.query.jamaahPayments.findFirst({
+      where: eq(jamaahPayments.jamaahId, jamaahId),
+      columns: { paymentNumber: true },
+      orderBy: [desc(jamaahPayments.paymentNumber)],
+    });
+
+    const paymentNumber = Number(latestPayment?.paymentNumber || 0) + 1;
+
+    try {
+      const [inserted] = await db
+        .insert(jamaahPayments)
+        .values(buildValues(paymentNumber))
+        .$returningId();
+      return { inserted, paymentNumber };
+    } catch (error) {
+      if (isPaymentNumberDuplicateError(error) && attempt < maxRetries) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw new Error("Gagal membuat nomor pembayaran unik");
+};
+
+const syncJamaahPaymentAggregate = async ({ jamaahId, hargaFinal }) => {
+  const [{ totalVerifiedAmount }] = await db
+    .select({
+      totalVerifiedAmount: sql`COALESCE(SUM(${jamaahPayments.amount}), 0)`,
+    })
+    .from(jamaahPayments)
+    .where(
+      and(
+        eq(jamaahPayments.jamaahId, jamaahId),
+        isNotNull(jamaahPayments.verifiedAt)
+      )
+    );
+
+  const paymentState = deriveJamaahPaymentState({
+    hargaFinal,
+    totalPayment: totalVerifiedAmount,
+  });
+
+  await db
+    .update(jamaahData)
+    .set({
+      totalPayment: paymentState.totalPayment.toString(),
+      outstanding: paymentState.outstanding.toString(),
+      statusPayment: paymentState.statusPayment,
+      updatedAt: new Date(),
+    })
+    .where(eq(jamaahData.id, jamaahId));
+
+  return paymentState;
+};
+
 // =====================================================
 // SYNC USER JAMAAH → JAMAAH_DATA
 // =====================================================
 export const syncJamaahFromUsers = async (req, res, next) => {
   try {
-    console.log("🔄 SYNC JAMAAH FROM USERS...");
+    logger.info("Sync jamaah from users started");
 
     // Get semua user dengan role JAMAAH
     const jamaahUsers = await db.query.users.findMany({
       where: eq(users.role, "JAMAAH"),
     });
 
-    console.log(`📊 Found ${jamaahUsers.length} users with role JAMAAH`);
+    logger.debug("Found jamaah users", { count: jamaahUsers.length });
 
     // Get semua jamaah_data
     const existingJamaahData = await db.query.jamaahData.findMany();
     const existingUserIds = existingJamaahData.map((j) => j.userId);
 
-    console.log(`📊 Existing jamaah_data count: ${existingJamaahData.length}`);
-    console.log(`📊 Existing user IDs:`, existingUserIds);
+    logger.debug("Existing jamaah rows", { count: existingJamaahData.length });
 
     // Filter user yang BELUM punya jamaah_data
     const usersWithoutJamaahData = jamaahUsers.filter(
       (u) => !existingUserIds.includes(u.id)
     );
 
-    console.log(
-      `📊 Users without jamaah_data: ${usersWithoutJamaahData.length}`
-    );
+    logger.debug("Users without jamaah", { count: usersWithoutJamaahData.length });
 
     if (usersWithoutJamaahData.length === 0) {
-      return res.json({
-        success: true,
-        message: "Semua user JAMAAH sudah punya data jamaah",
-        synced: 0,
-        total: jamaahUsers.length,
-      });
+      return successResponse(
+        res,
+        {
+          synced: 0,
+          total: jamaahUsers.length,
+        },
+        "Semua user JAMAAH sudah punya data jamaah"
+      );
     }
 
     // Create jamaah_data untuk setiap user yang belum punya
@@ -124,11 +227,15 @@ export const syncJamaahFromUsers = async (req, res, next) => {
           status: "created",
         });
 
-        console.log(
-          `✅ Created jamaah_data for: ${user.fullName} → ${bookingNumber}`
-        );
+        logger.info("Jamaah data synced", {
+          userId: user.id,
+          bookingNumber,
+        });
       } catch (err) {
-        console.error(`❌ Failed to create for user ${user.id}:`, err.message);
+        logger.warn("Failed syncing jamaah for user", {
+          userId: user.id,
+          message: err.message,
+        });
         results.push({
           userId: user.id,
           fullName: user.fullName,
@@ -141,15 +248,17 @@ export const syncJamaahFromUsers = async (req, res, next) => {
 
     const successCount = results.filter((r) => r.status === "created").length;
 
-    return res.json({
-      success: true,
-      message: `Berhasil sync ${successCount} dari ${usersWithoutJamaahData.length} user`,
-      synced: successCount,
-      total: jamaahUsers.length,
-      details: results,
-    });
+    return successResponse(
+      res,
+      {
+        synced: successCount,
+        total: jamaahUsers.length,
+        details: results,
+      },
+      `Berhasil sync ${successCount} dari ${usersWithoutJamaahData.length} user`
+    );
   } catch (error) {
-    console.error("❌ SYNC ERROR:", error);
+    logger.error("Sync jamaah from users error", error);
     next(error);
   }
 };
@@ -159,14 +268,31 @@ export const syncJamaahFromUsers = async (req, res, next) => {
 // =====================================================
 export const getAllJamaah = async (req, res, next) => {
   try {
-    const { search, statusPayment, registrationStatus, packageId } = req.query;
-
-    console.log("📥 GET ALL JAMAAH - Filters:", {
+    const {
       search,
       statusPayment,
       registrationStatus,
       packageId,
+      page = "1",
+      limit = "50",
+    } = req.query;
+
+    const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNumber = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
+
+    logger.debug("Get all jamaah", {
+      search,
+      statusPayment,
+      registrationStatus,
+      packageId,
+      page: pageNumber,
+      limit: limitNumber,
     });
+
+    const normalizedSearch =
+      typeof search === "string" && search.trim().length > 0
+        ? search.trim()
+        : null;
 
     // Build conditions
     const conditions = [];
@@ -183,11 +309,58 @@ export const getAllJamaah = async (req, res, next) => {
       conditions.push(eq(jamaahData.packageId, parseInt(packageId)));
     }
 
+    const baseWhere = conditions.length > 0 ? and(...conditions) : undefined;
+
+    let matchedJamaahIds = null;
+    if (normalizedSearch) {
+      const searchCondition = or(
+        like(users.fullName, `%${normalizedSearch}%`),
+        like(users.email, `%${normalizedSearch}%`),
+        like(users.phone, `%${normalizedSearch}%`),
+        like(jamaahData.namaPaspor, `%${normalizedSearch}%`),
+        like(jamaahData.bookingNumber, `%${normalizedSearch}%`),
+        like(jamaahData.nik, `%${normalizedSearch}%`),
+      );
+
+      const userMatchedRows = await db
+        .select({ id: jamaahData.id })
+        .from(jamaahData)
+        .leftJoin(users, eq(users.id, jamaahData.userId))
+        .where(baseWhere ? and(baseWhere, searchCondition) : searchCondition);
+
+      matchedJamaahIds = userMatchedRows
+        .map((row) => Number(row.id))
+        .filter((id) => Number.isInteger(id) && id > 0);
+
+      if (matchedJamaahIds.length === 0) {
+        return paginatedResponse(res, [], {
+          page: pageNumber,
+          limit: limitNumber,
+          total: 0,
+          totalPages: 0,
+        });
+      }
+
+    }
+
+    const whereCondition = matchedJamaahIds
+      ? baseWhere
+        ? and(baseWhere, inArray(jamaahData.id, matchedJamaahIds))
+        : inArray(jamaahData.id, matchedJamaahIds)
+      : baseWhere;
+
+    const [{ value: total }] = await db
+      .select({ value: count() })
+      .from(jamaahData)
+      .where(whereCondition);
+
     // Query dengan relasi LENGKAP
     const jamaahList = await db.query.jamaahData.findMany({
-      where: conditions.length > 0 ? and(...conditions) : undefined,
+      where: whereCondition,
       with: {
-        user: true, // Ambil SEMUA field dari users
+        user: {
+          columns: SAFE_USER_COLUMNS,
+        },
         package: {
           columns: {
             id: true,
@@ -206,44 +379,12 @@ export const getAllJamaah = async (req, res, next) => {
         },
       },
       orderBy: [desc(jamaahData.createdAt)],
+      limit: limitNumber,
+      offset: (pageNumber - 1) * limitNumber,
     });
-
-    console.log(`📊 Raw jamaah count: ${jamaahList.length}`);
-
-    // Debug log
-    jamaahList.forEach((j, idx) => {
-      console.log(
-        `  [${idx}] Booking: ${j.bookingNumber}, UserId: ${j.userId}, User: ${
-          j.user ? j.user.fullName : "NULL"
-        }`
-      );
-    });
-
-    // Filter search
-    let filteredList = jamaahList;
-    if (search && search.trim() !== "") {
-      const searchLower = search.toLowerCase();
-      filteredList = jamaahList.filter((j) => {
-        const namaUser = (j.user?.fullName || "").toLowerCase();
-        const namaPaspor = (j.namaPaspor || "").toLowerCase();
-        const booking = (j.bookingNumber || "").toLowerCase();
-        const email = (j.user?.email || "").toLowerCase();
-        const phone = (j.user?.phone || "").toLowerCase();
-        const nik = (j.nik || "").toLowerCase();
-
-        return (
-          namaUser.includes(searchLower) ||
-          namaPaspor.includes(searchLower) ||
-          booking.includes(searchLower) ||
-          email.includes(searchLower) ||
-          phone.includes(searchLower) ||
-          nik.includes(searchLower)
-        );
-      });
-    }
 
     // Transform response
-    const result = filteredList.map((j) => ({
+    const result = jamaahList.map((j) => ({
       id: j.id,
       bookingNumber: j.bookingNumber,
       dateOfBooking: j.dateOfBooking,
@@ -307,14 +448,16 @@ export const getAllJamaah = async (req, res, next) => {
       updatedAt: j.updatedAt,
     }));
 
-    console.log(`✅ Returning ${result.length} jamaah`);
+    logger.info("Jamaah list returned", { count: result.length });
 
-    return res.json({
-      success: true,
-      data: result,
+    return paginatedResponse(res, result, {
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
     });
   } catch (error) {
-    console.error("❌ GET ALL JAMAAH ERROR:", error);
+    logger.error("Get all jamaah error", error);
     next(error);
   }
 };
@@ -326,12 +469,26 @@ export const getJamaahByBookingNumber = async (req, res, next) => {
   try {
     const { bookingNumber } = req.params;
 
-    console.log("📥 GET JAMAAH BY BOOKING:", bookingNumber);
+    logger.debug("Get jamaah by booking", {
+      bookingNumber,
+      role: req.user?.role,
+      userId: req.user?.userId,
+    });
+
+    const whereCondition =
+      req.user?.role === "AGEN"
+        ? and(
+            eq(jamaahData.bookingNumber, bookingNumber),
+            await getAgenOwnershipCondition(req.user.userId)
+          )
+        : eq(jamaahData.bookingNumber, bookingNumber);
 
     const jamaah = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.bookingNumber, bookingNumber),
+      where: whereCondition,
       with: {
-        user: true,
+        user: {
+          columns: SAFE_USER_COLUMNS,
+        },
         package: {
           with: {
             hotelMakkah: true,
@@ -363,20 +520,16 @@ export const getJamaahByBookingNumber = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan atau bukan milik Anda");
     }
 
-    console.log("✅ Found jamaah:", jamaah.bookingNumber);
+    logger.info("Jamaah found", { bookingNumber: jamaah.bookingNumber });
 
-    return res.json({
-      success: true,
-      data: jamaah,
-    });
+    return successResponse(res, jamaah);
   } catch (error) {
-    console.error("❌ GET JAMAAH BY BOOKING ERROR:", error);
+    logger.error("Get jamaah by booking error", error, {
+      bookingNumber: req.params?.bookingNumber,
+    });
     next(error);
   }
 };
@@ -386,6 +539,7 @@ export const getJamaahByBookingNumber = async (req, res, next) => {
 // =====================================================
 export const createJamaah = async (req, res, next) => {
   try {
+    const payload = req.validatedBody || req.body;
     const {
       userId,
       packageId,
@@ -397,9 +551,14 @@ export const createJamaah = async (req, res, next) => {
       potonganFeeAgen,
       potonganPoinAgen,
       potonganCashbackKK,
-    } = req.body;
+    } = payload;
 
-    console.log("📥 CREATE JAMAAH:", req.body);
+    logger.debug("Create jamaah request", {
+      requestedBy: req.user?.userId,
+      role: req.user?.role,
+      hasUserId: !!userId,
+      hasPackageId: !!packageId,
+    });
 
     // Validasi user exists (jika ada userId)
     if (userId) {
@@ -407,10 +566,7 @@ export const createJamaah = async (req, res, next) => {
         where: eq(users.id, parseInt(userId)),
       });
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User tidak ditemukan",
-        });
+        return notFoundResponse(res, "User tidak ditemukan");
       }
 
       // Cek apakah user sudah punya jamaah_data
@@ -418,11 +574,12 @@ export const createJamaah = async (req, res, next) => {
         where: eq(jamaahData.userId, parseInt(userId)),
       });
       if (existingJamaah) {
-        return res.status(400).json({
-          success: false,
-          message: "User sudah memiliki data jamaah",
-          bookingNumber: existingJamaah.bookingNumber,
-        });
+        return errorResponse(
+          res,
+          "User sudah memiliki data jamaah",
+          400,
+          { bookingNumber: existingJamaah.bookingNumber }
+        );
       }
     }
 
@@ -457,15 +614,11 @@ export const createJamaah = async (req, res, next) => {
       })
     );
 
-    console.log("✅ Created jamaah with booking:", bookingNumber);
+    logger.info("Jamaah created", { bookingNumber, requestedBy: req.user?.userId });
 
-    return res.status(201).json({
-      success: true,
-      message: "Jamaah berhasil ditambahkan",
-      data: { id: newJamaah.id, bookingNumber },
-    });
+    return createdResponse(res, { id: newJamaah.id, bookingNumber }, "Jamaah berhasil ditambahkan");
   } catch (error) {
-    console.error("❌ CREATE JAMAAH ERROR:", error);
+    logger.error("Create jamaah error", error);
     next(error);
   }
 };
@@ -478,9 +631,13 @@ export const createJamaah = async (req, res, next) => {
 export const updateJamaah = async (req, res, next) => {
   try {
     const { bookingNumber } = req.params;
-    const updateData = req.body;
+    const updateData = req.validatedBody || req.body;
 
-    console.log("📥 UPDATE JAMAAH:", bookingNumber, updateData);
+    logger.debug("Update jamaah", {
+      bookingNumber,
+      requestedBy: req.user?.userId,
+      fields: Object.keys(updateData || {}),
+    });
 
     // Cek exists
     const existing = await db.query.jamaahData.findFirst({
@@ -488,10 +645,7 @@ export const updateJamaah = async (req, res, next) => {
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     // ✅ FIX: Tambahkan agenId ke allowedFields
@@ -548,7 +702,10 @@ export const updateJamaah = async (req, res, next) => {
       }
     }
 
-    console.log("📝 Filtered data to update:", filteredData); // ✅ Debug log
+    logger.debug("Filtered jamaah update fields", {
+      bookingNumber,
+      fields: Object.keys(filteredData),
+    });
 
     // Recalculate pricing if needed
     if (
@@ -614,15 +771,13 @@ export const updateJamaah = async (req, res, next) => {
         .where(eq(jamaahData.bookingNumber, bookingNumber));
     }
 
-    console.log("✅ Updated jamaah:", bookingNumber);
-    console.log("   - agenId:", filteredData.agenId); // ✅ Confirm agenId
+    logger.info("Jamaah updated", { bookingNumber });
 
-    return res.json({
-      success: true,
-      message: "Data jamaah berhasil diupdate",
-    });
+    return successResponse(res, null, "Data jamaah berhasil diupdate");
   } catch (error) {
-    console.error("❌ UPDATE JAMAAH ERROR:", error);
+    logger.error("Update jamaah error", error, {
+      bookingNumber: req.params?.bookingNumber,
+    });
     next(error);
   }
 };
@@ -640,32 +795,28 @@ export const deleteJamaah = async (req, res, next) => {
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     if (existing.payments && existing.payments.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Tidak dapat menghapus jamaah yang sudah memiliki riwayat pembayaran",
-      });
+      return errorResponse(
+        res,
+        "Tidak dapat menghapus jamaah yang sudah memiliki riwayat pembayaran",
+        400
+      );
     }
 
     await db
       .delete(jamaahData)
       .where(eq(jamaahData.bookingNumber, bookingNumber));
 
-    console.log("✅ Deleted jamaah:", bookingNumber);
+    logger.info("Jamaah deleted", { bookingNumber, requestedBy: req.user?.userId });
 
-    return res.json({
-      success: true,
-      message: "Data jamaah berhasil dihapus",
-    });
+    return successResponse(res, null, "Data jamaah berhasil dihapus");
   } catch (error) {
-    console.error("❌ DELETE JAMAAH ERROR:", error);
+    logger.error("Delete jamaah error", error, {
+      bookingNumber: req.params?.bookingNumber,
+    });
     next(error);
   }
 };
@@ -676,76 +827,57 @@ export const deleteJamaah = async (req, res, next) => {
 export const addPayment = async (req, res, next) => {
   try {
     const { bookingNumber } = req.params;
-    const { amount, bankId, paidBy, paymentDate, proofUrl, notes } = req.body;
+    const payload = req.validatedBody || req.body;
+    const { amount, bankId, paidBy, paymentDate, proofUrl, notes } = payload;
 
-    console.log("📥 ADD PAYMENT:", bookingNumber, { amount, bankId });
+    logger.debug("Add payment request", {
+      bookingNumber,
+      requestedBy: req.user?.userId,
+      bankId,
+    });
 
     const jamaah = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.bookingNumber, bookingNumber),
-      with: { payments: true },
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
-    const paymentNumber = (jamaah.payments?.length || 0) + 1;
-
-    const [newPayment] = await db
-      .insert(jamaahPayments)
-      .values({
+    const { inserted: newPayment, paymentNumber } = await createPaymentWithRetry(
+      jamaah.id,
+      (nextPaymentNumber) => ({
         jamaahId: jamaah.id,
-        paymentNumber,
+        paymentNumber: nextPaymentNumber,
         amount: amount.toString(),
-        bankId: bankId ? parseInt(bankId) : null,
+        bankId: bankId ? parseInt(bankId, 10) : null,
         paidBy,
         paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        proofStatus: "UPLOADED",
         proofUrl,
         notes,
       })
-      .$returningId();
+    );
 
-    // Update totals
-    const totalPaid =
-      parseFloat(jamaah.totalPayment || "0") + parseFloat(amount);
-    const hargaFinal = parseFloat(jamaah.hargaFinal || "0");
-    const outstanding = hargaFinal - totalPaid;
+    logger.info("Payment added", {
+      paymentId: newPayment.id,
+      bookingNumber,
+      paymentNumber,
+    });
 
-    let statusPayment = "BELUM_BAYAR";
-    if (totalPaid >= hargaFinal && hargaFinal > 0) {
-      statusPayment = "LUNAS";
-    } else if (totalPaid > 0) {
-      statusPayment = "CICILAN";
-    }
-
-    await db
-      .update(jamaahData)
-      .set({
-        totalPayment: totalPaid.toString(),
-        outstanding: outstanding.toString(),
-        statusPayment,
-        updatedAt: new Date(),
-      })
-      .where(eq(jamaahData.id, jamaah.id));
-
-    console.log("✅ Added payment:", newPayment.id);
-
-    return res.status(201).json({
-      success: true,
-      message: "Pembayaran berhasil ditambahkan",
-      data: {
+    return createdResponse(
+      res,
+      {
         paymentId: newPayment.id,
         paymentNumber,
-        totalPaid,
-        outstanding,
-        statusPayment,
+        verificationStatus: "UPLOADED",
       },
-    });
+      "Pembayaran berhasil dicatat dan menunggu verifikasi"
+    );
   } catch (error) {
-    console.error("❌ ADD PAYMENT ERROR:", error);
+    logger.error("Add payment error", error, {
+      bookingNumber: req.params?.bookingNumber,
+    });
     next(error);
   }
 };
@@ -754,15 +886,20 @@ export const getPayments = async (req, res, next) => {
   try {
     const { bookingNumber } = req.params;
 
+    const whereCondition =
+      req.user?.role === "AGEN"
+        ? and(
+            eq(jamaahData.bookingNumber, bookingNumber),
+            await getAgenOwnershipCondition(req.user.userId)
+          )
+        : eq(jamaahData.bookingNumber, bookingNumber);
+
     const jamaah = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.bookingNumber, bookingNumber),
+      where: whereCondition,
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan atau bukan milik Anda");
     }
 
     const payments = await db.query.jamaahPayments.findMany({
@@ -779,12 +916,12 @@ export const getPayments = async (req, res, next) => {
       orderBy: [desc(jamaahPayments.createdAt)],
     });
 
-    return res.json({
-      success: true,
-      data: payments,
-    });
+    return successResponse(res, payments);
   } catch (error) {
-    console.error("❌ GET PAYMENTS ERROR:", error);
+    logger.error("Get payments error", error, {
+      bookingNumber: req.params?.bookingNumber,
+      role: req.user?.role,
+    });
     next(error);
   }
 };
@@ -792,35 +929,247 @@ export const getPayments = async (req, res, next) => {
 export const verifyPayment = async (req, res, next) => {
   try {
     const { paymentId } = req.params;
+    const parsedPaymentId = Number.parseInt(paymentId, 10);
+
+    if (!Number.isInteger(parsedPaymentId) || parsedPaymentId <= 0) {
+      return errorResponse(res, "paymentId tidak valid", 400);
+    }
 
     const payment = await db.query.jamaahPayments.findFirst({
-      where: eq(jamaahPayments.id, parseInt(paymentId)),
+      where: eq(jamaahPayments.id, parsedPaymentId),
+      columns: {
+        id: true,
+        proofStatus: true,
+        verifiedBy: true,
+        verifiedAt: true,
+        rejectedBy: true,
+        rejectedAt: true,
+        proofUrl: true,
+      },
+      with: {
+        jamaah: {
+          columns: {
+            id: true,
+            userId: true,
+            bookingNumber: true,
+            hargaFinal: true,
+          },
+        },
+      },
     });
 
     if (!payment) {
-      return res.status(404).json({
-        success: false,
-        message: "Pembayaran tidak ditemukan",
-      });
+      return notFoundResponse(res, "Pembayaran tidak ditemukan");
+    }
+
+    if (!payment.jamaah?.id) {
+      return errorResponse(
+        res,
+        "Data jamaah untuk pembayaran ini tidak ditemukan",
+        422,
+        null,
+        "PAYMENT_JAMAAH_NOT_FOUND"
+      );
+    }
+
+    if (payment.jamaah?.userId && payment.jamaah.userId === req.user.userId) {
+      return errorResponse(
+        res,
+        "Verifikasi pembayaran sendiri tidak diizinkan",
+        403,
+        null,
+        "PAYMENT_SELF_VERIFICATION_BLOCKED"
+      );
+    }
+
+    if (payment.verifiedBy || payment.verifiedAt) {
+      return errorResponse(res, "Pembayaran sudah diverifikasi sebelumnya", 400);
+    }
+
+    if (payment.proofStatus === "REJECTED") {
+      return errorResponse(
+        res,
+        "Bukti pembayaran sudah ditolak. Minta upload ulang sebelum verifikasi.",
+        400,
+        null,
+        "PAYMENT_PROOF_REJECTED"
+      );
+    }
+
+    if (!isPaymentProofPathValid(payment.proofUrl)) {
+      return errorResponse(
+        res,
+        "Bukti pembayaran belum valid. Upload bukti transfer terlebih dahulu.",
+        400,
+      );
     }
 
     await db
       .update(jamaahPayments)
       .set({
+        proofStatus: "VERIFIED",
         verifiedBy: req.user.userId,
         verifiedAt: new Date(),
+        rejectedBy: null,
+        rejectedAt: null,
+        rejectionReason: null,
         updatedAt: new Date(),
       })
-      .where(eq(jamaahPayments.id, parseInt(paymentId)));
+      .where(eq(jamaahPayments.id, parsedPaymentId));
 
-    console.log("✅ Verified payment:", paymentId);
-
-    return res.json({
-      success: true,
-      message: "Pembayaran berhasil diverifikasi",
+    const paymentState = await syncJamaahPaymentAggregate({
+      jamaahId: payment.jamaah.id,
+      hargaFinal: payment.jamaah?.hargaFinal,
     });
+
+    try {
+      await db.insert(auditLogs).values({
+        userId: req.user.userId,
+        action: "VERIFY_PAYMENT",
+        module: "JAMAAH_PAYMENT",
+        description: `Verifikasi pembayaran #${parsedPaymentId} untuk booking ${payment.jamaah?.bookingNumber || "-"}`,
+        ipAddress: req.ip || null,
+        userAgent: req.get("user-agent") || null,
+      });
+    } catch (auditError) {
+      logger.warn("Payment verification audit log failed", {
+        paymentId: parsedPaymentId,
+        verifierId: req.user?.userId,
+        error: auditError?.message,
+      });
+    }
+
+    logger.info("Payment verified", {
+      paymentId: parsedPaymentId,
+      bookingNumber: payment.jamaah?.bookingNumber,
+      verifiedBy: req.user?.userId,
+      totalPaid: paymentState.totalPayment,
+      outstanding: paymentState.outstanding,
+      statusPayment: paymentState.statusPayment,
+    });
+
+    return successResponse(res, null, "Pembayaran berhasil diverifikasi");
   } catch (error) {
-    console.error("❌ VERIFY PAYMENT ERROR:", error);
+    logger.error("Verify payment error", error, {
+      paymentId: req.params?.paymentId,
+    });
+    next(error);
+  }
+};
+
+export const rejectPayment = async (req, res, next) => {
+  try {
+    const { paymentId } = req.params;
+    const { reason } = req.validatedBody || req.body;
+    const parsedPaymentId = Number.parseInt(paymentId, 10);
+
+    if (!Number.isInteger(parsedPaymentId) || parsedPaymentId <= 0) {
+      return errorResponse(res, "paymentId tidak valid", 400);
+    }
+
+    const payment = await db.query.jamaahPayments.findFirst({
+      where: eq(jamaahPayments.id, parsedPaymentId),
+      columns: {
+        id: true,
+        proofStatus: true,
+        verifiedBy: true,
+        verifiedAt: true,
+      },
+      with: {
+        jamaah: {
+          columns: {
+            id: true,
+            bookingNumber: true,
+            hargaFinal: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      return notFoundResponse(res, "Pembayaran tidak ditemukan");
+    }
+
+    if (!payment.jamaah?.id) {
+      return errorResponse(
+        res,
+        "Data jamaah untuk pembayaran ini tidak ditemukan",
+        422,
+        null,
+        "PAYMENT_JAMAAH_NOT_FOUND"
+      );
+    }
+
+    if (payment.verifiedBy || payment.verifiedAt) {
+      return errorResponse(
+        res,
+        "Pembayaran yang sudah diverifikasi tidak bisa ditolak",
+        409,
+        null,
+        "PAYMENT_ALREADY_VERIFIED"
+      );
+    }
+
+    if (payment.proofStatus === "REJECTED") {
+      return errorResponse(
+        res,
+        "Bukti pembayaran sudah ditolak sebelumnya",
+        400,
+        null,
+        "PAYMENT_ALREADY_REJECTED"
+      );
+    }
+
+    await db
+      .update(jamaahPayments)
+      .set({
+        proofStatus: "REJECTED",
+        rejectedBy: req.user.userId,
+        rejectedAt: new Date(),
+        rejectionReason: reason,
+        verifiedBy: null,
+        verifiedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(jamaahPayments.id, parsedPaymentId));
+
+    const paymentState = await syncJamaahPaymentAggregate({
+      jamaahId: payment.jamaah.id,
+      hargaFinal: payment.jamaah?.hargaFinal,
+    });
+
+    try {
+      await db.insert(auditLogs).values({
+        userId: req.user.userId,
+        action: "REJECT_PAYMENT",
+        module: "JAMAAH_PAYMENT",
+        description: `Reject pembayaran #${parsedPaymentId} untuk booking ${payment.jamaah?.bookingNumber || "-"}: ${reason}`,
+        ipAddress: req.ip || null,
+        userAgent: req.get("user-agent") || null,
+      });
+    } catch (auditError) {
+      logger.warn("Payment rejection audit log failed", {
+        paymentId: parsedPaymentId,
+        reviewerId: req.user?.userId,
+        error: auditError?.message,
+      });
+    }
+
+    logger.info("Payment rejected", {
+      paymentId: parsedPaymentId,
+      bookingNumber: payment.jamaah?.bookingNumber,
+      rejectedBy: req.user?.userId,
+      reason,
+      totalPaid: paymentState.totalPayment,
+      outstanding: paymentState.outstanding,
+      statusPayment: paymentState.statusPayment,
+    });
+
+    return successResponse(res, null, "Bukti pembayaran berhasil ditolak");
+  } catch (error) {
+    logger.error("Reject payment error", error, {
+      paymentId: req.params?.paymentId,
+    });
     next(error);
   }
 };
@@ -834,24 +1183,18 @@ export const approveJamaah = async (req, res, next) => {
     const { bookingNumber } = req.params;
     const adminId = req.user.userId;
 
-    console.log("📥 APPROVE JAMAAH:", bookingNumber);
+    logger.debug("Approve jamaah", { bookingNumber, adminId });
 
     const jamaah = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.bookingNumber, bookingNumber),
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     if (jamaah.registrationStatus === "APPROVED") {
-      return res.status(400).json({
-        success: false,
-        message: "Jamaah sudah di-approve sebelumnya",
-      });
+      return errorResponse(res, "Jamaah sudah di-approve sebelumnya", 400);
     }
 
     await db
@@ -864,19 +1207,21 @@ export const approveJamaah = async (req, res, next) => {
       })
       .where(eq(jamaahData.bookingNumber, bookingNumber));
 
-    console.log("✅ Approved jamaah:", bookingNumber);
+    logger.info("Jamaah approved", { bookingNumber, adminId });
 
-    return res.json({
-      success: true,
-      message: "Jamaah berhasil di-approve",
-      data: {
+    return successResponse(
+      res,
+      {
         bookingNumber,
         registrationStatus: "APPROVED",
         approvedAt: new Date(),
       },
-    });
+      "Jamaah berhasil di-approve"
+    );
   } catch (error) {
-    console.error("❌ APPROVE ERROR:", error);
+    logger.error("Approve jamaah error", error, {
+      bookingNumber: req.params?.bookingNumber,
+    });
     next(error);
   }
 };
@@ -890,13 +1235,10 @@ export const rejectJamaah = async (req, res, next) => {
     const { reason } = req.body;
     const adminId = req.user.userId;
 
-    console.log("📥 REJECT JAMAAH:", bookingNumber);
+    logger.debug("Reject jamaah", { bookingNumber, adminId });
 
     if (!reason) {
-      return res.status(400).json({
-        success: false,
-        message: "Alasan penolakan harus diisi",
-      });
+      return errorResponse(res, "Alasan penolakan harus diisi", 400);
     }
 
     const jamaah = await db.query.jamaahData.findFirst({
@@ -904,10 +1246,7 @@ export const rejectJamaah = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     await db
@@ -921,20 +1260,22 @@ export const rejectJamaah = async (req, res, next) => {
       })
       .where(eq(jamaahData.bookingNumber, bookingNumber));
 
-    console.log("✅ Rejected jamaah:", bookingNumber);
+    logger.info("Jamaah rejected", { bookingNumber, adminId });
 
-    return res.json({
-      success: true,
-      message: "Jamaah berhasil di-reject",
-      data: {
+    return successResponse(
+      res,
+      {
         bookingNumber,
         registrationStatus: "REJECTED",
         rejectedAt: new Date(),
         rejectionReason: reason,
       },
-    });
+      "Jamaah berhasil di-reject"
+    );
   } catch (error) {
-    console.error("❌ REJECT ERROR:", error);
+    logger.error("Reject jamaah error", error, {
+      bookingNumber: req.params?.bookingNumber,
+    });
     next(error);
   }
 };
@@ -946,17 +1287,17 @@ export const revertToVerified = async (req, res, next) => {
   try {
     const { bookingNumber } = req.params;
 
-    console.log("📥 REVERT TO VERIFIED:", bookingNumber);
+    logger.debug("Revert jamaah to verified", {
+      bookingNumber,
+      requestedBy: req.user?.userId,
+    });
 
     const jamaah = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.bookingNumber, bookingNumber),
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     await db
@@ -972,14 +1313,13 @@ export const revertToVerified = async (req, res, next) => {
       })
       .where(eq(jamaahData.bookingNumber, bookingNumber));
 
-    console.log("✅ Reverted to VERIFIED:", bookingNumber);
+    logger.info("Jamaah reverted to verified", { bookingNumber });
 
-    return res.json({
-      success: true,
-      message: "Status dikembalikan ke VERIFIED",
-    });
+    return successResponse(res, null, "Status dikembalikan ke VERIFIED");
   } catch (error) {
-    console.error("❌ REVERT ERROR:", error);
+    logger.error("Revert jamaah error", error, {
+      bookingNumber: req.params?.bookingNumber,
+    });
     next(error);
   }
 };

@@ -2,6 +2,7 @@ import { db } from "../db/index.js";
 import { companyProfile } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
+import { logger } from "../utils/logger.js";
 
 // ===== GET COMPANY PROFILE =====
 export const getCompanyProfile = async (req, res, next) => {
@@ -26,7 +27,7 @@ export const getCompanyProfile = async (req, res, next) => {
 
     return successResponse(res, profile);
   } catch (error) {
-    console.error("❌ Get Company Profile Error:", error);
+    logger.error("Get company profile error", error);
     next(error);
   }
 };
@@ -36,19 +37,19 @@ export const updateCompanyProfile = async (req, res, next) => {
   try {
     const data = req.body;
 
-    console.log("📥 Received update data:", data); // ✅ DEBUG
+    logger.debug("Update company profile requested", {
+      fields: Object.keys(data || {}),
+    });
 
     // Check if profile exists
     const existing = await db.query.companyProfile.findFirst({
       where: eq(companyProfile.id, 1),
     });
 
-    console.log("🔍 Existing profile:", existing ? "Found" : "Not found"); // ✅ DEBUG
+    logger.debug("Company profile existence checked", { exists: !!existing });
 
     if (!existing) {
       // ✅ CREATE NEW
-      console.log("➕ Creating new profile...");
-
       const [result] = await db.insert(companyProfile).values({
         id: 1,
         companyName: data.companyName || "Sahabat Qolbu",
@@ -74,11 +75,8 @@ export const updateCompanyProfile = async (req, res, next) => {
         mission: data.mission || null,
       });
 
-      console.log("✅ Profile created:", result);
+      logger.info("Company profile created", { result });
     } else {
-      // ✅ UPDATE EXISTING
-      console.log("🔄 Updating existing profile...");
-
       const updateData = {
         companyName: data.companyName ?? existing.companyName,
         tagline: data.tagline ?? existing.tagline,
@@ -103,19 +101,17 @@ export const updateCompanyProfile = async (req, res, next) => {
         updatedAt: new Date(),
       };
 
-      console.log("📝 Update data:", updateData); // ✅ DEBUG
-
       const result = await db
         .update(companyProfile)
         .set(updateData)
         .where(eq(companyProfile.id, 1));
 
-      console.log("✅ Profile updated:", result);
+      logger.info("Company profile updated", { result });
     }
 
     return successResponse(res, null, "Profil perusahaan berhasil diupdate");
   } catch (error) {
-    console.error("❌ Update Company Profile Error:", error);
+    logger.error("Update company profile error", error);
     next(error);
   }
 };
@@ -123,18 +119,14 @@ export const updateCompanyProfile = async (req, res, next) => {
 // ===== UPLOAD COMPANY LOGO =====
 export const uploadCompanyLogo = async (req, res, next) => {
   try {
-    // ✅ DEBUG
-    console.log("=".repeat(50));
-    console.log("📤 uploadCompanyLogo called");
-    console.log("   req.file:", req.file ? "EXISTS" : "UNDEFINED");
-    console.log("   req.uploadedFile:", req.uploadedFile ? req.uploadedFile : "UNDEFINED");
-    console.log("=".repeat(50));
+    logger.debug("Upload company logo called", {
+      hasFile: !!req.file,
+      hasUploadedFile: !!req.uploadedFile,
+    });
 
     if (!req.uploadedFile) {
       return errorResponse(res, "Logo harus diupload", 400);
     }
-
-    console.log("📤 Uploading logo:", req.uploadedFile.path);
 
     // Check if profile exists
     const existing = await db.query.companyProfile.findFirst({
@@ -157,7 +149,7 @@ export const uploadCompanyLogo = async (req, res, next) => {
         .where(eq(companyProfile.id, 1));
     }
 
-    console.log("✅ Logo uploaded successfully:", req.uploadedFile.path);
+    logger.info("Company logo uploaded", { logo: req.uploadedFile.path });
 
     return successResponse(
       res,
@@ -165,7 +157,7 @@ export const uploadCompanyLogo = async (req, res, next) => {
       "Logo berhasil diupload"
     );
   } catch (error) {
-    console.error("❌ Upload Logo Error:", error);
+    logger.error("Upload company logo error", error);
     next(error);
   }
 };

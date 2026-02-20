@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
-import { periods } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { periods, agentClosingHistory } from "../db/schema.js";
+import { eq, desc, sql } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 
 // ===== GET ALL =====
@@ -158,11 +158,18 @@ export const deletePeriod = async (req, res, next) => {
       return errorResponse(res, "Periode tidak ditemukan", 404);
     }
 
-    // TODO: Cek apakah ada closing history yang pakai periode ini
-    // const [closingCount] = await db
-    //   .select({ count: sql`count(*)` })
-    //   .from(agentClosingHistory)
-    //   .where(eq(agentClosingHistory.periodId, parseInt(id)));
+    const [closingCount] = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(agentClosingHistory)
+      .where(eq(agentClosingHistory.periodId, parseInt(id)));
+
+    if (Number(closingCount?.count || 0) > 0) {
+      return errorResponse(
+        res,
+        "Periode tidak dapat dihapus karena sudah digunakan pada histori closing",
+        400
+      );
+    }
 
     await db.delete(periods).where(eq(periods.id, parseInt(id)));
 

@@ -1,0 +1,55 @@
+name: Critical Alert Monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  critical-guard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run critical alert probe
+        id: critical_probe
+        continue-on-error: true
+        env:
+          AUTH_GUARD_URL: ${{ secrets.AUTH_GUARD_URL }}
+          AUTH_GUARD_EXPECTED_STATUS: ${{ secrets.AUTH_GUARD_EXPECTED_STATUS }}
+          AUTH_GUARD_COOKIE: ${{ secrets.AUTH_GUARD_COOKIE }}
+          PAYMENT_GUARD_URL: ${{ secrets.PAYMENT_GUARD_URL }}
+          PAYMENT_GUARD_EXPECTED_STATUS: ${{ secrets.PAYMENT_GUARD_EXPECTED_STATUS }}
+          PAYMENT_GUARD_COOKIE: ${{ secrets.PAYMENT_GUARD_COOKIE }}
+          PUBLIC_HEALTH_GUARD_URL: ${{ secrets.PUBLIC_HEALTH_GUARD_URL }}
+          PUBLIC_HEALTH_GUARD_EXPECTED_STATUS: ${{ secrets.PUBLIC_HEALTH_GUARD_EXPECTED_STATUS }}
+        run: |
+          node backend/src/scripts/criticalAlertProbe.js
+
+      - name: Notify ops channel (optional)
+        if: steps.critical_probe.outcome == 'failure' && secrets.OPS_ALERT_WEBHOOK_URL != ''
+        env:
+          OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$OPS_ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"[Sahabat Qolbu] Critical alert probe failed. Potential auth/payment anomaly detected. Check workflow logs immediately."}'
+
+      - name: Notify SEV-1 pager (optional)
+        if: steps.critical_probe.outcome == 'failure' && secrets.SEV1_PAGER_WEBHOOK_URL != ''
+        env:
+          SEV1_PAGER_WEBHOOK_URL: ${{ secrets.SEV1_PAGER_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$SEV1_PAGER_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"[Sahabat Qolbu] SEV-1 candidate from critical probe (auth/payment). Escalate immediately."}'
+
+      - name: Fail workflow if probe failed
+        if: steps.critical_probe.outcome == 'failure'
+        run: exit 1

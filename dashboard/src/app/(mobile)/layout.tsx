@@ -1,7 +1,7 @@
 // dashboard/src/app/%28mobile%29/layout.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
@@ -10,12 +10,15 @@ import {
   Calendar,
   CreditCard,
   FileText,
+  Globe,
   LayoutDashboard,
   Loader2,
   Package,
   UserCircle,
   Users,
 } from "lucide-react";
+
+const isDevelopment = process.env.NODE_ENV === "development";
 
 export default function MobileLayout({
   children,
@@ -24,8 +27,7 @@ export default function MobileLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, hasHydrated } = useAuthStore();
 
   const isAgenDesktop = pathname?.startsWith("/agen") && user?.role === "AGEN";
   const isAgenHome = pathname === "/agen";
@@ -36,6 +38,7 @@ export default function MobileLayout({
   const desktopAgenNav = [
     { href: "/agen", label: "Dashboard", icon: LayoutDashboard },
     { href: "/agen/jamaah", label: "Jamaah", icon: Users },
+    { href: "/agen/website", label: "Website", icon: Globe },
     { href: "/agen/calendar", label: "Kalender", icon: Calendar },
     { href: "/agen/profile", label: "Profil", icon: UserCircle },
   ];
@@ -56,21 +59,20 @@ export default function MobileLayout({
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!hasHydrated) {
+      return;
+    }
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      console.log("❌ Not authenticated, redirecting to login");
+    if (!user) {
+      if (isDevelopment) {
+        console.log("❌ Not authenticated, redirecting to login");
+      }
       router.replace("/login");
     }
-  }, [isLoading, user, router]);
+  }, [hasHydrated, user, router]);
 
   // Loading states
-  if (isLoading || !user) {
+  if (!hasHydrated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

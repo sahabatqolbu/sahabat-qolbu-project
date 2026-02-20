@@ -46,7 +46,7 @@ export const logger = {
    * Log error message
    */
   error: (message, error = null, meta = {}) => {
-    if (!enableLogs) return;
+    // Always log errors, even when regular logs are disabled.
     const errorMeta = error ? { error: error.message, stack: error.stack } : {};
     console.error(formatMessage("error", message, { ...sanitize(meta), ...errorMeta }));
   },
@@ -71,6 +71,6 @@ export const logger = {
    * Log security events (always logged)
    */
   security: (message, meta = {}) => {
-    console.log(formatMessage("SECURITY", message, sanitize(meta)));
+    console.warn(formatMessage("SECURITY", message, sanitize(meta)));
   },
 };

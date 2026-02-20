@@ -33,6 +33,22 @@ const airportSchema = z.object({
 
 type AirportFormData = z.infer<typeof airportSchema>;
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function CreateAirportPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -61,11 +77,11 @@ export default function CreateAirportPage() {
       });
       router.push("/admin/master/airports");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Menambahkan Bandara",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });

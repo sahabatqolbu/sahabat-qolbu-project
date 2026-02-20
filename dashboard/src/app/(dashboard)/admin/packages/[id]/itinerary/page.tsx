@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { packageService } from "@/services/packageService";
 import { getImageUrl } from "@/lib/utils";
+import { useAuthStore } from "@/stores/authStore";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ export default function PackageItineraryPage({ params }: PageProps) {
   const { id: packageId } = use(params);
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuthStore();
+  const isFinanceReadOnly = user?.role === "FINANCE";
 
   // Fetch Package
   const { data: packageData, isLoading } = useQuery({
@@ -45,11 +48,17 @@ export default function PackageItineraryPage({ params }: PageProps) {
           description: "Silakan upload PDF terlebih dahulu",
         });
 
+        // Redirect untuk role read-only kembali ke detail paket
+        if (isFinanceReadOnly) {
+          router.replace(`/admin/packages/${packageId}`);
+          return;
+        }
+
         // Redirect ke edit page tab gambar
         router.replace(`/admin/packages/${packageId}/edit?tab=images`);
       }
     }
-  }, [pkg, isLoading, packageId, router, toast]);
+  }, [pkg, isLoading, packageId, router, toast, isFinanceReadOnly]);
 
   // Loading state
   return (

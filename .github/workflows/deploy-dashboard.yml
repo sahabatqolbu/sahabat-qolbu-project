@@ -25,7 +25,22 @@ jobs:
       - name: Install dependencies
         run: |
           cd dashboard
-          npm install
+          npm ci
+
+      - name: Check menu route coverage
+        run: |
+          cd dashboard
+          npm run test:menu-routes
+
+      - name: Lint dashboard
+        run: |
+          cd dashboard
+          npm run lint
+
+      - name: Build dashboard
+        run: |
+          cd dashboard
+          npm run build
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest

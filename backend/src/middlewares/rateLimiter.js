@@ -3,6 +3,11 @@ import { logger } from "../utils/logger.js";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
+const normalizeEmail = (value) =>
+  typeof value === "string" ? value.toLowerCase().trim() : "";
+
+const getClientIp = (req) => req.ip || req.connection?.remoteAddress || "unknown";
+
 /**
  * Rate limiting configurations
  */
@@ -15,6 +20,7 @@ export const apiLimiter = rateLimit({
   skip: () => isDevelopment,
   message: {
     success: false,
+    code: "RATE_LIMIT_EXCEEDED",
     message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",
   },
   standardHeaders: true,
@@ -27,6 +33,7 @@ export const apiLimiter = rateLimit({
     });
     res.status(429).json({
       success: false,
+      code: "RATE_LIMIT_EXCEEDED",
       message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",
       retryAfter: Math.ceil(req.rateLimit.resetTime / 1000),
     });
@@ -37,21 +44,33 @@ export const apiLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 attempts
+  // In local development we don't want to constantly lock ourselves out.
+  skip: () => isDevelopment,
+  keyGenerator: (req) => {
+    const ip = getClientIp(req);
+    const email = normalizeEmail(req.body?.email);
+    // Rate limit is per IP + email to avoid blocking many legitimate users
+    // behind the same NAT when they login at the same time.
+    return email ? `${ip}:${email}` : ip;
+  },
   message: {
     success: false,
+    code: "RATE_LIMIT_EXCEEDED",
     message: "Terlalu banyak percobaan login. Silakan coba lagi dalam 15 menit.",
   },
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
   handler: (req, res) => {
+    res.setHeader("Retry-After", String(15 * 60));
     logger.security("Auth rate limit exceeded", {
-      ip: req.ip,
-      email: req.body?.email,
+      ip: getClientIp(req),
+      email: normalizeEmail(req.body?.email),
       path: req.path,
     });
     res.status(429).json({
       success: false,
+      code: "RATE_LIMIT_EXCEEDED",
       message: "Terlalu banyak percobaan. Silakan coba lagi dalam 15 menit.",
       retryAfter: 15 * 60, // 15 minutes in seconds
     });
@@ -62,19 +81,28 @@ export const authLimiter = rateLimit({
 export const otpLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 3, // 3 attempts
+  skip: () => isDevelopment,
+  keyGenerator: (req) => {
+    const ip = getClientIp(req);
+    const email = normalizeEmail(req.body?.email);
+    return email ? `${ip}:${email}` : ip;
+  },
   message: {
     success: false,
+    code: "RATE_LIMIT_EXCEEDED",
     message: "Terlalu banyak percobaan OTP. Silakan minta OTP baru.",
   },
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
+    res.setHeader("Retry-After", String(5 * 60));
     logger.security("OTP rate limit exceeded", {
-      ip: req.ip,
-      email: req.body?.email,
+      ip: getClientIp(req),
+      email: normalizeEmail(req.body?.email),
     });
     res.status(429).json({
       success: false,
+      code: "RATE_LIMIT_EXCEEDED",
       message: "Terlalu banyak percobaan OTP. Silakan minta OTP baru.",
       retryAfter: 5 * 60,
     });
@@ -87,6 +115,7 @@ export const createAccountLimiter = rateLimit({
   max: 5, // 5 accounts per hour
   message: {
     success: false,
+    code: "RATE_LIMIT_EXCEEDED",
     message: "Terlalu banyak pendaftaran. Silakan coba lagi nanti.",
   },
   standardHeaders: true,
@@ -97,6 +126,7 @@ export const createAccountLimiter = rateLimit({
     });
     res.status(429).json({
       success: false,
+      code: "RATE_LIMIT_EXCEEDED",
       message: "Terlalu banyak pendaftaran. Silakan coba lagi dalam 1 jam.",
       retryAfter: 60 * 60,
     });

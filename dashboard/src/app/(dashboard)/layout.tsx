@@ -1,7 +1,7 @@
 // dashboard/src/app/%28dashboard%29/layout.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -16,28 +16,79 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    // Wait for Zustand hydration
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
+    if (!hasHydrated) {
+      return;
+    }
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    // Only check auth after hydration complete
-    if (!isLoading && !user) {
+    if (!user) {
       console.log("❌ Not authenticated, redirecting to login");
       router.replace("/login");
+      return;
     }
-  }, [isLoading, user, router]);
+
+    if (user) {
+      const defaultRoutes: Record<string, string> = {
+        ADMIN: "/admin",
+        FINANCE: "/finance",
+        STAFF: "/staff",
+        AGEN: "/agen",
+        JAMAAH: "/jamaah",
+      };
+
+      const allowedPrefixes: Record<string, string[]> = {
+        ADMIN: ["/admin"],
+        FINANCE: ["/finance"],
+        STAFF: ["/staff"],
+        AGEN: ["/agen"],
+        JAMAAH: ["/jamaah"],
+      };
+
+      const blockedStaffPrefixes = ["/staff/reports", "/staff/transactions"];
+      if (
+        user.role === "STAFF" &&
+        blockedStaffPrefixes.some(
+          (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+        )
+      ) {
+        router.replace("/staff");
+        return;
+      }
+
+      if (user.role === "FINANCE") {
+        const blockedFinancePatterns = [
+          /^\/finance\/users\/create(?:\/|$)/,
+          /^\/finance\/users\/[^/]+\/edit(?:\/|$)/,
+          /^\/finance\/packages\/create(?:\/|$)/,
+          /^\/finance\/packages\/[^/]+\/edit(?:\/|$)/,
+          /^\/finance\/packages\/[^/]+\/itinerary(?:\/|$)/,
+          /^\/finance\/jamaah\/create(?:\/|$)/,
+          /^\/finance\/jamaah\/[^/]+\/edit(?:\/|$)/,
+          /^\/finance\/agen\/[^/]+\/edit(?:\/|$)/,
+        ];
+
+        if (blockedFinancePatterns.some((pattern) => pattern.test(pathname))) {
+          router.replace("/finance");
+          return;
+        }
+      }
+
+      const role = user.role;
+      const isAllowed =
+        allowedPrefixes[role]?.some(
+          (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+        ) ?? false;
+
+      if (!isAllowed) {
+        router.replace(defaultRoutes[role] || "/login");
+      }
+    }
+  }, [hasHydrated, user, pathname, router]);
 
   // Show loading during hydration
-  if (isLoading) {
+  if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

@@ -14,10 +14,11 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
 
-  setAuth: (token: string, user: User) => void;
+  setAuth: (user: User) => void;
+  setHasHydrated: (hydrated: boolean) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -31,19 +32,22 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       isAuthenticated: false,
+      hasHydrated: false,
 
-      setAuth: (_token, user) => {
+      setAuth: (user) => {
         log("💾 Setting auth state");
 
         set({
-          token: _token,
           user,
           isAuthenticated: true,
         });
 
         log("✅ Auth state updated");
+      },
+
+      setHasHydrated: (hydrated) => {
+        set({ hasHydrated: hydrated });
       },
 
       logout: () => {
@@ -54,7 +58,6 @@ export const useAuthStore = create<AuthState>()(
         }
 
         set({
-          token: null,
           user: null,
           isAuthenticated: false,
         });
@@ -75,10 +78,12 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        token: state.token,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       merge: (persistedState, currentState) => {
         const mergedState = {
           ...currentState,
@@ -87,8 +92,8 @@ export const useAuthStore = create<AuthState>()(
 
         return {
           ...mergedState,
-          token: mergedState.token ?? null,
-          isAuthenticated: Boolean(mergedState.user && mergedState.token),
+          isAuthenticated: Boolean(mergedState.user),
+          hasHydrated: true,
         };
       },
     }

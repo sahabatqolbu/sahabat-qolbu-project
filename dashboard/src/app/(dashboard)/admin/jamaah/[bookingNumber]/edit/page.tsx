@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jamaahService } from "@/services/jamaahService";
 import { adminService } from "@/services/adminService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/authStore";
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
@@ -132,12 +133,46 @@ interface AgenData {
   referralCode?: string;
 }
 
+interface PackageOption {
+  id: number;
+  name: string;
+  price?: string;
+  discountPrice?: string;
+}
+
+interface MahramOption {
+  id: number;
+  bookingNumber: string;
+  namaPaspor?: string;
+  fullName?: string;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function EditJamaahPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const bookingNumber = params.bookingNumber as string;
+  const roleBasePath =
+    user?.role === "FINANCE" ? "/finance" : user?.role === "STAFF" ? "/staff" : "/admin";
+  const jamaahBasePath = `${roleBasePath}/jamaah`;
 
   // State untuk Agen Combobox
   const [agenOpen, setAgenOpen] = useState(false);
@@ -175,7 +210,9 @@ export default function EditJamaahPage() {
     },
   });
 
-  const packages: any[] = packagesResponse?.data?.packages || [];
+  const packages: PackageOption[] = Array.isArray(packagesResponse?.data?.packages)
+    ? (packagesResponse.data.packages as PackageOption[])
+    : [];
 
   // =====================================================
   // FETCH AGEN LIST (for dropdown) ✅ NEW
@@ -213,9 +250,11 @@ export default function EditJamaahPage() {
     queryFn: () => jamaahService.getAll({}),
   });
 
-  const allJamaah: any[] = (allJamaahResponse?.data || []).filter(
-    (j: any) => j.bookingNumber !== bookingNumber
-  );
+  const allJamaah: MahramOption[] = Array.isArray(allJamaahResponse?.data)
+    ? (allJamaahResponse.data as MahramOption[]).filter(
+        (j) => j.bookingNumber !== bookingNumber,
+      )
+    : [];
 
   // =====================================================
   // POPULATE FORM WHEN DATA LOADS
@@ -294,7 +333,7 @@ export default function EditJamaahPage() {
       packages.length > 0
     ) {
       const selectedPackage = packages.find(
-        (pkg: any) => pkg.id.toString() === selectedPackageId
+        (pkg) => pkg.id.toString() === selectedPackageId,
       );
 
       if (selectedPackage) {
@@ -341,13 +380,13 @@ export default function EditJamaahPage() {
         queryKey: ["jamaah-detail", bookingNumber],
       });
       queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
-      router.push(`/admin/jamaah/${bookingNumber}`);
+      router.push(`${jamaahBasePath}/${bookingNumber}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Menyimpan",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -356,7 +395,7 @@ export default function EditJamaahPage() {
   // SUBMIT HANDLER
   // =====================================================
   const onSubmit = (data: JamaahFormData) => {
-    const cleanData: any = {};
+    const cleanData: Record<string, unknown> = {};
 
     Object.entries(data).forEach(([key, value]) => {
       if (
@@ -452,9 +491,9 @@ export default function EditJamaahPage() {
           Data Tidak Ditemukan
         </h2>
         <p className="text-gray-500 mb-6">
-          Booking number "{bookingNumber}" tidak ditemukan
+          Booking number &quot;{bookingNumber}&quot; tidak ditemukan
         </p>
-        <Link href="/admin/jamaah">
+        <Link href={jamaahBasePath}>
           <Button>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kembali
@@ -472,7 +511,7 @@ export default function EditJamaahPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href={`/admin/jamaah/${bookingNumber}`}>
+          <Link href={`${jamaahBasePath}/${bookingNumber}`}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -703,7 +742,7 @@ export default function EditJamaahPage() {
                             Tidak ada jamaah lain
                           </SelectItem>
                         ) : (
-                          allJamaah.map((j: any) => (
+                          allJamaah.map((j) => (
                             <SelectItem key={j.id} value={j.id.toString()}>
                               {j.namaPaspor || j.fullName} ({j.bookingNumber})
                             </SelectItem>
@@ -817,7 +856,7 @@ export default function EditJamaahPage() {
                             Tidak ada paket tersedia
                           </SelectItem>
                         ) : (
-                          packages.map((pkg: any) => (
+                          packages.map((pkg) => (
                             <SelectItem key={pkg.id} value={pkg.id.toString()}>
                               {pkg.name} -{" "}
                               {formatRupiah(
@@ -834,7 +873,7 @@ export default function EditJamaahPage() {
                         <p className="text-xs text-gray-500">
                           {
                             packages.find(
-                              (p: any) => p.id.toString() === selectedPackageId
+                              (p) => p.id.toString() === selectedPackageId,
                             )?.name
                           }
                         </p>

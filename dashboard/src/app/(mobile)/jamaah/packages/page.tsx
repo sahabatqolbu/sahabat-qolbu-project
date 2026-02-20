@@ -18,8 +18,6 @@ import {
   Star,
   Clock,
   Users,
-  Utensils,
-  Bus,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -42,6 +40,46 @@ export default function JamaahPackagePage() {
   const bookingInfo = data?.data?.booking;
   const pricing = data?.data?.pricing;
   const availablePackages = availablePackagesData?.data?.packages || [];
+
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_SERVER_URL ||
+    "http://localhost:5000";
+
+  const getAssetUrl = (path: string | null | undefined) => {
+    if (!path) return "";
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  };
+
+  const getTextLines = (value: unknown): string[] => {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof value !== "string") {
+      return [String(value)];
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      // fallback plain text
+    }
+
+    return trimmed
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  };
 
   if (isLoading) {
     return (
@@ -155,6 +193,15 @@ export default function JamaahPackagePage() {
     );
   }
 
+  const packageImages = Array.isArray(packageData.images) ? packageData.images : [];
+  const primaryImage =
+    packageImages.find((img: any) => img?.isPrimary)?.imageUrl ||
+    packageImages[0]?.imageUrl ||
+    "";
+  const itineraryUrl = getAssetUrl(packageData.itineraryPdf);
+  const facilityLines = getTextLines(packageData.facilities);
+  const descriptionLines = getTextLines(packageData.description);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
@@ -172,6 +219,16 @@ export default function JamaahPackagePage() {
       <div className="p-4 space-y-4">
         {/* Package Header */}
         <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
+          {primaryImage ? (
+            <div className="h-52 w-full bg-gray-100">
+              <img
+                src={getAssetUrl(primaryImage)}
+                alt={packageData.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          ) : null}
+
           <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-600)] p-5 text-white">
             <Badge className="bg-white/20 text-white border-0 mb-2">
               {bookingInfo?.notePaket || "FULLSERVICE"}
@@ -209,30 +266,119 @@ export default function JamaahPackagePage() {
           </CardContent>
         </Card>
 
-        {/* Flight */}
-        {packageData.airline && (
+        {packageImages.length > 1 && (
           <Card className="border-0 shadow-md rounded-2xl">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Plane className="h-5 w-5 text-blue-500" />
-                <h3 className="font-semibold">Penerbangan</h3>
-              </div>
-              <div className="flex items-center gap-3">
-                {packageData.airline.logo && (
-                  <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL}${packageData.airline.logo}`}
-                    alt={packageData.airline.name}
-                    className="h-10 w-10 object-contain"
-                  />
-                )}
-                <div>
-                  <p className="font-medium">{packageData.airline.name}</p>
-                  <p className="text-xs text-gray-500">Maskapai</p>
-                </div>
+              <h3 className="font-semibold mb-3">Galeri Paket</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {packageImages.slice(0, 6).map((img: any) => (
+                  <a
+                    key={img.id}
+                    href={getAssetUrl(img.imageUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-lg overflow-hidden bg-gray-100"
+                  >
+                    <img
+                      src={getAssetUrl(img.imageUrl)}
+                      alt={img.caption || packageData.name}
+                      className="h-20 w-full object-cover"
+                    />
+                  </a>
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Flight */}
+        <Card className="border-0 shadow-md rounded-2xl">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Plane className="h-5 w-5 text-blue-500" />
+              <h3 className="font-semibold">Penerbangan</h3>
+            </div>
+            <div className="flex items-center gap-3">
+              {packageData.airline?.logo ? (
+                <img
+                  src={getAssetUrl(packageData.airline.logo)}
+                  alt={packageData.airline.name || "Maskapai"}
+                  className="h-10 w-10 object-contain"
+                />
+              ) : null}
+              <div>
+                <p className="font-medium">{packageData.airline?.name || "-"}</p>
+                <p className="text-xs text-gray-500">Maskapai</p>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-3 border-t text-sm text-gray-700 space-y-1">
+              <p>
+                <span className="text-gray-500">Bandara Keberangkatan:</span>{" "}
+                {packageData.departureAirport
+                  ? `${packageData.departureAirport.code} - ${packageData.departureAirport.name}`
+                  : "-"}
+              </p>
+              {packageData.departureAirport?.city ? (
+                <p>
+                  <span className="text-gray-500">Kota:</span>{" "}
+                  {packageData.departureAirport.city}
+                </p>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md rounded-2xl">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3">Itinerary</h3>
+            {itineraryUrl ? (
+              <a
+                href={itineraryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white"
+              >
+                Lihat / Download Itinerary
+              </a>
+            ) : (
+              <p className="text-sm text-gray-500">Itinerary belum tersedia.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md rounded-2xl">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3">Deskripsi Paket</h3>
+            {descriptionLines.length > 0 ? (
+              <div className="space-y-1 text-sm text-gray-700">
+                {descriptionLines.map((line, idx) => (
+                  <p key={`desc-${idx}`}>{line}</p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Belum ada deskripsi.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md rounded-2xl">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3">Fasilitas</h3>
+            {facilityLines.length > 0 ? (
+              <ul className="space-y-2 text-sm text-gray-700">
+                {facilityLines.map((line, idx) => (
+                  <li key={`facility-${idx}`} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-500">Belum ada fasilitas.</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Hotels */}
         <Card className="border-0 shadow-md rounded-2xl">
@@ -372,6 +518,7 @@ export default function JamaahPackagePage() {
             </div>
           </CardContent>
         </Card>
+
       </div>
 
       <BottomNav role="JAMAAH" />

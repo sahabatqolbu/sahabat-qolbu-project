@@ -11,8 +11,6 @@ import {
   Clock,
   TrendingUp,
   ArrowRight,
-  MapPin,
-  Sparkles,
 } from "lucide-react";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 

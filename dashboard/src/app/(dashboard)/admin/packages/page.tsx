@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageService, Package } from "@/services/packageService";
 import { useToast } from "@/hooks/use-toast";
@@ -81,6 +82,7 @@ import { id as localeId } from "date-fns/locale";
 export default function PackagesPage() {
   const { toast } = useToast();
   const { user } = useAuthStore();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isFinanceReadOnly = user?.role === "FINANCE";
@@ -168,16 +170,6 @@ export default function PackagesPage() {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(num);
-  };
-
-  // Type Badge
-  const getTypeBadge = (type: string) => {
-    const colors = {
-      REGULER: "bg-blue-100 text-blue-800",
-      VIP: "bg-purple-100 text-purple-800",
-      VVIP: "bg-amber-100 text-amber-800 border border-amber-300",
-    };
-    return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
   // Status Badge
@@ -402,7 +394,11 @@ export default function PackagesPage() {
                   </TableHeader>
                   <TableBody>
                     {packages.map((pkg: Package) => (
-                      <TableRow key={pkg.id}>
+                      <TableRow
+                        key={pkg.id}
+                        className="hover:bg-gray-50/50 cursor-pointer group"
+                        onClick={() => router.push(`/admin/packages/${pkg.id}`)}
+                      >
                         {/* ID & Images */}
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -575,7 +571,10 @@ export default function PackagesPage() {
                         </TableCell>
 
                         {/* Aksi */}
-                        <TableCell className="text-right">
+                        <TableCell
+                          className="text-right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">

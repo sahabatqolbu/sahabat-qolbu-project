@@ -3,3 +3,9 @@ sqcb_ssh_key
 *.key
 backend/public/uploads/
 !backend/public/uploads/.gitkeep
+info.md
+
+# Environment variables
+**/.env
+**/.env.*
+!**/.env.example

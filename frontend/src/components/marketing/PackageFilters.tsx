@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, X, Filter, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ export default function PackageFilters({ onClose }: PackageFiltersProps) {
 
   const hasFilters = search || type || month;
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (type) params.set("type", type);
@@ -28,7 +28,7 @@ export default function PackageFilters({ onClose }: PackageFiltersProps) {
 
     router.push(`/packages?${params.toString()}`);
     onClose?.();
-  };
+  }, [month, onClose, router, search, type]);
 
   const clearFilters = () => {
     setSearch("");
@@ -48,7 +48,7 @@ export default function PackageFilters({ onClose }: PackageFiltersProps) {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, applyFilters]);
 
   return (
     <div className="bg-white rounded-3xl p-6 lg:p-6 border-4 border-neutral-100 lg:sticky lg:top-24 shadow-xl lg:shadow-none">
@@ -107,7 +107,7 @@ export default function PackageFilters({ onClose }: PackageFiltersProps) {
             )}
           </div>
           <p className="text-xs text-neutral-500 mt-2 font-medium">
-            Contoh: "Ramadhan", "Plus Turki", "Hemat"
+            Contoh: &quot;Ramadhan&quot;, &quot;Plus Turki&quot;, &quot;Hemat&quot;
           </p>
         </div>
 

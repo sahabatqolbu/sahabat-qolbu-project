@@ -34,6 +34,22 @@ const bankSchema = z.object({
 
 type BankFormData = z.infer<typeof bankSchema>;
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function EditBankPage() {
   const router = useRouter();
   const params = useParams();
@@ -84,11 +100,11 @@ export default function EditBankPage() {
       });
       router.push("/admin/master/banks");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Update Rekening",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });

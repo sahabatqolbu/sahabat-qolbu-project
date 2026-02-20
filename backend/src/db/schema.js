@@ -12,6 +12,7 @@ import {
   decimal,
   date,
   index,
+  uniqueIndex,
   json, // ✅ Opsional (kalo lu butuh)
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
@@ -752,27 +753,46 @@ export const jamaahData = mysqlTable(
 );
 
 // ===== TABEL 4: jamaah_payments (SUDAH ADA) =====
-export const jamaahPayments = mysqlTable("jamaah_payments", {
-  id: int("id").primaryKey().autoincrement(),
-  jamaahId: int("jamaah_id").references(() => jamaahData.id).notNull(),
-  
-  paymentNumber: int("payment_number").default(1),
-  bankId: int("bank_id").references(() => masterBanks.id),
-  paidBy: varchar("paid_by", { length: 255 }),
-  paymentDate: datetime("payment_date"),
-  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
-  
-  // Verification
-  verifiedBy: int("verified_by").references(() => users.id),
-  verifiedAt: datetime("verified_at"),
-  
-  // Proof
-  proofUrl: varchar("proof_url", { length: 500 }),
-  notes: text("notes"),
-  
-  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
-});
+export const jamaahPayments = mysqlTable(
+  "jamaah_payments",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    jamaahId: int("jamaah_id").references(() => jamaahData.id).notNull(),
+
+    paymentNumber: int("payment_number").default(1),
+    bankId: int("bank_id").references(() => masterBanks.id),
+    paidBy: varchar("paid_by", { length: 255 }),
+    paymentDate: datetime("payment_date"),
+    amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+
+    // Verification
+    proofStatus: mysqlEnum("proof_status", ["UPLOADED", "VERIFIED", "REJECTED"])
+      .notNull()
+      .default("UPLOADED"),
+    verifiedBy: int("verified_by").references(() => users.id),
+    verifiedAt: datetime("verified_at"),
+    rejectedBy: int("rejected_by").references(() => users.id),
+    rejectedAt: datetime("rejected_at"),
+    rejectionReason: text("rejection_reason"),
+
+    // Proof
+    proofUrl: varchar("proof_url", { length: 500 }),
+    notes: text("notes"),
+
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    jamaahIdx: index("jp_jamaah_idx").on(table.jamaahId),
+    proofStatusIdx: index("jp_proof_status_idx").on(table.proofStatus),
+    jamaahPaymentNumberUnique: uniqueIndex("jp_jamaah_payment_number_uq").on(
+      table.jamaahId,
+      table.paymentNumber
+    ),
+  })
+);
 
 
 
@@ -1059,6 +1079,12 @@ export const agentData = mysqlTable(
     instagram: varchar("instagram", { length: 100 }),
     facebook: varchar("facebook", { length: 100 }), // ✅ TAMBAH INI
     tiktok: varchar("tiktok", { length: 100 }),
+    youtube: varchar("youtube", { length: 100 }),
+
+    // Landing Page Agen
+    landingLogo: varchar("landing_logo", { length: 500 }),
+    landingPrimaryColor: varchar("landing_primary_color", { length: 10 }),
+    landingAccentColor: varchar("landing_accent_color", { length: 10 }),
 
     // Bintang & Level
     currentLevelId: int("current_level_id").references(() => agentLevels.id),
@@ -1071,6 +1097,9 @@ export const agentData = mysqlTable(
     certificateIssueDate: datetime("certificate_issue_date"),
     certificateValidFrom: datetime("certificate_valid_from"),
     certificateValidUntil: datetime("certificate_valid_until"),
+
+    // ID Card
+    idCardDesignFile: varchar("id_card_design_file", { length: 500 }),
 
     // Tracking Closing
     totalClosing: int("total_closing").notNull().default(0),
@@ -1086,6 +1115,7 @@ export const agentData = mysqlTable(
     customPurpose: text("custom_purpose"),
 
     // Dokumen
+    profilePhoto: varchar("profile_photo", { length: 500 }),
     ktpPhoto: varchar("ktp_photo", { length: 500 }),
     paymentProof: varchar("payment_proof", { length: 500 }),
 
@@ -1231,6 +1261,8 @@ export const notifications = mysqlTable(
       "REMINDER_PAYMENT",
       "REMINDER_PROFILE",
       "REMINDER_GENERAL",
+      "AGENT_KTP_REUPLOAD",
+      "AGENT_DOCS_REQUEST",
     ]).notNull(),
 
     title: varchar("title", { length: 255 }).notNull(),

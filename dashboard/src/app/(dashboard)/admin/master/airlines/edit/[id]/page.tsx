@@ -35,6 +35,22 @@ const airlineSchema = z.object({
 
 type AirlineFormData = z.infer<typeof airlineSchema>;
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan server";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan server";
+};
+
 export default function EditAirlinePage() {
   const router = useRouter();
   const params = useParams();
@@ -103,7 +119,7 @@ export default function EditAirlinePage() {
 
       // ✅ DEBUG: Log all FormData entries
       console.log("📦 FormData contents:");
-      for (let [key, value] of payload.entries()) {
+      for (const [key, value] of payload.entries()) {
         console.log(`  - ${key}:`, value);
       }
 
@@ -127,15 +143,13 @@ export default function EditAirlinePage() {
         router.push("/admin/master/airlines");
       }, 1000);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("❌ Update error:", error);
-      console.error("Response data:", error.response?.data);
 
       // ✅ TOAST ERROR
       toast({
         title: "❌ Gagal Update",
-        description:
-          error.response?.data?.message || "Terjadi kesalahan server",
+        description: getErrorMessage(error),
         variant: "destructive",
         duration: 5000,
       });

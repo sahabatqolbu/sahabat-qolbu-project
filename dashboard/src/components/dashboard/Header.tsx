@@ -30,6 +30,12 @@ export function Header() {
 
   if (!user) return null;
 
+  const isStaff = user.role === "STAFF";
+  const isFinance = user.role === "FINANCE";
+  const basePrefix = isStaff ? "/staff" : isFinance ? "/finance" : "/admin";
+  const calendarHref = `${basePrefix}/calendar`;
+  const profileHref = `${basePrefix}/profile`;
+
   return (
     <>
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
@@ -62,7 +68,7 @@ export function Header() {
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             {/* ✅ Calendar Icon */}
-            <Link href="/admin/calendar">
+            <Link href={calendarHref}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -104,7 +110,7 @@ export function Header() {
                 <DropdownMenuSeparator />
 
                 {/* Profile Link */}
-                <Link href="/admin/profile">
+                <Link href={profileHref}>
                   <DropdownMenuItem className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profil Saya</span>

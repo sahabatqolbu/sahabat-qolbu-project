@@ -5,6 +5,7 @@ import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { packageService } from "@/services/packageService";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/authStore";
 import { getImageUrl, PACKAGE_TYPE_LABELS, getTypeBadge } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +48,8 @@ interface PageProps {
 export default function PackageDetailPage({ params }: PageProps) {
   const { id: packageId } = use(params);
   const { toast } = useToast();
+  const { user } = useAuthStore();
+  const isFinanceReadOnly = user?.role === "FINANCE";
 
   const { data, isLoading } = useQuery({
     queryKey: ["package", packageId],
@@ -63,16 +66,6 @@ export default function PackageDetailPage({ params }: PageProps) {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(num);
-  };
-
-  // Type Badge
-  const getTypeBadge = (type: string) => {
-    const colors = {
-      REGULER: "bg-blue-100 text-blue-800",
-      VIP: "bg-purple-100 text-purple-800",
-      VVIP: "bg-amber-100 text-amber-800 border border-amber-300",
-    };
-    return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
   // Status Badge
@@ -205,12 +198,14 @@ export default function PackageDetailPage({ params }: PageProps) {
               Itinerary
             </Button>
           </Link>
-          <Link href={`/admin/packages/${packageId}/edit`}>
-            <Button className="bg-secondary hover:bg-secondary/90">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Paket
-            </Button>
-          </Link>
+          {!isFinanceReadOnly && (
+            <Link href={`/admin/packages/${packageId}/edit`}>
+              <Button className="bg-secondary hover:bg-secondary/90">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Paket
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -470,6 +465,18 @@ export default function PackageDetailPage({ params }: PageProps) {
             </Card>
           </div>
 
+          {/* Description */}
+          {pkg.description && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Deskripsi</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 text-sm whitespace-pre-wrap">{pkg.description}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Fasilitas */}
           {pkg.facilities && (
             <Card>
@@ -583,15 +590,17 @@ export default function PackageDetailPage({ params }: PageProps) {
                   Lihat Itinerary
                 </Button>
               </Link>
-              <Link
-                href={`/admin/packages/${packageId}/edit`}
-                className="block"
-              >
-                <Button variant="outline" className="w-full justify-start">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Paket
-                </Button>
-              </Link>
+              {!isFinanceReadOnly && (
+                <Link
+                  href={`/admin/packages/${packageId}/edit`}
+                  className="block"
+                >
+                  <Button variant="outline" className="w-full justify-start">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Paket
+                  </Button>
+                </Link>
+              )}
               <Button
                 variant="outline"
                 className="w-full justify-start"
@@ -603,17 +612,6 @@ export default function PackageDetailPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
-          {/* Description */}
-          {pkg.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Deskripsi</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 text-sm">{pkg.description}</p>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

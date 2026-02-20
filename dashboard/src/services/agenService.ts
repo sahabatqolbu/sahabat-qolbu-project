@@ -53,10 +53,9 @@ export interface JamaahListResponse {
 export const agenService = {
   // ✅ FIX: Ambil data.packages (bukan data langsung)
   getPackages: async () => {
-    const response = await api.get("/packages", {
+    const response = await api.get("/agen/packages", {
       params: {
         isActive: true,
-        isPublished: true,
       },
     });
 

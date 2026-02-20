@@ -12,6 +12,11 @@ import path from "path";
 import fs from "fs";
 import { createNotification, notifyAdmins } from "./notificationController.js";
 import { logger } from "../utils/logger.js";
+import {
+  successResponse,
+  errorResponse,
+  notFoundResponse,
+} from "../utils/response.js";
 
 // =====================================================
 // GET PROFILE (Jamaah akses data sendiri)
@@ -63,10 +68,7 @@ export const getMyProfile = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan. Hubungi admin.",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan. Hubungi admin.");
     }
 
     // Calculate document completeness
@@ -111,9 +113,7 @@ export const getMyProfile = async (req, res, next) => {
 
     logger.debug("Jamaah profile loaded", { userId });
 
-    return res.json({
-      success: true,
-      data: {
+    return successResponse(res, {
         ...jamaah,
         completeness: {
           biodata: biodataComplete,
@@ -133,7 +133,6 @@ export const getMyProfile = async (req, res, next) => {
               )
             : null,
         },
-      },
     });
   } catch (error) {
     logger.error("Get jamaah profile error", error, { userId: req.user?.userId });
@@ -202,17 +201,15 @@ export const updateMyBiodata = async (req, res, next) => {
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     if (existing.registrationStatus === "APPROVED") {
-      return res.status(403).json({
-        success: false,
-        message: "Data sudah diapprove. Hubungi admin untuk perubahan.",
-      });
+      return errorResponse(
+        res,
+        "Data sudah diapprove. Hubungi admin untuk perubahan.",
+        403
+      );
     }
 
     // Define field types for proper sanitization
@@ -275,11 +272,11 @@ export const updateMyBiodata = async (req, res, next) => {
 
     // Only update if there's data to update
     if (Object.keys(filteredData).length === 0) {
-      return res.json({
-        success: true,
-        message: "Tidak ada data yang diupdate",
-        data: { isProfileComplete: existing.isProfileComplete },
-      });
+      return successResponse(
+        res,
+        { isProfileComplete: existing.isProfileComplete },
+        "Tidak ada data yang diupdate"
+      );
     }
 
     await db
@@ -288,7 +285,7 @@ export const updateMyBiodata = async (req, res, next) => {
         ...filteredData,
         updatedAt: new Date(),
       })
-      .where(eq(jamaahData.userId, userId));
+      .where(eq(jamaahData.id, existing.id));
 
     const updated = await db.query.jamaahData.findFirst({
       where: eq(jamaahData.userId, userId),
@@ -311,17 +308,17 @@ export const updateMyBiodata = async (req, res, next) => {
     await db
       .update(jamaahData)
       .set({ isProfileComplete })
-      .where(eq(jamaahData.userId, userId));
+      .where(eq(jamaahData.id, existing.id));
 
     logger.info("Jamaah biodata updated", { userId });
 
-    return res.json({
-      success: true,
-      message: "Biodata berhasil diupdate",
-      data: {
+    return successResponse(
+      res,
+      {
         isProfileComplete,
       },
-    });
+      "Biodata berhasil diupdate"
+    );
   } catch (error) {
     logger.error("Update jamaah biodata error", error, { userId: req.user?.userId });
     next(error);
@@ -339,10 +336,7 @@ export const uploadMyDocument = async (req, res, next) => {
     logger.debug("Jamaah upload document", { userId, documentType });
 
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "File tidak ditemukan",
-      });
+      return errorResponse(res, "File tidak ditemukan", 400);
     }
 
     const validTypes = [
@@ -358,10 +352,7 @@ export const uploadMyDocument = async (req, res, next) => {
     ];
 
     if (!validTypes.includes(documentType)) {
-      return res.status(400).json({
-        success: false,
-        message: "Tipe dokumen tidak valid",
-      });
+      return errorResponse(res, "Tipe dokumen tidak valid", 400);
     }
 
     const existing = await db.query.jamaahData.findFirst({
@@ -370,10 +361,7 @@ export const uploadMyDocument = async (req, res, next) => {
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     const columnMap = {
@@ -389,11 +377,19 @@ export const uploadMyDocument = async (req, res, next) => {
     };
 
     const columnName = columnMap[documentType];
-    const fileUrl = `/uploads/jamaah/${req.file.filename}`;
+    const fileUrl = req.uploadedFile?.path;
+
+    if (!fileUrl) {
+      return errorResponse(res, "File upload gagal diproses", 500);
+    }
 
     const oldUrl = existing[columnName];
     if (oldUrl) {
-      const oldPath = path.join(process.cwd(), "public", oldUrl);
+      const oldPath = path.join(
+        process.cwd(),
+        "public",
+        String(oldUrl).replace(/^\/+/, "")
+      );
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
       }
@@ -405,17 +401,17 @@ export const uploadMyDocument = async (req, res, next) => {
         [columnName]: fileUrl,
         updatedAt: new Date(),
       })
-      .where(eq(jamaahData.userId, userId));
+      .where(eq(jamaahData.id, existing.id));
 
     logger.info("Jamaah document uploaded", { userId, documentType });
 
-    return res.json({
-      success: true,
-      message: `${documentType.toUpperCase()} berhasil diupload`,
-      data: {
+    return successResponse(
+      res,
+      {
         url: fileUrl,
       },
-    });
+      `${documentType.toUpperCase()} berhasil diupload`
+    );
   } catch (error) {
     logger.error("Upload jamaah document error", error, { userId: req.user?.userId });
     next(error);
@@ -437,10 +433,7 @@ export const submitForApproval = async (req, res, next) => {
     });
 
     if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     const requiredFields = {
@@ -478,13 +471,9 @@ export const submitForApproval = async (req, res, next) => {
     }
 
     if (missingFields.length > 0 || missingDocs.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Data belum lengkap",
-        data: {
-          missingFields,
-          missingDocs,
-        },
+      return errorResponse(res, "Data belum lengkap", 400, {
+        missingFields,
+        missingDocs,
       });
     }
 
@@ -495,14 +484,15 @@ export const submitForApproval = async (req, res, next) => {
         isProfileComplete: true,
         updatedAt: new Date(),
       })
-      .where(eq(jamaahData.userId, userId));
+      .where(eq(jamaahData.id, existing.id));
 
     logger.info("Jamaah submitted for approval", { userId });
 
-    return res.json({
-      success: true,
-      message: "Data berhasil disubmit. Menunggu approval admin.",
-    });
+    return successResponse(
+      res,
+      null,
+      "Data berhasil disubmit. Menunggu approval admin."
+    );
   } catch (error) {
     logger.error("Submit jamaah for approval error", error, { userId: req.user?.userId });
     next(error);
@@ -520,10 +510,7 @@ export const searchMahram = async (req, res, next) => {
     logger.debug("Jamaah search mahram", { userId, queryLength: String(q || "").length });
 
     if (!q || q.length < 3) {
-      return res.json({
-        success: true,
-        data: [],
-      });
+      return successResponse(res, []);
     }
 
     const myJamaah = await db.query.jamaahData.findFirst({
@@ -572,10 +559,7 @@ export const searchMahram = async (req, res, next) => {
       gender: j.gender,
     }));
 
-    return res.json({
-      success: true,
-      data,
-    });
+    return successResponse(res, data);
   } catch (error) {
     logger.error("Search mahram error", error, { userId: req.user?.userId });
     next(error);
@@ -597,10 +581,7 @@ export const getMyPayments = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     const payments = await db.query.jamaahPayments.findMany({
@@ -611,17 +592,14 @@ export const getMyPayments = async (req, res, next) => {
       orderBy: [desc(jamaahPayments.createdAt)],
     });
 
-    return res.json({
-      success: true,
-      data: {
-        summary: {
-          hargaFinal: jamaah.hargaFinal,
-          totalPayment: jamaah.totalPayment,
-          outstanding: jamaah.outstanding,
-          statusPayment: jamaah.statusPayment,
-        },
-        payments,
+    return successResponse(res, {
+      summary: {
+        hargaFinal: jamaah.hargaFinal,
+        totalPayment: jamaah.totalPayment,
+        outstanding: jamaah.outstanding,
+        statusPayment: jamaah.statusPayment,
       },
+      payments,
     });
   } catch (error) {
     logger.error("Get jamaah payments error", error, { userId: req.user?.userId });
@@ -647,50 +625,47 @@ export const getMyPackage = async (req, res, next) => {
             hotelMakkah: true,
             hotelMadinah: true,
             airline: true,
+            departureAirport: true,
+            images: true,
           },
         },
       },
     });
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     if (!jamaah.package) {
-      return res.json({
-        success: true,
-        data: null,
-        message: "Belum ada paket yang dipilih",
-      });
+      return successResponse(res, null, "Belum ada paket yang dipilih");
     }
 
-    return res.json({
-      success: true,
-      data: {
-        package: jamaah.package,
-        booking: {
-          bookingNumber: jamaah.bookingNumber,
-          dateOfBooking: jamaah.dateOfBooking,
-          roomTypeMakkah: jamaah.roomTypeMakkah,
-          roomTypeMadinah: jamaah.roomTypeMadinah,
-          notePaket: jamaah.notePaket,
-        },
-        pricing: {
-          hargaPaket: jamaah.hargaPaket,
-          potonganFeeAgen: jamaah.potonganFeeAgen,
-          potonganPoinAgen: jamaah.potonganPoinAgen,
-          potonganCashbackKK: jamaah.potonganCashbackKK,
-          hargaFinal: jamaah.hargaFinal,
-        },
+    return successResponse(res, {
+      package: jamaah.package,
+      booking: {
+        bookingNumber: jamaah.bookingNumber,
+        dateOfBooking: jamaah.dateOfBooking,
+        roomTypeMakkah: jamaah.roomTypeMakkah,
+        roomTypeMadinah: jamaah.roomTypeMadinah,
+        notePaket: jamaah.notePaket,
+      },
+      pricing: {
+        hargaPaket: jamaah.hargaPaket,
+        potonganFeeAgen: jamaah.potonganFeeAgen,
+        potonganPoinAgen: jamaah.potonganPoinAgen,
+        potonganCashbackKK: jamaah.potonganCashbackKK,
+        hargaFinal: jamaah.hargaFinal,
       },
     });
   } catch (error) {
     logger.error("Get jamaah package error", error, { userId: req.user?.userId });
     next(error);
   }
+};
+
+const parsePositiveInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
 // =====================================================
@@ -701,12 +676,9 @@ export const requestPackageConsultation = async (req, res, next) => {
     const userId = req.user.userId;
     const { packageId } = req.body;
 
-    const pkgId = parseInt(packageId, 10);
+    const pkgId = parsePositiveInt(packageId);
     if (!pkgId) {
-      return res.status(400).json({
-        success: false,
-        message: "Paket tidak valid",
-      });
+      return errorResponse(res, "Paket tidak valid", 400);
     }
 
     const [jamaah, pkg] = await Promise.all([
@@ -720,17 +692,11 @@ export const requestPackageConsultation = async (req, res, next) => {
     ]);
 
     if (!jamaah) {
-      return res.status(404).json({
-        success: false,
-        message: "Data jamaah tidak ditemukan",
-      });
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
     if (!pkg) {
-      return res.status(404).json({
-        success: false,
-        message: "Paket tidak ditemukan",
-      });
+      return notFoundResponse(res, "Paket tidak ditemukan");
     }
 
     const requesterName = jamaah.namaPaspor || req.user.fullName || `Jamaah #${userId}`;
@@ -789,14 +755,13 @@ export const requestPackageConsultation = async (req, res, next) => {
       await notifyAdmins(notificationPayload);
     }
 
-    return res.json({
-      success: true,
-      message:
-        target === "AGEN"
-          ? "Permintaan sudah dikirim ke agen Anda"
-          : "Permintaan sudah dikirim ke admin",
-      data: { target },
-    });
+    return successResponse(
+      res,
+      { target },
+      target === "AGEN"
+        ? "Permintaan sudah dikirim ke agen Anda"
+        : "Permintaan sudah dikirim ke admin"
+    );
   } catch (error) {
     logger.error("Request package consultation error", error, {
       userId: req.user?.userId,

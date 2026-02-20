@@ -49,6 +49,22 @@ interface FormData {
   benefits: BenefitField[];
 }
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function EditAgentLevelPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
@@ -126,11 +142,11 @@ export default function EditAgentLevelPage({ params }: PageProps) {
       });
       router.push("/admin/master/agent-levels");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Update Level",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });

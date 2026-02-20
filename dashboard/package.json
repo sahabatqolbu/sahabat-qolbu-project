@@ -6,7 +6,8 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "test:menu-routes": "node src/scripts/check-menu-routes.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

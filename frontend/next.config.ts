@@ -1,13 +1,24 @@
 import type { NextConfig } from "next";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
-  output: "export", // ✅ Static Export untuk Shared Hosting
+  output: isProduction ? "export" : undefined,
   images: {
-    unoptimized: true, // Required untuk static export
+    unoptimized: isProduction,
   },
-  trailingSlash: true, // Optional: untuk SEO
-  // Disable server-side features (karena static)
-  distDir: "out",
+  trailingSlash: isProduction,
+  distDir: isProduction ? "out" : undefined,
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/landing", destination: "/landing/index.html" },
+        { source: "/landing/", destination: "/landing/index.html" },
+        { source: "/landing/paket", destination: "/landing/paket.html" },
+        { source: "/landing/paket/", destination: "/landing/paket.html" },
+      ],
+    };
+  },
 };
 
 export default nextConfig;

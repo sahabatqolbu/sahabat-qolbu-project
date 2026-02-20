@@ -28,32 +28,51 @@ const logger = {
       console.log(...args);
     }
   },
+  warn: (...args: unknown[]) => {
+    if (enableDebugLogs) {
+      console.warn(...args);
+    }
+  },
   error: (...args: unknown[]) => {
     // Always log errors, but sanitize in production
     if (isProduction) {
       // In production, only log non-sensitive info
       console.error("[API Error]", args[0]);
     } else {
+      // NOTE: In Next.js dev, console.error triggers the red error overlay.
+      // For handled API errors, prefer logger.warn in the interceptor.
       console.error(...args);
     }
   },
 };
 
-const getStoredToken = (): string | null => {
-  if (typeof window === "undefined") return null;
+const getReadableErrorMessage = (error: AxiosError): string => {
+  const data = error.response?.data as any;
+  const backendMessage =
+    typeof data?.message === "string" && data.message.trim() ? data.message.trim() : "";
 
-  try {
-    const raw = localStorage.getItem("auth-storage");
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as {
-      state?: { token?: string | null };
-    };
-
-    return parsed?.state?.token || null;
-  } catch {
-    return null;
+  const loweredBackendMessage = backendMessage.toLowerCase();
+  if (loweredBackendMessage.includes("data and hash arguments required")) {
+    return "Akun tidak bisa login sementara. Silakan hubungi admin untuk reset password.";
   }
+  if (loweredBackendMessage.includes("bcrypt")) {
+    return "Terjadi masalah validasi akun. Silakan coba lagi atau hubungi admin.";
+  }
+
+  if (backendMessage) return backendMessage;
+
+  const status = error.response?.status;
+  if (status === 400) return "Permintaan tidak valid. Periksa input Anda.";
+  if (status === 401) return "Sesi login tidak valid atau sudah berakhir. Silakan login lagi.";
+  if (status === 403) return "Akses ditolak. Anda tidak punya izin.";
+  if (status === 404) return "Endpoint tidak ditemukan.";
+  if (status === 409) return "Terjadi konflik data (mis. email sudah terdaftar).";
+  if (status === 429) return "Terlalu banyak percobaan. Silakan tunggu sebentar lalu coba lagi.";
+  if (status && status >= 500) return "Server sedang bermasalah. Silakan coba lagi nanti.";
+
+  if (error.code === "ECONNABORTED") return "Request timeout. Silakan coba lagi.";
+  if (error.message === "Network Error") return "Gagal terhubung ke server. Cek koneksi Anda.";
+  return "Terjadi kesalahan. Silakan coba lagi.";
 };
 
 // Create axios instance
@@ -72,11 +91,6 @@ logger.debug("🌐 API baseURL:", resolvedApiUrl);
 api.interceptors.request.use(
   (config) => {
     logger.debug("🚀 API REQUEST:", config.method?.toUpperCase(), config.url);
-
-    const token = getStoredToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
 
     // Handle FormData
     if (config.data instanceof FormData) {
@@ -102,9 +116,18 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const url = error.config?.url;
     const data = error.response?.data as { message?: string };
+    const readableMessage = getReadableErrorMessage(error);
 
-    logger.error("❌ ERROR:", status, url);
-    logger.error("📦 Message:", data?.message || error.message);
+    // Use warn for HTTP errors to avoid Next dev overlay noise.
+    // The UI layer (toast/forms) should present the error to the user.
+    if (status) {
+      logger.warn("❌ API ERROR:", status, url);
+      logger.warn("📦 Message:", readableMessage);
+    } else {
+      // Network / unexpected errors
+      logger.error("❌ API ERROR:", status, url);
+      logger.error("📦 Message:", readableMessage);
+    }
 
     // Handle 401 Unauthorized
     if (status === 401) {
@@ -117,14 +140,9 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      logger.error("🚫 UNAUTHORIZED! Redirecting to login...");
+      logger.warn("🚫 UNAUTHORIZED! Redirecting to login...");
       
       if (typeof window !== "undefined") {
-        const hasSession = Boolean(getStoredToken());
-        if (!hasSession) {
-          return Promise.reject(error);
-        }
-
         // Clear auth data
         localStorage.removeItem("auth-storage");
         
@@ -138,12 +156,12 @@ api.interceptors.response.use(
 
     // Handle 403 Forbidden
     if (status === 403) {
-      logger.error("🚫 FORBIDDEN - Insufficient permissions");
+      logger.warn("🚫 FORBIDDEN - Insufficient permissions");
     }
 
     // Handle 429 Rate Limit
     if (status === 429) {
-      logger.error("⏰ RATE LIMITED - Too many requests");
+      logger.warn("⏰ RATE LIMITED - Too many requests");
       const retryAfter = error.response?.headers["retry-after"];
       if (retryAfter) {
         logger.debug(`Retry after: ${retryAfter} seconds`);
@@ -152,12 +170,12 @@ api.interceptors.response.use(
 
     // Handle network errors
     if (!status && error.message === "Network Error") {
-      logger.error("📡 Network error - check connection");
+      logger.warn("📡 Network error - check connection");
     }
 
     // Handle timeout
     if (error.code === "ECONNABORTED") {
-      logger.error("⏱️ Request timeout");
+      logger.warn("⏱️ Request timeout");
     }
 
     return Promise.reject(error);

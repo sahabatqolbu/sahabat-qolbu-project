@@ -1,0 +1,34 @@
+name: Uploads Backup Maintenance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 19 * * *"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run uploads backup snapshot
+        run: |
+          cd backend
+          npm run backup:uploads
+        env:
+          BACKUP_OUTPUT_DIR: ${{ vars.BACKUP_OUTPUT_DIR || 'backups/uploads' }}
+          BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS || '14' }}

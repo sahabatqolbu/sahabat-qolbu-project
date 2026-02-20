@@ -8,6 +8,23 @@ import {
   errorResponse,
   createdResponse,
 } from "../utils/response.js";
+import { logger } from "../utils/logger.js";
+
+const parseOptionalInt = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) ? parsed : null;
+};
+
+const parseBoolean = (value, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes"].includes(normalized)) return true;
+    if (["false", "0", "no"].includes(normalized)) return false;
+  }
+  return fallback;
+};
 
 // HELPER
 function facilitiesToString(facilities) {
@@ -122,13 +139,19 @@ export const createHotel = async (req, res, next) => {
 export const updateHotel = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const parsedId = Number.parseInt(id, 10);
+    if (!Number.isInteger(parsedId) || parsedId <= 0) {
+      return errorResponse(res, "ID hotel tidak valid", 400);
+    }
+
     // ✅ FIX: distanceToHaram (BUKAN distanceToHarem)
     const { name, address, city, country, stars, distanceToHaram, facilities, isActive } = req.body;
 
-    console.log("📥 Update hotel request:");
-    console.log("  - ID:", id);
-    console.log("  - Body:", req.body);
-    console.log("  - File:", req.file ? { name: req.file.originalname, path: req.file.path } : "No file");
+    logger.debug("Update hotel request", {
+      id: parsedId,
+      hasBody: Boolean(req.body),
+      hasFile: Boolean(req.file),
+    });
 
     const updateData = { updatedAt: new Date() };
 
@@ -138,15 +161,12 @@ export const updateHotel = async (req, res, next) => {
     if (country !== undefined) updateData.country = country || null;
     
     if (stars !== undefined) {
-      updateData.starRating = parseInt(stars);
-      console.log("  - Star Rating:", updateData.starRating);
+      updateData.starRating = parseOptionalInt(stars);
     }
     
     // ✅ Sekarang distanceToHaram sudah defined
     if (distanceToHaram !== undefined) {
-      const dist = parseInt(distanceToHaram);
-      updateData.distanceToHaram = isNaN(dist) ? null : dist;
-      console.log("  - Distance:", updateData.distanceToHaram);
+      updateData.distanceToHaram = parseOptionalInt(distanceToHaram);
     }
     
     if (facilities !== undefined) {
@@ -154,32 +174,34 @@ export const updateHotel = async (req, res, next) => {
     }
     
     if (isActive !== undefined) {
-      updateData.isActive = isActive === true || isActive === "true" || isActive === "1";
+      updateData.isActive = parseBoolean(isActive, false);
     }
     
     if (req.file && req.file.path) {
       updateData.imageUrl = req.file.path.replace("public", "");
-      console.log("  - New Image URL:", updateData.imageUrl);
     }
 
-    console.log("💾 Data to update:", updateData);
+    logger.debug("Update hotel payload prepared", {
+      id: parsedId,
+      fields: Object.keys(updateData),
+    });
 
     await db
       .update(masterHotels)
       .set(updateData)
-      .where(eq(masterHotels.id, parseInt(id)));
+      .where(eq(masterHotels.id, parsedId));
 
     const [updatedHotel] = await db
       .select()
       .from(masterHotels)
-      .where(eq(masterHotels.id, parseInt(id)))
+      .where(eq(masterHotels.id, parsedId))
       .limit(1);
 
     if (!updatedHotel) {
       return errorResponse(res, "Hotel tidak ditemukan", 404);
     }
 
-    console.log("✅ Updated hotel:", updatedHotel);
+    logger.info("Hotel updated", { id: parsedId });
 
     const response = {
       ...updatedHotel,
@@ -188,7 +210,7 @@ export const updateHotel = async (req, res, next) => {
 
     return successResponse(res, response, "Hotel berhasil diupdate");
   } catch (error) {
-    console.error("❌ Error updateHotel:", error);
+    logger.error("Error updateHotel", error);
     next(error);
   }
 };

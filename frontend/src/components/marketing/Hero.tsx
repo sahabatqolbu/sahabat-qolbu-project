@@ -5,6 +5,12 @@ import Link from "next/link";
 import { ArrowRight, Phone, CheckCircle2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const heroImages = [
+  "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1920&q=80",
+  "https://images.unsplash.com/photo-1564769610819-790a44eac2e8?w=1920&q=80",
+  "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&q=80",
+];
+
 const achievements = [
   { value: "5000+", label: "Jamaah" },
   { value: "14 Tahun", label: "Pengalaman" },
@@ -20,12 +26,6 @@ const features = [
 
 export default function Hero() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const heroImages = [
-    "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1920&q=80",
-    "https://images.unsplash.com/photo-1564769610819-790a44eac2e8?w=1920&q=80",
-    "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1920&q=80",
-  ];
 
   useEffect(() => {
     const interval = setInterval(() => {

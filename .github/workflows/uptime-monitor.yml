@@ -1,0 +1,43 @@
+name: Uptime Monitor
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run uptime probe
+        id: probe
+        continue-on-error: true
+        env:
+          BACKEND_HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL }}
+          BACKEND_PUBLIC_HEALTHCHECK_URL: ${{ secrets.BACKEND_PUBLIC_HEALTHCHECK_URL }}
+          BACKEND_DOCS_BLOCK_URL: ${{ secrets.BACKEND_DOCS_BLOCK_URL }}
+          DASHBOARD_HEALTHCHECK_URL: ${{ secrets.DASHBOARD_HEALTHCHECK_URL }}
+          FRONTEND_HEALTHCHECK_URL: ${{ secrets.FRONTEND_HEALTHCHECK_URL }}
+        run: |
+          node backend/src/scripts/uptimeProbe.js
+
+      - name: Notify on failure (optional webhook)
+        if: steps.probe.outcome == 'failure' && secrets.OPS_ALERT_WEBHOOK_URL != ''
+        env:
+          OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$OPS_ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"[Sahabat Qolbu] Uptime monitor failed. Check GitHub Actions run details."}'
+
+      - name: Fail workflow if probe failed
+        if: steps.probe.outcome == 'failure'
+        run: exit 1

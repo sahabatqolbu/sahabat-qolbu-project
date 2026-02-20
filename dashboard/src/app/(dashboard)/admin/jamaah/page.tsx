@@ -1,7 +1,7 @@
 // dashboard/src/app/(dashboard)/admin/jamaah/page.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { ComponentType, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jamaahService, JamaahListItem } from "@/services/jamaahService";
@@ -98,12 +98,60 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
+interface JamaahProfileFields extends JamaahListItem {
+  birthDate?: string | null;
+  birthPlace?: string | null;
+  maritalStatus?: string | null;
+  address?: string | null;
+  province?: string | null;
+  city?: string | null;
+  passportNumber?: string | null;
+  passportExpiry?: string | null;
+  passportIssuePlace?: string | null;
+  emergencyName?: string | null;
+  emergencyPhone?: string | null;
+  roomTypeMakkah?: string | null;
+  roomTypeMadinah?: string | null;
+  agenId?: number | null;
+  agenName?: string | null;
+}
+
+interface PackageFilterOption {
+  id: number;
+  name: string;
+}
+
+interface AgentFilterOption {
+  id: number;
+  fullName: string;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    message?: string;
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || payload.message || "Terjadi kesalahan";
+};
+
 export default function JamaahPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isFinanceReadOnly = user?.role === "FINANCE";
+  const isReadOnlyRole = user?.role !== "ADMIN";
+  const roleBasePath =
+    user?.role === "FINANCE" ? "/finance" : user?.role === "STAFF" ? "/staff" : "/admin";
+  const jamaahBasePath = `${roleBasePath}/jamaah`;
 
   // ===== FILTER STATES =====
   const [search, setSearch] = useState("");
@@ -128,8 +176,7 @@ export default function JamaahPage() {
 
   // ===== HELPER: Check Profile Complete (SAMAKAN dengan Agen) =====
   const checkProfileComplete = (j: JamaahListItem) => {
-    // Cast to any to avoid TypeScript errors if interface is missing detailed fields
-    const data = j as any;
+    const data = j as JamaahProfileFields;
 
     const requiredFields = [
       data.namaPaspor,
@@ -191,7 +238,9 @@ export default function JamaahPage() {
     },
   });
 
-  const packages = packagesResponse?.data?.packages || [];
+  const packages: PackageFilterOption[] = Array.isArray(packagesResponse?.data?.packages)
+    ? (packagesResponse.data.packages as PackageFilterOption[])
+    : [];
 
   // ===== FETCH AGENTS =====
   const { data: agentsResponse } = useQuery({
@@ -202,7 +251,9 @@ export default function JamaahPage() {
     },
   });
 
-  const agents = agentsResponse?.data || [];
+  const agents: AgentFilterOption[] = Array.isArray(agentsResponse?.data)
+    ? (agentsResponse.data as AgentFilterOption[])
+    : [];
 
   // ✅ DELETE MUTATION
   const deleteMutation = useMutation({
@@ -215,11 +266,11 @@ export default function JamaahPage() {
       queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
       setDeleteDialog({ open: false, jamaah: null });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Menghapus",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -272,11 +323,11 @@ export default function JamaahPage() {
           queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
           setImportDialogOpen(false);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         toast({
           variant: "destructive",
           title: "❌ Gagal Import",
-          description: error.response?.data?.message || "Terjadi kesalahan sistem",
+          description: getErrorMessage(error),
         });
       } finally {
         setIsImporting(false);
@@ -336,17 +387,16 @@ export default function JamaahPage() {
     // Package filter
     if (packageFilter !== "all") {
       list = list.filter(
-        // Cast to any because packageId might be missing in interface
         (j: JamaahListItem) =>
-          (j as any).packageId?.toString() === packageFilter,
+          (j as JamaahProfileFields).packageId?.toString() === packageFilter,
       );
     }
 
     // Agen filter
     if (agenFilter !== "all") {
       list = list.filter(
-        // Cast to any because agenId is missing in interface
-        (j: JamaahListItem) => (j as any).agenId?.toString() === agenFilter,
+        (j: JamaahListItem) =>
+          (j as JamaahProfileFields).agenId?.toString() === agenFilter,
       );
     }
 
@@ -461,8 +511,10 @@ export default function JamaahPage() {
 
   // ===== BADGE HELPERS =====
   const getPaymentBadge = (status: string) => {
-    const config: Record<string, { class: string; label: string; icon: any }> =
-    {
+    const config: Record<
+      string,
+      { class: string; label: string; icon: ComponentType<{ className?: string }> }
+    > = {
       LUNAS: {
         class: "bg-green-100 text-green-800 border-green-200",
         label: "Lunas",
@@ -537,8 +589,10 @@ export default function JamaahPage() {
       );
     }
 
-    const config: Record<string, { class: string; label: string; icon: any }> =
-    {
+    const config: Record<
+      string,
+      { class: string; label: string; icon: ComponentType<{ className?: string }> }
+    > = {
       DRAFT: {
         class: "bg-gray-100 text-gray-600 border-gray-300",
         label: "Draft",
@@ -679,7 +733,7 @@ export default function JamaahPage() {
           </h1>
           <p className="text-gray-600 mt-1">Kelola data jamaah & pembayaran</p>
         </div>
-        {!isFinanceReadOnly && <div className="flex flex-wrap gap-2">
+        {!isReadOnlyRole && <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -691,7 +745,7 @@ export default function JamaahPage() {
           <Button
             className="bg-secondary hover:bg-secondary/90 text-primary font-medium"
             size="sm"
-            onClick={() => router.push("/admin/users/create")}
+            onClick={() => router.push(`${roleBasePath}/users/create`)}
           >
             <Plus className="h-4 w-4 mr-2" />
             Tambah Jamaah
@@ -907,7 +961,7 @@ export default function JamaahPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Paket</SelectItem>
-                    {packages.map((pkg: any) => (
+                    {packages.map((pkg) => (
                       <SelectItem key={pkg.id} value={pkg.id.toString()}>
                         {pkg.name}
                       </SelectItem>
@@ -922,7 +976,7 @@ export default function JamaahPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Agen</SelectItem>
-                    {agents.map((agen: any) => (
+                    {agents.map((agen) => (
                       <SelectItem key={agen.id} value={agen.id.toString()}>
                         {agen.fullName}
                       </SelectItem>
@@ -1060,7 +1114,7 @@ export default function JamaahPage() {
                   onClick={() => setPackageFilter("all")}
                 >
                   Paket:{" "}
-                  {packages.find((p: any) => p.id.toString() === packageFilter)
+                  {packages.find((p) => p.id.toString() === packageFilter)
                     ?.name || packageFilter}
                   <X className="h-3 w-3" />
                 </Badge>
@@ -1072,7 +1126,7 @@ export default function JamaahPage() {
                   onClick={() => setAgenFilter("all")}
                 >
                   Agen:{" "}
-                  {agents.find((a: any) => a.id.toString() === agenFilter)
+                  {agents.find((a) => a.id.toString() === agenFilter)
                     ?.fullName || agenFilter}
                   <X className="h-3 w-3" />
                 </Badge>
@@ -1163,9 +1217,7 @@ export default function JamaahPage() {
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
               <p className="text-red-600 font-medium">Gagal memuat data</p>
               <p className="text-gray-500 text-sm mt-1 max-w-md mx-auto">
-                {(error as any)?.response?.data?.message ||
-                  (error as any)?.message ||
-                  "Terjadi kesalahan saat mengambil data"}
+                {getErrorMessage(error) || "Terjadi kesalahan saat mengambil data"}
               </p>
               <Button
                 variant="outline"
@@ -1198,10 +1250,10 @@ export default function JamaahPage() {
                   <X className="h-4 w-4 mr-2" />
                   Reset Filter
                 </Button>
-              ) : isFinanceReadOnly ? null : (
+              ) : isReadOnlyRole ? null : (
                 <Button
                   className="mt-6 bg-secondary text-primary hover:bg-secondary/90"
-                  onClick={() => router.push("/admin/users/create")}
+                  onClick={() => router.push(`${roleBasePath}/users/create`)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Tambah Jamaah Pertama
@@ -1239,7 +1291,7 @@ export default function JamaahPage() {
                       key={jamaah.id}
                       className="hover:bg-gray-50/50 cursor-pointer group"
                       onClick={() =>
-                        router.push(`/admin/jamaah/${jamaah.bookingNumber}`)
+                        router.push(`${jamaahBasePath}/${jamaah.bookingNumber}`)
                       }
                     >
                       <TableCell>
@@ -1321,10 +1373,9 @@ export default function JamaahPage() {
                           <p className="text-sm text-gray-700">
                             {jamaah.namaMitra || "-"}
                           </p>
-                          {/* Cast to any to access potentially missing agenName */}
-                          {(jamaah as any).agenName && (
+                          {(jamaah as JamaahProfileFields).agenName && (
                             <p className="text-xs text-gray-400">
-                              Agen: {(jamaah as any).agenName}
+                              Agen: {(jamaah as JamaahProfileFields).agenName}
                             </p>
                           )}
                         </div>
@@ -1367,19 +1418,19 @@ export default function JamaahPage() {
                               <DropdownMenuItem
                                 onClick={() =>
                                   router.push(
-                                    `/admin/jamaah/${jamaah.bookingNumber}`,
+                                    `${jamaahBasePath}/${jamaah.bookingNumber}`,
                                   )
                                 }
                               >
                                 <Eye className="h-4 w-4 mr-2" />
                                 Lihat Detail
                               </DropdownMenuItem>
-                              {!isFinanceReadOnly && (
+                              {!isReadOnlyRole && (
                                 <>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       router.push(
-                                        `/admin/jamaah/${jamaah.bookingNumber}/edit`,
+                                        `${jamaahBasePath}/${jamaah.bookingNumber}/edit`,
                                       )
                                     }
                                   >
@@ -1410,7 +1461,7 @@ export default function JamaahPage() {
       </Card>
 
       {/* Import Jamaah Dialog */}
-      {!isFinanceReadOnly && (
+      {!isReadOnlyRole && (
         <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
           <DialogContent>
             <DialogHeader>

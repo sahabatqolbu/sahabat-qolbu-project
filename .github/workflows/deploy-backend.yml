@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
 
 jobs:
   deploy:
@@ -11,6 +14,52 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Run runbook compliance check
+        run: |
+          cd backend
+          npm run check:runbook
+
+      - name: Run API contract compliance check
+        run: |
+          cd backend
+          npm run check:api-contract
+
+      - name: Run PII governance check
+        run: |
+          cd backend
+          npm run check:pii-governance
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test
+
+      - name: Run backend DB integration tests (optional)
+        if: ${{ secrets.DB_TEST_HOST != '' && secrets.DB_TEST_USER != '' && secrets.DB_TEST_NAME != '' }}
+        run: |
+          cd backend
+          npm run test:db-integration
+        env:
+          ENABLE_DB_INTEGRATION_TESTS: "true"
+          DB_HOST: ${{ secrets.DB_TEST_HOST }}
+          DB_PORT: ${{ secrets.DB_TEST_PORT || '3306' }}
+          DB_USER: ${{ secrets.DB_TEST_USER }}
+          DB_PASSWORD: ${{ secrets.DB_TEST_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_TEST_NAME }}
+          NODE_ENV: test
 
       - name: Upload backend via SFTP
         uses: appleboy/scp-action@v0.1.7
@@ -21,3 +70,14 @@ jobs:
             port: 22
             source: "backend/*"
             target: "/home/USERNAME/public_html/api/backend"
+
+      - name: Optional backend health check
+        if: ${{ secrets.BACKEND_HEALTHCHECK_URL != '' }}
+        run: |
+          curl --fail --show-error --silent "${{ secrets.BACKEND_HEALTHCHECK_URL }}"
+
+      - name: Optional backend smoke check
+        if: ${{ secrets.BACKEND_SMOKE_BASE_URL != '' }}
+        run: |
+          cd backend
+          SMOKE_BASE_URL="${{ secrets.BACKEND_SMOKE_BASE_URL }}" SMOKE_AUTH_COOKIE="${{ secrets.BACKEND_SMOKE_AUTH_COOKIE }}" npm run smoke

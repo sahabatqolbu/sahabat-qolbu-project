@@ -48,7 +48,16 @@ export default function LoginPage() {
       router.push("/verify-otp");
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || "Login gagal";
+      const status = error?.response?.status;
+      const rawMessage = String(error?.response?.data?.message || "");
+
+      let errorMessage = rawMessage || "Login gagal";
+      if (status >= 500) {
+        errorMessage = "Server sedang bermasalah. Silakan coba lagi beberapa saat.";
+      }
+      if (rawMessage.toLowerCase().includes("data and hash arguments required")) {
+        errorMessage = "Akun ini belum bisa login. Silakan hubungi admin untuk reset password.";
+      }
 
       toast({
         variant: "destructive",
@@ -83,6 +92,8 @@ export default function LoginPage() {
   // Handle Submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (loginMutation.isPending) return;
 
     if (validate()) {
       loginMutation.mutate(formData);

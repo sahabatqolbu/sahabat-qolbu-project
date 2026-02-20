@@ -1,0 +1,413 @@
+openapi: 3.0.3
+info:
+  title: Sahabat Qolbu API Baseline
+  version: 1.0.0-baseline
+  description: |
+    Baseline kontrak bertahap untuk domain prioritas sesuai CONCEPT_EXECUTION_PLAN.
+    Cakupan saat ini: auth, public, jamaah-payment admin flow, transactions verify.
+servers:
+  - url: /api
+    description: Primary API base
+  - url: /api/v1
+    description: Compatibility bridge
+tags:
+  - name: Auth
+  - name: Public
+  - name: JamaahPayment
+  - name: Transactions
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email/password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login success (OTP challenge sent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verify login OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+      responses:
+        '200':
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/request-otp:
+    post:
+      tags: [Auth]
+      summary: Request OTP for login flow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current authenticated user
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /public/packages:
+    get:
+      tags: [Public]
+      summary: Public package listing
+      responses:
+        '200':
+          description: Package list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /public/packages/{id}:
+    get:
+      tags: [Public]
+      summary: Public package detail
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Package detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /public/agents/slugs:
+    get:
+      tags: [Public]
+      summary: Public available agent slugs
+      responses:
+        '200':
+          description: Agent slugs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+
+  /public/agents/{slug}:
+    get:
+      tags: [Public]
+      summary: Public agent landing payload
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent landing data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /jamaah/admin/{bookingNumber}/payments:
+    post:
+      tags: [JamaahPayment]
+      summary: Add payment proof for jamaah booking (ADMIN/FINANCE)
+      parameters:
+        - in: path
+          name: bookingNumber
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPaymentRequest'
+      responses:
+        '201':
+          description: Payment proof created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      tags: [JamaahPayment]
+      summary: Get payment proofs for jamaah booking
+      parameters:
+        - in: path
+          name: bookingNumber
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment proof list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /jamaah/admin/payments/{paymentId}/verify:
+    patch:
+      tags: [JamaahPayment]
+      summary: Verify payment proof (ADMIN/FINANCE)
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payment proof verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /jamaah/admin/payments/{paymentId}/reject:
+    patch:
+      tags: [JamaahPayment]
+      summary: Reject payment proof with reason (ADMIN/FINANCE)
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectPaymentRequest'
+      responses:
+        '200':
+          description: Payment proof rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/transactions/{id}/verify:
+    patch:
+      tags: [Transactions]
+      summary: Verify transaction status transition (ADMIN/FINANCE)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyTransactionRequest'
+      responses:
+        '200':
+          description: Transaction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessEnvelope'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    SuccessEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operasi berhasil
+        data:
+          nullable: true
+      required: [success, message]
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: string
+          example: VALIDATION_FAILED
+        message:
+          type: string
+          example: Validasi gagal
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+      required: [success, message]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    VerifyOtpRequest:
+      type: object
+      required: [email, otp]
+      properties:
+        email:
+          type: string
+          format: email
+        otp:
+          type: string
+
+    AddPaymentRequest:
+      type: object
+      required: [amount, paymentDate, proofUrl]
+      properties:
+        amount:
+          type: number
+        paymentDate:
+          type: string
+          format: date-time
+        proofUrl:
+          type: string
+        notes:
+          type: string
+
+    RejectPaymentRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 3
+
+    VerifyTransactionRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PENDING, PARTIAL, VERIFIED, CANCELLED, REFUNDED]
+        remarks:
+          type: string
+
+  responses:
+    ValidationFailed:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'

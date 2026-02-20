@@ -68,7 +68,7 @@ export interface JamaahDetail {
 }
 
 export const jamaahService = {
-  // ✅ ENDPOINT: /admin/jamaah (sesuai api.js)
+  // ✅ ENDPOINT: /jamaah/admin
   getAll: async (filters?: JamaahFilters) => {
     console.log("📡 jamaahService.getAll - Filters:", filters);
 
@@ -84,7 +84,7 @@ export const jamaahService = {
       params.append("packageId", filters.packageId.toString());
     }
 
-    const url = `/admin/jamaah${
+    const url = `/jamaah/admin${
       params.toString() ? `?${params.toString()}` : ""
     }`;
     console.log("📡 Request URL:", url);
@@ -97,38 +97,38 @@ export const jamaahService = {
   // Get jamaah by booking number
   getByBookingNumber: async (bookingNumber: string) => {
     console.log("📡 jamaahService.getByBookingNumber:", bookingNumber);
-    const response = await api.get(`/admin/jamaah/${bookingNumber}`);
+    const response = await api.get(`/jamaah/admin/${bookingNumber}`);
     return response.data;
   },
 
   // Create jamaah
   create: async (data: any) => {
-    const response = await api.post("/admin/jamaah", data);
+    const response = await api.post("/jamaah/admin", data);
     return response.data;
   },
 
   // Update jamaah
   update: async (bookingNumber: string, data: any) => {
     console.log("📤 jamaahService.update:", bookingNumber, data);
-    const response = await api.put(`/admin/jamaah/${bookingNumber}`, data);
+    const response = await api.put(`/jamaah/admin/${bookingNumber}`, data);
     return response.data;
   },
 
   // Delete jamaah
   delete: async (bookingNumber: string) => {
-    const response = await api.delete(`/admin/jamaah/${bookingNumber}`);
+    const response = await api.delete(`/jamaah/admin/${bookingNumber}`);
     return response.data;
   },
 
   // ===== PAYMENTS =====
   getPayments: async (bookingNumber: string) => {
-    const response = await api.get(`/admin/jamaah/${bookingNumber}/payments`);
+    const response = await api.get(`/jamaah/admin/${bookingNumber}/payments`);
     return response.data;
   },
 
   addPayment: async (bookingNumber: string, data: any) => {
     const response = await api.post(
-      `/admin/jamaah/${bookingNumber}/payments`,
+      `/jamaah/admin/${bookingNumber}/payments`,
       data,
     );
     return response.data;
@@ -136,7 +136,15 @@ export const jamaahService = {
 
   verifyPayment: async (paymentId: number) => {
     const response = await api.patch(
-      `/admin/jamaah/payments/${paymentId}/verify`,
+      `/jamaah/admin/payments/${paymentId}/verify`,
+    );
+    return response.data;
+  },
+
+  rejectPayment: async (paymentId: number, reason: string) => {
+    const response = await api.patch(
+      `/jamaah/admin/payments/${paymentId}/reject`,
+      { reason },
     );
     return response.data;
   },
@@ -152,7 +160,7 @@ export const jamaahService = {
     formData.append("documentType", documentType);
 
     const response = await api.post(
-      `/admin/jamaah/${bookingNumber}/documents`,
+      `/jamaah/admin/${bookingNumber}/documents`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },

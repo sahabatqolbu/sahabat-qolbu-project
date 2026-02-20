@@ -30,10 +30,11 @@ import {
   Gift,
   ArrowUpRight,
   Bell,
+  Globe,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { BottomNav } from "@/components/mobile/BottomNav";
-import { Calendar } from "lucide-react"; // Pastikan import ini ada
 
 
 export default function AgenDashboardPage() {
@@ -308,6 +309,12 @@ export default function AgenDashboardPage() {
                 </div>
               </Link>
 
+              <Link href="/agen/website">
+                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                  <Globe className="h-5 w-5 md:h-6 md:w-6" />
+                </div>
+              </Link>
+
               <NotificationDropdownAgen />
 
               <Link href="/agen/profile">
@@ -458,7 +465,7 @@ export default function AgenDashboardPage() {
             <h2 className="text-sm md:text-base font-semibold text-[var(--color-primary)] my-3 px-1">
               Menu Cepat
             </h2>
-            <div className="grid grid-cols-4 gap-2 md:gap-4">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-4">
               <Link href="/agen/jamaah">
                 <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                   <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-blue-50 flex items-center justify-center mb-1.5">
@@ -492,6 +499,17 @@ export default function AgenDashboardPage() {
                 </div>
               </Link>
 
+              <Link href="/agen/website">
+                <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-cyan-50 flex items-center justify-center mb-1.5">
+                    <Globe className="h-5 w-5 text-cyan-600" />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-medium text-gray-600 text-center">
+                    Website
+                  </p>
+                </div>
+              </Link>
+
               <Link href="/agen/profile">
                 <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                   <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-gray-100 flex items-center justify-center mb-1.5">
@@ -499,6 +517,17 @@ export default function AgenDashboardPage() {
                   </div>
                   <p className="text-[10px] md:text-xs font-medium text-gray-600 text-center">
                     Profil
+                  </p>
+                </div>
+              </Link>
+
+              <Link href="/agen/calendar">
+                <div className="flex flex-col items-center p-3 md:p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-emerald-50 flex items-center justify-center mb-1.5">
+                    <Calendar className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-medium text-gray-600 text-center">
+                    Kalender
                   </p>
                 </div>
               </Link>

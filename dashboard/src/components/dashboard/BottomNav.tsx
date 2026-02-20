@@ -35,8 +35,8 @@ const getBottomNavItems = (role: string) => {
         exact: true,
       },
       { label: "POS", href: "/finance/pos", icon: Wallet },
-      { label: "Transaksi", href: "/admin/transactions", icon: Wallet },
-      { label: "Laporan", href: "/admin/reports", icon: FileText },
+      { label: "Transaksi", href: "/finance/transactions", icon: Wallet },
+      { label: "Laporan", href: "/finance/reports", icon: FileText },
     ],
     STAFF: [
       {
@@ -45,9 +45,9 @@ const getBottomNavItems = (role: string) => {
         icon: LayoutDashboard,
         exact: true,
       },
-      { label: "Paket", href: "/admin/packages", icon: Package },
-      { label: "Jamaah", href: "/admin/jamaah", icon: UserCheck },
-      { label: "Agen", href: "/admin/agen", icon: Users },
+      { label: "Paket", href: "/staff/packages", icon: Package },
+      { label: "Jamaah", href: "/staff/jamaah", icon: UserCheck },
+      { label: "Agen", href: "/staff/agen", icon: Users },
     ],
     AGEN: [
       { label: "Dashboard", href: "/agen", icon: LayoutDashboard, exact: true },

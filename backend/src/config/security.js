@@ -1,8 +1,10 @@
 // backend/src/config/security.js
 import rateLimit from "express-rate-limit";
+import crypto from "crypto";
 import helmet from "helmet";
 import cors from "cors";
 import { logger } from "../utils/logger.js";
+import { errorResponse, forbiddenResponse } from "../utils/response.js";
 
 /**
  * Security Configuration
@@ -129,10 +131,13 @@ export const rateLimitConfigs = {
         ip: req.ip,
         path: req.path,
       });
-      res.status(429).json({
-        success: false,
-        message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",
-      });
+      return errorResponse(
+        res,
+        "Terlalu banyak permintaan. Silakan coba lagi nanti.",
+        429,
+        null,
+        "RATE_LIMIT_EXCEEDED"
+      );
     },
   },
 
@@ -146,10 +151,13 @@ export const rateLimitConfigs = {
         ip: req.ip,
         email: req.body?.email,
       });
-      res.status(429).json({
-        success: false,
-        message: "Terlalu banyak percobaan. Silakan coba lagi dalam 15 menit.",
-      });
+      return errorResponse(
+        res,
+        "Terlalu banyak percobaan. Silakan coba lagi dalam 15 menit.",
+        429,
+        null,
+        "RATE_LIMIT_EXCEEDED"
+      );
     },
   },
 
@@ -162,10 +170,13 @@ export const rateLimitConfigs = {
         ip: req.ip,
         email: req.body?.email,
       });
-      res.status(429).json({
-        success: false,
-        message: "Terlalu banyak percobaan OTP. Silakan minta OTP baru.",
-      });
+      return errorResponse(
+        res,
+        "Terlalu banyak percobaan OTP. Silakan minta OTP baru.",
+        429,
+        null,
+        "RATE_LIMIT_EXCEEDED"
+      );
     },
   },
 };
@@ -180,9 +191,10 @@ export const createRateLimiter = (config) => rateLimit(config);
  * Adds unique request ID for tracing
  */
 export const requestId = (req, res, next) => {
+  const incoming = req.headers["x-request-id"];
   req.id =
-    req.headers["x-request-id"] ||
-    `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    incoming ||
+    `${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
   res.setHeader("X-Request-ID", req.id);
   next();
 };
@@ -217,10 +229,11 @@ export const ipWhitelist = (allowedIps = []) => {
         ip: clientIp,
         path: req.path,
       });
-      return res.status(403).json({
-        success: false,
-        message: "Akses ditolak dari IP ini",
-      });
+      return forbiddenResponse(
+        res,
+        "Akses ditolak dari IP ini",
+        "SECURITY_IP_NOT_ALLOWED"
+      );
     }
 
     next();

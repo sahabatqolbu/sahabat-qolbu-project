@@ -34,6 +34,31 @@ import {
 } from "@/components/ui/dialog";
 import { MapPin, Plus, Search, Loader2, Edit, Trash2 } from "lucide-react";
 
+interface AirportItem {
+  id: number;
+  code: string;
+  name: string;
+  city: string;
+  country: string;
+  isActive: boolean;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function AirportsPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -43,7 +68,7 @@ export default function AirportsPage() {
 
   // ✅ TAMBAH STATE INI
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedAirport, setSelectedAirport] = useState<any>(null);
+  const [selectedAirport, setSelectedAirport] = useState<AirportItem | null>(null);
 
   // ===== FETCH AIRPORTS =====
   const { data, isLoading } = useQuery({
@@ -51,12 +76,14 @@ export default function AirportsPage() {
     queryFn: () => masterService.airports.getAll(),
   });
 
-  const airports = data?.data || [];
+  const airports: AirportItem[] = Array.isArray(data?.data)
+    ? (data.data as AirportItem[])
+    : [];
   const filteredAirports = airports.filter(
-    (airport: any) =>
+    (airport) =>
       airport.name.toLowerCase().includes(search.toLowerCase()) ||
       airport.code.toLowerCase().includes(search.toLowerCase()) ||
-      airport.city.toLowerCase().includes(search.toLowerCase())
+      airport.city.toLowerCase().includes(search.toLowerCase()),
   );
 
   // ✅ DELETE MUTATION
@@ -71,11 +98,11 @@ export default function AirportsPage() {
         description: "Bandara berhasil dihapus dari sistem",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Hapus Bandara",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -154,7 +181,7 @@ export default function AirportsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAirports.map((airport: any) => (
+                {filteredAirports.map((airport) => (
                   <TableRow key={airport.id}>
                     <TableCell className="font-mono font-semibold">
                       {airport.code}

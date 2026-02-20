@@ -34,6 +34,22 @@ const airlineSchema = z.object({
 
 type AirlineFormData = z.infer<typeof airlineSchema>;
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan server";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan server";
+};
+
 export default function CreateAirlinePage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -90,12 +106,12 @@ export default function CreateAirlinePage() {
         router.push("/admin/master/airlines");
       }, 1000);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       // ✅ TOAST ERROR
       toast({
         title: "❌ Gagal Menambahkan",
         description:
-          error.response?.data?.message || "Terjadi kesalahan server",
+          getErrorMessage(error),
         variant: "destructive",
         duration: 5000,
       });

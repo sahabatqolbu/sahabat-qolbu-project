@@ -14,7 +14,24 @@ export const hashPassword = async (password) => {
 // COMPARE PASSWORD
 // =====================================================
 export const comparePassword = async (password, hashedPassword) => {
-  return await bcrypt.compare(password, hashedPassword);
+  if (
+    typeof password !== "string" ||
+    !password ||
+    typeof hashedPassword !== "string" ||
+    !hashedPassword
+  ) {
+    return false;
+  }
+
+  try {
+    const normalizedHash = hashedPassword.startsWith("$2y$")
+      ? `$2b$${hashedPassword.slice(4)}`
+      : hashedPassword;
+
+    return await bcrypt.compare(password, normalizedHash);
+  } catch {
+    return false;
+  }
 };
 
 // =====================================================

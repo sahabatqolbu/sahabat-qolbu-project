@@ -36,6 +36,30 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Landmark, Plus, Search, Loader2, Edit, Trash2 } from "lucide-react";
 
+interface BankItem {
+  id: number;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  isActive: boolean;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function BanksPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -44,7 +68,7 @@ export default function BanksPage() {
 
   // ✅ Missing state variables added
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedBank, setSelectedBank] = useState<any>(null);
+  const [selectedBank, setSelectedBank] = useState<BankItem | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["banks"],
@@ -59,11 +83,11 @@ export default function BanksPage() {
       queryClient.invalidateQueries({ queryKey: ["banks"] });
       setDeleteDialogOpen(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal menghapus bank",
-        description: error.response?.data?.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -74,9 +98,9 @@ export default function BanksPage() {
     }
   };
 
-  const banks = data?.data || [];
+  const banks: BankItem[] = Array.isArray(data?.data) ? (data.data as BankItem[]) : [];
   const filteredBanks = banks.filter(
-    (bank: any) =>
+    (bank) =>
       bank.bankName?.toLowerCase().includes(search.toLowerCase()) ||
       bank.accountName?.toLowerCase().includes(search.toLowerCase()),
   );
@@ -143,7 +167,7 @@ export default function BanksPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBanks.map((bank: any) => (
+                {filteredBanks.map((bank) => (
                   <TableRow key={bank.id}>
                     <TableCell className="font-medium">
                       {bank.bankName}

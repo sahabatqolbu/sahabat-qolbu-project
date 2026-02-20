@@ -34,6 +34,22 @@ const airportSchema = z.object({
 
 type AirportFormData = z.infer<typeof airportSchema>;
 
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function EditAirportPage() {
   const router = useRouter();
   const params = useParams();
@@ -84,11 +100,11 @@ export default function EditAirportPage() {
       });
       router.push("/admin/master/airports");
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Update Bandara",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });

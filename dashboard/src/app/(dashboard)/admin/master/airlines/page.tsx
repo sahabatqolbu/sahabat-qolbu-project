@@ -36,7 +36,31 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plane, Plus, Search, Loader2, Edit, Trash2 } from "lucide-react";
-import Image from "next/image";
+
+interface AirlineItem {
+  id: number;
+  code: string;
+  name: string;
+  logo?: string | null;
+  country?: string | null;
+  isActive: boolean;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Maskapai masih digunakan di paket";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Maskapai masih digunakan di paket";
+};
 
 export default function AirlinesPage() {
   const router = useRouter();
@@ -44,7 +68,7 @@ export default function AirlinesPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedAirline, setSelectedAirline] = useState<any>(null);
+  const [selectedAirline, setSelectedAirline] = useState<AirlineItem | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["airlines"],
@@ -66,22 +90,24 @@ const deleteMutation = useMutation({
 
     setDeleteDialogOpen(false);
   },
-  onError: (error: any) => {
+  onError: (error: unknown) => {
     // ✅ TOAST ERROR
     toast({
       title: "❌ Gagal Menghapus",
       description:
-        error.response?.data?.message || "Maskapai masih digunakan di paket",
+        getErrorMessage(error),
       variant: "destructive",
     });
   },
 });
 
-  const airlines = data?.data || [];
+  const airlines: AirlineItem[] = Array.isArray(data?.data)
+    ? (data.data as AirlineItem[])
+    : [];
   const filteredAirlines = airlines.filter(
-    (airline: any) =>
+    (airline) =>
       airline.name.toLowerCase().includes(search.toLowerCase()) ||
-      airline.code.toLowerCase().includes(search.toLowerCase())
+      airline.code.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -148,7 +174,7 @@ const deleteMutation = useMutation({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAirlines.map((airline: any) => (
+                {filteredAirlines.map((airline) => (
                   <TableRow key={airline.id}>
                     <TableCell>
                       {airline.logo ? (

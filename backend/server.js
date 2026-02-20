@@ -9,7 +9,8 @@ import { logger } from "./src/utils/logger.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+// Default to 5000 to match dashboard's dev config
+const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -63,6 +64,7 @@ const ensureUploadDirs = () => {
     path.join(baseUploadDir, "payments"),
     path.join(baseUploadDir, "itinerary"),
     path.join(baseUploadDir, "jamaah"),
+    path.join(baseUploadDir, "agents"),
   ];
 
   uploadDirs.forEach((dir) => {

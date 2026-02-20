@@ -1,0 +1,53 @@
+name: Incident Drill
+
+on:
+  schedule:
+    - cron: "0 2 1 * *"
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Incident drill scenario label"
+        required: false
+        default: "auth-payment-guard"
+
+jobs:
+  drill:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run incident drill probe
+        env:
+          INCIDENT_DRILL_SCENARIO: ${{ github.event.inputs.scenario || 'auth-payment-guard' }}
+          AUTH_GUARD_URL: ${{ secrets.AUTH_GUARD_URL }}
+          AUTH_GUARD_EXPECTED_STATUS: ${{ secrets.AUTH_GUARD_EXPECTED_STATUS }}
+          AUTH_GUARD_COOKIE: ${{ secrets.AUTH_GUARD_COOKIE }}
+          PAYMENT_GUARD_URL: ${{ secrets.PAYMENT_GUARD_URL }}
+          PAYMENT_GUARD_EXPECTED_STATUS: ${{ secrets.PAYMENT_GUARD_EXPECTED_STATUS }}
+          PAYMENT_GUARD_COOKIE: ${{ secrets.PAYMENT_GUARD_COOKIE }}
+          BACKEND_HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL }}
+          BACKEND_DOCS_BLOCK_URL: ${{ secrets.BACKEND_DOCS_BLOCK_URL }}
+        run: |
+          node backend/src/scripts/incidentDrillRun.js
+
+      - name: Upload drill report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: incident-drill-report
+          path: backend/.artifacts/incident-drill-report.json
+
+      - name: Notify ops on drill failure (optional)
+        if: failure() && secrets.OPS_ALERT_WEBHOOK_URL != ''
+        env:
+          OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$OPS_ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"[Sahabat Qolbu] Incident drill failed. Review artifact and execute escalation procedure."}'

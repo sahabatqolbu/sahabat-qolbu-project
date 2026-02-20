@@ -56,6 +56,43 @@ import {
   User,
 } from "lucide-react";
 
+interface TestimonialItem {
+  id: number;
+  name: string;
+  role?: string;
+  photo?: string;
+  rating: number;
+  message: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+interface TestimonialFormData {
+  name: string;
+  role: string;
+  photo: string;
+  rating: number;
+  message: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+const getErrorMessage = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) {
+    return "Terjadi kesalahan";
+  }
+
+  const payload = error as {
+    response?: {
+      data?: {
+        message?: string;
+      };
+    };
+  };
+
+  return payload.response?.data?.message || "Terjadi kesalahan";
+};
+
 export default function TestimonialsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -63,9 +100,9 @@ export default function TestimonialsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<TestimonialItem | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<TestimonialFormData>({
     name: "",
     role: "",
     photo: "",
@@ -84,40 +121,41 @@ export default function TestimonialsPage() {
     },
   });
 
-  const testimonials = data?.data || [];
+  const testimonials: TestimonialItem[] = Array.isArray(data?.data) ? data.data : [];
 
   // ===== CREATE MUTATION =====
   const createMutation = useMutation({
-    mutationFn: (data: any) => api.post("/testimonials", data),
+    mutationFn: (payload: TestimonialFormData) => api.post("/testimonials", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDialogOpen(false);
       resetForm();
       toast({ title: "✅ Testimonial berhasil ditambahkan" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal menambahkan testimonial",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
 
   // ===== UPDATE MUTATION =====
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) => api.put(`/testimonials/${id}`, data),
+    mutationFn: ({ id, data }: { id: number; data: TestimonialFormData }) =>
+      api.put(`/testimonials/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDialogOpen(false);
       resetForm();
       toast({ title: "✅ Testimonial berhasil diupdate" });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal update testimonial",
-        description: error.response?.data?.message,
+        description: getErrorMessage(error),
       });
     },
   });
@@ -129,6 +167,13 @@ export default function TestimonialsPage() {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDeleteDialogOpen(false);
       toast({ title: "✅ Testimonial berhasil dihapus" });
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal menghapus testimonial",
+        description: getErrorMessage(error),
+      });
     },
   });
 
@@ -142,7 +187,7 @@ export default function TestimonialsPage() {
     }
   };
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: TestimonialItem) => {
     setSelectedItem(item);
     setFormData({
       name: item.name,
@@ -231,7 +276,7 @@ export default function TestimonialsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {testimonials.map((item: any) => (
+                {testimonials.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

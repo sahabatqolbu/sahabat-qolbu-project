@@ -62,7 +62,7 @@ export default function VerifyOTPPage() {
     mutationFn: authService.verifyOTP,
     onSuccess: (data) => {
       // Save auth data to Zustand
-      setAuth(data.data.token, data.data.user as any);
+      setAuth(data.data.user as any);
       clearOTPData();
 
       toast({
@@ -133,7 +133,7 @@ export default function VerifyOTPPage() {
     setError("");
 
     // Auto-submit when 6 digits
-    if (value.length === 6) {
+    if (value.length === 6 && !verifyMutation.isPending) {
       verifyMutation.mutate({ email, otp: value });
     }
   };
@@ -235,7 +235,10 @@ export default function VerifyOTPPage() {
 
             {/* Verify Button (Manual) */}
             <Button
-              onClick={() => verifyMutation.mutate({ email, otp })}
+              onClick={() => {
+                if (verifyMutation.isPending) return;
+                verifyMutation.mutate({ email, otp });
+              }}
               disabled={otp.length !== 6 || verifyMutation.isPending}
               className="w-full bg-secondary hover:bg-secondary/90"
               size="lg"

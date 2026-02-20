@@ -1,7 +1,7 @@
 // backend/src/controllers/adminController.js
 
 import { db } from "../db/index.js";
-import { users, jamaahData, agenProfiles } from "../db/schema.js";
+import { users, jamaahData, agenProfiles, transactions, jamaahPayments, agentData } from "../db/schema.js";
 import { eq, like, or, and, sql, inArray } from "drizzle-orm";
 import { sendCredentialsEmail } from "../utils/email.js";
 import {
@@ -9,21 +9,8 @@ import {
   errorResponse,
   createdResponse,
 } from "../utils/response.js";
-import bcrypt from "bcrypt";
-import crypto from "crypto";
-
-// ✅ HELPER: Generate Random Password
-const generatePassword = (length = 12) => {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-  let password = "";
-
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  return password;
-};
+import { hashPassword, generatePassword } from "../utils/password.js";
+import { logger } from "../utils/logger.js";
 
 // ✅ HELPER: Generate Booking Number
 const generateBookingNumber = async () => {
@@ -52,7 +39,7 @@ const generateBookingNumber = async () => {
 
   const bookingNumber = `${prefix}-${String(sequence).padStart(4, "0")}`;
 
-  console.log("📋 Generated Booking Number:", bookingNumber);
+  logger.debug("Generated booking number", { bookingNumber });
 
   return bookingNumber;
 };
@@ -87,14 +74,7 @@ export const createUser = async (req, res, next) => {
     const { fullName, email, phone, role, packageId } = req.validatedBody || req.body;
     const requesterRole = req.user?.role;
 
-    console.log("📥 CREATE USER REQUEST:", {
-      fullName,
-      email,
-      phone,
-      role,
-      packageId,
-      requesterRole,
-    });
+    logger.info("Create user request", { role, requesterRole });
 
     if (!requesterRole || (requesterRole !== "ADMIN" && requesterRole !== "STAFF")) {
       return errorResponse(res, "Akses ditolak", 403);
@@ -130,13 +110,12 @@ export const createUser = async (req, res, next) => {
     const tempPassword = generatePassword(12);
 
     if (!tempPassword || tempPassword.length === 0) {
-      console.error("❌ Password generation failed!");
+      logger.error("Password generation failed");
       return errorResponse(res, "Gagal generate password", 500);
     }
 
     // ✅ HASH PASSWORD
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    console.log("✅ Password hashed successfully");
+    const hashedPassword = await hashPassword(tempPassword);
 
     // ✅ INSERT USER
     const [newUser] = await db
@@ -153,7 +132,7 @@ export const createUser = async (req, res, next) => {
       })
       .$returningId();
 
-    console.log("✅ User created with ID:", newUser.id);
+    logger.security("User created", { userId: newUser.id, role, createdBy: req.user?.userId || null });
 
     // ✅ JIKA ROLE JAMAAH → CREATE jamaahData
     let bookingNumber = null;
@@ -169,24 +148,22 @@ export const createUser = async (req, res, next) => {
         agenId: req.user?.role === "AGEN" ? req.user.userId : null,
       }));
 
-      console.log("✅ JamaahData created with booking:", bookingNumber);
+      logger.info("Jamaah data created", { userId: newUser.id });
     }
 
     // ✅ KIRIM EMAIL (async, non-blocking)
     if (typeof sendCredentialsEmail === "function") {
       sendCredentialsEmail(email.toLowerCase(), fullName, tempPassword)
         .then((result) => {
-          if (result && result.success) {
-            console.log(`✅ Credentials email sent to: ${email}`);
-          } else {
-            console.error(`❌ Email failed for ${email}:`, result?.error);
+          if (!result || !result.success) {
+            logger.error("Credentials email failed", result?.error);
           }
         })
         .catch((err) => {
-          console.error(`❌ Email error for ${email}:`, err.message);
+          logger.error("Credentials email error", err);
         });
     } else {
-      console.log("📧 Email service unavailable, credentials email not sent");
+      logger.warn("Email service unavailable, credentials email not sent");
     }
 
     // ✅ RETURN USER DATA ONLY (never expose plaintext credentials)
@@ -204,8 +181,7 @@ export const createUser = async (req, res, next) => {
       "User berhasil dibuat"
     );
   } catch (error) {
-    console.error("❌ CREATE USER ERROR:", error);
-    console.error("❌ ERROR STACK:", error.stack);
+    logger.error("Create user error", error);
     next(error);
   }
 };
@@ -266,7 +242,14 @@ export const getAllUsers = async (req, res, next) => {
     const creatorById = new Map(creators.map((c) => [c.id, c]));
 
     const enrichedUsers = allUsers.map((u) => {
-      const registeredBy = u.createdBy ? creatorById.get(u.createdBy) || null : null;
+      const registeredBy = u.createdBy
+        ? creatorById.get(u.createdBy) || {
+            id: u.createdBy,
+            fullName: `User #${u.createdBy}`,
+            email: null,
+            role: "UNKNOWN",
+          }
+        : null;
 
       return {
         ...u,
@@ -383,8 +366,39 @@ export const deleteUser = async (req, res, next) => {
       return errorResponse(res, "User tidak ditemukan", 404);
     }
 
-    // ✅ TODO: Cek apakah user punya relasi (jamaahData, transactions, dll)
-    // Kalau ada, return error atau cascade delete
+    const [jamaahCount] = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(jamaahData)
+      .where(eq(jamaahData.userId, parseInt(id)));
+
+    const [agentCount] = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(agentData)
+      .where(eq(agentData.userId, parseInt(id)));
+
+    const [txCount] = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(transactions)
+      .where(eq(transactions.verifiedBy, parseInt(id)));
+
+    const [paymentsVerifiedCount] = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(jamaahPayments)
+      .where(eq(jamaahPayments.verifiedBy, parseInt(id)));
+
+    const hasRelations =
+      Number(jamaahCount?.count || 0) > 0 ||
+      Number(agentCount?.count || 0) > 0 ||
+      Number(txCount?.count || 0) > 0 ||
+      Number(paymentsVerifiedCount?.count || 0) > 0;
+
+    if (hasRelations) {
+      return errorResponse(
+        res,
+        "User tidak dapat dihapus karena masih memiliki relasi data. Nonaktifkan akun sebagai alternatif.",
+        400
+      );
+    }
 
     await db.delete(users).where(eq(users.id, parseInt(id)));
 
@@ -436,7 +450,7 @@ export const importUsers = async (req, res, next) => {
 
         // Generate & Hash Password
         const tempPassword = generatePassword(12);
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+        const hashedPassword = await hashPassword(tempPassword);
 
         // Insert User
         const [newUser] = await db
@@ -476,13 +490,13 @@ export const importUsers = async (req, res, next) => {
         }
 
         // Kirim Email (Non-blocking)
-        sendCredentialsEmail(email.toLowerCase(), fullName, tempPassword).catch(err => {
-          console.error(`📧 Failed to send import email to ${email}:`, err.message);
+        sendCredentialsEmail(email.toLowerCase(), fullName, tempPassword).catch((err) => {
+          logger.error("Failed to send import email", err);
         });
 
         results.success++;
       } catch (err) {
-        console.error(`❌ Error importing user ${userData.email}:`, err);
+        logger.error("Error importing user", err);
         results.failed++;
         results.errors.push({ email: userData.email, reason: err.message });
       }
@@ -503,11 +517,60 @@ export const bulkDeleteUsers = async (req, res, next) => {
       return errorResponse(res, "Daftar ID tidak valid", 400);
     }
 
-    // Filter out users that might have constraints (optional logic)
-    // For now, simple bulk delete (cascades should handle relations)
-    await db.delete(users).where(inArray(users.id, ids));
+    const parsedIds = ids
+      .map((id) => Number.parseInt(id, 10))
+      .filter((id) => Number.isInteger(id) && id > 0);
 
-    return successResponse(res, null, `${ids.length} user berhasil dihapus`);
+    if (parsedIds.length === 0) {
+      return errorResponse(res, "Daftar ID tidak valid", 400);
+    }
+
+    const relationRows = await Promise.all([
+      db
+        .select({ userId: jamaahData.userId, count: sql`COUNT(*)` })
+        .from(jamaahData)
+        .where(inArray(jamaahData.userId, parsedIds))
+        .groupBy(jamaahData.userId),
+      db
+        .select({ userId: agentData.userId, count: sql`COUNT(*)` })
+        .from(agentData)
+        .where(inArray(agentData.userId, parsedIds))
+        .groupBy(agentData.userId),
+      db
+        .select({ userId: transactions.verifiedBy, count: sql`COUNT(*)` })
+        .from(transactions)
+        .where(inArray(transactions.verifiedBy, parsedIds))
+        .groupBy(transactions.verifiedBy),
+      db
+        .select({ userId: jamaahPayments.verifiedBy, count: sql`COUNT(*)` })
+        .from(jamaahPayments)
+        .where(inArray(jamaahPayments.verifiedBy, parsedIds))
+        .groupBy(jamaahPayments.verifiedBy),
+    ]);
+
+    const blockedUserIds = new Set();
+    for (const rows of relationRows) {
+      for (const row of rows) {
+        const userId = Number(row.userId);
+        if (userId > 0 && Number(row.count || 0) > 0) {
+          blockedUserIds.add(userId);
+        }
+      }
+    }
+
+    const deletableIds = parsedIds.filter((id) => !blockedUserIds.has(id));
+
+    if (deletableIds.length > 0) {
+      await db.delete(users).where(inArray(users.id, deletableIds));
+    }
+
+    const blockedIds = parsedIds.filter((id) => blockedUserIds.has(id));
+    return successResponse(res, {
+      requested: parsedIds.length,
+      deleted: deletableIds.length,
+      blocked: blockedIds.length,
+      blockedIds,
+    }, `${deletableIds.length} user berhasil dihapus`);
   } catch (error) {
     next(error);
   }
