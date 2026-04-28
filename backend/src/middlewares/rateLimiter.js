@@ -1,134 +1,154 @@
 import rateLimit from "express-rate-limit";
 import { logger } from "../utils/logger.js";
 
-const isDevelopment = process.env.NODE_ENV !== "production";
+const RATE_LIMIT_DISABLED = process.env.DISABLE_RATE_LIMIT === "true";
 
 const normalizeEmail = (value) =>
   typeof value === "string" ? value.toLowerCase().trim() : "";
 
 const getClientIp = (req) => req.ip || req.connection?.remoteAddress || "unknown";
 
-/**
- * Rate limiting configurations
- */
+const parseWindowMs = (envValue, fallbackMinutes) => {
+  const parsedMinutes = Number.parseInt(envValue || "", 10);
+  const minutes = Number.isInteger(parsedMinutes) && parsedMinutes > 0
+    ? parsedMinutes
+    : fallbackMinutes;
 
-// General API rate limit
-export const apiLimiter = rateLimit({
-  windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000, // 15 minutes
-  max:
-    parseInt(process.env.RATE_LIMIT_MAX) || (isDevelopment ? 10000 : 300),
-  skip: () => isDevelopment,
-  message: {
-    success: false,
-    code: "RATE_LIMIT_EXCEEDED",
-    message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logger.security("Rate limit exceeded", {
-      ip: req.ip,
-      path: req.path,
+  return minutes * 60 * 1000;
+};
+
+const parseMaxRequests = (envValue, fallbackValue) => {
+  const parsedValue = Number.parseInt(envValue || "", 10);
+  return Number.isInteger(parsedValue) && parsedValue > 0
+    ? parsedValue
+    : fallbackValue;
+};
+
+const getRetryAfterSeconds = (req, fallbackWindowMs) => {
+  const resetTime = req.rateLimit?.resetTime;
+  const resetTimeMs =
+    resetTime instanceof Date
+      ? resetTime.getTime()
+      : typeof resetTime === "number"
+        ? resetTime
+        : Number.NaN;
+
+  if (Number.isFinite(resetTimeMs)) {
+    return Math.max(1, Math.ceil((resetTimeMs - Date.now()) / 1000));
+  }
+
+  return Math.max(1, Math.ceil(fallbackWindowMs / 1000));
+};
+
+const createRateLimitHandler = ({
+  code,
+  message,
+  logMessage,
+  windowMs,
+  logDetails,
+}) => {
+  return (req, res) => {
+    const retryAfter = getRetryAfterSeconds(req, windowMs);
+
+    logger.security(logMessage, {
+      ip: getClientIp(req),
+      path: req.originalUrl || req.path,
       userAgent: req.get("user-agent"),
+      ...(typeof logDetails === "function" ? logDetails(req) : {}),
     });
+
+    res.setHeader("Retry-After", String(retryAfter));
     res.status(429).json({
       success: false,
-      code: "RATE_LIMIT_EXCEEDED",
-      message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000),
+      code,
+      message,
+      retryAfter,
     });
-  },
+  };
+};
+
+const createLimiter = ({
+  windowMs,
+  max,
+  keyGenerator,
+  skipSuccessfulRequests = false,
+  message,
+  code = "RATE_LIMIT_EXCEEDED",
+  logMessage = "Rate limit exceeded",
+  logDetails,
+}) =>
+  rateLimit({
+    windowMs,
+    max,
+    skip: () => RATE_LIMIT_DISABLED,
+    keyGenerator,
+    skipSuccessfulRequests,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      code,
+      message,
+    },
+    handler: createRateLimitHandler({
+      code,
+      message,
+      logMessage,
+      windowMs,
+      logDetails,
+    }),
+  });
+
+export const authenticatedApiLimiter = createLimiter({
+  windowMs: parseWindowMs(process.env.RATE_LIMIT_WINDOW, 15),
+  max: parseMaxRequests(process.env.RATE_LIMIT_MAX, 300),
+  message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",
+  logMessage: "Authenticated API rate limit exceeded",
 });
 
-// Strict limiter for auth endpoints
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts
-  // In local development we don't want to constantly lock ourselves out.
-  skip: () => isDevelopment,
+export const publicReadLimiter = createLimiter({
+  windowMs: parseWindowMs(process.env.PUBLIC_RATE_LIMIT_WINDOW, 15),
+  max: parseMaxRequests(process.env.PUBLIC_RATE_LIMIT_MAX, 600),
+  message: "Terlalu banyak permintaan publik. Silakan coba lagi nanti.",
+  logMessage: "Public API rate limit exceeded",
+});
+
+export const authLimiter = createLimiter({
+  windowMs: parseWindowMs(process.env.AUTH_RATE_LIMIT_WINDOW, 15),
+  max: parseMaxRequests(process.env.AUTH_RATE_LIMIT_MAX, 5),
   keyGenerator: (req) => {
     const ip = getClientIp(req);
     const email = normalizeEmail(req.body?.email);
-    // Rate limit is per IP + email to avoid blocking many legitimate users
-    // behind the same NAT when they login at the same time.
     return email ? `${ip}:${email}` : ip;
   },
-  message: {
-    success: false,
-    code: "RATE_LIMIT_EXCEEDED",
-    message: "Terlalu banyak percobaan login. Silakan coba lagi dalam 15 menit.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true, // Don't count successful requests
-  handler: (req, res) => {
-    res.setHeader("Retry-After", String(15 * 60));
-    logger.security("Auth rate limit exceeded", {
-      ip: getClientIp(req),
-      email: normalizeEmail(req.body?.email),
-      path: req.path,
-    });
-    res.status(429).json({
-      success: false,
-      code: "RATE_LIMIT_EXCEEDED",
-      message: "Terlalu banyak percobaan. Silakan coba lagi dalam 15 menit.",
-      retryAfter: 15 * 60, // 15 minutes in seconds
-    });
-  },
+  skipSuccessfulRequests: true,
+  message: "Terlalu banyak percobaan login. Silakan coba lagi dalam 15 menit.",
+  logMessage: "Auth rate limit exceeded",
+  logDetails: (req) => ({
+    email: normalizeEmail(req.body?.email),
+  }),
 });
 
-// OTP specific limiter (stricter)
-export const otpLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 3, // 3 attempts
-  skip: () => isDevelopment,
+export const otpLimiter = createLimiter({
+  windowMs: parseWindowMs(process.env.OTP_RATE_LIMIT_WINDOW, 5),
+  max: parseMaxRequests(process.env.OTP_RATE_LIMIT_MAX, 3),
   keyGenerator: (req) => {
     const ip = getClientIp(req);
     const email = normalizeEmail(req.body?.email);
     return email ? `${ip}:${email}` : ip;
   },
-  message: {
-    success: false,
-    code: "RATE_LIMIT_EXCEEDED",
-    message: "Terlalu banyak percobaan OTP. Silakan minta OTP baru.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    res.setHeader("Retry-After", String(5 * 60));
-    logger.security("OTP rate limit exceeded", {
-      ip: getClientIp(req),
-      email: normalizeEmail(req.body?.email),
-    });
-    res.status(429).json({
-      success: false,
-      code: "RATE_LIMIT_EXCEEDED",
-      message: "Terlalu banyak percobaan OTP. Silakan minta OTP baru.",
-      retryAfter: 5 * 60,
-    });
-  },
+  message: "Terlalu banyak percobaan OTP. Silakan minta OTP baru.",
+  logMessage: "OTP rate limit exceeded",
+  logDetails: (req) => ({
+    email: normalizeEmail(req.body?.email),
+  }),
 });
 
-// Create account limiter
-export const createAccountLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 accounts per hour
-  message: {
-    success: false,
-    code: "RATE_LIMIT_EXCEEDED",
-    message: "Terlalu banyak pendaftaran. Silakan coba lagi nanti.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logger.security("Account creation rate limit exceeded", {
-      ip: req.ip,
-    });
-    res.status(429).json({
-      success: false,
-      code: "RATE_LIMIT_EXCEEDED",
-      message: "Terlalu banyak pendaftaran. Silakan coba lagi dalam 1 jam.",
-      retryAfter: 60 * 60,
-    });
-  },
+export const createAccountLimiter = createLimiter({
+  windowMs: parseWindowMs(process.env.CREATE_ACCOUNT_RATE_LIMIT_WINDOW, 60),
+  max: parseMaxRequests(process.env.CREATE_ACCOUNT_RATE_LIMIT_MAX, 5),
+  message: "Terlalu banyak pendaftaran. Silakan coba lagi nanti.",
+  logMessage: "Account creation rate limit exceeded",
 });
+
+export const apiLimiter = authenticatedApiLimiter;

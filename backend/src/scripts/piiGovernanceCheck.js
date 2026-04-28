@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "../../..");
 
-const matrixPath = path.join(projectRoot, "PII_ACCESS_MATRIX.md");
+const matrixPath = path.join(projectRoot, "docs/PII_ACCESS_MATRIX.md");
 const appPath = path.join(projectRoot, "backend/src/app.js");
 
 const requiredMatrixSnippets = [

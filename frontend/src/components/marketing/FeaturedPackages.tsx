@@ -2,22 +2,22 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import PackageCard from "./PackageCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { mockPackages } from "@/lib/mock-data"; // ✅ Import dari source tunggal
+import { AlertCircle, Sparkles, TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import PackageCard from "./PackageCard";
+import { getFeaturedMarketingPackages } from "@/lib/public-api";
 
 function PackageCardSkeleton() {
   return (
-    <div className="bg-white rounded-3xl overflow-hidden border-4 border-neutral-100">
-      <Skeleton className="h-56 sm:h-64 w-full" />
-      <div className="p-4 sm:p-6 space-y-4">
+    <div className="overflow-hidden rounded-3xl border-4 border-neutral-100 bg-white">
+      <Skeleton className="h-56 w-full sm:h-64" />
+      <div className="space-y-4 p-4 sm:p-6">
         <Skeleton className="h-8 w-3/4" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-2/3" />
-        <div className="pt-4 space-y-3">
+        <div className="space-y-3 pt-4">
           <Skeleton className="h-10 w-40" />
           <Skeleton className="h-12 w-full" />
         </div>
@@ -27,87 +27,89 @@ function PackageCardSkeleton() {
 }
 
 export default function FeaturedPackages() {
-  // ✅ Use TanStack Query (bisa diganti dengan real API nanti)
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["packages", "featured"],
-    queryFn: async () => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return mockPackages; // ✅ Dari single source
-    },
+    queryKey: ["public-packages", "featured"],
+    queryFn: () => getFeaturedMarketingPackages(3),
     staleTime: 5 * 60 * 1000,
   });
 
   return (
-    <section className="py-20 md:py-28 bg-gradient-to-b from-white to-neutral-50">
+    <section className="bg-gradient-to-b from-white to-neutral-50 py-20 md:py-28">
       <div className="container-custom">
-        {/* Section Header */}
-        <div className="text-center max-w-4xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-3 bg-secondary/10 px-6 py-3 rounded-full mb-6 border-2 border-secondary/20">
-            <Sparkles className="w-5 h-5 text-secondary" />
-            <span className="text-primary font-bold text-sm">
-              Paket Terpopuler
-            </span>
+        <div className="mx-auto mb-16 max-w-4xl text-center">
+          <div className="mb-6 inline-flex items-center gap-3 rounded-full border-2 border-secondary/20 bg-secondary/10 px-6 py-3">
+            <Sparkles className="h-5 w-5 text-secondary" />
+            <span className="text-sm font-bold text-primary">Paket Terpopuler</span>
           </div>
 
           <h2 className="heading-section mb-6">Paket Umroh Pilihan Terbaik</h2>
 
-          <p className="text-body-large text-neutral-600 max-w-2xl mx-auto">
-            Pilihan paket umroh dengan fasilitas premium, hotel bintang 5 dekat
-            Masjidil Haram, dan harga terjangkau
+          <p className="mx-auto max-w-2xl text-body-large text-neutral-600">
+            Pilihan paket umroh dengan fasilitas premium, hotel terbaik, dan
+            jadwal keberangkatan yang bisa Anda pilih langsung dari data publik
+            terbaru.
           </p>
         </div>
 
-        {/* Error State */}
         {isError && (
-          <div className="max-w-md mx-auto text-center py-16">
-            <div className="w-20 h-20 bg-error/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-10 h-10 text-error" />
+          <div className="mx-auto max-w-md py-16 text-center">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-error/10">
+              <AlertCircle className="h-10 w-10 text-error" />
             </div>
-            <h3 className="font-bold text-2xl text-primary mb-3">
+            <h3 className="mb-3 text-2xl font-bold text-primary">
               Gagal Memuat Paket
             </h3>
-            <p className="text-neutral-600 mb-6">
+            <p className="mb-6 text-neutral-600">
               {error instanceof Error ? error.message : "Terjadi kesalahan"}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary"
+              type="button"
             >
               Coba Lagi
             </button>
           </div>
         )}
 
-        {/* Loading State */}
         {isLoading && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid gap-6 sm:grid-cols-2 md:gap-8 lg:grid-cols-3">
             {[...Array(3)].map((_, index) => (
               <PackageCardSkeleton key={index} />
             ))}
           </div>
         )}
 
-        {/* Success State */}
-        {!isLoading && !isError && data && (
+        {!isLoading && !isError && data && data.length > 0 && (
           <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
+            <div className="mb-12 grid gap-6 sm:grid-cols-2 md:gap-8 lg:grid-cols-3">
               {data.map((pkg) => (
                 <PackageCard key={pkg.id} pkg={pkg} />
               ))}
             </div>
 
-            {/* CTA to All Packages */}
             <div className="text-center">
               <Link
                 href="/packages"
-                className="inline-flex items-center gap-3 bg-primary hover:bg-primary-600 text-white font-bold text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border-3 border-primary-700"
+                className="inline-flex items-center gap-3 rounded-2xl border-3 border-primary-700 bg-primary px-8 py-4 text-base font-bold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:bg-primary-600 hover:shadow-2xl sm:px-10 sm:py-5 sm:text-lg"
               >
-                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>Lihat Semua Paket Umroh</span>
               </Link>
             </div>
           </>
+        )}
+
+        {!isLoading && !isError && (!data || data.length === 0) && (
+          <div className="rounded-3xl border-4 border-neutral-100 bg-white px-6 py-12 text-center shadow-lg">
+            <h3 className="mb-3 text-2xl font-bold text-primary">
+              Belum Ada Paket Publik
+            </h3>
+            <p className="mx-auto max-w-2xl text-neutral-600">
+              Paket yang aktif dan dipublikasikan akan tampil di sini setelah
+              tersedia dari backend publik.
+            </p>
+          </div>
         )}
       </div>
     </section>

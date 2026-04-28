@@ -148,14 +148,6 @@ export default function EditProfilePage() {
     updateMutation.mutate(data);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   useEffect(() => {
     if (!agentData || agentData.status === "APPROVED" || hasRedirectedRef.current) {
       return;
@@ -164,6 +156,14 @@ export default function EditProfilePage() {
     hasRedirectedRef.current = true;
     router.replace("/agen/profile");
   }, [agentData, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!agentData || agentData.status !== "APPROVED") {
     return (

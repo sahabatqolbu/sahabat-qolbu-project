@@ -55,6 +55,17 @@ describe("jamaah self-service data integrity", () => {
     assert.match(controller, /where\(eq\(jamaahData\.id, existing\.id\)\)/);
     assert.match(controller, /const fileUrl = req\.uploadedFile\?\.path/);
   });
+
+  it("supports admin jamaah document uploads with the multipart file path", () => {
+    const controller = read("src/controllers/jamaahController.js");
+    const routes = read("src/routes/jamaah.js");
+
+    assert.match(controller, /ADMIN_UPLOAD_DOCUMENT_MAP/);
+    assert.match(controller, /export const uploadAdminDocument = async/);
+    assert.match(controller, /const fileUrl = req\.uploadedFile\?\.path/);
+    assert.match(routes, /\/admin\/:bookingNumber\/documents/);
+    assert.match(routes, /uploadAdminDocument/);
+  });
 });
 
 describe("api contract regressions", () => {

@@ -1,10 +1,6 @@
-// dashboard/src/app/%28mobile%29/layout.tsx
-"use client";
-
-import { useEffect } from "react";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/authStore";
 import {
   ArrowLeft,
   Calendar,
@@ -12,178 +8,108 @@ import {
   FileText,
   Globe,
   LayoutDashboard,
-  Loader2,
   Package,
   UserCircle,
   Users,
 } from "lucide-react";
+import { AuthStoreHydrator } from "@/components/auth/AuthStoreHydrator";
+import { DEFAULT_ROUTES, getRoleRedirectPath } from "@/lib/routeAccess";
+import { sessionToAuthUser, validateSession } from "@/lib/validateSession";
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const desktopAgenNav = [
+  { href: "/agen", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/agen/jamaah", label: "Jamaah", icon: Users },
+  { href: "/agen/website", label: "Website", icon: Globe },
+  { href: "/agen/calendar", label: "Kalender", icon: Calendar },
+  { href: "/agen/profile", label: "Profil", icon: UserCircle },
+];
 
-export default function MobileLayout({
-  children,
-}: {
+const desktopJamaahNav = [
+  { href: "/jamaah", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/jamaah/packages", label: "Paket", icon: Package },
+  { href: "/jamaah/documents", label: "Dokumen", icon: FileText },
+  { href: "/jamaah/payments", label: "Pembayaran", icon: CreditCard },
+  { href: "/jamaah/profile", label: "Profil", icon: UserCircle },
+  { href: "/jamaah/calendar", label: "Kalender", icon: Calendar },
+];
+
+interface MobileLayoutProps {
   children: React.ReactNode;
-}) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { user, hasHydrated } = useAuthStore();
+}
 
-  const isAgenDesktop = pathname?.startsWith("/agen") && user?.role === "AGEN";
-  const isAgenHome = pathname === "/agen";
-  const isJamaahDesktop =
-    pathname?.startsWith("/jamaah") && user?.role === "JAMAAH";
-  const isJamaahHome = pathname === "/jamaah";
+interface DesktopNavProps {
+  title: string;
+  items: Array<{
+    href: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }>;
+}
 
-  const desktopAgenNav = [
-    { href: "/agen", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/agen/jamaah", label: "Jamaah", icon: Users },
-    { href: "/agen/website", label: "Website", icon: Globe },
-    { href: "/agen/calendar", label: "Kalender", icon: Calendar },
-    { href: "/agen/profile", label: "Profil", icon: UserCircle },
-  ];
+function DesktopNav({ title, items }: DesktopNavProps) {
+  return (
+    <div className="hidden md:block border-b bg-white/90 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-6 py-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-400">
+              <ArrowLeft className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">{title}</p>
+              <p className="text-sm font-semibold text-gray-900">Navigasi Desktop</p>
+            </div>
+          </div>
 
-  const desktopJamaahNav = [
-    { href: "/jamaah", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/jamaah/packages", label: "Paket", icon: Package },
-    { href: "/jamaah/documents", label: "Dokumen", icon: FileText },
-    { href: "/jamaah/payments", label: "Pembayaran", icon: CreditCard },
-    { href: "/jamaah/profile", label: "Profil", icon: UserCircle },
-    { href: "/jamaah/calendar", label: "Kalender", icon: Calendar },
-  ];
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {items.map((item) => {
+              const Icon = item.icon;
 
-  const isActivePath = (href: string) => {
-    if (!pathname) return false;
-    if (href === "/agen" || href === "/jamaah") return pathname === href;
-    return pathname === href || pathname.startsWith(href + "/");
-  };
-
-  useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
-
-    if (!user) {
-      if (isDevelopment) {
-        console.log("❌ Not authenticated, redirecting to login");
-      }
-      router.replace("/login");
-    }
-  }, [hasHydrated, user, router]);
-
-  // Loading states
-  if (!hasHydrated || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-gray-600">Memuat...</p>
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
-    );
+    </div>
+  );
+}
+
+export default async function MobileLayout({ children }: MobileLayoutProps) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+  const session = await validateSession(token);
+
+  if (!session) {
+    redirect("/login");
   }
 
+  const redirectPath = getRoleRedirectPath(session.role, `/${session.role.toLowerCase()}`);
+  if (session.role !== "AGEN" && session.role !== "JAMAAH") {
+    redirect(redirectPath ?? DEFAULT_ROUTES[session.role]);
+  }
+
+  const user = sessionToAuthUser(session);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {isAgenDesktop && (
-        <div className="hidden md:block border-b bg-white/90 backdrop-blur">
-          <div className="mx-auto max-w-7xl px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                {!isAgenHome && (
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                )}
-                <div>
-                  <p className="text-xs text-gray-500">Area Agen</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Navigasi Desktop
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {desktopAgenNav.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActivePath(item.href);
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                        active
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                          : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isJamaahDesktop && (
-        <div className="hidden md:block border-b bg-white/90 backdrop-blur">
-          <div className="mx-auto max-w-7xl px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                {!isJamaahHome && (
-                  <button
-                    type="button"
-                    onClick={() => router.back()}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                )}
-                <div>
-                  <p className="text-xs text-gray-500">Area Jamaah</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Navigasi Desktop
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap justify-end">
-                {desktopJamaahNav.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActivePath(item.href);
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                        active
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                          : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ✅ Tanpa Sidebar & Header Desktop */}
-      {/* ✅ Cuma render children langsung */}
-      {children}
-    </div>
+    <>
+      <AuthStoreHydrator user={user} />
+      <div className="min-h-screen bg-gray-50">
+        {session.role === "AGEN" ? (
+          <DesktopNav title="Area Agen" items={desktopAgenNav} />
+        ) : (
+          <DesktopNav title="Area Jamaah" items={desktopJamaahNav} />
+        )}
+        {children}
+      </div>
+    </>
   );
 }

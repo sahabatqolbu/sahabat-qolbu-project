@@ -341,7 +341,7 @@ export default function EditJamaahPage() {
 
         const harga = selectedPackage.discountPrice
           ? parseFloat(selectedPackage.discountPrice)
-          : parseFloat(selectedPackage.price) || 0;
+          : parseFloat(selectedPackage.price || "0") || 0;
 
         setValue("hargaPaket", harga.toString(), { shouldDirty: true });
 
@@ -413,13 +413,13 @@ export default function EditJamaahPage() {
 
     // Convert IDs ke number
     if (cleanData.packageId && cleanData.packageId !== null) {
-      cleanData.packageId = parseInt(cleanData.packageId);
+      cleanData.packageId = parseInt(cleanData.packageId as string);
     }
     if (cleanData.mahramId && cleanData.mahramId !== null) {
-      cleanData.mahramId = parseInt(cleanData.mahramId);
+      cleanData.mahramId = parseInt(cleanData.mahramId as string);
     }
     if (cleanData.agenId && cleanData.agenId !== null) {
-      cleanData.agenId = parseInt(cleanData.agenId);
+      cleanData.agenId = parseInt(cleanData.agenId as string);
     }
 
     console.log("📤 Submitting:", cleanData);
@@ -860,7 +860,7 @@ export default function EditJamaahPage() {
                             <SelectItem key={pkg.id} value={pkg.id.toString()}>
                               {pkg.name} -{" "}
                               {formatRupiah(
-                                parseFloat(pkg.discountPrice || pkg.price)
+                                parseFloat(pkg.discountPrice || pkg.price || "0")
                               )}
                             </SelectItem>
                           ))

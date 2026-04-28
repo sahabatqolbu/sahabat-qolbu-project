@@ -1,10 +1,10 @@
 // dashboard/src/stores/authStore.ts
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { authService } from "@/services/authService";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-interface User {
+export interface User {
   id: number;
   email: string;
   fullName: string;
@@ -16,86 +16,114 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   hasHydrated: boolean;
-
-  setAuth: (user: User) => void;
-  setHasHydrated: (hydrated: boolean) => void;
-  logout: () => void;
+  isLoading: boolean;
+  hasInitialized: boolean;
+  setAuth: (user: User | null) => void;
+  hydrateFromServer: (user: User | null) => void;
+  refreshUser: () => Promise<User | null>;
+  logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
 }
 
-// Logger for development only
-const log = isProduction 
-  ? () => {} 
-  : console.log;
+const log = isProduction ? () => {} : console.log;
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
+const clearLegacyAuthStorage = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.removeItem("auth-storage");
+  localStorage.removeItem("user_data");
+};
+
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  user: null,
+  isAuthenticated: false,
+  hasHydrated: false,
+  isLoading: false,
+  hasInitialized: false,
+
+  setAuth: (user) => {
+    set({
+      user,
+      isAuthenticated: Boolean(user),
+      hasHydrated: true,
+      hasInitialized: true,
+      isLoading: false,
+    });
+  },
+
+  hydrateFromServer: (user) => {
+    log("Hydrating auth state from server session");
+    set({
+      user,
+      isAuthenticated: Boolean(user),
+      hasHydrated: true,
+      hasInitialized: true,
+      isLoading: false,
+    });
+  },
+
+  refreshUser: async () => {
+    if (get().isLoading) {
+      return get().user;
+    }
+
+    set({ isLoading: true });
+
+    try {
+      const response = await authService.getCurrentUser();
+      const nextUser = response?.data ?? null;
+
+      set({
+        user: nextUser,
+        isAuthenticated: Boolean(nextUser),
+        hasHydrated: true,
+        hasInitialized: true,
+        isLoading: false,
+      });
+
+      return nextUser;
+    } catch {
+      clearLegacyAuthStorage();
+      set({
+        user: null,
+        isAuthenticated: false,
+        hasHydrated: true,
+        hasInitialized: true,
+        isLoading: false,
+      });
+      return null;
+    }
+  },
+
+  logout: async () => {
+    log("Logging out");
+
+    try {
+      await authService.logout();
+    } catch {
+      // Best-effort logout only.
+    }
+
+    clearLegacyAuthStorage();
+
+    set({
       user: null,
       isAuthenticated: false,
-      hasHydrated: false,
+      hasHydrated: true,
+      hasInitialized: true,
+      isLoading: false,
+    });
 
-      setAuth: (user) => {
-        log("💾 Setting auth state");
-
-        set({
-          user,
-          isAuthenticated: true,
-        });
-
-        log("✅ Auth state updated");
-      },
-
-      setHasHydrated: (hydrated) => {
-        set({ hasHydrated: hydrated });
-      },
-
-      logout: () => {
-        log("👋 Logging out...");
-
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("auth-storage");
-        }
-
-        set({
-          user: null,
-          isAuthenticated: false,
-        });
-
-        // Redirect to login
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
-      },
-
-      updateUser: (updatedUser) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updatedUser } : null,
-        }));
-      },
-    }),
-    {
-      name: "auth-storage",
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-      }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
-      merge: (persistedState, currentState) => {
-        const mergedState = {
-          ...currentState,
-          ...(persistedState as Partial<AuthState>),
-        };
-
-        return {
-          ...mergedState,
-          isAuthenticated: Boolean(mergedState.user),
-          hasHydrated: true,
-        };
-      },
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
     }
-  )
-);
+  },
+
+  updateUser: (updatedUser) => {
+    set((state) => ({
+      user: state.user ? { ...state.user, ...updatedUser } : null,
+    }));
+  },
+}));

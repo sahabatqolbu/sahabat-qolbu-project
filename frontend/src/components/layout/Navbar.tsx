@@ -13,9 +13,9 @@ const navigation = [
     href: "/packages",
     children: [
       { name: "Semua Paket", href: "/packages" },
-      { name: "Umroh Ramadhan", href: "/packages?type=ramadhan" },
-      { name: "Umroh Plus Turki", href: "/packages?type=plus" },
-      { name: "Umroh Reguler", href: "/packages?type=regular" },
+      { name: "Umroh Ramadhan", href: "/packages?type=UMRAH_RAMADHAN" },
+      { name: "Umroh Plus Turki", href: "/packages?type=UMRAH_PLUS" },
+      { name: "Umroh Reguler", href: "/packages?type=UMRAH" },
     ],
   },
   { name: "Tentang Kami", href: "/about" },

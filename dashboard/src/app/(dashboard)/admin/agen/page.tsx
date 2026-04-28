@@ -259,7 +259,7 @@ export default function AdminAgenPage() {
         if (response.success) {
           toast({
             title: "✅ Import Selesai",
-            description: `Berhasil: ${response.data.success}, Gagal: ${response.data.failed}`,
+            description: `Berhasil: ${response.data?.success || 0}, Gagal: ${response.data?.failed || 0}`,
           });
           queryClient.invalidateQueries({ queryKey: ["agents"] });
           setImportDialogOpen(false);

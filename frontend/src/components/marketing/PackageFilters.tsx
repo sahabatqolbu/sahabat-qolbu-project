@@ -118,10 +118,10 @@ export default function PackageFilters({ onClose }: PackageFiltersProps) {
           </label>
           <div className="space-y-2">
             {[
-              { value: "", label: "Semua Tipe", icon: "🌟" },
-              { value: "UMRAH", label: "Umroh Reguler", icon: "🕌" },
-              { value: "UMRAH_RAMADHAN", label: "Umroh Ramadhan", icon: "🌙" },
-              { value: "UMRAH_PLUS", label: "Umroh Plus", icon: "✈️" },
+              { value: "", label: "Semua Tipe", icon: "Semua" },
+              { value: "UMRAH", label: "Umroh Reguler", icon: "Reg" },
+              { value: "UMRAH_RAMADHAN", label: "Umroh Ramadhan", icon: "Ram" },
+              { value: "UMRAH_PLUS", label: "Umroh Plus", icon: "Plus" },
             ].map((option) => (
               <button
                 key={option.value}

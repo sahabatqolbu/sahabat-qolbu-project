@@ -44,6 +44,27 @@ const getAgenOwnershipCondition = async (agenUserId) => {
     : eq(jamaahData.agenId, agenUserId);
 };
 
+const ADMIN_UPLOAD_DOCUMENT_MAP = {
+  foto: "fotoUrl",
+  fotoUrl: "fotoUrl",
+  ktp: "ktpUrl",
+  ktpUrl: "ktpUrl",
+  kk: "kkUrl",
+  kkUrl: "kkUrl",
+  paspor: "pasporUrl",
+  pasporUrl: "pasporUrl",
+  bukuNikah: "bukuNikahUrl",
+  bukuNikahUrl: "bukuNikahUrl",
+  aktaLahir: "aktaLahirUrl",
+  aktaLahirUrl: "aktaLahirUrl",
+  ijazah: "ijazahUrl",
+  ijazahUrl: "ijazahUrl",
+  vaksin: "vaksinUrl",
+  vaksinUrl: "vaksinUrl",
+  meningitis: "meningitisUrl",
+  meningitisUrl: "meningitisUrl",
+};
+
 // ===== HELPER: Generate Booking Number =====
 const generateBookingNumber = async () => {
   const now = new Date();
@@ -529,6 +550,105 @@ export const getJamaahByBookingNumber = async (req, res, next) => {
   } catch (error) {
     logger.error("Get jamaah by booking error", error, {
       bookingNumber: req.params?.bookingNumber,
+    });
+    next(error);
+  }
+};
+
+export const uploadAdminDocument = async (req, res, next) => {
+  try {
+    const { bookingNumber } = req.params;
+    const { documentType } = req.body;
+
+    if (!req.file) {
+      return errorResponse(res, "File tidak ditemukan", 400);
+    }
+
+    const normalizedDocumentType = String(documentType || "").trim();
+    const columnName = ADMIN_UPLOAD_DOCUMENT_MAP[normalizedDocumentType];
+
+    if (!columnName) {
+      return errorResponse(res, "Tipe dokumen tidak valid", 400);
+    }
+
+    const jamaah = await db.query.jamaahData.findFirst({
+      where: eq(jamaahData.bookingNumber, bookingNumber),
+    });
+
+    if (!jamaah) {
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
+    }
+
+    const fileUrl = req.uploadedFile?.path;
+
+    if (!fileUrl) {
+      return errorResponse(res, "File upload gagal diproses", 500);
+    }
+
+    await db
+      .update(jamaahData)
+      .set({
+        [columnName]: fileUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(jamaahData.id, jamaah.id));
+
+    const updatedJamaah = await db.query.jamaahData.findFirst({
+      where: eq(jamaahData.id, jamaah.id),
+      with: {
+        user: {
+          columns: SAFE_USER_COLUMNS,
+        },
+        package: {
+          with: {
+            hotelMakkah: true,
+            hotelMadinah: true,
+            airline: true,
+          },
+        },
+        agen: {
+          columns: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        mahram: {
+          with: {
+            user: {
+              columns: {
+                fullName: true,
+              },
+            },
+          },
+        },
+        payments: {
+          orderBy: [desc(jamaahPayments.createdAt)],
+        },
+      },
+    });
+
+    logger.info("Admin jamaah document uploaded", {
+      bookingNumber,
+      documentType: normalizedDocumentType,
+      uploadedBy: req.user?.userId,
+    });
+
+    return successResponse(
+      res,
+      {
+        documentType: normalizedDocumentType,
+        columnName,
+        url: fileUrl,
+        jamaah: updatedJamaah,
+      },
+      `${normalizedDocumentType.toUpperCase()} berhasil diupload`
+    );
+  } catch (error) {
+    logger.error("Admin upload jamaah document error", error, {
+      bookingNumber: req.params?.bookingNumber,
+      uploadedBy: req.user?.userId,
     });
     next(error);
   }

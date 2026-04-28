@@ -99,7 +99,7 @@ export default function CreateJamaahPage() {
     watch,
     formState: { errors },
   } = useForm<CreateJamaahForm>({
-    resolver: zodResolver(createJamaahSchema),
+    resolver: zodResolver(createJamaahSchema) as any,
     defaultValues: {
       userMode: "new",
       notePaket: "FULLSERVICE",
@@ -375,7 +375,7 @@ export default function CreateJamaahPage() {
                           packages.map((pkg) => (
                             <SelectItem key={pkg.id} value={pkg.id.toString()}>
                               {pkg.name} -{" "}
-                              {formatRupiah(parseFloat(pkg.price) || 0)}
+                              {formatRupiah(parseFloat(pkg.price || "0") || 0)}
                             </SelectItem>
                           ))
                         )}
