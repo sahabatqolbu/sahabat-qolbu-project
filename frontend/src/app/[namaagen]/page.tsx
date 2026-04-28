@@ -1,14 +1,18 @@
-import AgentLandingFrame from "./AgentLandingFrame";
+import { notFound } from "next/navigation";
+import AgentLandingPage from "./AgentLandingPage";
+import { getPublicAgentLanding } from "@/lib/public-api";
 
-export async function generateStaticParams() {
-  return [{ namaagen: "agen-demo" }];
-}
-
-export default async function AgentLandingPage({
+export default async function AgentPage({
   params,
 }: {
   params: Promise<{ namaagen: string }>;
 }) {
   const { namaagen } = await params;
-  return <AgentLandingFrame namaagen={namaagen} />;
+  const landing = await getPublicAgentLanding(namaagen);
+
+  if (!landing) {
+    notFound();
+  }
+
+  return <AgentLandingPage landing={landing} />;
 }

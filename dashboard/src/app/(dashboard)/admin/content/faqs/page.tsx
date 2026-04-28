@@ -381,7 +381,7 @@ export default function FAQsPage() {
                 <Select
                   value={formData.category}
                   onValueChange={(val) =>
-                    setFormData({ ...formData, category: val })
+                    setFormData({ ...formData, category: val as FAQCategory })
                   }
                 >
                   <SelectTrigger>

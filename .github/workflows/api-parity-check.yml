@@ -1,0 +1,58 @@
+name: API Parity Check
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "dashboard/**"
+      - "scripts/audit-api-parity.sh"
+      - ".github/workflows/api-parity-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "dashboard/**"
+      - "scripts/audit-api-parity.sh"
+      - ".github/workflows/api-parity-check.yml"
+  workflow_dispatch:
+
+jobs:
+  api-parity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: |
+            backend/package-lock.json
+            dashboard/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Install dashboard dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Run API parity audit
+        run: bash ./scripts/audit-api-parity.sh
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test

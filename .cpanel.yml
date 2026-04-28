@@ -2,4 +2,4 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/sahj7196/public_html/api/backend
-    - /bin/rsync -av --delete backend/ $DEPLOYPATH/
+    - /bin/rsync -av --delete --exclude='.env*' --exclude='node_modules/' --exclude='public/uploads/' --exclude='backups/' backend/ $DEPLOYPATH/

@@ -1,8 +1,8 @@
 // dashboard/src/app/(dashboard)/admin/staff/[id]/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useState, use } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffService } from "@/services/staffService";
 import { useToast } from "@/hooks/use-toast";
@@ -38,12 +38,16 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
-export default function StaffDetailPage() {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function StaffDetailPage({ params }: PageProps) {
+  const { id } = use(params);
   const router = useRouter();
-  const params = useParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const staffId = parseInt(params.id as string);
+  const staffId = parseInt(id as string);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);

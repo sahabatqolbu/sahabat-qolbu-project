@@ -14,7 +14,10 @@ import {
 } from "./config/security.js";
 import cors from "cors";
 import helmet from "helmet";
-import { apiLimiter } from "./middlewares/rateLimiter.js";
+import {
+  authenticatedApiLimiter,
+  publicReadLimiter,
+} from "./middlewares/rateLimiter.js";
 import {
   forbiddenResponse,
   notFoundResponse,
@@ -56,13 +59,34 @@ app.use(helmet(helmetOptions));
 // 3. CORS configuration
 app.use(cors(corsOptions));
 
-// 4. General rate limiting
-app.use("/api/", apiLimiter);
-
-// 5. Body parsers with limits
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+// 4. Body parsers with safer defaults
+app.use(express.json({ limit: "256kb" }));
+app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 app.use(cookieParser());
+
+// 5. Rate limiting
+const PUBLIC_API_PREFIXES = ["/public", "/packages", "/agents", "/health-check"];
+
+const isPublicApiPath = (pathname) =>
+  PUBLIC_API_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+
+const applyApiRateLimit = (req, res, next) => {
+  const normalizedPath = String(req.path || "/").replace(/^\/v1(?=\/|$)/, "") || "/";
+
+  if (normalizedPath === "/auth" || normalizedPath.startsWith("/auth/")) {
+    return next();
+  }
+
+  if (isPublicApiPath(normalizedPath)) {
+    return publicReadLimiter(req, res, next);
+  }
+
+  return authenticatedApiLimiter(req, res, next);
+};
+
+app.use("/api", applyApiRateLimit);
 
 // 6. Request logging
 if (process.env.NODE_ENV === "development") {

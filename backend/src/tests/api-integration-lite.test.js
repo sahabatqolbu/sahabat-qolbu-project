@@ -68,6 +68,19 @@ describe("api integration lite", () => {
     assert.equal(v1Body.status, "API router is alive");
   });
 
+  it("keeps explicit admin alias mounts available without URL rewriting", async () => {
+    const jamaahRes = await fetch(`${baseUrl}/api/admin/jamaah`);
+    const jamaahBody = await jamaahRes.json();
+
+    const agenRes = await fetch(`${baseUrl}/api/admin/agen`);
+    const agenBody = await agenRes.json();
+
+    assert.equal(jamaahRes.status, 401);
+    assert.equal(agenRes.status, 401);
+    assert.equal(jamaahBody.code, "AUTH_UNAUTHORIZED");
+    assert.equal(agenBody.code, "AUTH_UNAUTHORIZED");
+  });
+
   it("keeps auth test route reachable on both /api and /api/v1 in non-production", async () => {
     if (process.env.NODE_ENV === "production") {
       return;

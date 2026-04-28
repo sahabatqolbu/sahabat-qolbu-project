@@ -276,7 +276,7 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
     },
     {
       label: "Paket Saya",
-      href: "/jamaah/package",
+      href: "/jamaah/packages",
       icon: Package,
     },
   ],

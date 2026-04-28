@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const projectRoot = path.resolve(__dirname, "../../..");
-const contractPath = path.join(projectRoot, "API_CONTRACT.md");
+const contractPath = path.join(projectRoot, "docs/API_CONTRACT.md");
 const openApiPath = path.join(projectRoot, "backend/openapi/openapi.v1.baseline.yaml");
 
 const requiredContractSnippets = [

@@ -1,36 +1,16 @@
-"use client";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { DEFAULT_ROUTES } from "@/lib/routeAccess";
+import { validateSession } from "@/lib/validateSession";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/authStore";
-import { Loader2 } from "lucide-react";
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+  const session = await validateSession(token);
 
-export default function HomePage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
+  if (!session) {
+    redirect("/login");
+  }
 
-  useEffect(() => {
-    if (!user) {
-      router.replace("/login");
-    } else {
-      // 🔥 ROLE-BASED REDIRECT
-      const routes = {
-        ADMIN: "/admin",
-        FINANCE: "/finance",
-        STAFF: "/staff",
-        AGEN: "/agen",
-        JAMAAH: "/jamaah",
-      };
-      router.replace(routes[user.role]);
-    }
-  }, [user, router]);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-        <p className="text-gray-600">Memuat...</p>
-      </div>
-    </div>
-  );
+  redirect(DEFAULT_ROUTES[session.role]);
 }

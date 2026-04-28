@@ -110,10 +110,7 @@ interface JamaahProfileFields extends JamaahListItem {
   passportIssuePlace?: string | null;
   emergencyName?: string | null;
   emergencyPhone?: string | null;
-  roomTypeMakkah?: string | null;
-  roomTypeMadinah?: string | null;
   agenId?: number | null;
-  agenName?: string | null;
 }
 
 interface PackageFilterOption {

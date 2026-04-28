@@ -11,9 +11,6 @@ package-lock.json
 uploads/*
 !uploads/.gitkeep
 
-# Drizzle
-drizzle/
-
 # Logs
 *.log
 npm-debug.log*

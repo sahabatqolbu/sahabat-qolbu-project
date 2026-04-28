@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { jamaahSelfService } from "@/services/jamaahSelfService";
@@ -35,10 +36,14 @@ const getImageUrl = (path: string | undefined): string => {
   return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
 
-export default function JamaahPackageDetailPage() {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function JamaahPackageDetailPage({ params }: PageProps) {
+  const { id } = use(params);
   const { toast } = useToast();
-  const params = useParams<{ id: string }>();
-  const packageId = params?.id;
+  const packageId = id;
 
   const { data, isLoading } = useQuery({
     queryKey: ["jamaah-package-detail", packageId],

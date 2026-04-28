@@ -1,43 +1,40 @@
 // src/components/marketing/PackageDetail/PackageHeader.tsx
 "use client";
 
-import { Package } from "@/lib/mock-data";
-import { Clock, Calendar, Users } from "lucide-react";
-import { formatDate } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { Calendar, Clock, Users } from "lucide-react";
+import { cn, formatDate } from "@/lib/utils";
+import type { MarketingPackage } from "@/lib/public-api";
 
 interface Props {
-  pkg: Package;
+  pkg: MarketingPackage;
 }
 
 export default function PackageHeader({ pkg }: Props) {
-  const seatsLeft = pkg.totalSeats - pkg.bookedSeats;
+  const seatsLeft = Math.max(pkg.totalSeats - pkg.bookedSeats, 0);
 
   return (
     <div className="mb-8">
-      {/* Title */}
-      <h1 className="font-display font-black text-3xl sm:text-4xl md:text-5xl text-primary mb-4">
+      <h1 className="mb-4 font-display text-3xl font-black text-primary sm:text-4xl md:text-5xl">
         {pkg.name}
       </h1>
 
-      {/* Meta Info */}
-      <div className="flex flex-wrap items-center gap-4 text-neutral-700 mb-6">
+      <div className="mb-6 flex flex-wrap items-center gap-4 text-neutral-700">
         <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-secondary" />
+          <Clock className="h-5 w-5 text-secondary" />
           <span className="font-semibold">{pkg.duration} Hari</span>
         </div>
         <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-secondary" />
-          <span className="font-semibold text-sm">
+          <Calendar className="h-5 w-5 text-secondary" />
+          <span className="text-sm font-semibold">
             {formatDate(pkg.departureDate)}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-secondary" />
+          <Users className="h-5 w-5 text-secondary" />
           <span
             className={cn(
               "font-bold",
-              seatsLeft <= 5 ? "text-error" : "text-success"
+              seatsLeft <= 5 ? "text-error" : "text-success",
             )}
           >
             {seatsLeft} Seat Tersisa

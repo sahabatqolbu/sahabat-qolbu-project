@@ -1,6 +1,6 @@
 // dashboard/src/lib/axios.ts
 
-import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import axios, { AxiosError } from "axios";
 
 const isProduction = process.env.NODE_ENV === "production";
 const enableDebugLogs = process.env.NEXT_PUBLIC_DEBUG_LOGS === "true" || !isProduction;
@@ -47,9 +47,15 @@ const logger = {
 };
 
 const getReadableErrorMessage = (error: AxiosError): string => {
-  const data = error.response?.data as any;
+  const data = error.response?.data;
   const backendMessage =
-    typeof data?.message === "string" && data.message.trim() ? data.message.trim() : "";
+    typeof data === "object" &&
+    data !== null &&
+    "message" in data &&
+    typeof data.message === "string" &&
+    data.message.trim()
+      ? data.message.trim()
+      : "";
 
   const loweredBackendMessage = backendMessage.toLowerCase();
   if (loweredBackendMessage.includes("data and hash arguments required")) {
@@ -115,7 +121,6 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     const status = error.response?.status;
     const url = error.config?.url;
-    const data = error.response?.data as { message?: string };
     const readableMessage = getReadableErrorMessage(error);
 
     // Use warn for HTTP errors to avoid Next dev overlay noise.
@@ -143,10 +148,9 @@ api.interceptors.response.use(
       logger.warn("🚫 UNAUTHORIZED! Redirecting to login...");
       
       if (typeof window !== "undefined") {
-        // Clear auth data
         localStorage.removeItem("auth-storage");
-        
-        // Only redirect if not already on login page
+        localStorage.removeItem("user_data");
+
         if (!window.location.pathname.includes("/login")) {
           const currentPath = encodeURIComponent(window.location.pathname);
           window.location.href = `/login?redirect=${currentPath}`;

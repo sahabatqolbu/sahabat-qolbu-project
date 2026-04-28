@@ -10,11 +10,12 @@ import {
   agentBenefits,
   agentRequirements,
   agentPurposes,
-    agentPaymentTransactions,
+  transactions,
+  agentPaymentTransactions,
   agentClosingHistory,
   periods,
 } from "../db/schema.js";
-import { eq, and, gte, lte, desc, asc, count, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, asc, count, sql, or, inArray } from "drizzle-orm";
 import { hashPassword, generatePassword } from "../utils/password.js";
 import { upload as uploadMemory, optimizeImage } from "../utils/upload.js";
 import crypto from "crypto";
@@ -1150,6 +1151,131 @@ export const uploadIdCardDesignPdf = [
 ];
 
 // ===== AGEN: REQUEST ADMIN/STAFF TO CREATE DOCS =====
+export const getCommission = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    const agent = await db.query.agentData.findFirst({
+      where: eq(agentData.userId, userId),
+      with: {
+        currentLevel: {
+          columns: {
+            star: true,
+          },
+        },
+      },
+    });
+
+    if (!agent) {
+      return errorResponse(res, "Data agen tidak ditemukan", 404);
+    }
+
+    const ownedJamaah = await db.query.jamaahData.findMany({
+      where: or(
+        eq(jamaahData.agenId, userId),
+        eq(jamaahData.agenId, agent.id),
+      ),
+      columns: {
+        id: true,
+      },
+    });
+
+    if (ownedJamaah.length === 0) {
+      return successResponse(res, {
+        total: 0,
+        pending: 0,
+        paid: 0,
+        history: [],
+        commissionRate: Number.parseInt(process.env.AGENT_COMMISSION_PERCENTAGE || "10", 10) || 10,
+        totalClosing: 0,
+        currentStar: agent.currentStar,
+        currentLevelStar: agent.currentLevel?.star ?? agent.currentStar,
+      });
+    }
+
+    const ownedJamaahIds = ownedJamaah.map((item) => item.id);
+
+    const commissionRows = await db.query.transactions.findMany({
+      where: and(
+        eq(transactions.status, "VERIFIED"),
+        inArray(transactions.jamaahId, ownedJamaahIds),
+      ),
+      with: {
+        jamaah: {
+          columns: {
+            id: true,
+            namaPaspor: true,
+            agenId: true,
+          },
+          with: {
+            user: {
+              columns: {
+                fullName: true,
+              },
+            },
+          },
+        },
+        package: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+      orderBy: [desc(transactions.verifiedAt), desc(transactions.createdAt)],
+    });
+
+    const ratePercent = Number.parseInt(
+      process.env.AGENT_COMMISSION_PERCENTAGE || "10",
+      10,
+    );
+    const normalizedRate = Number.isFinite(ratePercent) && ratePercent > 0
+      ? ratePercent
+      : 10;
+
+    const history = commissionRows.map((transaction) => {
+      const amount = Math.round(
+        (Number.parseFloat(transaction.totalAmount || "0") * normalizedRate) / 100,
+      );
+
+      return {
+        id: transaction.id,
+        jamaahName:
+          transaction.jamaah?.user?.fullName ||
+          transaction.jamaah?.namaPaspor ||
+          "-",
+        packageName: transaction.package?.name || "Paket tidak ditemukan",
+        status: transaction.commissionStatus || "PENDING",
+        date:
+          transaction.commissionPaidAt ||
+          transaction.verifiedAt ||
+          transaction.createdAt,
+        amount,
+      };
+    });
+
+    const pending = history
+      .filter((item) => item.status !== "PAID")
+      .reduce((sum, item) => sum + item.amount, 0);
+
+    const paid = history
+      .filter((item) => item.status === "PAID")
+      .reduce((sum, item) => sum + item.amount, 0);
+
+    return successResponse(res, {
+      total: pending + paid,
+      pending,
+      paid,
+      history,
+      commissionRate: normalizedRate,
+      totalClosing: history.length,
+      currentStar: agent.currentStar,
+      currentLevelStar: agent.currentLevel?.star ?? agent.currentStar,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const requestAgentDocs = async (req, res, next) => {
   try {
     const userId = req.user.userId;

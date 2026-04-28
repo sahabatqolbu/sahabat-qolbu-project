@@ -11,18 +11,42 @@ import { errorResponse, forbiddenResponse } from "../utils/response.js";
  * Centralized security settings for the application
  */
 
+const normalizeOrigin = (rawValue) => {
+  const origin = String(rawValue || "").trim();
+  if (!origin) return "";
+
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/+$/, "");
+  }
+};
+
+const parseCorsOrigins = (rawValue) =>
+  String(rawValue || "")
+    .split(",")
+    .map(normalizeOrigin)
+    .filter(Boolean);
+
 // Allowed origins for CORS
-export const allowedOrigins = [
+export const allowedOrigins = Array.from(new Set([
   "http://localhost:3000",
   "http://localhost:3001",
-  process.env.FRONTEND_URL,
-  process.env.DASHBOARD_URL,
-].filter(Boolean); // Remove undefined/null
+  normalizeOrigin(process.env.FRONTEND_URL),
+  normalizeOrigin(process.env.DASHBOARD_URL),
+  ...parseCorsOrigins(process.env.CORS_ORIGINS),
+].filter(Boolean))); // Remove undefined/null and duplicates
 
 // Add production domains if in production
 if (process.env.NODE_ENV === "production") {
-  allowedOrigins.push("https://sahabatqolbu.com");
-  allowedOrigins.push("https://dashboard.sahabatqolbu.com");
+  for (const origin of [
+    "https://sahabatqolbu.com",
+    "https://dashboard.sahabatqolbu.com",
+  ]) {
+    if (!allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  }
 }
 
 /**

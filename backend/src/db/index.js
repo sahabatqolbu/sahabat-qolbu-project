@@ -8,6 +8,11 @@ import { logger } from "../utils/logger.js";
 
 dotenv.config();
 
+const parsePositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(value || "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 // Create MySQL Connection Pool (Optimized for Shared Hosting)
 const poolConnection = mysql.createPool({
   host: process.env.DB_HOST,
@@ -16,7 +21,9 @@ const poolConnection = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 5, // Low limit untuk shared hosting
+  connectionLimit: parsePositiveInt(process.env.DB_POOL_MAX, 5), // Low default for shared hosting
+  maxIdle: parsePositiveInt(process.env.DB_POOL_MAX, 5),
+  idleTimeout: parsePositiveInt(process.env.DB_POOL_IDLE_TIMEOUT, 30000),
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
@@ -27,6 +34,17 @@ export const ensureSchemaCompatibility = async () => {
     logger.info("Runtime schema compatibility patch disabled");
     return;
   }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_PROD_RUNTIME_SCHEMA_PATCH !== "true"
+  ) {
+    throw new Error(
+      "Runtime schema patch is emergency-only and disabled in production. Use reviewed migrations, or set ALLOW_PROD_RUNTIME_SCHEMA_PATCH=true for a documented emergency."
+    );
+  }
+
+  logger.warn("Runtime schema compatibility patch enabled; use only as an emergency fallback");
 
   try {
     const [rows] = await poolConnection.query(

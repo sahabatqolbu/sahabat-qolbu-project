@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const APP_ROOT = path.join(ROOT, "src", "app", "(dashboard)");
+const APP_ROOTS = [
+  path.join(ROOT, "src", "app", "(dashboard)"),
+  path.join(ROOT, "src", "app", "(mobile)"),
+];
 
 const MENU_CONFIG_PATH = path.join(ROOT, "src", "lib", "menu-config.ts");
 
@@ -22,25 +25,30 @@ const extractRoutesFromMenuConfig = () => {
 
 const routeExists = (href) => {
   const normalized = href.replace(/^\//, "");
-  const routePath = path.join(APP_ROOT, ...normalized.split("/"));
-  const candidates = [
-    path.join(routePath, "page.tsx"),
-    path.join(routePath, "page.ts"),
-    path.join(routePath, "page.jsx"),
-    path.join(routePath, "page.js"),
-  ];
-  return candidates.some((candidate) => fs.existsSync(candidate));
+  return APP_ROOTS.some((appRoot) => {
+    const routePath = path.join(appRoot, ...normalized.split("/"));
+    const candidates = [
+      path.join(routePath, "page.tsx"),
+      path.join(routePath, "page.ts"),
+      path.join(routePath, "page.jsx"),
+      path.join(routePath, "page.js"),
+    ];
+    return candidates.some((candidate) => fs.existsSync(candidate));
+  });
 };
 
 const readPageSource = (href) => {
   const normalized = href.replace(/^\//, "");
-  const routePath = path.join(APP_ROOT, ...normalized.split("/"));
-  const candidates = [
-    path.join(routePath, "page.tsx"),
-    path.join(routePath, "page.ts"),
-    path.join(routePath, "page.jsx"),
-    path.join(routePath, "page.js"),
-  ];
+  const candidates = APP_ROOTS.flatMap((appRoot) => {
+    const routePath = path.join(appRoot, ...normalized.split("/"));
+    return [
+      path.join(routePath, "page.tsx"),
+      path.join(routePath, "page.ts"),
+      path.join(routePath, "page.jsx"),
+      path.join(routePath, "page.js"),
+    ];
+  });
+
   const pageFile = candidates.find((candidate) => fs.existsSync(candidate));
   if (!pageFile) return null;
   return fs.readFileSync(pageFile, "utf8");

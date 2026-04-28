@@ -21,9 +21,9 @@ const months = [
 
 const packageTypes = [
   { value: "all", label: "Semua Paket" },
-  { value: "regular", label: "Umroh Reguler" },
-  { value: "ramadhan", label: "Umroh Ramadhan" },
-  { value: "plus", label: "Umroh Plus" },
+  { value: "UMRAH", label: "Umroh Reguler" },
+  { value: "UMRAH_RAMADHAN", label: "Umroh Ramadhan" },
+  { value: "UMRAH_PLUS", label: "Umroh Plus" },
 ];
 
 export default function SearchWidget() {

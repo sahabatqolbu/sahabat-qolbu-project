@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jamaahService } from "@/services/jamaahService";
 import { adminService } from "@/services/adminService";
@@ -10,7 +10,7 @@ import { packageService } from "@/services/packageService";
 import { masterService } from "@/services/masterService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
-import { ComponentType, useEffect, useState } from "react";
+import { use, ComponentType, useEffect, useState } from "react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -176,6 +176,42 @@ interface JamaahRecord {
   [key: string]: unknown;
   bookingNumber?: string;
   namaPaspor?: string;
+  nik?: string;
+  birthPlace?: string;
+  birthDate?: string;
+  gender?: string;
+  maritalStatus?: string;
+  address?: string;
+  province?: string;
+  city?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
+  emergencyRelation?: string;
+  passportNumber?: string;
+  passportIssuePlace?: string;
+  passportIssueDate?: string;
+  passportExpiry?: string;
+  packageId?: number | string;
+  agenId?: number | string;
+  mahramId?: number | string;
+  notePaket?: string;
+  roomTypeMakkah?: string;
+  roomTypeMadinah?: string;
+  hargaPaket?: string;
+  hargaFinal?: string;
+  potonganFeeAgen?: string;
+  potonganPoinAgen?: string;
+  potonganCashbackKK?: string;
+  registrationStatus?: string;
+  notes?: string;
+  totalPayment?: string;
+  outstanding?: string;
+  statusPayment?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  dateOfBooking?: string;
+  mahramRelation?: string;
   user?: {
     fullName?: string;
     email?: string;
@@ -198,39 +234,6 @@ interface JamaahRecord {
   profileCompleteness?: {
     categories?: Record<string, { complete: boolean; passed: number; total: number }>;
   };
-  hargaFinal?: string;
-  totalPayment?: string;
-  outstanding?: string;
-  statusPayment?: string;
-  registrationStatus?: string;
-  packageId?: number;
-  approvedAt?: string;
-  rejectedAt?: string;
-  rejectionReason?: string;
-  dateOfBooking?: string;
-  notePaket?: string;
-  roomTypeMakkah?: string;
-  roomTypeMadinah?: string;
-  gender?: string;
-  maritalStatus?: string;
-  nik?: string;
-  birthPlace?: string;
-  birthDate?: string;
-  address?: string;
-  province?: string;
-  city?: string;
-  emergencyName?: string;
-  emergencyPhone?: string;
-  emergencyRelation?: string;
-  passportNumber?: string;
-  passportIssuePlace?: string;
-  passportIssueDate?: string;
-  passportExpiry?: string;
-  agenId?: number;
-  potonganFeeAgen?: string;
-  potonganPoinAgen?: string;
-  potonganCashbackKK?: string;
-  marhamRelation?: string;
 }
 
 const getErrorMessage = (error: unknown): string => {
@@ -249,12 +252,16 @@ const getErrorMessage = (error: unknown): string => {
   return payload.response?.data?.message || "Terjadi kesalahan";
 };
 
-export default function JamaahDetailPage() {
-  const params = useParams();
+interface PageProps {
+  params: Promise<{ bookingNumber: string }>;
+}
+
+export default function JamaahDetailPage({ params }: PageProps) {
+  const { bookingNumber } = use(params);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const bookingNumber = params.bookingNumber as string;
+
   const isReadOnlyRole = user?.role !== "ADMIN";
   const roleBasePath =
     user?.role === "FINANCE" ? "/finance" : user?.role === "STAFF" ? "/staff" : "/admin";
@@ -506,7 +513,7 @@ export default function JamaahDetailPage() {
   });
 
   const updateInlineMutation = useMutation({
-    mutationFn: (payload: Partial<InlineFormState>) =>
+    mutationFn: (payload: any) =>
       jamaahService.update(bookingNumber, payload),
     onSuccess: () => {
       toast({ title: "✅ Data jamaah berhasil diupdate" });
@@ -555,7 +562,7 @@ export default function JamaahDetailPage() {
   }, [jamaah]);
 
   const handleInlineSave = () => {
-    const payload: Partial<InlineFormState> & {
+    const payload: Omit<Partial<InlineFormState>, "packageId" | "agenId" | "roomTypeMakkah" | "roomTypeMadinah" | "notePaket" | "notes"> & {
       packageId?: number | null;
       agenId?: number | null;
       roomTypeMakkah?: string | null;
@@ -649,7 +656,7 @@ export default function JamaahDetailPage() {
 
     const harga = selectedPackage.discountPrice
       ? parseFloat(selectedPackage.discountPrice)
-      : parseFloat(selectedPackage.price) || 0;
+      : parseFloat(selectedPackage.price || "0") || 0;
 
     setInlineForm((prev) => ({
       ...prev,
@@ -977,7 +984,7 @@ export default function JamaahDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Status Bayar:</span>
-                  {getPaymentStatusBadge(jamaah.statusPayment)}
+                  {getPaymentStatusBadge(jamaah.statusPayment || "")}
                 </div>
               </div>
               <p className="text-green-700 text-sm">
@@ -1217,8 +1224,8 @@ export default function JamaahDetailPage() {
               >
                 {jamaah.bookingNumber}
               </Badge>
-              {getPaymentStatusBadge(jamaah.statusPayment)}
-              {getRegistrationBadge(jamaah.registrationStatus)}
+              {getPaymentStatusBadge(jamaah.statusPayment || "")}
+              {getRegistrationBadge(jamaah.registrationStatus || "")}
             </div>
           </div>
         </div>
@@ -2146,8 +2153,8 @@ export default function JamaahDetailPage() {
                           <p className="font-medium">
                             {jamaah.agen.user?.fullName || jamaah.agen.fullName}
                           </p>
-                          {jamaah.agen.currentStar > 0 &&
-                            renderStars(jamaah.agen.currentStar)}
+                          {(jamaah.agen.currentStar ?? 0) > 0 &&
+                            renderStars(jamaah.agen.currentStar ?? 0)}
                         </div>
                       ) : (
                         <p className="text-gray-400 italic">Tidak ada agen</p>

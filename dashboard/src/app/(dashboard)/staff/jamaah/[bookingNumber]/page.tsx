@@ -1,1 +1,1 @@
-export { default } from "../../../../admin/jamaah/[bookingNumber]/page";
+export { default } from "../../../admin/jamaah/[bookingNumber]/page";

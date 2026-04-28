@@ -1,7 +1,8 @@
 // dashboard/src/app/(mobile)/agen/jamaah/[id]/page.tsx
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useState, use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { agenService } from "@/services/agenService";
 import {
@@ -54,13 +55,17 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { BottomNav } from "@/components/mobile/BottomNav";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 
-export default function JamaahDetailPage() {
-  const params = useParams();
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function JamaahDetailPage({ params }: PageProps) {
+  const { id } = use(params);
   const router = useRouter();
   const { toast } = useToast();
-  const id = params.id as string;
+
   const [activeTab, setActiveTab] = useState("biodata");
 
   const { data, isLoading, error } = useQuery({

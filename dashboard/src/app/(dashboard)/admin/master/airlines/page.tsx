@@ -271,7 +271,7 @@ const deleteMutation = useMutation({
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteMutation.mutate(selectedAirline?.id)}
+              onClick={() => selectedAirline && deleteMutation.mutate(selectedAirline.id)}
               className="bg-red-500 hover:bg-red-600"
             >
               {deleteMutation.isPending ? (

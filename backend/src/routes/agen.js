@@ -1,6 +1,6 @@
 // backend/src/routes/agen.js
 import express from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
 import { upload, optimizeImage } from "../utils/upload.js";
@@ -8,23 +8,83 @@ import { db } from "../db/index.js";
 import { agentData, jamaahData } from "../db/schema.js";
 import { logger } from "../utils/logger.js";
 import {
-    errorResponse,
-    notFoundResponse,
-    successResponse,
+  errorResponse,
+  notFoundResponse,
+  successResponse,
 } from "../utils/response.js";
 import * as agenController from "../controllers/agenController.js";
 import * as packageController from "../controllers/packageController.js";
 import * as agenJamaahController from "../controllers/agenJamaahController.js";
 import {
-    getMyNotifications,
-    getUnreadCount,
-    markAsRead,
-    markAllAsRead,
-    getAgenJamaahReminders,
-    agenSendReminderToJamaah,
+  getMyNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  getAgenJamaahReminders,
+  agenSendReminderToJamaah,
 } from "../controllers/notificationController.js";
 
 const router = express.Router();
+export const adminAgenAliasRouter = express.Router();
+
+const registerAdminAgenAliasRoutes = (targetRouter) => {
+  targetRouter.get(
+    "/",
+    authenticate,
+    authorize(["ADMIN", "STAFF", "FINANCE"]),
+    agenController.getAll,
+  );
+  targetRouter.get(
+    "/:id",
+    authenticate,
+    authorize(["ADMIN", "STAFF", "FINANCE"]),
+    agenController.getById,
+  );
+  targetRouter.put(
+    "/:id",
+    authenticate,
+    authorize(["ADMIN"]),
+    agenController.update,
+  );
+  targetRouter.post(
+    "/:id/approve",
+    authenticate,
+    authorize(["ADMIN"]),
+    agenController.approve,
+  );
+  targetRouter.post(
+    "/:id/reject",
+    authenticate,
+    authorize(["ADMIN"]),
+    agenController.reject,
+  );
+  targetRouter.post(
+    "/:id/request-ktp-reupload",
+    authenticate,
+    authorize(["ADMIN"]),
+    agenController.requestKtpReupload,
+  );
+  targetRouter.post(
+    "/:id/upload-certificate",
+    authenticate,
+    authorize(["ADMIN", "STAFF"]),
+    ...agenController.uploadCertificatePdf,
+  );
+  targetRouter.post(
+    "/:id/upload-id-card-design",
+    authenticate,
+    authorize(["ADMIN", "STAFF"]),
+    ...agenController.uploadIdCardDesignPdf,
+  );
+  targetRouter.delete(
+    "/:id",
+    authenticate,
+    authorize(["ADMIN"]),
+    agenController.deleteAgent,
+  );
+};
+
+registerAdminAgenAliasRoutes(adminAgenAliasRouter);
 
 // =====================================================
 // ADMIN: AGEN MANAGEMENT
@@ -61,6 +121,7 @@ router.get("/packages/:id", authenticate, authorize(["AGEN"]), packageController
 // AGEN: JAMAAH MANAGEMENT
 // =====================================================
 router.get("/jamaah", authenticate, authorize(["AGEN"]), agenJamaahController.getMyJamaah);
+router.get("/jamaah/:id/completeness", authenticate, authorize(["AGEN"]), agenJamaahController.getJamaahCompleteness);
 router.get("/jamaah/:id", authenticate, authorize(["AGEN"]), agenJamaahController.getJamaahById);
 router.post("/jamaah", authenticate, authorize(["AGEN"]), agenJamaahController.createJamaah);
 router.put("/jamaah/:id", authenticate, authorize(["AGEN"]), agenJamaahController.updateJamaah);
@@ -69,6 +130,7 @@ router.put("/jamaah/:id", authenticate, authorize(["AGEN"]), agenJamaahControlle
 // AGEN: DASHBOARD STATS
 // =====================================================
 router.get("/dashboard", authenticate, authorize(["AGEN"]), agenJamaahController.getDashboardStats);
+router.get("/commission", authenticate, authorize(["AGEN"]), agenController.getCommission);
 
 // =====================================================
 // AGEN: NOTIFICATIONS
@@ -84,87 +146,98 @@ router.post("/reminders/send", authenticate, authorize(["AGEN"]), agenSendRemind
 // AGEN: DOCUMENT UPLOAD FOR JAMAAH
 // =====================================================
 router.post(
-    "/jamaah/:id/upload/:type",
-    authenticate,
-    authorize(["AGEN"]),
-    upload.single("document"),
-    optimizeImage("jamaah"),
-    async (req, res, next) => {
-        try {
-            const { id, type } = req.params;
-            const agenUserId = req.user.userId;
+  "/jamaah/:id/upload/:type",
+  authenticate,
+  authorize(["AGEN"]),
+  upload.single("document"),
+  optimizeImage("jamaah"),
+  async (req, res, next) => {
+    try {
+      const { id, type } = req.params;
+      const agenUserId = req.user.userId;
 
-            const allowedTypes = [
-                "fotoUrl", "ktpUrl", "kkUrl", "pasporUrl",
-                "bukuNikahUrl", "aktaLahirUrl", "ijazahUrl",
-                "vaksinUrl", "meningitisUrl",
-            ];
+      const allowedTypes = [
+        "fotoUrl", "ktpUrl", "kkUrl", "pasporUrl",
+        "bukuNikahUrl", "aktaLahirUrl", "ijazahUrl",
+        "vaksinUrl", "meningitisUrl",
+      ];
 
-            if (!allowedTypes.includes(type)) {
-                return errorResponse(
-                    res,
-                    "Tipe dokumen tidak valid",
-                    400,
-                    null,
-                    "VALIDATION_FAILED"
-                );
-            }
+      if (!allowedTypes.includes(type)) {
+        return errorResponse(
+          res,
+          "Tipe dokumen tidak valid",
+          400,
+          null,
+          "VALIDATION_FAILED"
+        );
+      }
 
-            // Check agent ownership
-            const agent = await db.query.agentData.findFirst({
-                where: eq(agentData.userId, agenUserId),
-            });
+      // Check agent ownership
+      const agent = await db.query.agentData.findFirst({
+        where: eq(agentData.userId, agenUserId),
+      });
 
-            if (!agent) {
-                return notFoundResponse(res, "Data agen tidak ditemukan");
-            }
+      if (!agent) {
+        return notFoundResponse(res, "Data agen tidak ditemukan");
+      }
 
-            const jamaah = await db.query.jamaahData.findFirst({
-                where: and(
-                    eq(jamaahData.id, parseInt(id)),
-                    eq(jamaahData.agenId, agent.id)
-                ),
-            });
+      const parsedJamaahId = Number.parseInt(id, 10);
+      if (!Number.isInteger(parsedJamaahId) || parsedJamaahId <= 0) {
+        return errorResponse(
+          res,
+          "ID jamaah tidak valid",
+          400,
+          null,
+          "VALIDATION_FAILED"
+        );
+      }
 
-            if (!jamaah) {
-                return notFoundResponse(
-                    res,
-                    "Data jamaah tidak ditemukan atau bukan milik Anda"
-                );
-            }
+      const jamaah = await db.query.jamaahData.findFirst({
+        where: and(
+          eq(jamaahData.id, parsedJamaahId),
+          or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id))
+        ),
+      });
 
-            const fileUrl = req.uploadedFile?.path;
-            if (!fileUrl) {
-                return errorResponse(
-                    res,
-                    "File upload gagal diproses",
-                    500,
-                    null,
-                    "UPLOAD_PROCESS_FAILED"
-                );
-            }
+      if (!jamaah) {
+        return notFoundResponse(
+          res,
+          "Data jamaah tidak ditemukan atau bukan milik Anda"
+        );
+      }
 
-            await db
-                .update(jamaahData)
-                .set({
-                    [type]: fileUrl,
-                    updatedAt: new Date(),
-                })
-                .where(eq(jamaahData.id, parseInt(id)));
+      const fileUrl = req.uploadedFile?.path;
+      if (!fileUrl) {
+        return errorResponse(
+          res,
+          "File upload gagal diproses",
+          500,
+          null,
+          "UPLOAD_PROCESS_FAILED"
+        );
+      }
 
-            return successResponse(
-                res,
-                {
-                    type,
-                    url: fileUrl,
-                },
-                "Dokumen berhasil diupload"
-            );
-        } catch (error) {
-            logger.error("Upload document error", error);
-            next(error);
-        }
+      await db
+        .update(jamaahData)
+        .set({
+          [type]: fileUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(jamaahData.id, parsedJamaahId));
+
+      return successResponse(
+        res,
+        {
+          type,
+          url: fileUrl,
+        },
+        "Dokumen berhasil diupload"
+      );
+    } catch (error) {
+      logger.error("Upload document error", error);
+      next(error);
     }
+  }
 );
 
 export default router;

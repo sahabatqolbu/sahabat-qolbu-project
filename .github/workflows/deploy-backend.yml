@@ -32,6 +32,11 @@ jobs:
           cd backend
           npm run check:runbook
 
+      - name: Run migration compliance check
+        run: |
+          cd backend
+          npm run check:migrations
+
       - name: Run API contract compliance check
         run: |
           cd backend

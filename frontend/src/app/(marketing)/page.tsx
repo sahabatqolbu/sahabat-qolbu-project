@@ -1,12 +1,21 @@
+import FAQ from "@/components/marketing/FAQ";
+import FeaturedPackages from "@/components/marketing/FeaturedPackages";
+import Hero from "@/components/marketing/Hero";
+import Muthowwif from "@/components/marketing/Muthowwif";
+import SearchWidget from "@/components/marketing/SearchWidget";
+import Testimonials from "@/components/marketing/Testimonials";
+import WhyChooseUs from "@/components/marketing/WhyChooseUs";
+
 export default function HomePage() {
   return (
-    <iframe
-      src="/landing/index.html"
-      title="Sahabat Qolbu"
-      loading="lazy"
-      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-      referrerPolicy="strict-origin-when-cross-origin"
-      className="h-screen w-full border-0"
-    />
+    <>
+      <Hero />
+      <SearchWidget />
+      <FeaturedPackages />
+      <WhyChooseUs />
+      <Muthowwif />
+      <Testimonials />
+      <FAQ />
+    </>
   );
 }

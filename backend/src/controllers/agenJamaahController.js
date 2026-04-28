@@ -606,6 +606,139 @@ export const updateJamaah = async (req, res, next) => {
 // =====================================================
 // GET DASHBOARD STATS
 // =====================================================
+export const getJamaahCompleteness = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const jamaahId = parsePositiveInt(req.params.id);
+
+    if (!jamaahId) {
+      return errorResponse(res, "ID jamaah tidak valid", 400);
+    }
+
+    const agent = await db.query.agentData.findFirst({
+      where: eq(agentData.userId, userId),
+      columns: { id: true },
+    });
+
+    const ownershipCondition = agent
+      ? or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id))
+      : eq(jamaahData.agenId, userId);
+
+    const jamaah = await db.query.jamaahData.findFirst({
+      where: and(eq(jamaahData.id, jamaahId), ownershipCondition),
+      with: {
+        user: {
+          columns: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        package: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!jamaah) {
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
+    }
+
+    const profileCheck = checkProfileComplete(jamaah);
+    const requiredFields = [
+      { key: "namaPaspor", label: "Nama Paspor", category: "biodata" },
+      { key: "nik", label: "NIK", category: "biodata" },
+      { key: "birthDate", label: "Tanggal Lahir", category: "biodata" },
+      { key: "birthPlace", label: "Tempat Lahir", category: "biodata" },
+      { key: "gender", label: "Jenis Kelamin", category: "biodata" },
+      { key: "maritalStatus", label: "Status Pernikahan", category: "biodata" },
+      { key: "address", label: "Alamat", category: "alamat" },
+      { key: "province", label: "Provinsi", category: "alamat" },
+      { key: "city", label: "Kota", category: "alamat" },
+      { key: "passportNumber", label: "Nomor Paspor", category: "paspor" },
+      { key: "passportExpiry", label: "Masa Berlaku Paspor", category: "paspor" },
+      { key: "passportIssuePlace", label: "Tempat Terbit Paspor", category: "paspor" },
+      { key: "emergencyName", label: "Nama Kontak Darurat", category: "emergency" },
+      { key: "emergencyPhone", label: "No. HP Darurat", category: "emergency" },
+      { key: "packageId", label: "Paket Umrah", category: "paket" },
+      { key: "roomTypeMakkah", label: "Kamar Makkah", category: "paket" },
+      { key: "roomTypeMadinah", label: "Kamar Madinah", category: "paket" },
+    ];
+
+    const requiredDocs = [
+      { key: "fotoUrl", label: "Pas Foto", category: "dokumen" },
+      { key: "ktpUrl", label: "KTP", category: "dokumen" },
+      { key: "kkUrl", label: "Kartu Keluarga", category: "dokumen" },
+      { key: "pasporUrl", label: "Scan Paspor", category: "dokumen" },
+    ];
+
+    const allFields = [...requiredFields, ...requiredDocs];
+    const missing = [];
+    const categories = {};
+    let filled = 0;
+
+    for (const field of allFields) {
+      const value = jamaah[field.key];
+      const isFilled = value !== null && value !== undefined && value !== "";
+
+      if (!categories[field.category]) {
+        categories[field.category] = { total: 0, passed: 0, complete: false };
+      }
+
+      categories[field.category].total += 1;
+
+      if (isFilled) {
+        filled += 1;
+        categories[field.category].passed += 1;
+      } else {
+        missing.push({ label: field.label, category: field.category, key: field.key });
+      }
+    }
+
+    for (const category of Object.keys(categories)) {
+      categories[category].complete =
+        categories[category].passed === categories[category].total;
+    }
+
+    const total = allFields.length;
+    const percentage = total > 0 ? Math.round((filled / total) * 100) : 0;
+
+    return successResponse(res, {
+      jamaah: {
+        id: jamaah.id,
+        bookingNumber: jamaah.bookingNumber,
+        namaPaspor: jamaah.namaPaspor,
+        user: jamaah.user,
+        package: jamaah.package,
+        registrationStatus: jamaah.registrationStatus,
+        statusPayment: jamaah.statusPayment,
+      },
+      isComplete: percentage >= 80,
+      percentage,
+      filled,
+      total,
+      missing,
+      categories,
+      summary: {
+        isProfileComplete: profileCheck.isComplete,
+        percentage: profileCheck.percentage,
+        totalRequired: profileCheck.totalRequired,
+        totalFilled: profileCheck.totalFilled,
+      },
+    });
+  } catch (error) {
+    logger.error("Agen get jamaah completeness error", error, {
+      userId: req.user?.userId,
+      jamaahId: req.params?.id,
+    });
+    next(error);
+  }
+};
+
 export const getDashboardStats = async (req, res, next) => {
   try {
     const userId = req.user.userId; // ✅ users.id
