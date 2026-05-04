@@ -91,7 +91,7 @@ export default function AgenWebsitePage() {
     return "nama-agen";
   }, [profile?.fullName, agentData?.nickname]);
 
-  const landingUrl = `${APP_BASE_URL.replace(/\/$/, "")}/${websiteSlug}`;
+  const landingUrl = `${APP_BASE_URL.replace(/\/$/, "")}/landing/index.html?agent=${encodeURIComponent(websiteSlug)}`;
 
   const saveMutation = useMutation({
     mutationFn: (payload: WebsiteFormData) =>

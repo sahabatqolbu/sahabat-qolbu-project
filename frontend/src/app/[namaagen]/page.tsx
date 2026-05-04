@@ -1,5 +1,4 @@
-import { notFound } from "next/navigation";
-import AgentLandingPage from "./AgentLandingPage";
+import { notFound, redirect } from "next/navigation";
 import { getPublicAgentLanding } from "@/lib/public-api";
 
 export default async function AgentPage({
@@ -14,5 +13,5 @@ export default async function AgentPage({
     notFound();
   }
 
-  return <AgentLandingPage landing={landing} />;
+  redirect(`/landing/index.html?agent=${encodeURIComponent(namaagen)}`);
 }
