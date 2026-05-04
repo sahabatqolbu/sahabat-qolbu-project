@@ -57,7 +57,7 @@ jobs:
           cd backend
           npm test
         env:
-          JWT_SECRET: ci-test-jwt-secret
+          JWT_SECRET: ci-test-jwt-secret-0123456789abcdef
           NODE_ENV: test
 
       - name: Run backend DB integration tests (optional)
