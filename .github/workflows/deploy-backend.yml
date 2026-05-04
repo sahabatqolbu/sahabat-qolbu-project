@@ -56,6 +56,9 @@ jobs:
         run: |
           cd backend
           npm test
+        env:
+          JWT_SECRET: ci-test-jwt-secret
+          NODE_ENV: test
 
       - name: Run backend DB integration tests (optional)
         if: env.HAS_DB_TEST_CONFIG == 'true'
