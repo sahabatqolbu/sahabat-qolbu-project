@@ -1,6 +1,7 @@
 name: Deploy Backend to cPanel
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -11,6 +12,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      HAS_DB_TEST_CONFIG: ${{ secrets.DB_TEST_HOST != '' && secrets.DB_TEST_USER != '' && secrets.DB_TEST_NAME != '' }}
+      HAS_BACKEND_HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL != '' }}
+      HAS_BACKEND_SMOKE_BASE_URL: ${{ secrets.BACKEND_SMOKE_BASE_URL != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +58,7 @@ jobs:
           npm test
 
       - name: Run backend DB integration tests (optional)
-        if: ${{ secrets.DB_TEST_HOST != '' && secrets.DB_TEST_USER != '' && secrets.DB_TEST_NAME != '' }}
+        if: env.HAS_DB_TEST_CONFIG == 'true'
         run: |
           cd backend
           npm run test:db-integration
@@ -72,17 +77,17 @@ jobs:
             host: ${{ secrets.SSH_HOST }}
             username: ${{ secrets.SSH_USERNAME }}
             key: ${{ secrets.SSH_PRIVATE_KEY }}
-            port: 22
+            port: ${{ secrets.SSH_PORT || '22' }}
             source: "backend/*"
-            target: "/home/USERNAME/public_html/api/backend"
+            target: ${{ secrets.BACKEND_DEPLOY_TARGET }}
 
       - name: Optional backend health check
-        if: ${{ secrets.BACKEND_HEALTHCHECK_URL != '' }}
+        if: env.HAS_BACKEND_HEALTHCHECK_URL == 'true'
         run: |
           curl --fail --show-error --silent "${{ secrets.BACKEND_HEALTHCHECK_URL }}"
 
       - name: Optional backend smoke check
-        if: ${{ secrets.BACKEND_SMOKE_BASE_URL != '' }}
+        if: env.HAS_BACKEND_SMOKE_BASE_URL == 'true'
         run: |
           cd backend
           SMOKE_BASE_URL="${{ secrets.BACKEND_SMOKE_BASE_URL }}" SMOKE_AUTH_COOKIE="${{ secrets.BACKEND_SMOKE_AUTH_COOKIE }}" npm run smoke
