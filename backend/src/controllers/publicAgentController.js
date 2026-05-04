@@ -12,6 +12,25 @@ const slugify = (input = "") =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
+const normalizePublicPhone = (value = "") => {
+  const digits = String(value).replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+};
+
+export const buildPublicAgentCta = (agent = {}) => {
+  const whatsappNumber = normalizePublicPhone(agent.phone);
+  const email = String(agent.email || "").trim();
+
+  return {
+    whatsapp: whatsappNumber ? `https://wa.me/${whatsappNumber}` : null,
+    email: email ? `mailto:${email}` : null,
+  };
+};
+
 export const getPublicAgentLandingBySlug = async (req, res, next) => {
   try {
     const slug = slugify(req.params.slug || "");
@@ -77,8 +96,7 @@ export const getPublicAgentLandingBySlug = async (req, res, next) => {
           : null,
       },
       cta: {
-        whatsapp: null,
-        email: null,
+        ...buildPublicAgentCta(foundAgent),
       },
       socials: {
         instagram: foundAgent.agentData.instagram || null,

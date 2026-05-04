@@ -1,6 +1,27 @@
 (function () {
-  var API_BASE = "http://localhost:5000/api/master/company";
-  var PUBLIC_AGENT_API_BASE = "http://localhost:5000/api/agents";
+  function normalizeApiBase(value) {
+    return String(value || "").trim().replace(/\/+$/, "");
+  }
+
+  function resolveApiBase() {
+    var fromWindow = normalizeApiBase(window.SQ_API_BASE);
+    if (fromWindow) return fromWindow;
+
+    var meta = document.querySelector('meta[name="sq-api-base"]');
+    var fromMeta = normalizeApiBase(meta && meta.getAttribute("content"));
+    if (fromMeta) return fromMeta;
+
+    var hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:5000/api";
+    }
+
+    return "https://api.sahabatqolbu.com/api";
+  }
+
+  var API_ROOT = resolveApiBase();
+  var API_BASE = API_ROOT + "/master/company";
+  var PUBLIC_AGENT_API_BASE = API_ROOT + "/agents";
 
   function getAgentSlugFromQuery() {
     try {
@@ -112,7 +133,22 @@
     if (!digits) return "";
     if (digits.startsWith("0")) return "62" + digits.slice(1);
     if (digits.startsWith("62")) return digits;
+    if (digits.startsWith("8")) return "62" + digits;
     return digits;
+  }
+
+  function publishLandingContact(contact) {
+    window.SQ_LANDING_CONTACT = Object.assign(
+      {},
+      window.SQ_LANDING_CONTACT || {},
+      contact || {}
+    );
+
+    document.dispatchEvent(
+      new CustomEvent("sq:landing-contact-updated", {
+        detail: window.SQ_LANDING_CONTACT,
+      })
+    );
   }
 
   function formatPhone(raw) {
@@ -191,6 +227,7 @@
       if (waNumber) {
         var waHref = "https://wa.me/" + waNumber;
         setHrefById("company-whatsapp-text", waHref);
+        publishLandingContact({ whatsapp: waHref, whatsappNumber: waNumber });
 
         document.querySelectorAll('a[href*="wa.me/"]').forEach(function (link) {
           var oldHref = link.getAttribute("href") || "";
@@ -210,6 +247,7 @@
         emailNode.textContent = data.email;
         emailNode.setAttribute("href", "mailto:" + data.email);
       }
+      publishLandingContact({ email: "mailto:" + data.email });
     }
 
     if (data.companyName) {
@@ -256,12 +294,13 @@
     applyTheme(agent.landingPrimaryColor, agent.landingAccentColor);
 
     if (cta.whatsapp) {
-      var waHref = cta.whatsapp;
+      var waNumber = normalizeWaNumber(cta.whatsapp);
+      var waHref = waNumber ? "https://wa.me/" + waNumber : cta.whatsapp;
       var waTextNode = document.getElementById("company-whatsapp-text");
       if (waTextNode) {
-        var digits = waHref.replace("https://wa.me/", "");
-        waTextNode.textContent = "+" + digits;
+        waTextNode.textContent = waNumber ? "+" + waNumber : waHref;
       }
+      publishLandingContact({ whatsapp: waHref, whatsappNumber: waNumber });
 
       document.querySelectorAll('a[href*="wa.me/"]').forEach(function (link) {
         var oldHref = link.getAttribute("href") || "";
@@ -281,6 +320,7 @@
         emailNode.textContent = email;
         emailNode.setAttribute("href", cta.email);
       }
+      publishLandingContact({ email: cta.email });
     }
 
     function normalizeSocial(urlOrHandle, base) {
@@ -330,27 +370,35 @@
 
   applyMitraBrandingIfAgent(agentSlug);
 
-  if (agentSlug) {
-    fetch(PUBLIC_AGENT_API_BASE + "/" + encodeURIComponent(agentSlug))
+  function fetchJson(url, options) {
+    return fetch(url, options)
       .then(function (res) {
-        if (!res.ok) throw new Error("Failed to fetch agent profile");
+        if (!res.ok) throw new Error("Fetch failed");
         return res.json();
       })
-      .then(function (agentPayload) {
-        applyAgentLinks(agentPayload && agentPayload.data ? agentPayload.data : null);
-      })
       .catch(function () {
-        // keep default links if agent data unavailable
+        return null;
       });
   }
 
-  fetch(API_BASE, { credentials: "include" })
-    .then(function (res) {
-      if (!res.ok) throw new Error("Failed to fetch company profile");
-      return res.json();
-    })
-    .then(function (payload) {
-      applyCompanyProfile(payload && payload.data ? payload.data : null);
+  var companyProfileRequest = fetchJson(API_BASE, { credentials: "include" });
+  var agentProfileRequest = agentSlug
+    ? fetchJson(PUBLIC_AGENT_API_BASE + "/" + encodeURIComponent(agentSlug))
+    : Promise.resolve(null);
+
+  Promise.all([companyProfileRequest, agentProfileRequest])
+    .then(function (results) {
+      var companyPayload = results[0];
+      var agentPayload = results[1];
+
+      applyCompanyProfile(
+        companyPayload && companyPayload.data ? companyPayload.data : null
+      );
+
+      if (agentSlug) {
+        applyMitraBrandingIfAgent(agentSlug);
+        applyAgentLinks(agentPayload && agentPayload.data ? agentPayload.data : null);
+      }
     })
     .catch(function () {
       // keep static fallback content if API unavailable

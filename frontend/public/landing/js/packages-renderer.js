@@ -3,10 +3,28 @@
 (function () {
   const fallbackImg =
     "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&q=80";
-  const apiBase =
-    window.location.hostname === "localhost"
-      ? "http://localhost:5000/api"
-      : "https://api.sahabatqolbu.com/api";
+
+  function normalizeApiBase(value) {
+    return String(value || "").trim().replace(/\/+$/, "");
+  }
+
+  function resolveApiBase() {
+    const fromWindow = normalizeApiBase(window.SQ_API_BASE);
+    if (fromWindow) return fromWindow;
+
+    const meta = document.querySelector('meta[name="sq-api-base"]');
+    const fromMeta = normalizeApiBase(meta && meta.getAttribute("content"));
+    if (fromMeta) return fromMeta;
+
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:5000/api";
+    }
+
+    return "https://api.sahabatqolbu.com/api";
+  }
+
+  const apiBase = resolveApiBase();
   const serverBase = apiBase.replace(/\/api$/, "");
 
   const packageTypeMap = {
@@ -98,6 +116,29 @@
     };
   }
 
+  function getCurrentWaNumber() {
+    const contact = window.SQ_LANDING_CONTACT || {};
+    const fromContact = contact.whatsappNumber || contact.whatsapp;
+    const digits = String(fromContact || WA || "").replace(/\D/g, "");
+    if (!digits) return WA;
+    if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+    if (digits.startsWith("62")) return digits;
+    if (digits.startsWith("8")) return `62${digits}`;
+    return digits;
+  }
+
+  function createWhatsappLink(packageName) {
+    const message = `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${packageName}*`;
+    return `https://wa.me/${getCurrentWaNumber()}?text=${encodeURIComponent(message)}`;
+  }
+
+  function updatePackageWhatsappLinks() {
+    document.querySelectorAll(".js-package-wa-link").forEach((link) => {
+      const packageName = link.getAttribute("data-package-name") || "Paket Umroh";
+      link.setAttribute("href", createWhatsappLink(packageName));
+    });
+  }
+
   async function hydratePackagesFromApi() {
     try {
       const response = await fetch(`${apiBase}/packages`, {
@@ -174,7 +215,7 @@
 
   // Create Card
   function createCard(p) {
-    const waLink = `https://wa.me/${WA}?text=Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${p.nama}*`;
+    const waLink = createWhatsappLink(p.nama);
     const ringClass = p.hot ? "ring-2 ring-gold" : "";
     const hari = typeof p.hari === "number" ? `${p.hari} Hari` : p.hari;
     const hasMultiple = p.images && p.images.length > 1;
@@ -223,7 +264,9 @@
           </div>
           
           <a href="${waLink}" target="_blank" rel="noopener"
-             class="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors">
+             class="js-package-wa-link flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors"
+             data-package-name="${p.nama.replace(/"/g, "&quot;")}"
+          >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
             </svg>
@@ -494,5 +537,8 @@
     await hydratePackagesFromApi();
     renderHome();
     renderAll();
+    updatePackageWhatsappLinks();
   });
+
+  document.addEventListener("sq:landing-contact-updated", updatePackageWhatsappLinks);
 })();
