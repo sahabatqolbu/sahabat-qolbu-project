@@ -18,6 +18,7 @@ const required = [
   "SMTP_PASS",
   "SMTP_FROM",
   "COOKIE_SECURE",
+  "COOKIE_DOMAIN",
   "TRUST_PROXY",
 ];
 
@@ -58,6 +59,10 @@ for (const name of ["FRONTEND_URL", "DASHBOARD_URL", "BACKEND_URL"]) {
 
 if (value("COOKIE_SECURE") !== "true") {
   failures.push("COOKIE_SECURE must be true in production");
+}
+
+if (value("COOKIE_DOMAIN") !== ".sahabatqolbu.com") {
+  failures.push("COOKIE_DOMAIN must be .sahabatqolbu.com in production");
 }
 
 if (value("TRUST_PROXY") === "false") {

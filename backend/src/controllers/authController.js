@@ -33,12 +33,15 @@ const getAuthCookieOptions = (req) => {
         ? false
         : requestIsHttps;
 
+  const cookieDomain = process.env.COOKIE_DOMAIN?.trim();
+
   return {
     httpOnly: true,
     secure: isSecureCookie,
     sameSite: isSecureCookie ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: "/",
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
   };
 };
 

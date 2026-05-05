@@ -4,9 +4,15 @@ import { validateSession } from "@/lib/validateSession";
 
 const PROTECTED_PREFIXES = ["/admin", "/finance", "/staff", "/agen", "/jamaah"];
 
+const safeInternalPath = (pathname: string) => {
+  if (!pathname.startsWith("/")) return "/";
+  if (pathname.startsWith("//")) return "/";
+  return pathname;
+};
+
 const redirectToLogin = (request: NextRequest, pathname: string) => {
   const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("redirect", pathname);
+  loginUrl.searchParams.set("redirect", safeInternalPath(pathname));
   return NextResponse.redirect(loginUrl);
 };
 
