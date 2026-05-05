@@ -6,11 +6,12 @@ const isProduction = process.env.NODE_ENV === "production";
 const enableDebugLogs = process.env.NEXT_PUBLIC_DEBUG_LOGS === "true" || !isProduction;
 
 const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+const productionApiUrl = "https://api.sahabatqolbu.com/api";
 const fallbackDevApiUrl = "http://localhost:5000/api";
 
 const resolvedApiUrl = (() => {
+  if (isProduction) return envApiUrl || productionApiUrl;
   if (!envApiUrl) return fallbackDevApiUrl;
-  if (isProduction) return envApiUrl;
 
   try {
     const parsed = new URL(envApiUrl);
