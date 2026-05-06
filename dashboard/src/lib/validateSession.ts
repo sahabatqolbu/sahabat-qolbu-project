@@ -80,6 +80,74 @@ const normalizePayload = (payload: JWTPayload): ValidatedSession | null => {
   };
 };
 
+const normalizeApiUser = (user: unknown): ValidatedSession | null => {
+  if (!user || typeof user !== "object") {
+    return null;
+  }
+
+  const record = user as Record<string, unknown>;
+  const parsedUserId =
+    typeof record.id === "number"
+      ? record.id
+      : typeof record.id === "string"
+        ? Number.parseInt(record.id, 10)
+        : Number.NaN;
+
+  if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+    return null;
+  }
+
+  if (typeof record.email !== "string" || !record.email.trim()) {
+    return null;
+  }
+
+  if (!isDashboardRole(record.role)) {
+    return null;
+  }
+
+  return {
+    userId: parsedUserId,
+    email: record.email,
+    role: record.role,
+    fullName: typeof record.fullName === "string" ? record.fullName : undefined,
+    phone:
+      typeof record.phone === "string"
+        ? record.phone
+        : record.phone === null
+          ? null
+          : undefined,
+    sub: String(parsedUserId),
+  };
+};
+
+const getApiBaseUrl = () => {
+  const envApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (envApiUrl) return envApiUrl.replace(/\/+$/, "");
+  return process.env.NODE_ENV === "production"
+    ? "https://api.sahabatqolbu.com/api"
+    : "http://localhost:5000/api";
+};
+
+const validateSessionViaBackend = async (token: string) => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/auth/me`, {
+      headers: {
+        Cookie: `access_token=${encodeURIComponent(token)}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = await response.json();
+    return normalizeApiUser(payload?.data);
+  } catch {
+    return null;
+  }
+};
+
 export const sessionToAuthUser = (session: ValidatedSession): SessionAuthUser => ({
   id: session.userId,
   email: session.email,
@@ -95,8 +163,12 @@ export async function validateSession(token?: string | null) {
 
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    return normalizePayload(payload);
+    const session = normalizePayload(payload);
+    if (session) return session;
   } catch {
-    return null;
+    // Fall back to backend validation. This keeps dashboard auth working when
+    // dashboard JWT_SECRET is missing/stale while backend remains source of truth.
   }
+
+  return validateSessionViaBackend(token);
 }
