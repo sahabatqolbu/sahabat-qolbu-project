@@ -62,7 +62,16 @@ if (value("COOKIE_SECURE") !== "true") {
 }
 
 if (value("COOKIE_DOMAIN") !== ".sahabatqolbu.com") {
-  failures.push("COOKIE_DOMAIN must be .sahabatqolbu.com in production");
+  failures.push("COOKIE_DOMAIN must be .sahabatqolbu.com in production so dashboard can read API auth cookie");
+}
+
+const cookieSameSite = value("COOKIE_SAMESITE").toLowerCase();
+if (cookieSameSite && !["lax", "strict", "none"].includes(cookieSameSite)) {
+  failures.push("COOKIE_SAMESITE must be lax, strict, none, or empty");
+}
+
+if (cookieSameSite === "none" && value("COOKIE_SECURE") !== "true") {
+  failures.push("COOKIE_SECURE must be true when COOKIE_SAMESITE is none");
 }
 
 if (value("TRUST_PROXY") === "false") {

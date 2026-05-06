@@ -34,11 +34,17 @@ const getAuthCookieOptions = (req) => {
         : requestIsHttps;
 
   const cookieDomain = process.env.COOKIE_DOMAIN?.trim();
+  const sameSiteOverride = process.env.COOKIE_SAMESITE?.trim().toLowerCase();
+  const sameSite = ["lax", "strict", "none"].includes(sameSiteOverride)
+    ? sameSiteOverride
+    : isSecureCookie
+      ? "none"
+      : "lax";
 
   return {
     httpOnly: true,
     secure: isSecureCookie,
-    sameSite: isSecureCookie ? "none" : "lax",
+    sameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: "/",
     ...(cookieDomain ? { domain: cookieDomain } : {}),
@@ -581,6 +587,7 @@ export const logout = async (req, res) => {
     secure: cookieOptions.secure,
     sameSite: cookieOptions.sameSite,
     path: "/",
+    ...(cookieOptions.domain ? { domain: cookieOptions.domain } : {}),
   });
   return successResponse(res, null, "Logout berhasil");
 };
