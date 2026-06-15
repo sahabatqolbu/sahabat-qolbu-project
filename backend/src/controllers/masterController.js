@@ -112,12 +112,14 @@ export const createHotel = async (req, res, next) => {
       isActive,
     } = req.body;
 
+    const starsToUse = stars !== undefined ? stars : req.body.starRating;
+
     const result = await db.insert(masterHotels).values({
       name,
       address: address || null,
       city,
       country: country || "Saudi Arabia",
-      starRating: stars ? parseInt(stars) : null,
+      starRating: starsToUse ? parseInt(starsToUse) : null,
       distanceToHaram: distanceToHaram ? parseInt(distanceToHaram) : null,
       facilities: stringToFacilities(facilities),
       imageUrl: req.file ? req.file.path.replace("public", "") : null,
@@ -160,8 +162,9 @@ export const updateHotel = async (req, res, next) => {
     if (city) updateData.city = city;
     if (country !== undefined) updateData.country = country || null;
     
-    if (stars !== undefined) {
-      updateData.starRating = parseOptionalInt(stars);
+    const starsValue = stars !== undefined ? stars : req.body.starRating;
+    if (starsValue !== undefined) {
+      updateData.starRating = parseOptionalInt(starsValue);
     }
     
     // ✅ Sekarang distanceToHaram sudah defined

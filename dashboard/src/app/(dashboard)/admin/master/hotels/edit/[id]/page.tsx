@@ -25,14 +25,18 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save, Loader2, Building2, Upload, X } from "lucide-react";
 import Link from "next/link";
+import { getImageUrl } from "@/lib/utils";
 
-// ✅ VALIDATION SCHEMA: Removed .default(true)
+// ✅ VALIDATION SCHEMA: Preprocess distanceToHaram to handle empty numbers correctly
 const hotelSchema = z.object({
   name: z.string().min(3, "Nama hotel minimal 3 karakter"),
   city: z.string().min(1, "Kota wajib dipilih"),
   address: z.string().optional(),
   starRating: z.number().min(1).max(5),
-  distanceToHaram: z.number().min(0).optional(),
+  distanceToHaram: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined || isNaN(Number(val)) ? undefined : Number(val)),
+    z.number().min(0).optional()
+  ),
   facilities: z.string().optional(),
   isActive: z.boolean(),
 });
@@ -80,7 +84,7 @@ export default function EditHotelPage() {
         city: hotel.city || "MAKKAH",
         address: hotel.address || "",
         starRating: hotel.starRating || 4,
-        distanceToHaram: hotel.distanceToHaram || 0,
+        distanceToHaram: hotel.distanceToHaram ?? undefined,
         facilities: hotel.facilities || "",
         isActive: hotel.isActive ?? true,
       });
@@ -94,10 +98,7 @@ export default function EditHotelPage() {
       }, 100);
 
       if (hotel.imageUrl) {
-        const url = hotel.imageUrl.startsWith("http")
-          ? hotel.imageUrl
-          : `${process.env.NEXT_PUBLIC_API_URL}${hotel.imageUrl}`;
-        setImagePreview(url);
+        setImagePreview(getImageUrl(hotel.imageUrl));
       }
     }
   }, [data, reset, setValue]);
@@ -112,8 +113,10 @@ export default function EditHotelPage() {
       payload.append("isActive", formData.isActive.toString());
 
       if (formData.address) payload.append("address", formData.address);
-      if (formData.distanceToHaram !== undefined) {
+      if (formData.distanceToHaram !== undefined && formData.distanceToHaram !== null) {
         payload.append("distanceToHaram", formData.distanceToHaram.toString());
+      } else {
+        payload.append("distanceToHaram", "");
       }
       if (formData.facilities)
         payload.append("facilities", formData.facilities);

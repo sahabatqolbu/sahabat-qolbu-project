@@ -30,13 +30,16 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save, Loader2, Building2, Star } from "lucide-react";
 import Link from "next/link";
 
-// ✅ VALIDATION SCHEMA: Removed .default(true) to fix type error
+// ✅ VALIDATION SCHEMA: Preprocess distanceToHaram to handle empty numbers correctly
 const hotelSchema = z.object({
   name: z.string().min(3, "Nama hotel minimal 3 karakter"),
   city: z.enum(["MAKKAH", "MADINAH"]),
   address: z.string().optional(),
   starRating: z.number().min(1).max(5),
-  distanceToHaram: z.number().min(0).optional(),
+  distanceToHaram: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined || isNaN(Number(val)) ? undefined : Number(val)),
+    z.number().min(0).optional()
+  ),
   facilities: z.string().optional(),
   imageUrl: z.string().optional(),
   isActive: z.boolean(),

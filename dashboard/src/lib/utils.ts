@@ -10,7 +10,17 @@ export function cn(...inputs: ClassValue[]) {
 export function getImageUrl(path: string | null | undefined): string {
   if (!path) return "https://via.placeholder.com/400x300?text=No+Image";
 
-  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
+  const getFallbackServerUrl = () => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+        return "https://api.sahabatqolbu.com";
+      }
+    }
+    return "http://localhost:5000";
+  };
+
+  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || getFallbackServerUrl();
 
   const normalizeSensitivePath = (input: string): string => {
     try {

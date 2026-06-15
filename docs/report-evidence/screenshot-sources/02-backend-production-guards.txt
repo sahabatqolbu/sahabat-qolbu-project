@@ -1,0 +1,20 @@
+PS C:\Projects\sahabat-qolbu-project\backend> npm run check:migrations
+Migration compliance check passed
+
+PS C:\Projects\sahabat-qolbu-project\backend> npm run check:runbook
+Runbook compliance check passed
+
+PS C:\Projects\sahabat-qolbu-project\backend> npm run check:api-contract
+API contract compliance check passed
+
+PS C:\Projects\sahabat-qolbu-project\backend> npm run check:pii-governance
+PII governance check passed
+
+PS C:\Projects\sahabat-qolbu-project\backend> npm run check:prod-env
+Production environment check passed with warnings
+- ERROR_TRACKING_ENABLED is not true; production will use log-only error tracking
+
+PS C:\Projects\sahabat-qolbu-project\backend> npm run db:push
+db:push is disabled for this project.
+Production schema changes must use reviewed migration files and npm run db:migrate.
+For disposable local development only, use npm run db:push:dev intentionally.

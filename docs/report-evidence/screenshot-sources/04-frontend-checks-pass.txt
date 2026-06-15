@@ -1,0 +1,26 @@
+PS C:\Projects\sahabat-qolbu-project\frontend> npm run lint
+
+> frontend@0.1.0 lint
+> eslint
+
+Result:
+  no lint errors
+  exit code 0
+
+PS C:\Projects\sahabat-qolbu-project\frontend> npm run build
+
+> frontend@0.1.0 build
+> next build
+
+Next.js 16.2.3
+Compiled successfully
+Finished TypeScript
+Generated static pages: 7/7
+
+Routes:
+  /                         static
+  /packages                 dynamic
+  /packages/[id]            dynamic
+  /[namaagen]               dynamic
+  /robots.txt               static
+  /sitemap.xml              static

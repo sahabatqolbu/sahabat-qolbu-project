@@ -1,0 +1,28 @@
+PS C:\Projects\sahabat-qolbu-project\dashboard> npm run test:menu-routes
+
+> dashboard@0.1.0 test:menu-routes
+> node src/scripts/check-menu-routes.mjs
+
+[menu-route-check] OK: semua menu href punya page.
+
+PS C:\Projects\sahabat-qolbu-project\dashboard> npm run lint
+
+> dashboard@0.1.0 lint
+> eslint .
+
+Result:
+  437 problems
+  0 errors
+  437 warnings
+  exit code 0
+
+PS C:\Projects\sahabat-qolbu-project\dashboard> npm run build
+
+> dashboard@0.1.0 build
+> next build
+
+Next.js 16.2.3
+Compiled successfully
+Finished TypeScript
+Generated static pages: 89/89
+Route surface includes admin, finance, staff, agen, and jamaah workspaces.

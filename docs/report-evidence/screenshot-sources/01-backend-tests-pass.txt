@@ -1,0 +1,30 @@
+PS C:\Projects\sahabat-qolbu-project\backend> npm test
+
+> backend@1.0.0 test
+> node --test "src/tests/*.js"
+
+Selected passing suites:
+  OK api integration lite
+  OK integration db critical path
+     DB-backed cases skipped unless ENABLE_DB_INTEGRATION_TESTS=true
+  OK jamaah payment validation
+  OK payment proof policy
+  OK role middleware contract
+  OK security regressions
+  OK jamaah self-service data integrity
+  OK api contract regressions
+  OK payment flow regressions
+  OK transaction state helpers
+  OK transaction workflow contract
+  OK transaction workflow validation
+
+Test summary:
+  tests     52
+  suites    12
+  pass      48
+  fail       0
+  skipped    4
+  duration   25869.1437 ms
+
+Evidence file:
+  docs/report-evidence/logs/backend-npm-test.log

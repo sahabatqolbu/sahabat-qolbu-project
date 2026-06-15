@@ -154,10 +154,10 @@ export default function PackageDetailPage({ params }: PageProps) {
     (pkg.hotelMadinahQuad || 0) +
     (pkg.hotelMadinahQuint || 0);
 
-  // Calculate airline payment
-  const termin1 = parseFloat(pkg.airlineTermin1Amount) || 0;
-  const termin2 = parseFloat(pkg.airlineTermin2Amount) || 0;
-  const totalAirlinePayment = termin1 + termin2;
+  // Calculate airline payment (unused, keeping defaults)
+  const termin1 = 0;
+  const termin2 = 0;
+  const totalAirlinePayment = 0;
 
   return (
     <div className="space-y-6">
@@ -329,56 +329,7 @@ export default function PackageDetailPage({ params }: PageProps) {
                     </div>
                   )}
 
-                  {/* Payment Info */}
-                  <Separator />
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      Pembayaran Maskapai
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Termin 1</p>
-                        <p className="font-semibold">
-                          {formatCurrency(termin1)}
-                        </p>
-                        {pkg.airlineTermin1Date && (
-                          <p className="text-xs text-gray-500">
-                            {format(
-                              new Date(pkg.airlineTermin1Date),
-                              "dd MMM yyyy"
-                            )}
-                          </p>
-                        )}
-                        <div className="mt-1">
-                          {getStatusBadge(pkg.airlineTermin1Status)}
-                        </div>
-                      </div>
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-500 mb-1">Termin 2</p>
-                        <p className="font-semibold">
-                          {formatCurrency(termin2)}
-                        </p>
-                        {pkg.airlineTermin2Date && (
-                          <p className="text-xs text-gray-500">
-                            {format(
-                              new Date(pkg.airlineTermin2Date),
-                              "dd MMM yyyy"
-                            )}
-                          </p>
-                        )}
-                        <div className="mt-1">
-                          {getStatusBadge(pkg.airlineTermin2Status)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
-                      <span className="font-medium">Total</span>
-                      <span className="text-lg font-bold text-blue-600">
-                        {formatCurrency(totalAirlinePayment)}
-                      </span>
-                    </div>
-                  </div>
+
                 </div>
               ) : (
                 <p className="text-gray-500 text-center py-4">

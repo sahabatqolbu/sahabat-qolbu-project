@@ -412,7 +412,7 @@ export default function EditPackagePage({ params }: PageProps) {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Info className="h-4 w-4" />
               <span className="hidden md:inline">Info</span>
@@ -424,10 +424,6 @@ export default function EditPackagePage({ params }: PageProps) {
             <TabsTrigger value="hotels" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden md:inline">Hotel</span>
-            </TabsTrigger>
-            <TabsTrigger value="payment" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden md:inline">Bayar</span>
             </TabsTrigger>
             <TabsTrigger value="images" className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
@@ -986,118 +982,7 @@ export default function EditPackagePage({ params }: PageProps) {
             </div>
           </TabsContent>
 
-          {/* ===== TAB: PEMBAYARAN ===== */}
-          <TabsContent value="payment">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Pembayaran Maskapai
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Termin 1 */}
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
-                    <Badge>Termin 1</Badge>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Jumlah</Label>
-                      <Input
-                        type="number"
-                        {...register("airlineTermin1Amount", {
-                          valueAsNumber: true,
-                        })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tanggal</Label>
-                      <Input type="date" {...register("airlineTermin1Date")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Controller
-                        name="airlineTermin1Status"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="UNPAID">Unpaid</SelectItem>
-                              <SelectItem value="PAID">Paid</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                {/* Termin 2 */}
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
-                    <Badge>Termin 2</Badge>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Jumlah</Label>
-                      <Input
-                        type="number"
-                        {...register("airlineTermin2Amount", {
-                          valueAsNumber: true,
-                        })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tanggal</Label>
-                      <Input type="date" {...register("airlineTermin2Date")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Controller
-                        name="airlineTermin2Status"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="UNPAID">Unpaid</SelectItem>
-                              <SelectItem value="PAID">Paid</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className="p-4 border rounded-lg bg-blue-50">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Total</span>
-                    <span className="text-xl font-bold text-blue-600">
-                      Rp{" "}
-                      {(
-                        (watch("airlineTermin1Amount") || 0) +
-                        (watch("airlineTermin2Amount") || 0)
-                      ).toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* ===== TAB: IMAGES ===== */}
           <TabsContent value="images">

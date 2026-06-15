@@ -1,0 +1,14 @@
+PS C:\Projects\sahabat-qolbu-project> git status --short --branch
+
+## production-readiness-report...origin/production-readiness-report
+?? .claude/
+?? docs/report-evidence/
+
+PS C:\Projects\sahabat-qolbu-project> git log -1 --oneline
+
+564f8be chore: prepare production readiness report
+
+Report notes:
+  Branch pushed earlier: production-readiness-report
+  Local evidence pack is intentionally uncommitted and not pushed.
+  .claude/ is local tool configuration and is excluded from report commits.

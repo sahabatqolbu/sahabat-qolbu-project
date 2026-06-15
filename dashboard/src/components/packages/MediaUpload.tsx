@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
+import { getImageUrl } from "@/lib/utils";
 
 interface MediaUploadProps {
   onImagesChange: (files: File[]) => void;
@@ -134,7 +135,7 @@ export function MediaUpload({
                   <div key={img.id} className="relative group">
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_API_URL}${img.imageUrl}`}
+                        src={getImageUrl(img.imageUrl)}
                         alt={img.caption || "Package image"}
                         width={200}
                         height={200}
@@ -213,7 +214,7 @@ export function MediaUpload({
                     Itinerary Tersimpan
                   </p>
                   <a
-                    href={`${process.env.NEXT_PUBLIC_API_URL}${existingPdf}`}
+                    href={getImageUrl(existingPdf)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:underline"

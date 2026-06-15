@@ -229,7 +229,7 @@ export default function CreatePackagePage() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Info className="h-4 w-4" />
               <span className="hidden md:inline">Info Dasar</span>
@@ -244,10 +244,6 @@ export default function CreatePackagePage() {
             <TabsTrigger value="hotels" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden md:inline">Hotel</span>
-            </TabsTrigger>
-            <TabsTrigger value="payment" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden md:inline">Pembayaran</span>
             </TabsTrigger>
             {/* ✅ TAB BARU */}
             <TabsTrigger value="media" className="flex items-center gap-2">
@@ -953,159 +949,7 @@ export default function CreatePackagePage() {
             </div>
           </TabsContent>
 
-          {/* ===== TAB: PEMBAYARAN MASKAPAI ===== */}
-          <TabsContent value="payment">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Pembayaran Maskapai
-                </CardTitle>
-                <CardDescription>
-                  Detail pembayaran ke maskapai (Termin 1 & 2)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Termin 1 */}
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
-                    <Badge>Termin 1</Badge>
-                    Down Payment
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Jumlah</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-gray-500">
-                          Rp
-                        </span>
-                        <Input
-                          type="number"
-                          min="0"
-                          className="pl-10"
-                          {...register("airlineTermin1Amount", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tanggal Bayar</Label>
-                      <Input type="date" {...register("airlineTermin1Date")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Controller
-                        name="airlineTermin1Status"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="UNPAID">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                                  Unpaid
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="PAID">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                                  Paid
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                {/* Termin 2 */}
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
-                    <Badge>Termin 2</Badge>
-                    Pelunasan
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Jumlah</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-gray-500">
-                          Rp
-                        </span>
-                        <Input
-                          type="number"
-                          min="0"
-                          className="pl-10"
-                          {...register("airlineTermin2Amount", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tanggal Bayar</Label>
-                      <Input type="date" {...register("airlineTermin2Date")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Controller
-                        name="airlineTermin2Status"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="UNPAID">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-red-500" />
-                                  Unpaid
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="PAID">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                                  Paid
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="p-4 border rounded-lg bg-blue-50">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">
-                      Total Pembayaran Maskapai
-                    </span>
-                    <span className="text-xl font-bold text-blue-600">
-                      Rp{" "}
-                      {(
-                        (watch("airlineTermin1Amount") || 0) +
-                        (watch("airlineTermin2Amount") || 0)
-                      ).toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* ✅ TAB: MEDIA (BARU) */}
           <TabsContent value="media">
