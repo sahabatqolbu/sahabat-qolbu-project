@@ -71,7 +71,8 @@ export default function CreatePackagePage() {
     setValue,
     formState: { errors },
   } = useForm<CreatePackageFormData>({
-    resolver: zodResolver(createPackageSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createPackageSchema) as any,
     defaultValues: {
       type: "FULL_SERVICE", // ✅ FIXED
       totalSeats: 45,
