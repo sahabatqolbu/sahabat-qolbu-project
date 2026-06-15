@@ -488,6 +488,16 @@ export const submitForApproval = async (req, res, next) => {
 
     logger.info("Jamaah submitted for approval", { userId });
 
+    // ✅ KIRIM NOTIFIKASI KE ADMIN
+    await notifyAdmins({
+      type: "JAMAAH_SUBMITTED",
+      title: "Data Jamaah Menunggu Approval",
+      message: `${existing.namaPaspor || req.user.fullName || `Jamaah #${userId}`} telah mengirimkan data untuk approval`,
+      link: `/admin/jamaah/${existing.bookingNumber}`,
+      referenceId: existing.id,
+      referenceType: "jamaah",
+    });
+
     return successResponse(
       res,
       null,

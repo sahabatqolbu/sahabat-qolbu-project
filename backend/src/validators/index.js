@@ -312,7 +312,7 @@ export const jamaahAdminSchemas = {
 
   approveRejectRevert: z.object({
     reason: z.string().max(500).optional(),
-  }),
+  }).optional().default({}),
 };
 
 /**
