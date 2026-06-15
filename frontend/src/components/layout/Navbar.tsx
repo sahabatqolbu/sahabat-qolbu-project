@@ -7,7 +7,7 @@ import { Menu, X, Phone, Mail, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Beranda", href: "/" },
+  { name: "Beranda", href: "/landing/#beranda" },
   {
     name: "Paket Umroh",
     href: "/packages",
@@ -18,9 +18,10 @@ const navigation = [
       { name: "Umroh Reguler", href: "/packages?type=UMRAH" },
     ],
   },
-  { name: "Tentang Kami", href: "/about" },
-  { name: "Testimoni", href: "/#testimonials" },
-  { name: "Kontak", href: "/contact" },
+  { name: "Tentang Kami", href: "/landing/#tentang" },
+  { name: "Testimoni", href: "/landing/#testimoni" },
+  { name: "FAQ", href: "/landing/#faq" },
+  { name: "Daftar", href: "/landing/#daftar" },
 ];
 
 export default function Navbar() {

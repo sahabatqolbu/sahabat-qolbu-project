@@ -13,5 +13,5 @@ export default async function AgentPage({
     notFound();
   }
 
-  redirect(`/landing/index.html?agent=${encodeURIComponent(namaagen)}`);
+  redirect(`/landing/?agent=${encodeURIComponent(namaagen)}`);
 }

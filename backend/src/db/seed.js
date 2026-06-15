@@ -314,12 +314,10 @@ async function seed() {
         {
           code: "UMR-2024-001",
           name: "Umrah Ramadhan 2024 - Premium",
-          type: "UMRAH",
+          type: "FULL_SERVICE",
           duration: 9,
-          priceQuad: "25000000.00",
-          priceTriple: "27000000.00",
-          priceDouble: "30000000.00",
-          commissionPercentage: "5.00",
+          price: "25000000.00",
+          discountPrice: "24000000.00",
           departureDate: new Date("2024-03-10"),
           returnDate: new Date("2024-03-18"),
           airlineId: 1,
@@ -346,19 +344,17 @@ async function seed() {
             "Perlengkapan umrah",
             "Pembimbing berpengalaman",
           ]),
-          terms: "Harga sudah termasuk tiket, hotel, makan, dan transportasi.",
+          notes: "Harga sudah termasuk tiket, hotel, makan, dan transportasi.",
           isActive: true,
           isPublished: true,
         },
         {
           code: "UMR-2024-002",
           name: "Umrah Plus Turki 2024",
-          type: "UMRAH_PLUS",
+          type: "EXTREME",
           duration: 12,
-          priceQuad: "35000000.00",
-          priceTriple: "37000000.00",
-          priceDouble: "40000000.00",
-          commissionPercentage: "5.00",
+          price: "35000000.00",
+          discountPrice: "33000000.00",
           departureDate: new Date("2024-04-15"),
           returnDate: new Date("2024-04-26"),
           airlineId: 2,
@@ -372,7 +368,7 @@ async function seed() {
             day3: "Istanbul - Jeddah",
           }),
           facilities: JSON.stringify(["Tiket PP", "Hotel 5*", "Tour Istanbul"]),
-          terms: "Termasuk tour Istanbul.",
+          notes: "Termasuk tour Istanbul.",
           isActive: true,
           isPublished: true,
         },
@@ -404,81 +400,4 @@ async function seed() {
 }
 
 seed();
-
-import { db } from "../index.js";
-import { masterDocuments } from "../schema.js";
-
-async function seedDocuments() {
-  try {
-    console.log("🌱 Seeding Master Documents...");
-
-    const documents = [
-      {
-        name: "KTP",
-        description: "Kartu Tanda Penduduk (Scan/Foto)",
-        isMandatory: true,
-        category: "IDENTITAS",
-        fileFormat: "jpg,jpeg,png,pdf",
-        maxSizeMB: 2,
-        isActive: true,
-      },
-      {
-        name: "Kartu Keluarga",
-        description: "Kartu Keluarga (Scan/Foto)",
-        isMandatory: true,
-        category: "IDENTITAS",
-        fileFormat: "jpg,jpeg,png,pdf",
-        maxSizeMB: 2,
-        isActive: true,
-      },
-      {
-        name: "Paspor",
-        description: "Paspor Halaman Identitas (Scan warna)",
-        isMandatory: true,
-        category: "TRAVEL",
-        fileFormat: "jpg,jpeg,png,pdf",
-        maxSizeMB: 3,
-        isActive: true,
-      },
-      {
-        name: "Foto 4x6 Background Putih",
-        description: "Foto formal background putih (80% wajah)",
-        isMandatory: true,
-        category: "TRAVEL",
-        fileFormat: "jpg,jpeg,png",
-        maxSizeMB: 2,
-        isActive: true,
-      },
-      {
-        name: "Buku Vaksin (Yellow Card)",
-        description: "Sertifikat Vaksinasi Meningitis & COVID-19",
-        isMandatory: false,
-        category: "KESEHATAN",
-        fileFormat: "jpg,jpeg,png,pdf",
-        maxSizeMB: 2,
-        isActive: true,
-      },
-      {
-        name: "Surat Keterangan Mahram",
-        description: "Untuk wanita yang tidak bersama mahram (jika diperlukan)",
-        isMandatory: false,
-        category: "LAINNYA",
-        fileFormat: "jpg,jpeg,png,pdf",
-        maxSizeMB: 2,
-        isActive: true,
-      },
-    ];
-
-    for (const doc of documents) {
-      await db.insert(masterDocuments).values(doc);
-      console.log(`✅ ${doc.name} inserted`);
-    }
-
-    console.log("🎉 Master Documents seeded successfully!");
-  } catch (error) {
-    console.error("❌ Seed error:", error);
-  }
-  process.exit(0);
-}
-
-seedDocuments();
+

@@ -1,14 +1,9 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-export async function GET() {
-  const filePath = path.join(process.cwd(), "public", "landing", "index.html");
-  const html = await readFile(filePath, "utf8");
+export function GET(request: NextRequest) {
+  const target = request.nextUrl.clone();
+  target.pathname = "/landing/";
 
-  return new NextResponse(html, {
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-    },
-  });
+  return NextResponse.redirect(target);
 }
