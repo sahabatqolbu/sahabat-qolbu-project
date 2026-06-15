@@ -514,14 +514,7 @@ export default function PackagesPage() {
                               <span>{pkg.airline?.name || "-"}</span>
                             </div>
                             {pkg.airline && (
-                              <>
-                                {getStatusBadge(pkg.airlineStatus || "PLANNING")}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {getStatusBadge(
-                                    pkg.airlinePaymentStatus || "UNPAID"
-                                  )}
-                                </p>
-                              </>
+                              getStatusBadge(pkg.airlineStatus || "PLANNING")
                             )}
                           </div>
                         </TableCell>
