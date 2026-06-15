@@ -35,6 +35,10 @@ export const createPackageSchema = z.object({
   // ===== PRICING =====
   price: z.number().min(0, "Harga harus lebih dari 0"),
   discountPrice: z.number().min(0).optional().nullable(),
+  priceDouble: optionalNumber,
+  priceTriple: optionalNumber,
+  priceQuad: optionalNumber,
+  priceQuint: optionalNumber,
 
   // ===== SEATS =====
   totalSeats: z.number().min(1, "Total seat minimal 1"),
@@ -111,6 +115,10 @@ export const updatePackageSchema = z.object({
   // ===== PRICING =====
   price: z.number().min(0, "Harga harus lebih dari 0"),
   discountPrice: z.number().min(0).optional().nullable(),
+  priceDouble: optionalNumber,
+  priceTriple: optionalNumber,
+  priceQuad: optionalNumber,
+  priceQuint: optionalNumber,
 
   // ===== SEATS =====
   totalSeats: z.number().min(1, "Total seat minimal 1"),

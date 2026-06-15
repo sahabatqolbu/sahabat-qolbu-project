@@ -339,6 +339,36 @@ export default function PackageDetailPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
+          {/* Harga per Tipe Kamar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Harga Berdasarkan Tipe Kamar (per Orang)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 border rounded-lg bg-gray-50 text-center">
+                  <p className="text-xs text-gray-500 mb-1 font-medium">Double (2 org)</p>
+                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceDouble || 0)}</p>
+                </div>
+                <div className="p-3 border rounded-lg bg-gray-50 text-center">
+                  <p className="text-xs text-gray-500 mb-1 font-medium">Triple (3 org)</p>
+                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceTriple || 0)}</p>
+                </div>
+                <div className="p-3 border rounded-lg bg-gray-50 text-center">
+                  <p className="text-xs text-gray-500 mb-1 font-medium">Quad (4 org)</p>
+                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceQuad || 0)}</p>
+                </div>
+                <div className="p-3 border rounded-lg bg-gray-50 text-center">
+                  <p className="text-xs text-gray-500 mb-1 font-medium">Quint (5 org)</p>
+                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceQuint || 0)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Hotels */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Hotel Makkah */}
@@ -359,18 +389,6 @@ export default function PackageDetailPage({ params }: PageProps) {
                     <p className="text-sm text-yellow-500">
                       {"⭐".repeat(pkg.hotelMakkah.starRating || 0)}
                     </p>
-                    <Separator />
-                    <div className="text-sm space-y-1">
-                      <p className="font-medium">
-                        Jumlah Kamar: {hotelMakkahRooms}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 text-gray-600">
-                        <span>Double: {pkg.hotelMakkahDouble || 0}</span>
-                        <span>Triple: {pkg.hotelMakkahTriple || 0}</span>
-                        <span>Quad: {pkg.hotelMakkahQuad || 0}</span>
-                        <span>Quint: {pkg.hotelMakkahQuint || 0}</span>
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-4">Belum ada</p>
@@ -396,18 +414,6 @@ export default function PackageDetailPage({ params }: PageProps) {
                     <p className="text-sm text-yellow-500">
                       {"⭐".repeat(pkg.hotelMadinah.starRating || 0)}
                     </p>
-                    <Separator />
-                    <div className="text-sm space-y-1">
-                      <p className="font-medium">
-                        Jumlah Kamar: {hotelMadinahRooms}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 text-gray-600">
-                        <span>Double: {pkg.hotelMadinahDouble || 0}</span>
-                        <span>Triple: {pkg.hotelMadinahTriple || 0}</span>
-                        <span>Quad: {pkg.hotelMadinahQuad || 0}</span>
-                        <span>Quint: {pkg.hotelMadinahQuint || 0}</span>
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-4">Belum ada</p>

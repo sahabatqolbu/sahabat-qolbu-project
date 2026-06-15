@@ -134,6 +134,10 @@ interface PackageOption {
   type?: string;
   price?: string;
   discountPrice?: string;
+  priceDouble?: string;
+  priceTriple?: string;
+  priceQuad?: string;
+  priceQuint?: string;
   hotelMakkahDouble?: number;
   hotelMakkahTriple?: number;
   hotelMakkahQuad?: number;

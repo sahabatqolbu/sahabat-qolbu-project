@@ -218,6 +218,10 @@ export const packages = mysqlTable(
     // ===== PRICING =====
     price: decimal("price", { precision: 15, scale: 2 }).notNull(),
     discountPrice: decimal("discount_price", { precision: 15, scale: 2 }),
+    priceDouble: decimal("price_double", { precision: 15, scale: 2 }).default("0.00"),
+    priceTriple: decimal("price_triple", { precision: 15, scale: 2 }).default("0.00"),
+    priceQuad: decimal("price_quad", { precision: 15, scale: 2 }).default("0.00"),
+    priceQuint: decimal("price_quint", { precision: 15, scale: 2 }).default("0.00"),
 
     // ===== SEAT MANAGEMENT =====
     totalSeats: int("total_seats").notNull().default(45),

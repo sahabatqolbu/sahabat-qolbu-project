@@ -439,7 +439,18 @@ export const createJamaah = async (req, res, next) => {
         where: eq(packages.id, parseInt(packageId)),
       });
       if (pkg) {
-        hargaPaket = pkg.discountPrice || pkg.price || "0";
+        const type = String(roomType || "").toUpperCase();
+        if (type === "DOUBLE" && pkg.priceDouble && parseFloat(pkg.priceDouble) > 0) {
+          hargaPaket = pkg.priceDouble;
+        } else if (type === "TRIPLE" && pkg.priceTriple && parseFloat(pkg.priceTriple) > 0) {
+          hargaPaket = pkg.priceTriple;
+        } else if (type === "QUAD" && pkg.priceQuad && parseFloat(pkg.priceQuad) > 0) {
+          hargaPaket = pkg.priceQuad;
+        } else if (type === "QUINT" && pkg.priceQuint && parseFloat(pkg.priceQuint) > 0) {
+          hargaPaket = pkg.priceQuint;
+        } else {
+          hargaPaket = pkg.discountPrice || pkg.price || "0";
+        }
       }
     }
 

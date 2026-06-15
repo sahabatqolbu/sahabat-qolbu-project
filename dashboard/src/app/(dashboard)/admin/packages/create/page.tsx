@@ -83,6 +83,10 @@ export default function CreatePackagePage() {
       airlineTermin2Status: "UNPAID",
       hotelMakkahStatus: "PLANNING",
       hotelMadinahStatus: "PLANNING",
+      priceDouble: 0,
+      priceTriple: 0,
+      priceQuad: 0,
+      priceQuint: 0,
       hotelMakkahDouble: 0,
       hotelMakkahTriple: 0,
       hotelMakkahQuad: 0,
@@ -491,6 +495,69 @@ export default function CreatePackagePage() {
                   </div>
                 </div>
 
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-serif font-semibold text-lg text-gray-900">
+                    Harga berdasarkan Tipe Kamar
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Input harga paket per orang untuk masing-masing tipe kamar (isi 0 jika tidak tersedia)
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="priceDouble">Double (2 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceDouble"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceDouble", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="priceTriple">Triple (3 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceTriple"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceTriple", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="priceQuad">Quad (4 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceQuad"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceQuad", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="priceQuint">Quint (5 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceQuint"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceQuint", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Deskripsi */}
                 <div className="space-y-2">
                   <Label htmlFor="description">Deskripsi</Label>
@@ -752,60 +819,7 @@ export default function CreatePackagePage() {
                     </div>
                   </div>
 
-                  {/* Room Count */}
-                  <div>
-                    <Label className="mb-3 block">Jumlah Kamar</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Double (2 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMakkahDouble", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Triple (3 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMakkahTriple", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Quad (4 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMakkahQuad", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Quint (5 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMakkahQuint", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </div>
+
                 </CardContent>
               </Card>
 
@@ -891,60 +905,7 @@ export default function CreatePackagePage() {
                     </div>
                   </div>
 
-                  {/* Room Count */}
-                  <div>
-                    <Label className="mb-3 block">Jumlah Kamar</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Double (2 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMadinahDouble", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Triple (3 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMadinahTriple", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Quad (4 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMadinahQuad", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-gray-500">
-                          Quint (5 org)
-                        </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          {...register("hotelMadinahQuint", {
-                            valueAsNumber: true,
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </div>
+
                 </CardContent>
               </Card>
             </div>

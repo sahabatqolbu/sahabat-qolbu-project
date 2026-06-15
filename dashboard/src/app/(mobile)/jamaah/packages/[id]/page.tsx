@@ -140,11 +140,34 @@ export default function JamaahPackageDetailPage({ params }: PageProps) {
                 ))}
               {!pkg.description && <p>-</p>}
             </div>
-            <div className="mt-3 text-right">
-              <p className="text-xs text-gray-500">Harga paket</p>
-              <p className="font-bold text-[var(--color-primary)] text-lg">
-                Rp {finalPrice.toLocaleString("id-ID")}
-              </p>
+            <div className="mt-3 flex items-center justify-between border-t pt-2">
+              <div>
+                <p className="text-xs text-gray-500">Harga dasar</p>
+                <p className="font-bold text-[var(--color-primary)] text-lg">
+                  Rp {finalPrice.toLocaleString("id-ID")}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-xs text-gray-600 mb-2 font-medium">Harga berdasarkan Tipe Kamar (per Orang):</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-700">
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-gray-500">Double (2 org):</span>
+                  <span className="font-semibold text-gray-900">Rp {parseFloat(pkg.priceDouble || "0").toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-gray-500">Triple (3 org):</span>
+                  <span className="font-semibold text-gray-900">Rp {parseFloat(pkg.priceTriple || "0").toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-gray-500">Quad (4 org):</span>
+                  <span className="font-semibold text-gray-900">Rp {parseFloat(pkg.priceQuad || "0").toLocaleString("id-ID")}</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-gray-500">Quint (5 org):</span>
+                  <span className="font-semibold text-gray-900">Rp {parseFloat(pkg.priceQuint || "0").toLocaleString("id-ID")}</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

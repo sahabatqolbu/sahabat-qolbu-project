@@ -146,6 +146,10 @@ export default function EditPackagePage({ params }: PageProps) {
           pkg.discountPrice && parseFloat(pkg.discountPrice) > 0
             ? parseFloat(pkg.discountPrice)
             : undefined,
+        priceDouble: pkg.priceDouble ? parseFloat(pkg.priceDouble) : 0,
+        priceTriple: pkg.priceTriple ? parseFloat(pkg.priceTriple) : 0,
+        priceQuad: pkg.priceQuad ? parseFloat(pkg.priceQuad) : 0,
+        priceQuint: pkg.priceQuint ? parseFloat(pkg.priceQuint) : 0,
         totalSeats: pkg.totalSeats,
 
         facilities: pkg.facilities || "",
@@ -636,6 +640,69 @@ export default function EditPackagePage({ params }: PageProps) {
                   </div>
                 </div>
 
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-serif font-semibold text-lg text-gray-900">
+                    Harga berdasarkan Tipe Kamar
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Input harga paket per orang untuk masing-masing tipe kamar (isi 0 jika tidak tersedia)
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="priceDouble">Double (2 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceDouble"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceDouble", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="priceTriple">Triple (3 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceTriple"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceTriple", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="priceQuad">Quad (4 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceQuad"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceQuad", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="priceQuint">Quint (5 org)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <Input
+                          id="priceQuint"
+                          type="number"
+                          placeholder="0"
+                          className="pl-8"
+                          {...register("priceQuint", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Deskripsi & Fasilitas */}
                 <div className="space-y-2">
                   <Label htmlFor="description">Deskripsi</Label>
@@ -830,40 +897,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Double</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMakkahDouble")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Triple</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMakkahTriple")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Quad</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMakkahQuad")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Quint</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMakkahQuint")}
-                      />
-                    </div>
-                  </div>
+
                 </CardContent>
               </Card>
 
@@ -928,40 +962,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Double</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMadinahDouble")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Triple</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMadinahTriple")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Quad</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMadinahQuad")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Quint</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...register("hotelMadinahQuint")}
-                      />
-                    </div>
-                  </div>
+
                 </CardContent>
               </Card>
             </div>

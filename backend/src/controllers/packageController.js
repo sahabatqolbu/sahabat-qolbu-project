@@ -132,6 +132,10 @@ const validatePackagePayload = (data = {}, isUpdate = false) => {
   const numericFields = [
     "price",
     "discountPrice",
+    "priceDouble",
+    "priceTriple",
+    "priceQuad",
+    "priceQuint",
     "airlineTermin1Amount",
     "airlineTermin2Amount",
   ];
@@ -448,6 +452,10 @@ export const createPackage = async (req, res, next) => {
       duration,
       price: parseDecimalString(data.price, "0.00"),
       discountPrice: parseDecimalString(data.discountPrice, null),
+      priceDouble: parseDecimalString(data.priceDouble, "0.00"),
+      priceTriple: parseDecimalString(data.priceTriple, "0.00"),
+      priceQuad: parseDecimalString(data.priceQuad, "0.00"),
+      priceQuint: parseDecimalString(data.priceQuint, "0.00"),
       totalSeats: parsePositiveInt(data.totalSeats, 45),
       facilities: data.facilities || null,
       notes: data.notes || null,
@@ -585,6 +593,22 @@ export const updatePackage = async (req, res, next) => {
         data.discountPrice !== undefined
           ? parseDecimalString(data.discountPrice, existingPackage.discountPrice)
           : existingPackage.discountPrice,
+      priceDouble:
+        data.priceDouble !== undefined
+          ? parseDecimalString(data.priceDouble, existingPackage.priceDouble)
+          : existingPackage.priceDouble,
+      priceTriple:
+        data.priceTriple !== undefined
+          ? parseDecimalString(data.priceTriple, existingPackage.priceTriple)
+          : existingPackage.priceTriple,
+      priceQuad:
+        data.priceQuad !== undefined
+          ? parseDecimalString(data.priceQuad, existingPackage.priceQuad)
+          : existingPackage.priceQuad,
+      priceQuint:
+        data.priceQuint !== undefined
+          ? parseDecimalString(data.priceQuint, existingPackage.priceQuint)
+          : existingPackage.priceQuint,
       totalSeats:
         data.totalSeats !== undefined
           ? parsePositiveInt(data.totalSeats, existingPackage.totalSeats)

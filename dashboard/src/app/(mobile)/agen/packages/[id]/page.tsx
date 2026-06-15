@@ -59,6 +59,10 @@ interface PackageDetail {
   remainingSeats?: number;
   price?: string | number;
   discountPrice?: string | number;
+  priceDouble?: string | number;
+  priceTriple?: string | number;
+  priceQuad?: string | number;
+  priceQuint?: string | number;
   discountPercentage?: number;
   isActive?: boolean;
   isPublished?: boolean;
@@ -409,6 +413,39 @@ export default function PackageDetailPage() {
                     <p className="text-2xl font-bold text-[var(--color-primary)]">
                       Rp {finalPrice.toLocaleString("id-ID")}
                     </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Room Occupancy Pricing */}
+              <div className="border rounded-xl p-4 bg-white mt-3">
+                <p className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+                  Harga berdasarkan Tipe Kamar (per Orang)
+                </p>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex flex-col p-2 bg-gray-50 rounded border">
+                    <span className="text-gray-500 font-medium">Double (2 org)</span>
+                    <span className="font-bold text-gray-900 mt-1">
+                      Rp {parseFloat(pkg?.priceDouble ? String(pkg.priceDouble) : "0").toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="flex flex-col p-2 bg-gray-50 rounded border">
+                    <span className="text-gray-500 font-medium">Triple (3 org)</span>
+                    <span className="font-bold text-gray-900 mt-1">
+                      Rp {parseFloat(pkg?.priceTriple ? String(pkg.priceTriple) : "0").toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="flex flex-col p-2 bg-gray-50 rounded border">
+                    <span className="text-gray-500 font-medium">Quad (4 org)</span>
+                    <span className="font-bold text-gray-900 mt-1">
+                      Rp {parseFloat(pkg?.priceQuad ? String(pkg.priceQuad) : "0").toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="flex flex-col p-2 bg-gray-50 rounded border">
+                    <span className="text-gray-500 font-medium">Quint (5 org)</span>
+                    <span className="font-bold text-gray-900 mt-1">
+                      Rp {parseFloat(pkg?.priceQuint ? String(pkg.priceQuint) : "0").toLocaleString("id-ID")}
+                    </span>
                   </div>
                 </div>
               </div>
