@@ -1,6 +1,17 @@
 // dashboard/src/lib/schemas/package-schema.ts
 import * as z from "zod";
 
+// Helper: converts NaN/empty string to undefined for optional number fields
+// This is needed because react-hook-form's valueAsNumber returns NaN for empty inputs
+const optionalNumber = z.preprocess(
+  (val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    const n = Number(val);
+    return isNaN(n) ? undefined : n;
+  },
+  z.number().min(0).optional()
+);
+
 // =====================================================
 // PACKAGE FORM SCHEMA
 // =====================================================
@@ -38,28 +49,28 @@ export const createPackageSchema = z.object({
   airlineIssuedDate: z.string().optional().nullable(),
 
   // ===== AIRLINE PAYMENT =====
-  airlineTermin1Amount: z.number().optional(),
+  airlineTermin1Amount: optionalNumber,
   airlineTermin1Date: z.string().optional().nullable(),
   airlineTermin1Status: z.enum(["UNPAID", "PAID"]).optional(),
-  airlineTermin2Amount: z.number().optional(),
+  airlineTermin2Amount: optionalNumber,
   airlineTermin2Date: z.string().optional().nullable(),
   airlineTermin2Status: z.enum(["UNPAID", "PAID"]).optional(),
 
   // ===== HOTEL MAKKAH =====
   hotelMakkahId: z.number().optional().nullable(),
   hotelMakkahStatus: z.enum(["PLANNING", "CONFIRMED"]).optional(),
-  hotelMakkahDouble: z.number().optional(),
-  hotelMakkahTriple: z.number().optional(),
-  hotelMakkahQuad: z.number().optional(),
-  hotelMakkahQuint: z.number().optional(),
+  hotelMakkahDouble: optionalNumber,
+  hotelMakkahTriple: optionalNumber,
+  hotelMakkahQuad: optionalNumber,
+  hotelMakkahQuint: optionalNumber,
 
   // ===== HOTEL MADINAH =====
   hotelMadinahId: z.number().optional().nullable(),
   hotelMadinahStatus: z.enum(["PLANNING", "CONFIRMED"]).optional(),
-  hotelMadinahDouble: z.number().optional(),
-  hotelMadinahTriple: z.number().optional(),
-  hotelMadinahQuad: z.number().optional(),
-  hotelMadinahQuint: z.number().optional(),
+  hotelMadinahDouble: optionalNumber,
+  hotelMadinahTriple: optionalNumber,
+  hotelMadinahQuad: optionalNumber,
+  hotelMadinahQuint: optionalNumber,
 
   // ===== AIRPORT =====
   departureAirportId: z.number().optional().nullable(),
@@ -114,28 +125,31 @@ export const updatePackageSchema = z.object({
   airlineIssuedDate: z.string().optional().nullable(),
 
   // ===== AIRLINE PAYMENT =====
-  airlineTermin1Amount: z.number().optional(),
+  // ✅ optionalNumber handles NaN from valueAsNumber on empty inputs
+  airlineTermin1Amount: optionalNumber,
   airlineTermin1Date: z.string().optional().nullable(),
   airlineTermin1Status: z.enum(["UNPAID", "PAID"]).optional(),
-  airlineTermin2Amount: z.number().optional(),
+  airlineTermin2Amount: optionalNumber,
   airlineTermin2Date: z.string().optional().nullable(),
   airlineTermin2Status: z.enum(["UNPAID", "PAID"]).optional(),
 
   // ===== HOTEL MAKKAH =====
   hotelMakkahId: z.number().optional().nullable(),
   hotelMakkahStatus: z.enum(["PLANNING", "CONFIRMED"]).optional(),
-  hotelMakkahDouble: z.number().optional(),
-  hotelMakkahTriple: z.number().optional(),
-  hotelMakkahQuad: z.number().optional(),
-  hotelMakkahQuint: z.number().optional(),
+  // ✅ optionalNumber handles NaN from valueAsNumber on empty inputs
+  hotelMakkahDouble: optionalNumber,
+  hotelMakkahTriple: optionalNumber,
+  hotelMakkahQuad: optionalNumber,
+  hotelMakkahQuint: optionalNumber,
 
   // ===== HOTEL MADINAH =====
   hotelMadinahId: z.number().optional().nullable(),
   hotelMadinahStatus: z.enum(["PLANNING", "CONFIRMED"]).optional(),
-  hotelMadinahDouble: z.number().optional(),
-  hotelMadinahTriple: z.number().optional(),
-  hotelMadinahQuad: z.number().optional(),
-  hotelMadinahQuint: z.number().optional(),
+  // ✅ optionalNumber handles NaN from valueAsNumber on empty inputs
+  hotelMadinahDouble: optionalNumber,
+  hotelMadinahTriple: optionalNumber,
+  hotelMadinahQuad: optionalNumber,
+  hotelMadinahQuint: optionalNumber,
 
   // ===== AIRPORT =====
   departureAirportId: z.number().optional().nullable(),

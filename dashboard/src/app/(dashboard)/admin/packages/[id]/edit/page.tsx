@@ -85,7 +85,8 @@ export default function EditPackagePage({ params }: PageProps) {
     reset,
     formState: { errors, isDirty: isDirtyFromForm },
   } = useForm<UpdatePackageFormData>({
-    resolver: zodResolver(updatePackageSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(updatePackageSchema) as any,
   });
 
   const isDirty = isDirtyFromForm || hasPdfChanged || uploadingPdf;
@@ -835,9 +836,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMakkahDouble", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMakkahDouble")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -845,9 +844,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMakkahTriple", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMakkahTriple")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -855,9 +852,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMakkahQuad", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMakkahQuad")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -865,9 +860,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMakkahQuint", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMakkahQuint")}
                       />
                     </div>
                   </div>
@@ -941,9 +934,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMadinahDouble", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMadinahDouble")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -951,9 +942,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMadinahTriple", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMadinahTriple")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -961,9 +950,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMadinahQuad", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMadinahQuad")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -971,9 +958,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         min="0"
-                        {...register("hotelMadinahQuint", {
-                          valueAsNumber: true,
-                        })}
+                        {...register("hotelMadinahQuint")}
                       />
                     </div>
                   </div>
