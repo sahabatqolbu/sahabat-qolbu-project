@@ -13,6 +13,8 @@ import {
     requestEmailChangeOTP,
     changeEmailWithOTP,
     logout,
+    requestForgotPasswordOTP,
+    resetPasswordWithOTP,
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -21,11 +23,11 @@ const router = express.Router();
 router.post("/login", authLimiter, validate(authSchemas.login), login);
 router.post("/verify-otp", otpLimiter, validate(authSchemas.verifyOTP), verifyOTPLogin);
 router.post("/request-otp", authLimiter, validate(authSchemas.requestOTP), requestOTP);
+router.post("/forgot-password/request-otp", authLimiter, validate(authSchemas.forgotPassword), requestForgotPasswordOTP);
+router.post("/forgot-password/reset", otpLimiter, validate(authSchemas.resetPassword), resetPasswordWithOTP);
 if (process.env.NODE_ENV !== "production") {
     router.get("/test-public", (req, res) => res.json({ message: "Public route works" }));
 }
-
-// Protected auth routes
 router.get("/me", authenticate, getCurrentUser);
 router.post("/password/request-otp", authenticate, authLimiter, requestPasswordChangeOTP);
 router.post("/password/change", authenticate, otpLimiter, validate(authSchemas.changePassword), changePasswordWithOTP);

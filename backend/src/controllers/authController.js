@@ -591,3 +591,123 @@ export const logout = async (req, res) => {
   });
   return successResponse(res, null, "Logout berhasil");
 };
+
+// =====================================================
+// FORGOT PASSWORD - REQUEST OTP
+// =====================================================
+export const requestForgotPasswordOTP = async (req, res, next) => {
+  try {
+    const { email } = req.validatedBody || req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    logger.info("Forgot password OTP request", { email: normalizedEmail });
+
+    // Find user by email
+    const user = await findUserByEmail(normalizedEmail);
+
+    if (!user) {
+      return errorResponse(res, "Email tidak ditemukan", 404);
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return errorResponse(res, "Akun Anda telah dinonaktifkan. Hubungi admin.", 403);
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = getOTPExpiry();
+
+    // Save OTP to database
+    await db
+      .update(users)
+      .set({
+        otp,
+        otpExpiry,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    // Send OTP via email (async via queue)
+    const emailResult = await sendOTPEmail(user, otp);
+    
+    if (!emailResult.success) {
+      logger.error("Failed to send forgot password OTP email", emailResult.error, { userId: user.id });
+      return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
+    }
+
+    const emailStatus = emailResult.queued ? "queued" : "sent";
+    logger.info(`Forgot password OTP email ${emailStatus} successfully`, { userId: user.id, jobId: emailResult.jobId });
+
+    // Mask email for response
+    const [local, domain] = user.email.split("@");
+    const maskedEmail = local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
+
+    return successResponse(
+      res,
+      {
+        email: maskedEmail,
+        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
+      },
+      "Kode OTP telah dikirim ke email Anda"
+    );
+  } catch (error) {
+    logger.error("Request forgot password OTP error", error);
+    next(error);
+  }
+};
+
+// =====================================================
+// FORGOT PASSWORD - RESET WITH OTP
+// =====================================================
+export const resetPasswordWithOTP = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.validatedBody || req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    logger.info("Forgot password reset attempt", { email: normalizedEmail });
+
+    // Find user by email
+    const user = await findUserByEmail(normalizedEmail);
+
+    if (!user) {
+      return errorResponse(res, "User tidak ditemukan", 404);
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return errorResponse(res, "Akun Anda telah dinonaktifkan. Hubungi admin.", 403);
+    }
+
+    // Verify OTP
+    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
+    if (!otpValidation.valid) {
+      logger.security("Forgot password reset failed - invalid OTP", { userId: user.id });
+      return errorResponse(res, otpValidation.message, 400);
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password & clear OTP
+    await db
+      .update(users)
+      .set({
+        password: hashedPassword,
+        otp: null,
+        otpExpiry: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    logger.security("Forgot password reset successfully", { userId: user.id });
+
+    // Clear access_token cookie if logged in
+    res.clearCookie("access_token", getAuthCookieOptions(req));
+
+    return successResponse(res, null, "Password berhasil diubah. Silakan login kembali.");
+  } catch (error) {
+    logger.error("Forgot password reset error", error);
+    next(error);
+  }
+};

@@ -71,4 +71,20 @@ export const authService = {
     const response = await api.post("/auth/logout");
     return response.data;
   },
+
+  // Request Forgot Password OTP
+  requestForgotPasswordOTP: async (data: { email: string }) => {
+    const response = await api.post("/auth/forgot-password/request-otp", data);
+    return response.data;
+  },
+
+  // Reset Password with OTP
+  resetPasswordWithOTP: async (data: {
+    email: string;
+    otp: string;
+    newPassword: string;
+  }) => {
+    const response = await api.post("/auth/forgot-password/reset", data);
+    return response.data;
+  },
 };

@@ -91,6 +91,20 @@ export const authSchemas = {
       .email(messages.email.invalid)
       .transform((val) => val.toLowerCase().trim()),
   }),
+
+  resetPassword: z.object({
+    email: z
+      .string()
+      .min(1, messages.email.required)
+      .email(messages.email.invalid)
+      .transform((val) => val.toLowerCase().trim()),
+    otp: z.string().length(6, messages.otp.length),
+    newPassword: z
+      .string()
+      .min(8, messages.password.min)
+      .max(128, messages.password.max)
+      .regex(patterns.password, messages.password.pattern),
+  }),
 };
 
 /**
