@@ -2,6 +2,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { getImageUrl } from "@/lib/utils";
 import { jamaahSelfService } from "@/services/jamaahSelfService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,15 +42,8 @@ export default function JamaahPackagePage() {
   const pricing = data?.data?.pricing;
   const availablePackages = availablePackagesData?.data?.packages || [];
 
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.NEXT_PUBLIC_SERVER_URL ||
-    "http://localhost:5000";
-
   const getAssetUrl = (path: string | null | undefined) => {
-    if (!path) return "";
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+    return path ? getImageUrl(path) : "";
   };
 
   const getTextLines = (value: unknown): string[] => {

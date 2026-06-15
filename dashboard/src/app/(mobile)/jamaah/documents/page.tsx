@@ -24,22 +24,7 @@ import {
   ImageOff,
 } from "lucide-react";
 import Link from "next/link";
-
-// ✅ Helper function untuk generate URL gambar
-const getImageUrl = (path: string | null | undefined): string | null => {
-  if (!path) return null;
-
-  // Jika sudah full URL, return langsung
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-
-  // Tambahkan API URL
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
-  return `${baseUrl}${cleanPath}`;
-};
+import { getImageUrl } from "@/lib/utils";
 
 export default function JamaahDocumentsPage() {
   const queryClient = useQueryClient();
@@ -337,8 +322,8 @@ function DocumentCard({
 }) {
   const [imgError, setImgError] = useState(false);
 
-  // ✅ Gunakan helper function
-  const imageUrl = getImageUrl(doc.url);
+  // ✅ Gunakan helper function (null-safe)
+  const imageUrl = doc.url ? getImageUrl(doc.url) : null;
 
   return (
     <Card

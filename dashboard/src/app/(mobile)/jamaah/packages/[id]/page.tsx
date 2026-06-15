@@ -24,17 +24,7 @@ import {
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import Image from "next/image";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000";
-
-const getImageUrl = (path: string | undefined): string => {
-  if (!path) return "";
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
-};
+import { getImageUrl } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ id: string }>;
