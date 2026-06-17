@@ -133,7 +133,7 @@
   }
 
   function createDetailLink(packageId) {
-    return `/landing/detail-paket.html?id=${encodeURIComponent(packageId)}`;
+    return `/landing/paket/${encodeURIComponent(packageId)}`;
   }
 
   function updatePackageWhatsappLinks() {
