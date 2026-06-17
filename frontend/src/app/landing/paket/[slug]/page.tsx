@@ -32,6 +32,17 @@ const getWhatsappLink = (pkg: MarketingPackage) => {
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
 };
 
+const getDescriptionItems = (value?: string) =>
+  String(value || "")
+    .split(/\r?\n/)
+    .map((item) =>
+      item
+        .replace(/^[-*\s]+/, "")
+        .replace(/\*+/g, "")
+        .trim(),
+    )
+    .filter(Boolean);
+
 function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 bg-primary shadow-lg">
@@ -166,6 +177,10 @@ export default async function LandingPackageDetailPage({
     "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1200&q=80";
   const seatsLeft = getSeatsLeft(pkg);
   const whatsappLink = getWhatsappLink(pkg);
+  const descriptionItems = getDescriptionItems(pkg.description);
+  const heroDescription =
+    descriptionItems.slice(0, 2).join(" ") ||
+    "Detail paket tersedia dari database Sahabat Qolbu.";
 
   return (
     <div className="min-h-screen bg-gray-50 text-primary">
@@ -189,7 +204,7 @@ export default async function LandingPackageDetailPage({
                 {pkg.name}
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/75">
-                {pkg.description}
+                {heroDescription}
               </p>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -238,6 +253,21 @@ export default async function LandingPackageDetailPage({
                       className="aspect-[4/3] w-full rounded-xl bg-cover bg-center"
                       style={{ backgroundImage: `url(${image})` }}
                     />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {descriptionItems.length ? (
+              <section className="rounded-2xl bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-2xl font-bold text-primary">
+                  Detail Program
+                </h2>
+                <div className="space-y-3">
+                  {descriptionItems.map((item) => (
+                    <p key={item} className="leading-relaxed text-gray-700">
+                      {item}
+                    </p>
                   ))}
                 </div>
               </section>

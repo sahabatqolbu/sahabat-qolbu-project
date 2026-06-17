@@ -1,5 +1,8 @@
 const DEFAULT_API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://api.sahabatqolbu.com/api"
+    : "http://localhost:5000/api");
 
 const normalizeApiBaseUrl = (value: string) => value.replace(/\/+$/, "");
 
@@ -8,7 +11,9 @@ const API_ORIGIN = (() => {
   try {
     return new URL(API_BASE_URL).origin;
   } catch {
-    return "http://localhost:5000";
+    return process.env.NODE_ENV === "production"
+      ? "https://api.sahabatqolbu.com"
+      : "http://localhost:5000";
   }
 })();
 
