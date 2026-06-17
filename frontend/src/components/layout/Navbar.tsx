@@ -10,12 +10,12 @@ const navigation = [
   { name: "Beranda", href: "/landing/#beranda" },
   {
     name: "Paket Umroh",
-    href: "/packages",
+    href: "/landing/paket",
     children: [
-      { name: "Semua Paket", href: "/packages" },
-      { name: "Umroh Ramadhan", href: "/packages?type=UMRAH_RAMADHAN" },
-      { name: "Umroh Plus Turki", href: "/packages?type=UMRAH_PLUS" },
-      { name: "Umroh Reguler", href: "/packages?type=UMRAH" },
+      { name: "Semua Paket", href: "/landing/paket" },
+      { name: "Umroh Ramadhan", href: "/landing/paket?type=UMRAH_RAMADHAN" },
+      { name: "Umroh Plus", href: "/landing/paket?type=UMRAH_PLUS" },
+      { name: "Umroh Reguler", href: "/landing/paket?type=UMRAH" },
     ],
   },
   { name: "Tentang Kami", href: "/landing/#tentang" },

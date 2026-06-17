@@ -49,9 +49,14 @@ interface PackageCardProps {
 interface Props {
   pkg: PackageCardProps;
   viewMode?: "grid" | "list";
+  detailBasePath?: string;
 }
 
-export default function PackageCard({ pkg, viewMode = "grid" }: Props) {
+export default function PackageCard({
+  pkg,
+  viewMode = "grid",
+  detailBasePath = "/landing/paket",
+}: Props) {
   const availability =
     ((pkg.totalSeats - pkg.bookedSeats) / pkg.totalSeats) * 100;
   const seatsLeft = pkg.totalSeats - pkg.bookedSeats;
@@ -71,7 +76,7 @@ export default function PackageCard({ pkg, viewMode = "grid" }: Props) {
   };
 
   if (viewMode === "list") {
-    return <PackageCardList pkg={pkg} />;
+    return <PackageCardList pkg={pkg} detailBasePath={detailBasePath} />;
   }
 
   return (
@@ -260,7 +265,7 @@ export default function PackageCard({ pkg, viewMode = "grid" }: Props) {
 
           {/* CTA Button */}
           <Link
-            href={`/packages/${pkg.id}`}
+            href={`${detailBasePath}/${pkg.id}`}
             className="group/btn w-full bg-secondary hover:bg-secondary-600 text-primary font-bold py-3 sm:py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border-3 border-secondary-700 text-sm sm:text-base"
           >
             <span>Lihat Detail</span>
@@ -273,7 +278,13 @@ export default function PackageCard({ pkg, viewMode = "grid" }: Props) {
 }
 
 // LIST VIEW COMPONENT
-function PackageCardList({ pkg }: { pkg: PackageCardProps }) {
+function PackageCardList({
+  pkg,
+  detailBasePath,
+}: {
+  pkg: PackageCardProps;
+  detailBasePath: string;
+}) {
   const availability =
     ((pkg.totalSeats - pkg.bookedSeats) / pkg.totalSeats) * 100;
   const seatsLeft = pkg.totalSeats - pkg.bookedSeats;
@@ -462,7 +473,7 @@ function PackageCardList({ pkg }: { pkg: PackageCardProps }) {
           </div>
 
           <Link
-            href={`/packages/${pkg.id}`}
+            href={`${detailBasePath}/${pkg.id}`}
             className="group/btn bg-secondary hover:bg-secondary-600 text-primary font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border-3 border-secondary-700 whitespace-nowrap"
           >
             <span>Lihat Detail</span>

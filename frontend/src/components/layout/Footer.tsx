@@ -22,9 +22,9 @@ const footerLinks = {
     { name: "Karir", href: "/career" },
   ],
   services: [
-    { name: "Paket Umroh Reguler", href: "/packages?type=UMRAH" },
-    { name: "Umroh Ramadhan", href: "/packages?type=UMRAH_RAMADHAN" },
-    { name: "Umroh Plus", href: "/packages?type=UMRAH_PLUS" },
+    { name: "Paket Umroh Reguler", href: "/landing/paket?type=UMRAH" },
+    { name: "Umroh Ramadhan", href: "/landing/paket?type=UMRAH_RAMADHAN" },
+    { name: "Umroh Plus", href: "/landing/paket?type=UMRAH_PLUS" },
     { name: "Program Itikaf", href: "/itikaf" },
   ],
   support: [

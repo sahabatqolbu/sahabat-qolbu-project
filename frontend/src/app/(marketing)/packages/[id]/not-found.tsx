@@ -24,7 +24,7 @@ export default function PackageNotFound() {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/packages"
+              href="/landing/paket"
               className="inline-flex items-center gap-2 bg-primary hover:bg-primary-600 text-white font-bold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -32,7 +32,7 @@ export default function PackageNotFound() {
             </Link>
 
             <Link
-              href="/"
+              href="/landing"
               className="inline-flex items-center gap-2 bg-white hover:bg-neutral-50 text-primary font-bold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all border-3 border-neutral-200 hover:border-primary"
             >
               <Home className="w-5 h-5" />

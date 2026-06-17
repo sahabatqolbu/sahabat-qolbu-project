@@ -17,10 +17,10 @@ export default function NotFoundPage() {
           </p>
 
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/" className="btn-primary">
+            <Link href="/landing" className="btn-primary">
               Kembali ke Beranda
             </Link>
-            <Link href="/packages" className="btn-outline-white">
+            <Link href="/landing/paket" className="btn-outline-white">
               Lihat Paket Umroh
             </Link>
           </div>
