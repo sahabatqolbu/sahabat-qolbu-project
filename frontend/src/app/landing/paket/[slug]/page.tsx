@@ -3,14 +3,12 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
-  CheckCircle2,
   Clock3,
   FileText,
-  Hotel,
   MessageCircle,
-  Plane,
   Users,
 } from "lucide-react";
+import { LandingPackageTabs } from "@/components/marketing/PackageDetail/LandingPackageTabs";
 import { getMarketingPackageBySlug } from "@/lib/public-api";
 import type { MarketingPackage } from "@/lib/public-api";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -102,63 +100,6 @@ function LandingHeader() {
   );
 }
 
-function InfoList({ title, items }: { title: string; items?: string[] }) {
-  if (!items?.length) return null;
-
-  return (
-    <section className="rounded-2xl bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-2xl font-bold text-primary">{title}</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {items.map((item) => (
-          <div key={item} className="flex items-start gap-3 rounded-xl bg-gray-50 p-3">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-green-500" />
-            <span className="text-sm font-medium text-gray-700">{item}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function HotelCard({
-  title,
-  name,
-  distance,
-  facilities,
-}: {
-  title: string;
-  name: string;
-  distance?: string;
-  facilities?: string[];
-}) {
-  return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-secondary">
-          <Hotel className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-gray-500">{title}</p>
-          <h3 className="font-bold text-primary">{name}</h3>
-        </div>
-      </div>
-      {distance ? <p className="mb-3 text-sm font-semibold text-gray-600">{distance}</p> : null}
-      {facilities?.length ? (
-        <div className="flex flex-wrap gap-2">
-          {facilities.slice(0, 5).map((facility) => (
-            <span
-              key={facility}
-              className="rounded-full bg-yellow-50 px-3 py-1 text-xs font-bold text-primary"
-            >
-              {facility}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export default async function LandingPackageDetailPage({
   params,
 }: {
@@ -183,13 +124,14 @@ export default async function LandingPackageDetailPage({
     "Detail paket tersedia dari database Sahabat Qolbu.";
 
   return (
-    <div className="min-h-screen bg-gray-50 text-primary">
+    <div className="min-h-screen bg-[#F9F5EC] font-sans text-primary">
       <LandingHeader />
 
       <main>
-        <section className="bg-primary text-white">
+        <section className="relative overflow-hidden bg-primary text-white">
+          <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,#FFC107_0,transparent_28%),radial-gradient(circle_at_80%_10%,#ffffff_0,transparent_22%)]" />
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-16">
-            <div>
+            <div className="relative">
               <Link
                 href="/landing/paket"
                 className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/20"
@@ -200,7 +142,7 @@ export default async function LandingPackageDetailPage({
               <div className="mb-5 inline-flex rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
                 Data dari database
               </div>
-              <h1 className="max-w-4xl text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-4xl font-sans text-4xl font-black leading-[0.96] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
                 {pkg.name}
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/75">
@@ -231,7 +173,7 @@ export default async function LandingPackageDetailPage({
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/25">
+            <div className="relative rounded-[2rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/25">
               <div
                 aria-label={pkg.name}
                 className="aspect-[4/3] w-full rounded-[1.45rem] bg-cover bg-center"
@@ -258,68 +200,7 @@ export default async function LandingPackageDetailPage({
               </section>
             ) : null}
 
-            {descriptionItems.length ? (
-              <section className="rounded-2xl bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-2xl font-bold text-primary">
-                  Detail Program
-                </h2>
-                <div className="space-y-3">
-                  {descriptionItems.map((item) => (
-                    <p key={item} className="leading-relaxed text-gray-700">
-                      {item}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-2xl font-bold text-primary">Ringkasan Paket</h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-sm font-semibold text-gray-500">Kode Paket</p>
-                  <p className="mt-1 font-bold text-primary">{pkg.code}</p>
-                </div>
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-sm font-semibold text-gray-500">Tanggal</p>
-                  <p className="mt-1 font-bold text-primary">
-                    {pkg.departureDate ? formatDate(pkg.departureDate, "long") : "Menyusul"}
-                    {pkg.returnDate ? ` - ${formatDate(pkg.returnDate, "long")}` : ""}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-sm font-semibold text-gray-500">Maskapai</p>
-                  <p className="mt-1 flex items-center gap-2 font-bold text-primary">
-                    <Plane className="h-4 w-4 text-secondary" />
-                    {pkg.airline.name}
-                  </p>
-                </div>
-                <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-sm font-semibold text-gray-500">Tipe</p>
-                  <p className="mt-1 font-bold text-primary">{pkg.backendType || pkg.type}</p>
-                </div>
-              </div>
-            </section>
-
-            <div className="grid gap-5 md:grid-cols-2">
-              <HotelCard
-                title="Hotel Makkah"
-                name={pkg.hotelMakkah.name}
-                distance={pkg.hotelMakkah.distanceToHaram}
-                facilities={pkg.hotelMakkah.facilities}
-              />
-              {pkg.hotelMadinah ? (
-                <HotelCard
-                  title="Hotel Madinah"
-                  name={pkg.hotelMadinah.name}
-                  distance={pkg.hotelMadinah.distanceToMasjid}
-                  facilities={pkg.hotelMadinah.facilities}
-                />
-              ) : null}
-            </div>
-
-            <InfoList title="Fasilitas Termasuk" items={pkg.included} />
-            <InfoList title="Syarat & Catatan" items={pkg.terms} />
+            <LandingPackageTabs pkg={pkg} descriptionItems={descriptionItems} />
           </div>
 
           <aside className="lg:sticky lg:top-28 lg:self-start">
