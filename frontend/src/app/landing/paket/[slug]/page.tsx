@@ -11,11 +11,11 @@ import {
   Plane,
   Users,
 } from "lucide-react";
-import { getMarketingPackageById } from "@/lib/public-api";
+import { getMarketingPackageBySlug } from "@/lib/public-api";
 import type { MarketingPackage } from "@/lib/public-api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-type Params = Promise<{ id: string }>;
+type Params = Promise<{ slug: string }>;
 
 const WA_NUMBER = "6281255871984";
 
@@ -153,8 +153,8 @@ export default async function LandingPackageDetailPage({
 }: {
   params: Params;
 }) {
-  const { id } = await params;
-  const pkg = await getMarketingPackageById(id);
+  const { slug } = await params;
+  const pkg = await getMarketingPackageBySlug(slug);
 
   if (!pkg) {
     notFound();

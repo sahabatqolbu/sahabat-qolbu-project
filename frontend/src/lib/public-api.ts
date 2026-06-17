@@ -117,6 +117,7 @@ export type MarketingPackageType = "UMRAH" | "UMRAH_PLUS" | "UMRAH_RAMADHAN";
 
 export interface MarketingPackage {
   id: number;
+  slug: string;
   code: string;
   name: string;
   type: MarketingPackageType;
@@ -192,6 +193,15 @@ export interface PublicAgentLanding {
 
 const resolveApiUrl = (path: string) =>
   `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+
+export const slugifyPackageName = (value: unknown) =>
+  String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
 
 const toNonEmptyString = (value: unknown, fallback = "") => {
   const normalized = String(value ?? "").trim();
@@ -334,10 +344,13 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
         .filter((item) => item.activities.length > 0 || item.title)
     : undefined;
 
+  const name = toNonEmptyString(pkg.name, "Paket Umroh");
+
   return {
     id: pkg.id,
+    slug: slugifyPackageName(name || `paket-${pkg.id}`),
     code: toNonEmptyString(pkg.code, `PKG-${pkg.id}`),
-    name: toNonEmptyString(pkg.name, "Paket Umroh"),
+    name,
     type: mapPackageType(pkg.type, pkg.name),
     duration: toNumber(pkg.duration, 0),
     departureDate: toNonEmptyString(pkg.departureDate),
@@ -448,6 +461,16 @@ export const getMarketingPackageById = async (id: number | string) => {
 
   const pkg = await fetchApi<BackendPackage>(`/public/packages/${parsedId}`);
   return pkg ? mapPackage(pkg) : null;
+};
+
+export const getMarketingPackageBySlug = async (slug: string) => {
+  const normalizedSlug = slugifyPackageName(slug);
+  if (!normalizedSlug) {
+    return null;
+  }
+
+  const packages = await getMarketingPackages();
+  return packages.find((pkg) => pkg.slug === normalizedSlug) || null;
 };
 
 export const getPublicAgentSlugs = async () => {

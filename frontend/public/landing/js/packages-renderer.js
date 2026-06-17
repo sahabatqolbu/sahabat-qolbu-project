@@ -91,6 +91,16 @@
     return `${serverBase}${path}`;
   }
 
+  function slugifyPackageName(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-{2,}/g, "-");
+  }
+
   function mapApiPackage(pkg, index) {
     const imageList = Array.isArray(pkg.images)
       ? pkg.images
@@ -105,6 +115,7 @@
     return {
       id: pkg.id,
       nama: pkg.name,
+      slug: slugifyPackageName(pkg.name || `paket-${pkg.id}`),
       images: imageList.length > 0 ? imageList : [fallbackImg],
       tgl: formatDateRange(pkg.departureDate, pkg.returnDate),
       hari: Number(pkg.duration) || "-",
@@ -132,8 +143,9 @@
     return `https://wa.me/${getCurrentWaNumber()}?text=${encodeURIComponent(message)}`;
   }
 
-  function createDetailLink(packageId) {
-    return `/landing/paket/${encodeURIComponent(packageId)}`;
+  function createDetailLink(packageItem) {
+    const slug = packageItem.slug || slugifyPackageName(packageItem.nama);
+    return `/landing/paket/${encodeURIComponent(slug)}`;
   }
 
   function updatePackageWhatsappLinks() {
@@ -220,7 +232,7 @@
   // Create Card
   function createCard(p) {
     const waLink = createWhatsappLink(p.nama);
-    const detailLink = createDetailLink(p.id);
+    const detailLink = createDetailLink(p);
     const ringClass = p.hot ? "ring-2 ring-gold" : "";
     const hari = typeof p.hari === "number" ? `${p.hari} Hari` : p.hari;
     const hasMultiple = p.images && p.images.length > 1;

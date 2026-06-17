@@ -16,6 +16,7 @@ import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 interface PackageCardProps {
   id: number;
+  slug: string;
   code: string;
   name: string;
   type: "UMRAH" | "UMRAH_PLUS" | "UMRAH_RAMADHAN";
@@ -265,7 +266,7 @@ export default function PackageCard({
 
           {/* CTA Button */}
           <Link
-            href={`${detailBasePath}/${pkg.id}`}
+            href={`${detailBasePath}/${pkg.slug}`}
             className="group/btn w-full bg-secondary hover:bg-secondary-600 text-primary font-bold py-3 sm:py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border-3 border-secondary-700 text-sm sm:text-base"
           >
             <span>Lihat Detail</span>
@@ -473,7 +474,7 @@ function PackageCardList({
           </div>
 
           <Link
-            href={`${detailBasePath}/${pkg.id}`}
+            href={`${detailBasePath}/${pkg.slug}`}
             className="group/btn bg-secondary hover:bg-secondary-600 text-primary font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border-3 border-secondary-700 whitespace-nowrap"
           >
             <span>Lihat Detail</span>
