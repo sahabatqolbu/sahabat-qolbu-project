@@ -38,12 +38,12 @@ function InfoBox({
   icon?: typeof Info;
 }) {
   return (
-    <div className="rounded-2xl border border-primary/10 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary/45">
+    <div className="rounded-2xl border border-neutral-100 bg-neutral-50 p-5">
+      <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
         {Icon ? <Icon className="h-4 w-4 text-secondary" /> : null}
         {label}
       </div>
-      <div className="text-base font-extrabold leading-relaxed text-primary">
+      <div className="text-base font-bold leading-relaxed text-primary">
         {value}
       </div>
     </div>
@@ -59,7 +59,7 @@ function ItemList({
 }) {
   if (!items?.length) {
     return (
-      <p className="rounded-2xl border border-dashed border-primary/15 bg-white p-5 text-sm font-semibold text-primary/55">
+      <p className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-5 text-sm font-semibold text-neutral-500">
         {emptyText}
       </p>
     );
@@ -70,10 +70,10 @@ function ItemList({
       {items.map((item, index) => (
         <div
           key={`${item}-${index}`}
-          className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white p-4 shadow-sm"
+          className="flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4"
         >
           <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-emerald-500" />
-          <span className="text-sm font-semibold leading-relaxed text-primary/75">
+          <span className="text-sm font-medium leading-relaxed text-neutral-700">
             {item}
           </span>
         </div>
@@ -94,20 +94,20 @@ function HotelPanel({
   facilities?: string[];
 }) {
   return (
-    <div className="rounded-[1.6rem] border border-primary/10 bg-white p-5 shadow-sm">
+    <div className="rounded-3xl border border-neutral-100 bg-neutral-50 p-5">
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-secondary">
           <Hotel className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-primary/40">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
             {title}
           </p>
-          <h3 className="mt-1 text-lg font-black text-primary">{name}</h3>
+          <h3 className="mt-1 text-lg font-bold text-primary">{name}</h3>
         </div>
       </div>
       {distance ? (
-        <p className="mb-4 rounded-xl bg-secondary/15 px-3 py-2 text-sm font-bold text-primary">
+        <p className="mb-4 rounded-xl bg-secondary/20 px-3 py-2 text-sm font-bold text-primary">
           {distance}
         </p>
       ) : null}
@@ -116,7 +116,7 @@ function HotelPanel({
           {facilities.map((facility) => (
             <span
               key={facility}
-              className="rounded-full bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary/70"
+              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700"
             >
               {facility}
             </span>
@@ -140,8 +140,8 @@ export function LandingPackageTabs({
   const ActiveIcon = activeTabMeta.icon;
 
   return (
-    <section className="overflow-hidden rounded-[2rem] border border-primary/10 bg-[#F7F2E8] shadow-sm">
-      <div className="border-b border-primary/10 bg-primary px-3 py-3 sm:px-4">
+    <section className="overflow-hidden rounded-3xl border border-neutral-100 bg-white shadow-xl shadow-primary/5">
+      <div className="border-b border-neutral-100 bg-white px-3 py-3 sm:px-5">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {tabs.map(({ key, label, icon: Icon }) => {
             const isActive = activeTab === key;
@@ -151,10 +151,10 @@ export function LandingPackageTabs({
                 key={key}
                 type="button"
                 onClick={() => setActiveTab(key)}
-                className={`inline-flex flex-none items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition ${
+                className={`inline-flex flex-none items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition ${
                   isActive
-                    ? "bg-secondary text-primary shadow-lg shadow-black/15"
-                    : "bg-white/8 text-white/75 hover:bg-white/15 hover:text-white"
+                    ? "bg-primary text-white shadow-lg shadow-primary/20"
+                    : "bg-neutral-50 text-neutral-600 hover:bg-secondary/20 hover:text-primary"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -171,10 +171,10 @@ export function LandingPackageTabs({
             <ActiveIcon className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary/45">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">
               Detail Paket
             </p>
-            <h2 className="text-2xl font-black tracking-tight text-primary">
+            <h2 className="font-sans text-2xl font-extrabold tracking-tight text-primary">
               {activeTabMeta.label}
             </h2>
           </div>
@@ -184,15 +184,20 @@ export function LandingPackageTabs({
           <div className="space-y-3">
             {descriptionItems.length ? (
               descriptionItems.map((item, index) => (
-                <p
+                <div
                   key={`${item}-${index}`}
-                  className="rounded-2xl bg-white p-4 text-base font-semibold leading-relaxed text-primary/75 shadow-sm"
+                  className="flex gap-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-4"
                 >
-                  {item}
-                </p>
+                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-secondary text-sm font-black text-primary">
+                    {index + 1}
+                  </span>
+                  <p className="pt-1 text-base font-medium leading-relaxed text-neutral-700">
+                    {item}
+                  </p>
+                </div>
               ))
             ) : (
-              <p className="rounded-2xl bg-white p-5 text-sm font-semibold text-primary/55">
+              <p className="rounded-2xl bg-neutral-50 p-5 text-sm font-semibold text-neutral-500">
                 Detail program akan diinformasikan oleh tim Sahabat Qolbu.
               </p>
             )}
@@ -235,7 +240,7 @@ export function LandingPackageTabs({
                 facilities={pkg.hotelMadinah.facilities}
               />
             ) : (
-              <p className="rounded-[1.6rem] border border-dashed border-primary/15 bg-white p-5 text-sm font-semibold text-primary/55">
+              <p className="rounded-3xl border border-dashed border-neutral-200 bg-neutral-50 p-5 text-sm font-semibold text-neutral-500">
                 Detail hotel Madinah menyusul.
               </p>
             )}
