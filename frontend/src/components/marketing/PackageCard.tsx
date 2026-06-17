@@ -49,14 +49,9 @@ interface PackageCardProps {
 interface Props {
   pkg: PackageCardProps;
   viewMode?: "grid" | "list";
-  detailBasePath?: string;
 }
 
-export default function PackageCard({
-  pkg,
-  viewMode = "grid",
-  detailBasePath = "/packages",
-}: Props) {
+export default function PackageCard({ pkg, viewMode = "grid" }: Props) {
   const availability =
     ((pkg.totalSeats - pkg.bookedSeats) / pkg.totalSeats) * 100;
   const seatsLeft = pkg.totalSeats - pkg.bookedSeats;
@@ -76,7 +71,7 @@ export default function PackageCard({
   };
 
   if (viewMode === "list") {
-    return <PackageCardList pkg={pkg} detailBasePath={detailBasePath} />;
+    return <PackageCardList pkg={pkg} />;
   }
 
   return (
@@ -265,7 +260,7 @@ export default function PackageCard({
 
           {/* CTA Button */}
           <Link
-            href={`${detailBasePath}/${pkg.id}`}
+            href={`/packages/${pkg.id}`}
             className="group/btn w-full bg-secondary hover:bg-secondary-600 text-primary font-bold py-3 sm:py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border-3 border-secondary-700 text-sm sm:text-base"
           >
             <span>Lihat Detail</span>
@@ -278,13 +273,7 @@ export default function PackageCard({
 }
 
 // LIST VIEW COMPONENT
-function PackageCardList({
-  pkg,
-  detailBasePath,
-}: {
-  pkg: PackageCardProps;
-  detailBasePath: string;
-}) {
+function PackageCardList({ pkg }: { pkg: PackageCardProps }) {
   const availability =
     ((pkg.totalSeats - pkg.bookedSeats) / pkg.totalSeats) * 100;
   const seatsLeft = pkg.totalSeats - pkg.bookedSeats;
@@ -473,7 +462,7 @@ function PackageCardList({
           </div>
 
           <Link
-            href={`${detailBasePath}/${pkg.id}`}
+            href={`/packages/${pkg.id}`}
             className="group/btn bg-secondary hover:bg-secondary-600 text-primary font-bold px-8 py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border-3 border-secondary-700 whitespace-nowrap"
           >
             <span>Lihat Detail</span>

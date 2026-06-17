@@ -9,13 +9,11 @@ import { getMarketingPackages } from "@/lib/public-api";
 interface Props {
   currentPackageId: number;
   packageType: string;
-  detailBasePath?: string;
 }
 
 export default function RelatedPackages({
   currentPackageId,
   packageType,
-  detailBasePath = "/packages",
 }: Props) {
   const { data } = useQuery({
     queryKey: ["public-packages", "related", currentPackageId, packageType],
@@ -47,7 +45,7 @@ export default function RelatedPackages({
 
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {relatedPackages.map((pkg) => (
-            <PackageCard key={pkg.id} pkg={pkg} detailBasePath={detailBasePath} />
+            <PackageCard key={pkg.id} pkg={pkg} />
           ))}
         </div>
       </div>

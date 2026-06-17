@@ -8,13 +8,9 @@ import { cn } from "@/lib/utils";
 
 interface PackageFiltersProps {
   onClose?: () => void;
-  basePath?: string;
 }
 
-export default function PackageFilters({
-  onClose,
-  basePath = "/packages",
-}: PackageFiltersProps) {
+export default function PackageFilters({ onClose }: PackageFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -30,16 +26,15 @@ export default function PackageFilters({
     if (type) params.set("type", type);
     if (month) params.set("month", month);
 
-    const query = params.toString();
-    router.push(query ? `${basePath}?${query}` : basePath);
+    router.push(`/packages?${params.toString()}`);
     onClose?.();
-  }, [basePath, month, onClose, router, search, type]);
+  }, [month, onClose, router, search, type]);
 
   const clearFilters = () => {
     setSearch("");
     setType("");
     setMonth("");
-    router.push(basePath);
+    router.push("/packages");
     onClose?.();
   };
 
