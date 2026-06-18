@@ -417,15 +417,15 @@ function StatPill({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur">
-      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-secondary text-primary">
+    <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-gold text-primary shadow-lg shadow-gold/20">
         <Icon className="h-5 w-5" />
       </span>
       <span className="min-w-0">
-        <span className="block text-xs font-bold uppercase tracking-[0.14em] text-white/55">
+        <span className="block text-xs font-bold uppercase tracking-[0.14em] text-gray-300">
           {label}
         </span>
-        <span className="block truncate text-sm font-black text-white">{value}</span>
+        <span className="block truncate text-sm font-extrabold text-white">{value}</span>
       </span>
     </div>
   );
@@ -448,42 +448,42 @@ function BookingPanel({
 
   return (
     <aside className="lg:sticky lg:top-28">
-      <div className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-2xl shadow-primary/15">
+      <div className="overflow-hidden rounded-2xl border border-white/30 bg-white shadow-2xl shadow-primary/20">
         <div className="bg-primary p-6 text-white">
-          <p className="text-sm font-semibold text-white/60">Mulai dari</p>
-          <p className="mt-1 font-display text-4xl font-black leading-none text-secondary">
+          <p className="text-sm font-semibold text-gray-300">Mulai dari</p>
+          <p className="mt-1 text-4xl font-extrabold leading-none text-gold">
             {toCurrency(pkg.priceQuad)}
           </p>
-          <p className="mt-2 text-sm font-semibold text-white/65">
+          <p className="mt-2 text-sm font-semibold text-gray-300">
             per orang, kamar quad
           </p>
         </div>
 
         <div className="space-y-5 p-6">
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-2xl bg-neutral-50 p-4">
+            <div className="rounded-2xl bg-gray-50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
                 Durasi
               </p>
-              <p className="mt-1 font-black text-primary">{pkg.duration || "-"} Hari</p>
+              <p className="mt-1 font-extrabold text-primary">{pkg.duration || "-"} Hari</p>
             </div>
-            <div className="rounded-2xl bg-neutral-50 p-4">
+            <div className="rounded-2xl bg-gray-50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
                 Seat
               </p>
-              <p className="mt-1 font-black text-primary">{seatsLeft} tersisa</p>
+              <p className="mt-1 font-extrabold text-primary">{seatsLeft} tersisa</p>
             </div>
           </div>
 
           {pkg.totalSeats ? (
             <div>
-              <div className="mb-2 flex items-center justify-between text-xs font-black text-neutral-500">
+              <div className="mb-2 flex items-center justify-between text-xs font-extrabold text-neutral-500">
                 <span>Ketersediaan</span>
                 <span>{seatPercent}%</span>
               </div>
               <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200">
                 <div
-                  className="h-full rounded-full bg-success"
+                  className="h-full rounded-full bg-gold"
                   style={{ width: `${seatPercent}%` }}
                 />
               </div>
@@ -499,7 +499,7 @@ function BookingPanel({
             ].map(([label, value]) => (
               <div key={label} className="flex items-start justify-between gap-4 border-b border-neutral-100 pb-3">
                 <span className="font-semibold text-neutral-500">{label}</span>
-                <span className="text-right font-black text-primary">{value}</span>
+                <span className="text-right font-extrabold text-primary">{value}</span>
               </div>
             ))}
           </div>
@@ -508,7 +508,7 @@ function BookingPanel({
             href={bookingLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary px-5 py-4 font-black text-primary shadow-lg shadow-secondary/25 transition hover:bg-secondary-400"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#FFC107_0%,#FFD54F_100%)] px-5 py-4 font-extrabold text-primary shadow-lg shadow-gold/25 transition hover:opacity-90"
           >
             <MessageCircle className="h-5 w-5" />
             Booking Seat
@@ -517,7 +517,7 @@ function BookingPanel({
             href={consultLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary px-5 py-3.5 font-black text-primary transition hover:bg-primary hover:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary px-5 py-3.5 font-extrabold text-primary transition hover:bg-primary hover:text-white"
           >
             Konsultasi Dulu
           </a>
@@ -527,7 +527,7 @@ function BookingPanel({
               href={pkg.itineraryPdf}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 text-sm font-black text-neutral-600 hover:text-primary"
+              className="flex w-full items-center justify-center gap-2 text-sm font-extrabold text-neutral-600 hover:text-primary"
             >
               <Download className="h-4 w-4" />
               Download Itinerary PDF
@@ -567,17 +567,17 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
       {hotels.map((hotel) => (
         <article
           key={hotel.city}
-          className="rounded-[1.5rem] border border-neutral-200 bg-white p-5 shadow-lg shadow-primary/5"
+          className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-lg shadow-primary/5"
         >
           <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-primary text-secondary">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-gold/10 text-gold">
               <Hotel className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-secondary-700">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">
                 Hotel {hotel.city}
               </p>
-              <h3 className="mt-1 font-display text-xl font-black text-primary">
+              <h3 className="mt-1 text-xl font-extrabold text-primary">
                 {hotel.name}
               </h3>
               <div className="mt-2 flex items-center gap-2">
@@ -586,7 +586,7 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
                     (_, index) => (
                       <Star
                         key={index}
-                        className="h-4 w-4 fill-secondary text-secondary"
+                        className="h-4 w-4 fill-gold text-gold"
                       />
                     ),
                   )}
@@ -597,7 +597,7 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
               </div>
               {hotel.distance ? (
                 <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-neutral-600">
-                  <MapPin className="h-4 w-4 text-secondary-700" />
+                  <MapPin className="h-4 w-4 text-gold" />
                   {hotel.distance}
                 </p>
               ) : null}
@@ -635,11 +635,11 @@ export default async function LandingPackageDetailPage({
     `Paket umroh ${pkg.duration || ""} hari bersama Sahabat Qolbu dengan pendampingan tim berpengalaman.`;
 
   return (
-    <div className="min-h-screen bg-[#f7f5ef] text-neutral-800 antialiased">
+    <div className="landing-detail min-h-screen bg-white font-[var(--font-inter)] text-neutral-800 antialiased">
       <LandingHeader />
 
       <main>
-        <section className="relative overflow-hidden bg-primary text-white">
+        <section className="relative min-h-screen overflow-hidden bg-primary text-white">
           <div className="absolute inset-0">
             <Image
               src={heroImage}
@@ -647,36 +647,36 @@ export default async function LandingPackageDetailPage({
               fill
               priority
               sizes="100vw"
-              className="object-cover opacity-55"
+              className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/55" />
-            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#f7f5ef] to-transparent" />
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(10,44,69,0.9)_0%,rgba(10,44,69,0.7)_100%)]" />
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
           </div>
 
-          <div className="relative mx-auto grid min-h-[680px] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8 lg:py-16">
+          <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-4 py-28 sm:px-6 md:py-36 lg:grid-cols-[1fr_380px] lg:px-8">
             <div className="max-w-4xl">
               <Link
-                href="/landing/paket"
-                className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-white/75 transition hover:text-secondary"
+                href="/paket"
+                className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-gray-200 transition hover:text-gold"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Semua Paket Umroh
               </Link>
 
               <div className="mb-5 flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
+                <span className="rounded-full bg-gold px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary">
                   {typeLabel}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white/80 backdrop-blur">
-                  <BadgeCheck className="h-4 w-4 text-secondary" />
+                  <BadgeCheck className="h-4 w-4 text-gold" />
                   PPIU 12112100038690008
                 </span>
               </div>
 
-              <h1 className="max-w-4xl font-display text-4xl font-black leading-[1.04] text-white sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-4xl text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
                 {pkg.name}
               </h1>
-              <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-white/78 sm:text-lg">
+              <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-gray-200 sm:text-lg">
                 {heroDescription}
               </p>
 
@@ -690,6 +690,25 @@ export default async function LandingPackageDetailPage({
                 <StatPill icon={Plane} label="Maskapai" value={pkg.airline.name} />
                 <StatPill icon={Users} label="Seat" value={`${seatsLeft} tersisa`} />
               </div>
+
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                <a
+                  href={bookingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#FFC107_0%,#FFD54F_100%)] px-8 py-4 text-center font-bold text-primary transition-all hover:scale-105 hover:opacity-90"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Booking Seat Sekarang
+                </a>
+                <a
+                  href="#detail-paket"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white px-8 py-4 text-center font-semibold text-white transition-all hover:bg-white hover:text-primary"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Lihat Detail
+                </a>
+              </div>
             </div>
 
             <BookingPanel
@@ -701,9 +720,9 @@ export default async function LandingPackageDetailPage({
           </div>
         </section>
 
-        <section className="relative z-10 -mt-10 pb-14">
+        <section id="detail-paket" className="relative z-10 -mt-12 bg-white pb-14">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl shadow-primary/10 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="grid overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-xl shadow-primary/10 lg:grid-cols-[1.15fr_0.85fr]">
               <div className="relative min-h-[320px] bg-primary lg:min-h-[520px]">
                 <Image
                   src={gallery[1] || heroImage}
@@ -715,10 +734,10 @@ export default async function LandingPackageDetailPage({
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/25 to-transparent" />
               </div>
               <div className="p-6 sm:p-8 lg:p-10">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-secondary-700">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">
                   Paket Detail
                 </p>
-                <h2 className="mt-3 font-display text-3xl font-black leading-tight text-primary">
+                <h2 className="mt-3 text-3xl font-extrabold leading-tight text-primary">
                   Fokus ke ibadah, detail perjalanan sudah disiapkan.
                 </h2>
                 <div className="mt-6 grid gap-3">
@@ -744,12 +763,12 @@ export default async function LandingPackageDetailPage({
                       text: "Tim Sahabat Qolbu membantu dari konsultasi sampai keberangkatan.",
                     },
                   ].map(({ icon: Icon, title, text }) => (
-                    <div key={title} className="flex gap-4 rounded-2xl bg-[#f7f5ef] p-4">
-                      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-primary text-secondary">
+                    <div key={title} className="flex gap-4 rounded-xl bg-gray-50 p-4">
+                      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-gold/10 text-gold">
                         <Icon className="h-5 w-5" />
                       </span>
                       <div>
-                        <h3 className="font-black text-primary">{title}</h3>
+                        <h3 className="font-extrabold text-primary">{title}</h3>
                         <p className="mt-1 text-sm font-medium leading-6 text-neutral-600">
                           {text}
                         </p>
@@ -762,7 +781,7 @@ export default async function LandingPackageDetailPage({
           </div>
         </section>
 
-        <section className="pb-14">
+        <section className="bg-white pb-16 md:pb-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
             <div className="space-y-8">
               <HotelSummary pkg={pkg} />
@@ -771,8 +790,8 @@ export default async function LandingPackageDetailPage({
             </div>
 
             <div className="space-y-5">
-              <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-6 shadow-lg shadow-primary/5">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-secondary-700">
+              <div className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-lg shadow-primary/5">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">
                   Harga kamar
                 </p>
                 <div className="mt-4 space-y-3">
@@ -783,7 +802,7 @@ export default async function LandingPackageDetailPage({
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between border-b border-neutral-100 pb-3">
                       <span className="font-bold text-neutral-500">{label}</span>
-                      <span className="font-display text-xl font-black text-primary">
+                      <span className="text-xl font-extrabold text-primary">
                         {toCurrency(value)}
                       </span>
                     </div>
@@ -791,9 +810,9 @@ export default async function LandingPackageDetailPage({
                 </div>
               </div>
 
-              <div className="rounded-[1.5rem] bg-primary p-6 text-white shadow-xl shadow-primary/15">
-                <p className="font-display text-2xl font-black">Butuh bantuan pilih paket?</p>
-                <p className="mt-2 text-sm font-medium leading-6 text-white/70">
+              <div className="rounded-2xl bg-primary p-6 text-white shadow-xl shadow-primary/15">
+                <p className="text-2xl font-extrabold">Butuh bantuan pilih paket?</p>
+                <p className="mt-2 text-sm font-medium leading-6 text-gray-300">
                   Konsultasikan jadwal, harga, dan kebutuhan keluarga langsung
                   dengan admin Sahabat Qolbu.
                 </p>
@@ -801,7 +820,7 @@ export default async function LandingPackageDetailPage({
                   href={consultLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-secondary px-5 py-3.5 font-black text-primary"
+                  className="mt-5 flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#FFC107_0%,#FFD54F_100%)] px-5 py-3.5 font-extrabold text-primary transition hover:opacity-90"
                 >
                   <MessageCircle className="h-5 w-5" />
                   Chat Admin
