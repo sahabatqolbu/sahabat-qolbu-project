@@ -7,21 +7,21 @@ import { Menu, X, Phone, Mail, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Beranda", href: "/landing/#beranda" },
+  { name: "Beranda", href: "/#beranda" },
   {
     name: "Paket Umroh",
-    href: "/landing/paket",
+    href: "/paket",
     children: [
-      { name: "Semua Paket", href: "/landing/paket" },
-      { name: "Umroh Ramadhan", href: "/landing/paket?type=UMRAH_RAMADHAN" },
-      { name: "Umroh Plus", href: "/landing/paket?type=UMRAH_PLUS" },
-      { name: "Umroh Reguler", href: "/landing/paket?type=UMRAH" },
+      { name: "Semua Paket", href: "/paket" },
+      { name: "Umroh Ramadhan", href: "/paket?type=UMRAH_RAMADHAN" },
+      { name: "Umroh Plus", href: "/paket?type=UMRAH_PLUS" },
+      { name: "Umroh Reguler", href: "/paket?type=UMRAH" },
     ],
   },
-  { name: "Tentang Kami", href: "/landing/#tentang" },
-  { name: "Testimoni", href: "/landing/#testimoni" },
-  { name: "FAQ", href: "/landing/#faq" },
-  { name: "Daftar", href: "/landing/#daftar" },
+  { name: "Tentang Kami", href: "/#tentang" },
+  { name: "Testimoni", href: "/#testimoni" },
+  { name: "FAQ", href: "/#faq" },
+  { name: "Daftar", href: "/#daftar" },
 ];
 
 export default function Navbar() {

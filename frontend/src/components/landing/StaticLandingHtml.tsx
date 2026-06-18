@@ -6,8 +6,8 @@ type StaticLandingHtmlProps = {
   fileName: "index.html" | "paket.html";
 };
 
-const scriptlessHtml = (html: string) =>
-  html
+const scriptlessHtml = (html: string, fileName: StaticLandingHtmlProps["fileName"]) => {
+  let transformed = html
     .replace(/^[\s\S]*?<body[^>]*>/i, "")
     .replace(/<\/body>[\s\S]*$/i, "")
     .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -15,7 +15,6 @@ const scriptlessHtml = (html: string) =>
     .replace(/href="\/landing\/#([^"]+)"/g, 'href="/#$1"')
     .replace(/href="\/landing\/paket"/g, 'href="/paket"')
     .replace(/href="\/landing\/"/g, 'href="/"')
-    .replace(/href="#paket"/g, 'href="/paket"')
     .replace(/href="#beranda"/g, 'href="/#beranda"')
     .replace(/href="#tentang"/g, 'href="/#tentang"')
     .replace(/href="#testimoni"/g, 'href="/#testimoni"')
@@ -23,11 +22,18 @@ const scriptlessHtml = (html: string) =>
     .replace(/src="\.\//g, 'src="/landing/')
     .replace(/src="images\//g, 'src="/landing/images/');
 
+  if (fileName === "paket.html") {
+    transformed = transformed.replace(/href="#paket"/g, 'href="/paket"');
+  }
+
+  return transformed;
+};
+
 export default async function StaticLandingHtml({
   fileName,
 }: StaticLandingHtmlProps) {
   const filePath = path.join(process.cwd(), "public", "landing", fileName);
-  const html = scriptlessHtml(await readFile(filePath, "utf8"));
+  const html = scriptlessHtml(await readFile(filePath, "utf8"), fileName);
 
   return (
     <div className="landing-static">
