@@ -1,23 +1,38 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
   Clock3,
-  FileText,
   Instagram,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
+  Plane,
   ShieldCheck,
+  Sparkles,
+  Star,
   Users,
 } from "lucide-react";
+import { LandingBookingCard } from "@/components/marketing/PackageDetail/LandingBookingCard";
+import { LandingGallery } from "@/components/marketing/PackageDetail/LandingGallery";
+import { LandingItinerary } from "@/components/marketing/PackageDetail/LandingItinerary";
 import { LandingPackageTabs } from "@/components/marketing/PackageDetail/LandingPackageTabs";
-import { getMarketingPackageBySlug } from "@/lib/public-api";
-import type { MarketingPackage } from "@/lib/public-api";
+import {
+  LandingTrustBar,
+  LandingTrustStrip,
+} from "@/components/marketing/PackageDetail/LandingTrustBar";
+import RelatedPackages from "@/components/marketing/PackageDetail/RelatedPackages";
+import {
+  getMarketingPackageBySlug,
+  getMarketingPackageSlugs,
+  type MarketingPackage,
+} from "@/lib/public-api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Params = Promise<{ slug: string }>;
@@ -47,6 +62,66 @@ const getDescriptionItems = (value?: string) =>
         .trim(),
     )
     .filter(Boolean);
+
+const getPackageTypeLabel = (pkg: MarketingPackage) => {
+  const type = String(pkg.backendType || pkg.type || "").toUpperCase();
+  if (type.includes("RAMADHAN") || pkg.name.toLowerCase().includes("ramadhan")) {
+    return "Umroh Ramadhan";
+  }
+  if (
+    type.includes("PLUS") ||
+    type.includes("EXTREME") ||
+    pkg.name.toLowerCase().includes("plus") ||
+    pkg.name.toLowerCase().includes("turki") ||
+    pkg.name.toLowerCase().includes("dubai")
+  ) {
+    return "Umroh Plus";
+  }
+  return "Umroh Reguler";
+};
+
+export async function generateStaticParams() {
+  const slugs = await getMarketingPackageSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
+
+export const dynamicParams = true;
+export const revalidate = 600;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const pkg = await getMarketingPackageBySlug(slug);
+
+  if (!pkg) {
+    return {
+      title: "Paket Tidak Ditemukan | Sahabat Qolbu",
+    };
+  }
+
+  const description =
+    pkg.description?.slice(0, 160) ||
+    `Detail paket umroh ${pkg.name} dari Sahabat Qolbu.`;
+
+  return {
+    title: `${pkg.name} | Sahabat Qolbu`,
+    description,
+    openGraph: {
+      title: pkg.name,
+      description,
+      images: pkg.image ? [{ url: pkg.image }] : undefined,
+    },
+  };
+}
+
+export const viewport = {
+  themeColor: "#0A2C45",
+  width: "device-width",
+  initialScale: 1,
+};
 
 function LandingHeader() {
   return (
@@ -89,7 +164,7 @@ function LandingHeader() {
               href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya ingin konsultasi paket umroh")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full bg-secondary px-5 py-2.5 font-semibold text-primary hover:opacity-90"
+              className="rounded-full bg-secondary px-5 py-2.5 font-semibold text-primary transition hover:opacity-90"
             >
               Hubungi Kami
             </a>
@@ -247,99 +322,176 @@ export default async function LandingPackageDetailPage({
   const seatsLeft = getSeatsLeft(pkg);
   const whatsappLink = getWhatsappLink(pkg);
   const descriptionItems = getDescriptionItems(pkg.description);
-  const heroDescription =
-    descriptionItems.slice(0, 2).join(" ") ||
-    "Detail paket tersedia dari database Sahabat Qolbu.";
+  const typeLabel = getPackageTypeLabel(pkg);
+  const price = Number.parseFloat(pkg.priceQuad) || 0;
+  const originalPrice = Number.parseFloat(pkg.priceDouble) || 0;
+  const seatPercent = pkg.totalSeats
+    ? Math.round((seatsLeft / pkg.totalSeats) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-white font-sans text-primary">
       <LandingHeader />
 
-      <main className="bg-[#F7F5EF]">
-        <section className="relative min-h-[680px] overflow-hidden bg-primary text-white">
+      <main className="bg-neutral-50">
+        <section className="relative isolate overflow-hidden bg-primary text-white">
           <Image
             src={heroImage}
             alt={pkg.name}
             fill
             priority
             sizes="100vw"
-            className="object-cover opacity-55"
+            className="object-cover opacity-50"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/88 to-primary/35" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,193,7,0.22),transparent_28%)]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/85 to-primary/40" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,193,7,0.22),transparent_30%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_78%,rgba(255,193,7,0.16),transparent_30%)]" />
 
-          <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl flex-col justify-end px-4 pb-10 pt-10 sm:px-6 lg:px-8">
+          <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-10 pt-8 sm:px-6 sm:pb-12 sm:pt-12 lg:px-8">
             <Link
               href="/landing/paket"
-              className="mb-auto inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
             >
               <ArrowLeft className="h-4 w-4" />
               Kembali ke Semua Paket
             </Link>
 
-            <div className="max-w-4xl">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
-                <ShieldCheck className="h-4 w-4" />
-                Detail Paket Umroh
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
+              <div className="max-w-3xl">
+                <div className="mb-5 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
+                    <ShieldCheck className="h-4 w-4" />
+                    Resmi Kemenag RI
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white backdrop-blur">
+                    <Sparkles className="h-3.5 w-3.5 text-secondary" />
+                    {typeLabel}
+                  </span>
+                </div>
+
+                <h1 className="font-display text-4xl font-black leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
+                  {pkg.name}
+                </h1>
+                <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-white/80">
+                  <span className="font-mono text-secondary">{pkg.code}</span>
+                  <span className="text-white/30">•</span>
+                  <span>Detail paket umroh dari Sahabat Qolbu</span>
+                </p>
+
+                <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    {
+                      label: "Mulai Dari",
+                      value: toCurrency(pkg.priceQuad),
+                      icon: ShieldCheck,
+                    },
+                    {
+                      label: "Berangkat",
+                      value: pkg.departureDate
+                        ? formatDate(pkg.departureDate)
+                        : "Menyusul",
+                      icon: CalendarDays,
+                    },
+                    {
+                      label: "Durasi",
+                      value: `${pkg.duration || "-"} Hari`,
+                      icon: Clock3,
+                    },
+                    {
+                      label: "Seat",
+                      value: `${seatsLeft} Tersisa`,
+                      icon: Users,
+                    },
+                  ].map(({ label, value, icon: Icon }) => (
+                    <div
+                      key={label}
+                      className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"
+                    >
+                      <Icon className="mb-3 h-5 w-5 text-secondary" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">
+                        {label}
+                      </p>
+                      <p className="mt-1 text-base font-black">{value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <h1 className="font-sans text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
-                {pkg.name}
-              </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-100">
-                {heroDescription}
-              </p>
+
+              <div className="hidden lg:block">
+                <div className="rounded-[2rem] border border-white/15 bg-white/5 p-6 backdrop-blur">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+                    <Star className="h-3.5 w-3.5 fill-secondary text-secondary" />
+                    Ringkasan Cepat
+                  </div>
+                  <ul className="mt-4 space-y-3 text-sm font-medium text-white/85">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-success" />
+                      Hotel dekat Masjidil Haram &amp; Masjid Nabawi
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Plane className="mt-0.5 h-4 w-4 flex-none text-secondary" />
+                      Penerbangan langsung (tanpa transit)
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-success" />
+                      Muthawif &amp; tim berpengalaman
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 flex-none text-secondary" />
+                      DP ringan, booking seat mudah
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-10 grid gap-3 rounded-[2rem] border border-white/15 bg-white/10 p-3 backdrop-blur md:grid-cols-4">
-              {[
-                {
-                  label: "Mulai Dari",
-                  value: toCurrency(pkg.priceQuad),
-                  icon: ShieldCheck,
-                },
-                {
-                  label: "Berangkat",
-                  value: pkg.departureDate ? formatDate(pkg.departureDate) : "Menyusul",
-                  icon: CalendarDays,
-                },
-                { label: "Durasi", value: `${pkg.duration || "-"} Hari`, icon: Clock3 },
-                { label: "Seat", value: `${seatsLeft} Tersisa`, icon: Users },
-              ].map(({ label, value, icon: Icon }) => (
-                <div key={label} className="rounded-3xl bg-white p-5 text-primary">
-                  <Icon className="mb-4 h-6 w-6 text-secondary" />
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    {label}
-                  </p>
-                  <p className="mt-2 text-lg font-black">{value}</p>
-                </div>
-              ))}
-            </div>
+            <LandingTrustBar />
           </div>
         </section>
+
+        <LandingTrustStrip />
 
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div className="space-y-8">
-              <section className="rounded-[2rem] bg-white p-6 shadow-xl shadow-primary/5 sm:p-8">
+              <section className="rounded-[2rem] border-2 border-neutral-100 bg-white p-6 shadow-xl shadow-primary/5 sm:p-8">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">
                   Overview
                 </p>
-                <h2 className="mt-3 font-sans text-3xl font-black text-primary">
-                  Gambaran perjalanan
+                <h2 className="mt-3 font-display text-3xl font-black text-primary">
+                  Sekilas Perjalanan
                 </h2>
                 <p className="mt-4 max-w-3xl text-base font-medium leading-8 text-neutral-700">
-                  {heroDescription}
+                  {descriptionItems.slice(0, 2).join(" ") ||
+                    `Nikmati perjalanan ibadah umroh ${pkg.duration || ""} hari dengan akomodasi terbaik dan bimbingan tim Sahabat Qolbu yang berpengalaman.`}
                 </p>
                 <div className="mt-6 grid gap-4 md:grid-cols-3">
                   {[
-                    "Data paket langsung dari database Sahabat Qolbu.",
-                    "Detail hotel, maskapai, jadwal, dan fasilitas tersedia di tab.",
-                    "Tim kami siap bantu validasi seat dan kebutuhan jamaah.",
+                    {
+                      title: "Data Real-time",
+                      desc: "Harga, seat, dan itinerary selalu sinkron dengan database.",
+                    },
+                    {
+                      title: "Detail Lengkap",
+                      desc: "Hotel, maskapai, jadwal keberangkatan, dan fasilitas tersedia.",
+                    },
+                    {
+                      title: "Tim Siap Bantu",
+                      desc: "Konsultasi seat & kebutuhan jamaah via WhatsApp 24/7.",
+                    },
                   ].map((item) => (
-                    <div key={item} className="flex gap-3 rounded-2xl bg-neutral-50 p-4">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-green-500" />
-                      <p className="text-sm font-semibold leading-relaxed text-neutral-700">
-                        {item}
+                    <div
+                      key={item.title}
+                      className="rounded-2xl border-2 border-neutral-100 bg-neutral-50/60 p-4 transition hover:border-secondary"
+                    >
+                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                      <p className="font-display text-base font-black text-primary">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-sm font-medium leading-relaxed text-neutral-600">
+                        {item.desc}
                       </p>
                     </div>
                   ))}
@@ -348,92 +500,22 @@ export default async function LandingPackageDetailPage({
 
               <LandingPackageTabs pkg={pkg} descriptionItems={descriptionItems} />
 
-              {gallery.length > 1 ? (
-                <section className="rounded-[2rem] bg-white p-5 shadow-xl shadow-primary/5 sm:p-6">
-                  <div className="mb-5">
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">
-                      Galeri
-                    </p>
-                    <h2 className="mt-2 font-sans text-3xl font-black text-primary">
-                      Visual paket
-                    </h2>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {gallery.slice(0, 6).map((image, index) => (
-                      <div
-                        key={image}
-                        className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-primary/10"
-                      >
-                        <Image
-                          src={image}
-                          alt={`${pkg.name} ${index + 1}`}
-                          fill
-                          sizes="(min-width: 1024px) 20vw, 50vw"
-                          className="object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+              <LandingItinerary pkg={pkg} />
+
+              <LandingGallery pkg={pkg} />
             </div>
 
-            <aside className="lg:sticky lg:top-28 lg:self-start">
-              <div className="overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-primary/15">
-                <div className="bg-primary p-7 text-white">
-                  <p className="text-sm font-semibold text-gray-300">Harga mulai dari</p>
-                  <p className="mt-3 text-4xl font-black text-secondary">
-                    {toCurrency(pkg.priceQuad)}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-300">
-                    Konsultasikan konfigurasi kamar dan ketersediaan seat sebelum booking.
-                  </p>
-                </div>
-
-                <div className="space-y-4 p-6">
-                  <a
-                    href={whatsappLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-green-500 px-5 py-4 font-bold text-white transition hover:bg-green-600"
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                    Konsultasi via WhatsApp
-                  </a>
-
-                  {pkg.itineraryPdf ? (
-                    <a
-                      href={pkg.itineraryPdf}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary px-5 py-4 font-bold text-primary transition hover:bg-secondary-600"
-                    >
-                      <FileText className="h-5 w-5" />
-                      Lihat Itinerary PDF
-                    </a>
-                  ) : null}
-
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="rounded-2xl bg-neutral-50 p-4">
-                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                        Seat
-                      </p>
-                      <p className="mt-1 text-2xl font-black text-primary">{seatsLeft}</p>
-                    </div>
-                    <div className="rounded-2xl bg-neutral-50 p-4">
-                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                        Durasi
-                      </p>
-                      <p className="mt-1 text-2xl font-black text-primary">
-                        {pkg.duration || "-"}H
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </aside>
+            <LandingBookingCard pkg={pkg} whatsappLink={whatsappLink} />
           </div>
         </section>
+
+        <Suspense fallback={null}>
+          <RelatedPackages
+            currentPackageId={pkg.id}
+            packageType={pkg.type}
+            detailBasePath="/landing/paket"
+          />
+        </Suspense>
       </main>
 
       <LandingFooter />

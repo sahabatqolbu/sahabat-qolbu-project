@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 const DEFAULT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "production"
@@ -425,11 +427,11 @@ const fetchApi = async <T>(path: string) => {
   }
 };
 
-export const getMarketingPackages = async () => {
+export const getMarketingPackages = cache(async (): Promise<MarketingPackage[]> => {
   const firstPage = await fetchApi<PublicPackagesPayload>("/public/packages?page=1&limit=100");
 
   if (!firstPage) {
-    return [] as MarketingPackage[];
+    return [];
   }
 
   const collectedPackages = [...(firstPage.packages || [])];
@@ -454,6 +456,11 @@ export const getMarketingPackages = async () => {
       .filter((pkg) => pkg.isPublished !== false)
       .map((pkg) => mapPackage(pkg)),
   );
+});
+
+export const getMarketingPackageSlugs = async (): Promise<string[]> => {
+  const packages = await getMarketingPackages();
+  return packages.map((pkg) => pkg.slug);
 };
 
 export const getFeaturedMarketingPackages = async (limit = 3) => {
