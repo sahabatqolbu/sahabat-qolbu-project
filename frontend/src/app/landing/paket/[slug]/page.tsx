@@ -127,7 +127,7 @@ function LandingHeader() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <nav className="flex h-16 items-center justify-between md:h-20">
-          <Link href="/landing/" className="flex items-center gap-2 md:gap-3">
+          <Link href="/" className="flex items-center gap-2 md:gap-3">
             <div className="flex h-10 w-10 items-center justify-center md:h-12 md:w-12">
               <Image
                 src="/landing/images/icon.png"
@@ -143,7 +143,7 @@ function LandingHeader() {
                 <span className="js-logo-sahabat text-white transition-colors duration-300">
                   Sahabat
                 </span>{" "}
-                <span className="js-logo-qolbu text-secondary transition-colors duration-300">
+                <span className="js-logo-qolbu text-gold transition-colors duration-300">
                   Qolbu
                 </span>
               </span>
@@ -155,26 +155,26 @@ function LandingHeader() {
 
           <div className="hidden items-center gap-8 md:flex">
             <Link
-              href="/landing/#beranda"
-              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+              href="/#beranda"
+              className="nav-link font-medium text-white transition-colors hover:text-gold"
             >
               Beranda
             </Link>
             <Link
-              href="/landing/#tentang"
-              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+              href="/#tentang"
+              className="nav-link font-medium text-white transition-colors hover:text-gold"
             >
               Tentang
             </Link>
             <Link
-              href="/landing/paket"
-              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+              href="/#paket"
+              className="nav-link font-medium text-white transition-colors hover:text-gold"
             >
               Paket
             </Link>
             <Link
-              href="/landing/#testimoni"
-              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+              href="/#testimoni"
+              className="nav-link font-medium text-white transition-colors hover:text-gold"
             >
               Testimoni
             </Link>
@@ -182,7 +182,7 @@ function LandingHeader() {
               href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik konsultasi tentang paket umroh")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full bg-gradient-to-r from-secondary to-secondary-400 px-5 py-2.5 font-semibold text-primary transition-opacity hover:opacity-90"
+              className="rounded-full bg-[linear-gradient(135deg,#FFC107_0%,#FFD54F_100%)] px-5 py-2.5 font-semibold text-primary transition-opacity hover:opacity-90"
             >
               Hubungi Kami
             </a>
@@ -190,7 +190,7 @@ function LandingHeader() {
 
           <button
             type="button"
-            className="p-2 text-white transition-colors hover:text-secondary md:hidden"
+            className="p-2 text-white transition-colors hover:text-gold md:hidden"
             id="mobileMenuBtn"
             aria-label="Buka menu navigasi"
             aria-expanded="false"
@@ -218,26 +218,26 @@ function LandingHeader() {
       >
         <div className="space-y-3 px-4 py-4">
           <Link
-            href="/landing/#beranda"
-            className="block py-2 text-white transition-colors hover:text-secondary"
+            href="/#beranda"
+            className="block py-2 text-white transition-colors hover:text-gold"
           >
             Beranda
           </Link>
           <Link
-            href="/landing/#tentang"
-            className="block py-2 text-white transition-colors hover:text-secondary"
+            href="/#tentang"
+            className="block py-2 text-white transition-colors hover:text-gold"
           >
             Tentang
           </Link>
           <Link
-            href="/landing/paket"
-            className="block py-2 text-white transition-colors hover:text-secondary"
+            href="/#paket"
+            className="block py-2 text-white transition-colors hover:text-gold"
           >
             Paket
           </Link>
           <Link
-            href="/landing/#testimoni"
-            className="block py-2 text-white transition-colors hover:text-secondary"
+            href="/#testimoni"
+            className="block py-2 text-white transition-colors hover:text-gold"
           >
             Testimoni
           </Link>
@@ -245,7 +245,7 @@ function LandingHeader() {
             href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik konsultasi tentang paket umroh")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 block rounded-full bg-gradient-to-r from-secondary to-secondary-400 px-5 py-3 text-center font-semibold text-primary"
+            className="mt-4 block rounded-full bg-[linear-gradient(135deg,#FFC107_0%,#FFD54F_100%)] px-5 py-3 text-center font-semibold text-primary"
           >
             Hubungi Kami
           </a>
@@ -261,7 +261,7 @@ function LandingFooter() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-8 py-12 md:grid-cols-2 md:py-16 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <Link href="/landing/" className="mb-4 flex items-center gap-3">
+            <Link href="/" className="mb-4 flex items-center gap-3">
               <Image
                 src="/landing/images/icon.png"
                 alt="Logo Sahabat Qolbu"
@@ -271,30 +271,47 @@ function LandingFooter() {
               />
               <div>
                 <span className="text-lg font-bold">
-                  Sahabat <span className="text-secondary">Qolbu</span>
+                  Sahabat <span className="text-gold">Qolbu</span>
                 </span>
-                <span className="block text-xs text-white/60">Cahaya Baitullah</span>
+                <span className="block text-xs text-gray-300">Cahaya Baitullah</span>
               </div>
             </Link>
-            <p className="max-w-md leading-relaxed text-white/70">
-              Travel Haji dan Umroh berizin resmi Kementerian Agama Republik
-              Indonesia No. PPIU 12112100038690008.
+            <p className="mb-6 max-w-md leading-relaxed text-gray-300">
+              Sahabat Qolbu Cahaya Baitullah adalah perusahaan Travel Haji dan
+              Umroh yang telah memiliki IZIN RESMI dari Kementrian Agama
+              Republik Indonesia (No. PPIU 12112100038690008).
             </p>
-            <div className="mt-6 flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <a
                 href="https://www.instagram.com/sahabatqolbu.ofc/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-secondary hover:text-primary"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-all hover:bg-gold hover:text-primary"
                 aria-label="Instagram Sahabat Qolbu"
               >
                 <Instagram className="h-5 w-5" />
               </a>
               <a
+                href="https://www.facebook.com/sahabatqolbu.ofc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-all hover:bg-gold hover:text-primary"
+                aria-label="Facebook Sahabat Qolbu"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M24 12.073C24 5.446 18.627.073 12 .073S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </a>
+              <a
                 href={`https://wa.me/${WA_NUMBER}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-secondary hover:text-primary"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-all hover:bg-gold hover:text-primary"
                 aria-label="WhatsApp Sahabat Qolbu"
               >
                 <MessageCircle className="h-5 w-5" />
@@ -304,24 +321,24 @@ function LandingFooter() {
 
           <div>
             <h3 className="mb-4 text-lg font-bold">Menu</h3>
-            <ul className="space-y-3 text-white/70">
+            <ul className="space-y-3">
               <li>
-                <Link href="/landing/#beranda" className="hover:text-secondary">
+                <Link href="/#beranda" className="text-gray-300 transition-colors hover:text-gold">
                   Beranda
                 </Link>
               </li>
               <li>
-                <Link href="/landing/#tentang" className="hover:text-secondary">
+                <Link href="/#tentang" className="text-gray-300 transition-colors hover:text-gold">
                   Tentang Kami
                 </Link>
               </li>
               <li>
-                <Link href="/landing/paket" className="hover:text-secondary">
-                  Paket Umroh
+                <Link href="/#paket" className="text-gray-300 transition-colors hover:text-gold">
+                  Paket umroh
                 </Link>
               </li>
               <li>
-                <Link href="/landing/#testimoni" className="hover:text-secondary">
+                <Link href="/#testimoni" className="text-gray-300 transition-colors hover:text-gold">
                   Testimoni
                 </Link>
               </li>
@@ -330,25 +347,28 @@ function LandingFooter() {
 
           <div>
             <h3 className="mb-4 text-lg font-bold">Kontak</h3>
-            <ul className="space-y-4 text-sm text-white/70">
+            <ul className="space-y-4">
               <li className="flex items-start gap-3">
-                <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-secondary" />
-                <span>
-                  Ruko Jl. Ebony, Metland Transyogi No.11, Cileungsi, Kab.
-                  Bogor, Jawa Barat 16820
+                <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-gold" />
+                <span className="text-sm text-gray-300">
+                  Ruko Jl. Ebony, Metland Transyogi No.11,{" "}
+                  <strong>Kec. Cileungsi, Kab. Bogor</strong>, Jawa Barat 16820
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone className="h-5 w-5 flex-shrink-0 text-secondary" />
-                <a href={`https://wa.me/${WA_NUMBER}`} className="hover:text-secondary">
+                <Phone className="h-5 w-5 flex-shrink-0 text-gold" />
+                <a
+                  href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik mendaftar umroh bersama Sahabat Qolbu")}`}
+                  className="text-gray-300 transition-colors hover:text-gold"
+                >
                   0812-5587-1984
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <Mail className="h-5 w-5 flex-shrink-0 text-secondary" />
+                <Mail className="h-5 w-5 flex-shrink-0 text-gold" />
                 <a
                   href="mailto:Sahabatqolbucahayabaitullah@gmail.com"
-                  className="break-all hover:text-secondary"
+                  className="break-all text-sm text-gray-300 transition-colors hover:text-gold"
                 >
                   Sahabatqolbucahayabaitullah@gmail.com
                 </a>
