@@ -122,7 +122,7 @@ export const viewport = {
 function LandingHeader() {
   return (
     <header
-      className="fixed left-0 right-0 top-0 z-50 font-[var(--font-inter)] transition-all duration-300"
+      className="landing-chrome fixed left-0 right-0 top-0 z-50 transition-all duration-300"
       data-detail-header="true"
       id="header"
     >
@@ -258,7 +258,7 @@ function LandingHeader() {
 
 function LandingFooter() {
   return (
-    <footer className="bg-primary font-[var(--font-inter)] text-white">
+    <footer className="landing-chrome bg-primary text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-8 py-12 md:grid-cols-2 md:py-16 lg:grid-cols-4">
           <div className="lg:col-span-2">
@@ -321,7 +321,7 @@ function LandingFooter() {
           </div>
 
           <div>
-            <h3 className="mb-4 font-[var(--font-inter)] text-lg font-bold">Menu</h3>
+            <h3 className="mb-4 text-lg font-bold">Menu</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/#beranda" className="text-gray-300 transition-colors hover:text-gold">
@@ -347,7 +347,7 @@ function LandingFooter() {
           </div>
 
           <div>
-            <h3 className="mb-4 font-[var(--font-inter)] text-lg font-bold">Kontak</h3>
+            <h3 className="mb-4 text-lg font-bold">Kontak</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-gold" />

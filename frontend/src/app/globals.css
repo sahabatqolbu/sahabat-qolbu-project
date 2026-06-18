@@ -342,6 +342,13 @@
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 
+.landing-chrome,
+.landing-chrome h1,
+.landing-chrome h2,
+.landing-chrome h3 {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
 .landing-static .gradient-overlay {
   background: linear-gradient(
     135deg,

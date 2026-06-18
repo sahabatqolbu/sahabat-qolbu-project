@@ -40,46 +40,6 @@ export default async function StaticLandingHtml({
       <div dangerouslySetInnerHTML={{ __html: html }} />
 
       <LandingScriptRunner />
-      <script
-        id={`landing-behavior-${fileName}`}
-        dangerouslySetInnerHTML={{
-          __html: `
-          (function () {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const mobileMenu = document.getElementById('mobileMenu');
-            const header = document.getElementById('header');
-
-            if (mobileMenuBtn && mobileMenu && !mobileMenuBtn.dataset.bound) {
-              mobileMenuBtn.dataset.bound = 'true';
-              mobileMenuBtn.addEventListener('click', function () {
-                const isOpen = !mobileMenu.classList.contains('hidden');
-                mobileMenu.classList.toggle('hidden');
-                mobileMenuBtn.setAttribute('aria-expanded', String(!isOpen));
-              });
-
-              mobileMenu.querySelectorAll('a').forEach(function (link) {
-                link.addEventListener('click', function () {
-                  mobileMenu.classList.add('hidden');
-                  mobileMenuBtn.setAttribute('aria-expanded', 'false');
-                });
-              });
-            }
-
-            function updateHeader() {
-              if (!header || !header.classList.contains('fixed')) return;
-              if (window.scrollY > 50) {
-                header.classList.add('bg-primary', 'shadow-lg');
-              } else {
-                header.classList.remove('bg-primary', 'shadow-lg');
-              }
-            }
-
-            updateHeader();
-            window.addEventListener('scroll', updateHeader, { passive: true });
-          })();
-        `,
-        }}
-      />
     </div>
   );
 }
