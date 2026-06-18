@@ -58,9 +58,10 @@ export default function PackageCard({
   viewMode = "grid",
   detailBasePath = "/landing/paket",
 }: Props) {
-  const availability =
-    ((pkg.totalSeats - pkg.bookedSeats) / pkg.totalSeats) * 100;
-  const seatsLeft = pkg.totalSeats - pkg.bookedSeats;
+  const seatsLeft = Math.max(pkg.totalSeats - pkg.bookedSeats, 0);
+  const availability = pkg.totalSeats
+    ? (seatsLeft / pkg.totalSeats) * 100
+    : 0;
 
   // Type labels
   const typeLabels = {
@@ -286,9 +287,10 @@ function PackageCardList({
   pkg: PackageCardProps;
   detailBasePath: string;
 }) {
-  const availability =
-    ((pkg.totalSeats - pkg.bookedSeats) / pkg.totalSeats) * 100;
-  const seatsLeft = pkg.totalSeats - pkg.bookedSeats;
+  const seatsLeft = Math.max(pkg.totalSeats - pkg.bookedSeats, 0);
+  const availability = pkg.totalSeats
+    ? (seatsLeft / pkg.totalSeats) * 100
+    : 0;
 
   const typeLabels = {
     UMRAH: "Umroh Reguler",

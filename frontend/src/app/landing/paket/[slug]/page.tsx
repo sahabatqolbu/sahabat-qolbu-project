@@ -7,8 +7,8 @@ import {
   ArrowLeft,
   BadgeCheck,
   CalendarDays,
-  CheckCircle2,
   Clock3,
+  Download,
   Hotel,
   Instagram,
   Mail,
@@ -17,6 +17,9 @@ import {
   Phone,
   Plane,
   ShieldCheck,
+  Sparkles,
+  Star,
+  Train,
   Users,
 } from "lucide-react";
 import { LandingPackageTabs } from "@/components/marketing/PackageDetail/LandingPackageTabs";
@@ -40,41 +43,36 @@ const toCurrency = (value?: string) => {
 const getSeatsLeft = (pkg: MarketingPackage) =>
   Math.max(Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0), 0);
 
-const getWhatsappLink = (pkg: MarketingPackage) => {
-  const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik konsultasi paket ${pkg.name}`;
-  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
-};
-
-const getBookingWhatsappLink = (pkg: MarketingPackage) => {
-  const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan ingin booking seat paket ${pkg.name}`;
+const getWhatsappLink = (pkg: MarketingPackage, intent: "consult" | "book") => {
+  const action = intent === "book" ? "ingin booking seat" : "tertarik konsultasi";
+  const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan ${action} paket ${pkg.name}`;
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`;
 };
 
 const getDescriptionItems = (value?: string) =>
   String(value || "")
     .split(/\r?\n/)
-    .map((item) =>
-      item
-        .replace(/^[-*\s]+/, "")
-        .replace(/\*+/g, "")
-        .trim(),
-    )
+    .map((item) => item.replace(/^[-*\s]+/, "").replace(/\*+/g, "").trim())
     .filter(Boolean);
 
 const getPackageTypeLabel = (pkg: MarketingPackage) => {
   const type = String(pkg.backendType || pkg.type || "").toUpperCase();
-  if (type.includes("RAMADHAN") || pkg.name.toLowerCase().includes("ramadhan")) {
+  const name = pkg.name.toLowerCase();
+
+  if (type.includes("RAMADHAN") || name.includes("ramadhan")) {
     return "Umroh Ramadhan";
   }
+
   if (
     type.includes("PLUS") ||
     type.includes("EXTREME") ||
-    pkg.name.toLowerCase().includes("plus") ||
-    pkg.name.toLowerCase().includes("turki") ||
-    pkg.name.toLowerCase().includes("dubai")
+    name.includes("plus") ||
+    name.includes("turki") ||
+    name.includes("dubai")
   ) {
     return "Umroh Plus";
   }
+
   return "Umroh Reguler";
 };
 
@@ -123,126 +121,51 @@ export const viewport = {
 
 function LandingHeader() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-primary shadow-lg">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <nav className="flex items-center justify-between h-16 md:h-20">
-          <Link href="/landing/" className="flex items-center gap-2 md:gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-              <Image
-                src="/landing/images/icon.png"
-                alt="Logo Sahabat Qolbu"
-                width={48}
-                height={48}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div>
-              <span className="text-lg md:text-xl font-bold">
-                <span className="text-white">Sahabat</span>{" "}
-                <span className="text-secondary">Qolbu</span>
-              </span>
-              <span className="hidden sm:block text-xs text-gray-300">
-                Cahaya Baitullah
-              </span>
-            </div>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8">
-            <Link
-              href="/landing/#beranda"
-              className="font-medium text-white hover:text-secondary transition-colors"
-            >
-              Beranda
-            </Link>
-            <Link
-              href="/landing/#tentang"
-              className="font-medium text-white hover:text-secondary transition-colors"
-            >
-              Tentang
-            </Link>
-            <Link
-              href="/landing/paket"
-              className="font-medium text-secondary"
-            >
-              Paket
-            </Link>
-            <Link
-              href="/landing/#testimoni"
-              className="font-medium text-white hover:text-secondary transition-colors"
-            >
-              Testimoni
-            </Link>
-            <a
-              href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya ingin konsultasi paket umroh")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="gold-gradient text-primary font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity"
-            >
-              Hubungi Kami
-            </a>
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-primary/95 text-white shadow-lg backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-8">
+        <Link href="/landing/" className="flex items-center gap-3">
+          <Image
+            src="/landing/images/icon.png"
+            alt="Logo Sahabat Qolbu"
+            width={48}
+            height={48}
+            className="h-10 w-10 object-contain lg:h-12 lg:w-12"
+            priority
+          />
+          <div className="leading-tight">
+            <span className="block text-lg font-black lg:text-xl">
+              Sahabat <span className="text-secondary">Qolbu</span>
+            </span>
+            <span className="hidden text-xs font-medium text-white/65 sm:block">
+              Cahaya Baitullah
+            </span>
           </div>
+        </Link>
 
-          <button
-            type="button"
-            className="md:hidden p-2 text-white hover:text-secondary transition-colors"
-            aria-label="Buka menu navigasi"
-            id="mobileMenuBtn"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </nav>
-      </div>
-
-      <div
-        className="md:hidden hidden bg-primary border-t border-white/10"
-        id="mobileMenu"
-      >
-        <div className="px-4 py-4 space-y-3">
-          <Link
-            href="/landing/#beranda"
-            className="block text-white hover:text-secondary py-2 transition-colors"
-          >
+        <nav className="hidden items-center gap-7 text-sm font-bold md:flex">
+          <Link href="/landing/#beranda" className="text-white/85 hover:text-secondary">
             Beranda
           </Link>
-          <Link
-            href="/landing/#tentang"
-            className="block text-white hover:text-secondary py-2 transition-colors"
-          >
+          <Link href="/landing/#tentang" className="text-white/85 hover:text-secondary">
             Tentang
           </Link>
-          <Link
-            href="/landing/paket"
-            className="block text-secondary py-2 font-medium"
-          >
+          <Link href="/landing/paket" className="text-secondary">
             Paket
           </Link>
-          <Link
-            href="/landing/#testimoni"
-            className="block text-white hover:text-secondary py-2 transition-colors"
-          >
+          <Link href="/landing/#testimoni" className="text-white/85 hover:text-secondary">
             Testimoni
           </Link>
-          <a
-            href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya ingin konsultasi paket umroh")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block gold-gradient text-primary font-semibold px-5 py-3 rounded-full text-center mt-4"
-          >
-            Hubungi Kami
-          </a>
-        </div>
+        </nav>
+
+        <a
+          href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya ingin konsultasi paket umroh")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-black text-primary shadow-lg shadow-secondary/20 transition hover:bg-secondary-400"
+        >
+          <MessageCircle className="h-4 w-4" />
+          <span className="hidden sm:inline">Konsultasi</span>
+        </a>
       </div>
     </header>
   );
@@ -252,98 +175,69 @@ function LandingFooter() {
   return (
     <footer className="bg-primary text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="py-12 md:py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid gap-8 py-12 md:grid-cols-2 md:py-16 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <Link href="/landing/" className="flex items-center gap-2 md:gap-3">
-                <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-                  <Image
-                    src="/landing/images/icon.png"
-                    alt="Logo Sahabat Qolbu"
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div>
-                  <span className="text-lg md:text-xl font-bold">
-                    <span className="text-white">Sahabat</span>{" "}
-                    <span className="text-secondary">Qolbu</span>
-                  </span>
-                  <span className="hidden sm:block text-xs text-gray-300">
-                    Cahaya Baitullah
-                  </span>
-                </div>
-              </Link>
-            </div>
-            <p className="text-gray-300 mb-6 max-w-md leading-relaxed">
-              Sahabat Qolbu Cahaya Baitullah adalah perusahaan Travel Haji dan
-              Umroh yang telah memiliki IZIN RESMI dari Kementrian Agama
-              Republik Indonesia (No. PPIU 12112100038690008).
+            <Link href="/landing/" className="mb-4 flex items-center gap-3">
+              <Image
+                src="/landing/images/icon.png"
+                alt="Logo Sahabat Qolbu"
+                width={48}
+                height={48}
+                className="h-11 w-11 object-contain"
+              />
+              <div>
+                <span className="text-lg font-bold">
+                  Sahabat <span className="text-secondary">Qolbu</span>
+                </span>
+                <span className="block text-xs text-white/60">Cahaya Baitullah</span>
+              </div>
+            </Link>
+            <p className="max-w-md leading-relaxed text-white/70">
+              Travel Haji dan Umroh berizin resmi Kementerian Agama Republik
+              Indonesia No. PPIU 12112100038690008.
             </p>
-            <div className="flex items-center gap-4">
+            <div className="mt-6 flex items-center gap-3">
               <a
                 href="https://www.instagram.com/sahabatqolbu.ofc/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-secondary hover:text-primary transition-all"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-secondary hover:text-primary"
                 aria-label="Instagram Sahabat Qolbu"
               >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.facebook.com/sahabatqolbu.ofc"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-secondary hover:text-primary transition-all text-sm font-black"
-                aria-label="Facebook Sahabat Qolbu"
-              >
-                f
+                <Instagram className="h-5 w-5" />
               </a>
               <a
                 href={`https://wa.me/${WA_NUMBER}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-secondary hover:text-primary transition-all"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-secondary hover:text-primary"
                 aria-label="WhatsApp Sahabat Qolbu"
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="h-5 w-5" />
               </a>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4">Menu</h3>
-            <ul className="space-y-3">
+            <h3 className="mb-4 text-lg font-bold">Menu</h3>
+            <ul className="space-y-3 text-white/70">
               <li>
-                <Link
-                  href="/landing/#beranda"
-                  className="text-gray-300 hover:text-secondary transition-colors"
-                >
+                <Link href="/landing/#beranda" className="hover:text-secondary">
                   Beranda
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/landing/#tentang"
-                  className="text-gray-300 hover:text-secondary transition-colors"
-                >
+                <Link href="/landing/#tentang" className="hover:text-secondary">
                   Tentang Kami
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/landing/paket"
-                  className="text-gray-300 hover:text-secondary transition-colors"
-                >
+                <Link href="/landing/paket" className="hover:text-secondary">
                   Paket Umroh
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/landing/#testimoni"
-                  className="text-gray-300 hover:text-secondary transition-colors"
-                >
+                <Link href="/landing/#testimoni" className="hover:text-secondary">
                   Testimoni
                 </Link>
               </li>
@@ -351,29 +245,26 @@ function LandingFooter() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-4">Kontak</h3>
-            <ul className="space-y-4">
+            <h3 className="mb-4 text-lg font-bold">Kontak</h3>
+            <ul className="space-y-4 text-sm text-white/70">
               <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-secondary mt-1 flex-shrink-0" />
-                <span className="text-gray-300 text-sm">
-                  Ruko Jl. Ebony, Metland Transyogi No.11,{" "}
-                  <strong>Kec. Cileungsi, Kab. Bogor</strong>, Jawa Barat 16820
+                <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-secondary" />
+                <span>
+                  Ruko Jl. Ebony, Metland Transyogi No.11, Cileungsi, Kab.
+                  Bogor, Jawa Barat 16820
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-secondary flex-shrink-0" />
-                <a
-                  href={`https://wa.me/${WA_NUMBER}`}
-                  className="text-gray-300 hover:text-secondary transition-colors"
-                >
+                <Phone className="h-5 w-5 flex-shrink-0 text-secondary" />
+                <a href={`https://wa.me/${WA_NUMBER}`} className="hover:text-secondary">
                   0812-5587-1984
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-secondary flex-shrink-0" />
+                <Mail className="h-5 w-5 flex-shrink-0 text-secondary" />
                 <a
                   href="mailto:Sahabatqolbucahayabaitullah@gmail.com"
-                  className="text-gray-300 hover:text-secondary transition-colors text-sm break-all"
+                  className="break-all hover:text-secondary"
                 >
                   Sahabatqolbucahayabaitullah@gmail.com
                 </a>
@@ -382,13 +273,213 @@ function LandingFooter() {
           </div>
         </div>
 
-        <div className="py-6 border-t border-white/10 text-center">
-          <p className="text-gray-400 text-sm">
-            © 2026 Sahabat Qolbu Cahaya Baitullah. All rights reserved.
-          </p>
+        <div className="border-t border-white/10 py-6 text-center text-sm text-white/45">
+          © 2026 Sahabat Qolbu Cahaya Baitullah. All rights reserved.
         </div>
       </div>
     </footer>
+  );
+}
+
+function StatPill({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof CalendarDays;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur">
+      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-secondary text-primary">
+        <Icon className="h-5 w-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xs font-bold uppercase tracking-[0.14em] text-white/55">
+          {label}
+        </span>
+        <span className="block truncate text-sm font-black text-white">{value}</span>
+      </span>
+    </div>
+  );
+}
+
+function BookingPanel({
+  pkg,
+  seatsLeft,
+  bookingLink,
+  consultLink,
+}: {
+  pkg: MarketingPackage;
+  seatsLeft: number;
+  bookingLink: string;
+  consultLink: string;
+}) {
+  const seatPercent = pkg.totalSeats
+    ? Math.round((seatsLeft / pkg.totalSeats) * 100)
+    : 0;
+
+  return (
+    <aside className="lg:sticky lg:top-28">
+      <div className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-2xl shadow-primary/15">
+        <div className="bg-primary p-6 text-white">
+          <p className="text-sm font-semibold text-white/60">Mulai dari</p>
+          <p className="mt-1 font-display text-4xl font-black leading-none text-secondary">
+            {toCurrency(pkg.priceQuad)}
+          </p>
+          <p className="mt-2 text-sm font-semibold text-white/65">
+            per orang, kamar quad
+          </p>
+        </div>
+
+        <div className="space-y-5 p-6">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-2xl bg-neutral-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
+                Durasi
+              </p>
+              <p className="mt-1 font-black text-primary">{pkg.duration || "-"} Hari</p>
+            </div>
+            <div className="rounded-2xl bg-neutral-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
+                Seat
+              </p>
+              <p className="mt-1 font-black text-primary">{seatsLeft} tersisa</p>
+            </div>
+          </div>
+
+          {pkg.totalSeats ? (
+            <div>
+              <div className="mb-2 flex items-center justify-between text-xs font-black text-neutral-500">
+                <span>Ketersediaan</span>
+                <span>{seatPercent}%</span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200">
+                <div
+                  className="h-full rounded-full bg-success"
+                  style={{ width: `${seatPercent}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          <div className="space-y-3 text-sm">
+            {[
+              ["Kode Paket", pkg.code],
+              ["Keberangkatan", pkg.departureDate ? formatDate(pkg.departureDate) : "Menyusul"],
+              ["Kepulangan", pkg.returnDate ? formatDate(pkg.returnDate) : "Menyusul"],
+              ["Maskapai", pkg.airline.name],
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-start justify-between gap-4 border-b border-neutral-100 pb-3">
+                <span className="font-semibold text-neutral-500">{label}</span>
+                <span className="text-right font-black text-primary">{value}</span>
+              </div>
+            ))}
+          </div>
+
+          <a
+            href={bookingLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary px-5 py-4 font-black text-primary shadow-lg shadow-secondary/25 transition hover:bg-secondary-400"
+          >
+            <MessageCircle className="h-5 w-5" />
+            Booking Seat
+          </a>
+          <a
+            href={consultLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-primary px-5 py-3.5 font-black text-primary transition hover:bg-primary hover:text-white"
+          >
+            Konsultasi Dulu
+          </a>
+
+          {pkg.itineraryPdf ? (
+            <a
+              href={pkg.itineraryPdf}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 text-sm font-black text-neutral-600 hover:text-primary"
+            >
+              <Download className="h-4 w-4" />
+              Download Itinerary PDF
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
+  const hotels = [
+    {
+      city: "Makkah",
+      name: pkg.hotelMakkah.name,
+      distance: pkg.hotelMakkah.distanceToHaram,
+      rating: pkg.hotelMakkah.starRating,
+    },
+    pkg.hotelMadinah
+      ? {
+          city: "Madinah",
+          name: pkg.hotelMadinah.name,
+          distance: pkg.hotelMadinah.distanceToMasjid,
+          rating: pkg.hotelMadinah.starRating,
+        }
+      : null,
+  ].filter(Boolean) as {
+    city: string;
+    name: string;
+    distance?: string;
+    rating: number;
+  }[];
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {hotels.map((hotel) => (
+        <article
+          key={hotel.city}
+          className="rounded-[1.5rem] border border-neutral-200 bg-white p-5 shadow-lg shadow-primary/5"
+        >
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-primary text-secondary">
+              <Hotel className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-secondary-700">
+                Hotel {hotel.city}
+              </p>
+              <h3 className="mt-1 font-display text-xl font-black text-primary">
+                {hotel.name}
+              </h3>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex">
+                  {Array.from({ length: Math.max(0, Math.min(5, hotel.rating)) }).map(
+                    (_, index) => (
+                      <Star
+                        key={index}
+                        className="h-4 w-4 fill-secondary text-secondary"
+                      />
+                    ),
+                  )}
+                </div>
+                <span className="text-xs font-bold text-neutral-500">
+                  {hotel.rating || "-"} Bintang
+                </span>
+              </div>
+              {hotel.distance ? (
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-neutral-600">
+                  <MapPin className="h-4 w-4 text-secondary-700" />
+                  {hotel.distance}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -409,26 +500,20 @@ export default async function LandingPackageDetailPage({
     gallery[0] ||
     "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1920&q=80";
   const seatsLeft = getSeatsLeft(pkg);
-  const whatsappLink = getWhatsappLink(pkg);
-  const bookingLink = getBookingWhatsappLink(pkg);
+  const consultLink = getWhatsappLink(pkg, "consult");
+  const bookingLink = getWhatsappLink(pkg, "book");
   const descriptionItems = getDescriptionItems(pkg.description);
   const typeLabel = getPackageTypeLabel(pkg);
-  const price = Number.parseFloat(pkg.priceQuad) || 0;
-  const originalPrice = Number.parseFloat(pkg.priceDouble) || 0;
-  const seatPercent = pkg.totalSeats
-    ? Math.round((seatsLeft / pkg.totalSeats) * 100)
-    : 0;
   const heroDescription =
     descriptionItems[0] ||
-    `Nikmati perjalanan ibadah umroh ${pkg.duration || ""} hari bersama Sahabat Qolbu Cahaya Baitullah.`;
+    `Paket umroh ${pkg.duration || ""} hari bersama Sahabat Qolbu dengan pendampingan tim berpengalaman.`;
 
   return (
-    <div className="min-h-screen bg-white text-gray-800 antialiased">
+    <div className="min-h-screen bg-[#f7f5ef] text-neutral-800 antialiased">
       <LandingHeader />
 
       <main>
-        {/* HERO */}
-        <section className="relative min-h-[640px] flex items-center pt-16 md:pt-20">
+        <section className="relative overflow-hidden bg-primary text-white">
           <div className="absolute inset-0">
             <Image
               src={heroImage}
@@ -436,506 +521,170 @@ export default async function LandingPackageDetailPage({
               fill
               priority
               sizes="100vw"
-              className="object-cover"
+              className="object-cover opacity-55"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/55" />
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#f7f5ef] to-transparent" />
           </div>
 
-          <div className="relative z-10 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-            <div className="max-w-3xl animate-fade-in">
+          <div className="relative mx-auto grid min-h-[680px] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8 lg:py-16">
+            <div className="max-w-4xl">
               <Link
                 href="/landing/paket"
-                className="inline-flex items-center gap-2 mb-6 text-white/80 hover:text-secondary transition-colors text-sm font-semibold"
+                className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-white/75 transition hover:text-secondary"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Kembali ke Semua Paket
+                <ArrowLeft className="h-4 w-4" />
+                Semua Paket Umroh
               </Link>
 
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/20">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-white text-sm font-medium">
-                  Izin PPIU: 12112100038690008
+              <div className="mb-5 flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
+                  {typeLabel}
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white/80 backdrop-blur">
+                  <BadgeCheck className="h-4 w-4 text-secondary" />
+                  PPIU 12112100038690008
                 </span>
               </div>
 
-              <span className="inline-block gold-gradient text-primary font-bold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full mb-4">
-                {typeLabel}
-              </span>
-
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4">
+              <h1 className="max-w-4xl font-display text-4xl font-black leading-[1.04] text-white sm:text-5xl lg:text-6xl">
                 {pkg.name}
-                <span className="text-secondary block mt-2 text-2xl sm:text-3xl md:text-4xl font-bold">
-                  Resmi Kemenag & Amanah
-                </span>
               </h1>
-
-              <p className="text-base sm:text-lg text-gray-200 mb-6 max-w-2xl leading-relaxed">
+              <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-white/78 sm:text-lg">
                 {heroDescription}
               </p>
 
-              <div className="mb-6 inline-block bg-white text-primary px-5 py-2.5 rounded-lg font-bold shadow-lg">
-                <span className="text-secondary">Mulai dari </span>
-                {toCurrency(pkg.priceQuad)}{" "}
-                <span className="text-gray-500 text-sm font-semibold">
-                  / orang (quad)
-                </span>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href={bookingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="gold-gradient text-primary font-bold px-8 py-4 rounded-full text-center hover:opacity-90 transition-all hover:scale-105 inline-flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  Booking Seat Sekarang
-                </a>
-                <a
-                  href="#detail-paket"
-                  className="border-2 border-white text-white font-semibold px-8 py-4 rounded-full text-center hover:bg-white hover:text-primary transition-all inline-flex items-center justify-center gap-2"
-                >
-                  Lihat Detail
-                </a>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-6 mt-10 pt-8 border-t border-white/20">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-secondary" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold">Ratusan</p>
-                    <p className="text-gray-400 text-xs">Jamaah Puas</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-secondary" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold">Resmi</p>
-                    <p className="text-gray-400 text-xs">Kemenag RI</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                    <BadgeCheck className="w-5 h-5 text-secondary" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold">Profesional</p>
-                    <p className="text-gray-400 text-xs">Tim Berpengalaman</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* INFO STRIP - Ringkasan paket */}
-        <section className="bg-white border-b border-neutral-100">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-12 relative z-20">
-            <div className="bg-white rounded-2xl shadow-xl p-6 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {[
-                {
-                  label: "Mulai Dari",
-                  value: toCurrency(pkg.priceQuad),
-                  icon: ShieldCheck,
-                },
-                {
-                  label: "Berangkat",
-                  value: pkg.departureDate
-                    ? formatDate(pkg.departureDate)
-                    : "Menyusul",
-                  icon: CalendarDays,
-                },
-                {
-                  label: "Durasi",
-                  value: `${pkg.duration || "-"} Hari`,
-                  icon: Clock3,
-                },
-                {
-                  label: "Seat Tersisa",
-                  value: `${seatsLeft} dari ${pkg.totalSeats || "-"}`,
-                  icon: Users,
-                },
-              ].map(({ label, value, icon: Icon }) => (
-                <div key={label} className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-5 h-5 text-secondary-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-500 font-semibold">
-                      {label}
-                    </p>
-                    <p className="font-bold text-primary truncate">{value}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 1: GAMBARAN + FLOATING CARD ala Tentang di landing home */}
-        <section
-          id="detail-paket"
-          className="py-16 md:py-24 bg-gray-50"
-        >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-              <div className="relative">
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
-                  <Image
-                    src={gallery[1] || gallery[0] || heroImage}
-                    alt={pkg.name}
-                    fill
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                    className="object-cover"
-                  />
-                </div>
-                <div className="absolute -bottom-6 -right-6 bg-white rounded-xl shadow-lg p-5 hidden sm:block">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 gold-gradient rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="w-7 h-7 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-primary">100%</p>
-                      <p className="text-gray-500 text-sm">Amanah & Resmi</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-secondary font-semibold text-sm uppercase tracking-wider">
-                  Gambaran Paket
-                </span>
-                <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-6">
-                  Detail Perjalanan Ibadah Anda
-                </h2>
-                <div className="prose text-gray-600 mb-6 leading-relaxed">
-                  <p className="mb-4">
-                    <strong>{pkg.name}</strong> adalah paket umroh dari Sahabat
-                    Qolbu Cahaya Baitullah. Nikmati perjalanan ibadah yang
-                    nyaman dengan fasilitas terbaik dan bimbingan tim
-                    profesional kami.
-                  </p>
-                  <p className="mb-4">
-                    Selama keberangkatan {pkg.duration || "-"} hari, Anda akan
-                    mendapatkan pelayanan prima dalam segi:
-                  </p>
-                </div>
-
-                <ul className="space-y-2 mb-6">
-                  {[
-                    "Penerbangan Langsung (Tanpa Transit)",
-                    "Akomodasi Hotel Dekat Masjid",
-                    "Makan & Transportasi Nyaman",
-                    "Muthawif/Pemandu Berpengalaman",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-center gap-2 text-gray-700"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <p className="italic text-gray-600 mb-6">
-                  &ldquo;Sehingga Jamaah khusyu dalam menjalankan Ibadah Umroh
-                  sesuai Qur&rsquo;an &amp; Sunnah.&rdquo;
-                </p>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm">
-                    <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <ShieldCheck className="w-5 h-5 text-secondary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-primary">
-                        Izin Resmi PPIU
-                      </h3>
-                      <p className="text-gray-500 text-sm">
-                        Terdaftar di Kemenag
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm">
-                    <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Plane className="w-5 h-5 text-secondary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-primary">
-                        Direct Flight
-                      </h3>
-                      <p className="text-gray-500 text-sm">
-                        Langsung ke Jeddah/Madinah
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 2: KEUNGGULAN ala landing home */}
-        <section className="py-16 md:py-24 bg-primary text-white relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5">
-            <svg
-              className="w-full h-full"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <pattern
-                id="grid"
-                width="10"
-                height="10"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M 10 0 L 0 0 0 10"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="0.5"
+              <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <StatPill
+                  icon={CalendarDays}
+                  label="Berangkat"
+                  value={pkg.departureDate ? formatDate(pkg.departureDate) : "Menyusul"}
                 />
-              </pattern>
-              <rect width="100" height="100" fill="url(#grid)" />
-            </svg>
-          </div>
-
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <span className="text-secondary font-semibold text-sm uppercase tracking-wider">
-                Keunggulan Paket
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-                Mengapa Pilih Paket Ini?
-              </h2>
-              <p className="text-gray-300">
-                KAMI PASTIKAN pelayanan terbaik untuk kenyamanan ibadah Anda
-              </p>
+                <StatPill icon={Clock3} label="Durasi" value={`${pkg.duration || "-"} Hari`} />
+                <StatPill icon={Plane} label="Maskapai" value={pkg.airline.name} />
+                <StatPill icon={Users} label="Seat" value={`${seatsLeft} tersisa`} />
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-              {[
-                {
-                  title: "Harga Terbaik",
-                  desc: "Fasilitas terbaik di kelasnya dengan harga kompetitif.",
-                  icon: ShieldCheck,
-                },
-                {
-                  title: "Sesuai Syariat",
-                  desc: "Kegiatan ibadah InsyaAllah sesuai Al-Quran & Sunnah.",
-                  icon: BadgeCheck,
-                },
-                {
-                  title: "Hotel Dekat",
-                  desc: "Hotel dekat dengan Masjid untuk memudahkan ibadah.",
-                  icon: Hotel,
-                },
-                {
-                  title: "Jadwal Tepat",
-                  desc: "Tanggal berangkat, nomor pesawat & itinerary tertera.",
-                  icon: CalendarDays,
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition"
-                >
-                  <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <item.icon className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                  <p className="text-gray-300 text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 3: DETAIL PAKET (Tabs) */}
-        <section className="py-16 md:py-24 bg-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <span className="text-secondary font-semibold text-sm uppercase tracking-wider">
-                Detail Lengkap
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
-                Informasi Paket Umroh
-              </h2>
-              <p className="text-gray-600">
-                Pelajari detail perjalanan, hotel, maskapai, dan itinerary
-                paket ini sebelum melakukan pendaftaran.
-              </p>
-            </div>
-
-            <LandingPackageTabs
+            <BookingPanel
               pkg={pkg}
-              descriptionItems={descriptionItems}
+              seatsLeft={seatsLeft}
+              bookingLink={bookingLink}
+              consultLink={consultLink}
             />
           </div>
         </section>
 
-        {/* SECTION 4: BOOKING CARD ala CTA Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-br from-primary to-secondary relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-              <div className="grid md:grid-cols-2">
-                <div className="p-6 sm:p-8 md:p-10">
-                  <span className="inline-block gold-gradient text-primary font-bold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full mb-4">
-                    Penawaran Terbatas
-                  </span>
-                  <h2 className="text-2xl md:text-3xl font-bold text-primary mb-3">
-                    Amankan Seat Anda Sekarang
-                  </h2>
-                  <p className="text-gray-600 mb-6">
-                    Kuota setiap keberangkatan terbatas untuk menjaga
-                    kenyamanan jamaah. Booking sekarang sebelum seat habis.
-                  </p>
-                  <ul className="space-y-2 mb-6 text-sm text-gray-700">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-success" />
-                      DP ringan, angsuran fleksibel
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-success" />
-                      Konsultasi gratis via WhatsApp
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-success" />
-                      Tim profesional siap membantu 24/7
-                    </li>
-                  </ul>
-
-                  {pkg.totalSeats ? (
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center text-xs font-bold text-gray-600 mb-2">
-                        <span>Ketersediaan Seat</span>
-                        <span className="text-primary">
-                          {seatPercent}% tersedia
-                        </span>
-                      </div>
-                      <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            seatPercent <= 20
-                              ? "bg-error"
-                              : seatPercent <= 50
-                                ? "bg-warning"
-                                : "bg-success"
-                          }`}
-                          style={{ width: `${seatPercent}%` }}
-                        />
+        <section className="relative z-10 -mt-10 pb-14">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl shadow-primary/10 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="relative min-h-[320px] bg-primary lg:min-h-[520px]">
+                <Image
+                  src={gallery[1] || heroImage}
+                  alt={pkg.name}
+                  fill
+                  sizes="(min-width: 1024px) 55vw, 100vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/25 to-transparent" />
+              </div>
+              <div className="p-6 sm:p-8 lg:p-10">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-secondary-700">
+                  Paket Detail
+                </p>
+                <h2 className="mt-3 font-display text-3xl font-black leading-tight text-primary">
+                  Fokus ke ibadah, detail perjalanan sudah disiapkan.
+                </h2>
+                <div className="mt-6 grid gap-3">
+                  {[
+                    {
+                      icon: ShieldCheck,
+                      title: "Travel resmi",
+                      text: "Berizin PPIU Kementerian Agama RI.",
+                    },
+                    {
+                      icon: Hotel,
+                      title: "Akomodasi jelas",
+                      text: "Hotel Makkah dan Madinah tampil transparan.",
+                    },
+                    {
+                      icon: Train,
+                      title: "Mobilitas nyaman",
+                      text: "Transportasi dan itinerary disiapkan untuk jamaah.",
+                    },
+                    {
+                      icon: Sparkles,
+                      title: "Pendampingan",
+                      text: "Tim Sahabat Qolbu membantu dari konsultasi sampai keberangkatan.",
+                    },
+                  ].map(({ icon: Icon, title, text }) => (
+                    <div key={title} className="flex gap-4 rounded-2xl bg-[#f7f5ef] p-4">
+                      <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-primary text-secondary">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h3 className="font-black text-primary">{title}</h3>
+                        <p className="mt-1 text-sm font-medium leading-6 text-neutral-600">
+                          {text}
+                        </p>
                       </div>
                     </div>
-                  ) : null}
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <a
-                      href={whatsappLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3.5 rounded-full transition-colors"
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      Konsultasi WhatsApp
-                    </a>
-                    <a
-                      href={bookingLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 gold-gradient text-primary font-bold px-6 py-3.5 rounded-full hover:opacity-90 transition-opacity"
-                    >
-                      Booking Sekarang
-                    </a>
-                  </div>
-                </div>
-
-                <div className="bg-primary text-white p-6 sm:p-8 md:p-10 relative overflow-hidden">
-                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary/10 rounded-full" />
-                  <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/10 rounded-full" />
-                  <div className="relative">
-                    <p className="text-sm text-gray-300 mb-2">
-                      Harga Mulai Dari
-                    </p>
-                    <p className="text-4xl md:text-5xl font-extrabold text-secondary mb-1">
-                      {toCurrency(pkg.priceQuad)}
-                    </p>
-                    {originalPrice > price ? (
-                      <p className="text-gray-300 text-sm line-through mb-4">
-                        {toCurrency(pkg.priceDouble)}
-                      </p>
-                    ) : (
-                      <div className="mb-4" />
-                    )}
-
-                    <div className="space-y-3 mt-6">
-                      {[
-                        { label: "Kode Paket", value: pkg.code },
-                        {
-                          label: "Berangkat",
-                          value: pkg.departureDate
-                            ? formatDate(pkg.departureDate)
-                            : "Menyusul",
-                        },
-                        {
-                          label: "Durasi",
-                          value: `${pkg.duration || "-"} Hari`,
-                        },
-                        {
-                          label: "Maskapai",
-                          value: pkg.airline.name,
-                        },
-                      ].map((row) => (
-                        <div
-                          key={row.label}
-                          className="flex items-center justify-between border-b border-white/10 pb-2"
-                        >
-                          <span className="text-gray-300 text-sm">
-                            {row.label}
-                          </span>
-                          <span className="font-bold text-sm text-white text-right">
-                            {row.value}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {pkg.itineraryPdf ? (
-                      <a
-                        href={pkg.itineraryPdf}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-6 inline-flex items-center justify-center gap-2 w-full border-2 border-secondary text-secondary font-bold px-5 py-3 rounded-full hover:bg-secondary hover:text-primary transition-all"
-                      >
-                        Download Itinerary PDF
-                      </a>
-                    ) : null}
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
-
-            <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-xl max-w-2xl mx-auto text-center">
-              <p className="text-red-600 font-bold text-sm">
-                ⚠️ Segera booking seat sebelum kehabisan!
-              </p>
-              <p className="text-xs text-red-500">
-                Kuota setiap keberangkatan terbatas untuk menjaga kenyamanan
-                jamaah.
-              </p>
             </div>
           </div>
         </section>
 
-        {/* SECTION 5: RELATED PAKET */}
+        <section className="pb-14">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
+            <div className="space-y-8">
+              <HotelSummary pkg={pkg} />
+
+              <LandingPackageTabs pkg={pkg} descriptionItems={descriptionItems} />
+            </div>
+
+            <div className="space-y-5">
+              <div className="rounded-[1.5rem] border border-neutral-200 bg-white p-6 shadow-lg shadow-primary/5">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-secondary-700">
+                  Harga kamar
+                </p>
+                <div className="mt-4 space-y-3">
+                  {[
+                    ["Quad", pkg.priceQuad],
+                    ["Triple", pkg.priceTriple || pkg.priceQuad],
+                    ["Double", pkg.priceDouble],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                      <span className="font-bold text-neutral-500">{label}</span>
+                      <span className="font-display text-xl font-black text-primary">
+                        {toCurrency(value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[1.5rem] bg-primary p-6 text-white shadow-xl shadow-primary/15">
+                <p className="font-display text-2xl font-black">Butuh bantuan pilih paket?</p>
+                <p className="mt-2 text-sm font-medium leading-6 text-white/70">
+                  Konsultasikan jadwal, harga, dan kebutuhan keluarga langsung
+                  dengan admin Sahabat Qolbu.
+                </p>
+                <a
+                  href={consultLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-secondary px-5 py-3.5 font-black text-primary"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Chat Admin
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <Suspense fallback={null}>
           <RelatedPackages
             currentPackageId={pkg.id}
@@ -948,34 +697,14 @@ export default async function LandingPackageDetailPage({
       <LandingFooter />
 
       <a
-        href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya ingin konsultasi umroh")}`}
+        href={consultLink}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Hubungi via WhatsApp"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors hover:scale-110"
+        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl transition hover:bg-green-600"
       >
-        <MessageCircle className="w-7 h-7 text-white" />
+        <MessageCircle className="h-7 w-7" />
       </a>
-
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              const btn = document.getElementById('mobileMenuBtn');
-              const menu = document.getElementById('mobileMenu');
-              if (!btn || !menu) return;
-              btn.addEventListener('click', function() {
-                menu.classList.toggle('hidden');
-              });
-              menu.querySelectorAll('a').forEach(function(link) {
-                link.addEventListener('click', function() {
-                  menu.classList.add('hidden');
-                });
-              });
-            })();
-          `,
-        }}
-      />
     </div>
   );
 }
