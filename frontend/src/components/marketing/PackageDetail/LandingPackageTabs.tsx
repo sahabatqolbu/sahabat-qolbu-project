@@ -20,15 +20,33 @@ type LandingPackageTabsProps = {
   descriptionItems: string[];
 };
 
-const tabs: { key: TabKey; label: string; icon: typeof Info }[] = [
-  { key: "program", label: "Program", icon: ClipboardList },
-  { key: "summary", label: "Ringkasan", icon: Info },
-  { key: "hotels", label: "Hotel", icon: Hotel },
-  { key: "facilities", label: "Fasilitas", icon: CheckCircle2 },
-  { key: "notes", label: "Catatan", icon: CalendarDays },
+const tabs: { key: TabKey; label: string; helper: string; icon: typeof Info }[] = [
+  {
+    key: "program",
+    label: "Program",
+    helper: "Alur perjalanan",
+    icon: ClipboardList,
+  },
+  { key: "summary", label: "Ringkasan", helper: "Info utama", icon: Info },
+  { key: "hotels", label: "Hotel", helper: "Akomodasi", icon: Hotel },
+  {
+    key: "facilities",
+    label: "Fasilitas",
+    helper: "Termasuk paket",
+    icon: CheckCircle2,
+  },
+  { key: "notes", label: "Catatan", helper: "Syarat paket", icon: CalendarDays },
 ];
 
-function InfoBox({
+function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-5 text-sm font-semibold text-neutral-500">
+      {children}
+    </div>
+  );
+}
+
+function SummaryItem({
   label,
   value,
   icon: Icon,
@@ -38,19 +56,17 @@ function InfoBox({
   icon?: typeof Info;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-neutral-50 p-5">
+    <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
       <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
         {Icon ? <Icon className="h-4 w-4 text-secondary" /> : null}
         {label}
       </div>
-      <div className="text-base font-bold leading-relaxed text-primary">
-        {value}
-      </div>
+      <div className="text-base font-bold leading-relaxed text-primary">{value}</div>
     </div>
   );
 }
 
-function ItemList({
+function Checklist({
   items,
   emptyText,
 }: {
@@ -58,11 +74,7 @@ function ItemList({
   emptyText: string;
 }) {
   if (!items?.length) {
-    return (
-      <p className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-5 text-sm font-semibold text-neutral-500">
-        {emptyText}
-      </p>
-    );
+    return <EmptyState>{emptyText}</EmptyState>;
   }
 
   return (
@@ -70,19 +82,19 @@ function ItemList({
       {items.map((item, index) => (
         <div
           key={`${item}-${index}`}
-          className="flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4"
+          className="flex gap-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm"
         >
-          <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-emerald-500" />
-          <span className="text-sm font-medium leading-relaxed text-neutral-700">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-green-500" />
+          <p className="text-sm font-medium leading-relaxed text-neutral-700">
             {item}
-          </span>
+          </p>
         </div>
       ))}
     </div>
   );
 }
 
-function HotelPanel({
+function HotelCard({
   title,
   name,
   distance,
@@ -94,16 +106,16 @@ function HotelPanel({
   facilities?: string[];
 }) {
   return (
-    <div className="rounded-3xl border border-neutral-100 bg-neutral-50 p-5">
+    <article className="rounded-3xl border border-neutral-100 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-secondary">
           <Hotel className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
             {title}
           </p>
-          <h3 className="mt-1 text-lg font-bold text-primary">{name}</h3>
+          <h3 className="mt-1 text-lg font-extrabold text-primary">{name}</h3>
         </div>
       </div>
       {distance ? (
@@ -116,18 +128,18 @@ function HotelPanel({
           {facilities.map((facility) => (
             <span
               key={facility}
-              className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700"
+              className="rounded-full bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-700"
             >
               {facility}
             </span>
           ))}
         </div>
       ) : (
-        <p className="text-sm font-semibold text-primary/50">
+        <p className="text-sm font-medium text-neutral-500">
           Detail fasilitas hotel menyusul.
         </p>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -140,41 +152,54 @@ export function LandingPackageTabs({
   const ActiveIcon = activeTabMeta.icon;
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-neutral-100 bg-white shadow-xl shadow-primary/5">
-      <div className="border-b border-neutral-100 bg-white px-3 py-3 sm:px-5">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {tabs.map(({ key, label, icon: Icon }) => {
-            const isActive = activeTab === key;
+    <section className="rounded-[1.75rem] border border-neutral-100 bg-neutral-50 p-3 shadow-xl shadow-primary/5">
+      <div className="grid gap-2 rounded-[1.35rem] bg-white p-2 sm:grid-cols-5">
+        {tabs.map(({ key, label, helper, icon: Icon }) => {
+          const isActive = activeTab === key;
 
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveTab(key)}
-                className={`inline-flex flex-none items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition ${
-                  isActive
-                    ? "bg-primary text-white shadow-lg shadow-primary/20"
-                    : "bg-neutral-50 text-neutral-600 hover:bg-secondary/20 hover:text-primary"
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
+                isActive
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "text-neutral-600 hover:bg-secondary/20 hover:text-primary"
+              }`}
+            >
+              <span
+                className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${
+                  isActive ? "bg-secondary text-primary" : "bg-neutral-50 text-primary"
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            );
-          })}
-        </div>
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-extrabold">{label}</span>
+                <span
+                  className={`hidden text-xs sm:block ${
+                    isActive ? "text-white/65" : "text-neutral-400"
+                  }`}
+                >
+                  {helper}
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="p-5 sm:p-7">
+      <div className="p-4 sm:p-6">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-secondary">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-primary">
             <ActiveIcon className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
               Detail Paket
             </p>
-            <h2 className="font-sans text-2xl font-extrabold tracking-tight text-primary">
+            <h2 className="font-sans text-2xl font-black tracking-tight text-primary">
               {activeTabMeta.label}
             </h2>
           </div>
@@ -186,28 +211,28 @@ export function LandingPackageTabs({
               descriptionItems.map((item, index) => (
                 <div
                   key={`${item}-${index}`}
-                  className="flex gap-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-4"
+                  className="grid gap-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm sm:grid-cols-[44px_1fr]"
                 >
-                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-secondary text-sm font-black text-primary">
-                    {index + 1}
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-sm font-black text-secondary">
+                    {String(index + 1).padStart(2, "0")}
                   </span>
-                  <p className="pt-1 text-base font-medium leading-relaxed text-neutral-700">
+                  <p className="text-base font-medium leading-relaxed text-neutral-700">
                     {item}
                   </p>
                 </div>
               ))
             ) : (
-              <p className="rounded-2xl bg-neutral-50 p-5 text-sm font-semibold text-neutral-500">
+              <EmptyState>
                 Detail program akan diinformasikan oleh tim Sahabat Qolbu.
-              </p>
+              </EmptyState>
             )}
           </div>
         ) : null}
 
         {activeTab === "summary" ? (
           <div className="grid gap-4 md:grid-cols-2">
-            <InfoBox label="Kode Paket" value={pkg.code} />
-            <InfoBox
+            <SummaryItem label="Kode Paket" value={pkg.code} />
+            <SummaryItem
               label="Tanggal"
               icon={CalendarDays}
               value={
@@ -219,43 +244,41 @@ export function LandingPackageTabs({
                 </>
               }
             />
-            <InfoBox label="Maskapai" icon={Plane} value={pkg.airline.name} />
-            <InfoBox label="Tipe" value={pkg.backendType || pkg.type} />
+            <SummaryItem label="Maskapai" icon={Plane} value={pkg.airline.name} />
+            <SummaryItem label="Tipe Paket" value={pkg.backendType || pkg.type} />
           </div>
         ) : null}
 
         {activeTab === "hotels" ? (
           <div className="grid gap-4 md:grid-cols-2">
-            <HotelPanel
+            <HotelCard
               title="Hotel Makkah"
               name={pkg.hotelMakkah.name}
               distance={pkg.hotelMakkah.distanceToHaram}
               facilities={pkg.hotelMakkah.facilities}
             />
             {pkg.hotelMadinah ? (
-              <HotelPanel
+              <HotelCard
                 title="Hotel Madinah"
                 name={pkg.hotelMadinah.name}
                 distance={pkg.hotelMadinah.distanceToMasjid}
                 facilities={pkg.hotelMadinah.facilities}
               />
             ) : (
-              <p className="rounded-3xl border border-dashed border-neutral-200 bg-neutral-50 p-5 text-sm font-semibold text-neutral-500">
-                Detail hotel Madinah menyusul.
-              </p>
+              <EmptyState>Detail hotel Madinah menyusul.</EmptyState>
             )}
           </div>
         ) : null}
 
         {activeTab === "facilities" ? (
-          <ItemList
+          <Checklist
             items={pkg.included}
             emptyText="Fasilitas paket belum tersedia di database."
           />
         ) : null}
 
         {activeTab === "notes" ? (
-          <ItemList
+          <Checklist
             items={pkg.terms}
             emptyText="Syarat dan catatan belum tersedia di database."
           />

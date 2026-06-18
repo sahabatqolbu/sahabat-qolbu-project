@@ -409,6 +409,9 @@ const fetchApi = async <T>(path: string) => {
       headers: {
         Accept: "application/json",
       },
+      next: {
+        revalidate: 300,
+      },
     });
 
     if (!response.ok) {

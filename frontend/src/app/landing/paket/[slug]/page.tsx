@@ -1,8 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
+  CheckCircle2,
   Clock3,
   FileText,
   Instagram,
@@ -10,6 +12,7 @@ import {
   MapPin,
   MessageCircle,
   Phone,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import { LandingPackageTabs } from "@/components/marketing/PackageDetail/LandingPackageTabs";
@@ -254,21 +257,23 @@ export default async function LandingPackageDetailPage({
 
       <main>
         <section className="relative overflow-hidden bg-primary text-white">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,193,7,0.18),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(255,255,255,0.16),transparent_26%)]" />
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-white [clip-path:polygon(0_55%,100%_0,100%_100%,0_100%)]" />
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 pb-20 pt-10 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:pb-24 lg:pt-16">
-            <div className="relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,193,7,0.25),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_45%)]" />
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.86fr] lg:px-8 lg:py-16">
+            <div className="relative z-10">
               <Link
                 href="/landing/paket"
-                className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white hover:bg-white/20"
+                className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Kembali ke Semua Paket
               </Link>
-              <div className="mb-5 inline-flex rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary shadow-lg shadow-black/10">
-                Paket resmi Sahabat Qolbu
+
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
+                <ShieldCheck className="h-4 w-4" />
+                Paket Umroh Resmi
               </div>
-              <h1 className="max-w-4xl font-sans text-4xl font-black leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-6xl">
+
+              <h1 className="max-w-4xl font-sans text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
                 {pkg.name}
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-gray-200">
@@ -290,7 +295,7 @@ export default async function LandingPackageDetailPage({
                     className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"
                   >
                     <Icon className="mb-3 h-6 w-6 text-secondary" />
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
                       {label}
                     </p>
                     <p className="mt-1 font-bold">{value}</p>
@@ -299,75 +304,143 @@ export default async function LandingPackageDetailPage({
               </div>
             </div>
 
-            <div className="relative rounded-[2rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/25 backdrop-blur">
-              <div
-                aria-label={pkg.name}
-                className="aspect-[4/3] w-full rounded-[1.45rem] bg-cover bg-center"
-                style={{ backgroundImage: `url(${heroImage})` }}
-              />
-              <div className="absolute -bottom-5 left-6 right-6 rounded-2xl bg-white p-4 text-primary shadow-xl">
+            <div className="relative z-10">
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/25">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[1.45rem] bg-primary/20">
+                  <Image
+                    src={heroImage}
+                    alt={pkg.name}
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 42vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+              <div className="-mt-8 mx-5 rounded-3xl bg-white p-5 text-primary shadow-2xl shadow-black/20">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
                   Harga mulai dari
                 </p>
-                <p className="mt-1 text-2xl font-black">{toCurrency(pkg.priceQuad)}</p>
+                <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+                  <p className="text-3xl font-black">{toCurrency(pkg.priceQuad)}</p>
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full bg-green-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-600"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Konsultasi
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8 lg:py-14">
-          <div className="space-y-8">
-            {gallery.length > 1 ? (
-              <section className="rounded-3xl border border-neutral-100 bg-white p-4 shadow-xl shadow-primary/5">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {gallery.slice(0, 6).map((image, index) => (
-                    <div
-                      key={image}
-                      aria-label={`${pkg.name} ${index + 1}`}
-                      className="aspect-[4/3] w-full rounded-2xl bg-cover bg-center"
-                      style={{ backgroundImage: `url(${image})` }}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <LandingPackageTabs pkg={pkg} descriptionItems={descriptionItems} />
-          </div>
-
-          <aside className="lg:sticky lg:top-28 lg:self-start">
-            <div className="overflow-hidden rounded-3xl border border-neutral-100 bg-white shadow-2xl shadow-primary/10">
-              <div className="bg-primary p-6 text-white">
-                <p className="text-sm font-semibold text-gray-300">Harga mulai dari</p>
-                <p className="mt-2 text-4xl font-black text-secondary">
-                  {toCurrency(pkg.priceQuad)}
-                </p>
-                <p className="mt-1 text-sm text-gray-300">
-                  per jamaah, sesuai ketersediaan kamar
-                </p>
+        <section className="bg-white">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8 lg:py-14">
+            <div className="space-y-8">
+              <div className="grid gap-4 md:grid-cols-3">
+                {[
+                  "Bimbingan manasik sebelum keberangkatan",
+                  "Akomodasi dan maskapai sesuai data paket",
+                  "Tim Sahabat Qolbu siap bantu konsultasi",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4"
+                  >
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-green-500" />
+                    <p className="text-sm font-semibold leading-relaxed text-neutral-700">
+                      {item}
+                    </p>
+                  </div>
+                ))}
               </div>
 
-              <div className="p-6">
-                <div className="mb-6 rounded-2xl bg-neutral-50 p-4">
-                  <p className="text-sm font-semibold text-neutral-500">Seat tersedia</p>
-                  <p className="mt-1 text-2xl font-black text-primary">{seatsLeft}</p>
+              <LandingPackageTabs pkg={pkg} descriptionItems={descriptionItems} />
+
+              {gallery.length > 1 ? (
+                <section className="rounded-[1.75rem] border border-neutral-100 bg-neutral-50 p-3 shadow-xl shadow-primary/5">
+                  <div className="mb-4 px-2 pt-2">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
+                      Galeri Paket
+                    </p>
+                    <h2 className="mt-1 font-sans text-2xl font-black text-primary">
+                      Dokumentasi & visual paket
+                    </h2>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {gallery.slice(0, 6).map((image, index) => (
+                      <div
+                        key={image}
+                        className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-primary/10"
+                      >
+                        <Image
+                          src={image}
+                          alt={`${pkg.name} ${index + 1}`}
+                          fill
+                          sizes="(min-width: 1024px) 20vw, 50vw"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </div>
+
+            <aside className="lg:sticky lg:top-28 lg:self-start">
+              <div className="overflow-hidden rounded-[1.75rem] border border-neutral-100 bg-white shadow-2xl shadow-primary/10">
+                <div className="bg-primary p-6 text-white">
+                  <p className="text-sm font-semibold text-gray-300">
+                    Booking & konsultasi
+                  </p>
+                  <p className="mt-2 text-4xl font-black text-secondary">
+                    {toCurrency(pkg.priceQuad)}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-300">
+                    Harga mengikuti ketersediaan seat dan konfigurasi kamar.
+                  </p>
                 </div>
-                <div className="grid gap-3">
+
+                <div className="space-y-4 p-6">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl bg-neutral-50 p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+                        Seat
+                      </p>
+                      <p className="mt-1 text-2xl font-black text-primary">
+                        {seatsLeft}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-neutral-50 p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+                        Durasi
+                      </p>
+                      <p className="mt-1 text-2xl font-black text-primary">
+                        {pkg.duration || "-"}H
+                      </p>
+                    </div>
+                  </div>
+
                   <a
                     href={whatsappLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 px-5 py-4 font-bold text-white transition hover:bg-green-600"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-green-500 px-5 py-4 font-bold text-white transition hover:bg-green-600"
                   >
                     <MessageCircle className="h-5 w-5" />
                     Tanya Paket Ini
                   </a>
+
                   {pkg.itineraryPdf ? (
                     <a
                       href={pkg.itineraryPdf}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-4 font-bold text-white transition hover:bg-secondary hover:text-primary"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-bold text-white transition hover:bg-secondary hover:text-primary"
                     >
                       <FileText className="h-5 w-5" />
                       Lihat Itinerary PDF
@@ -375,8 +448,8 @@ export default async function LandingPackageDetailPage({
                   ) : null}
                 </div>
               </div>
-            </div>
-          </aside>
+            </aside>
+          </div>
         </section>
       </main>
 

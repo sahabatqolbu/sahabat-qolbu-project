@@ -155,6 +155,34 @@
     });
   }
 
+  function prefetchPackageDetail(link) {
+    if (!link || link.dataset.prefetched === "true") return;
+
+    const href = link.getAttribute("href");
+    if (!href) return;
+
+    const prefetch = document.createElement("link");
+    prefetch.rel = "prefetch";
+    prefetch.href = href;
+    document.head.appendChild(prefetch);
+    link.dataset.prefetched = "true";
+  }
+
+  function initPackageDetailPrefetch() {
+    document.querySelectorAll(".js-package-detail-link").forEach((link) => {
+      link.addEventListener("mouseenter", () => prefetchPackageDetail(link), {
+        once: true,
+      });
+      link.addEventListener("touchstart", () => prefetchPackageDetail(link), {
+        once: true,
+        passive: true,
+      });
+      link.addEventListener("mousedown", () => prefetchPackageDetail(link), {
+        once: true,
+      });
+    });
+  }
+
   async function hydratePackagesFromApi() {
     try {
       const response = await fetch(`${apiBase}/packages`, {
@@ -282,7 +310,8 @@
           
           <div class="grid grid-cols-2 gap-2">
             <a href="${detailLink}"
-               class="flex items-center justify-center w-full bg-primary hover:bg-secondary text-white font-semibold py-3 rounded-xl transition-colors">
+               data-package-detail-link
+               class="js-package-detail-link flex items-center justify-center w-full bg-primary hover:bg-secondary text-white hover:text-primary font-semibold py-3 rounded-xl transition-colors">
               Detail
             </a>
             <a href="${waLink}" target="_blank" rel="noopener"
@@ -534,6 +563,7 @@
       .map(createCard)
       .join("");
     initSwipers();
+    initPackageDetailPrefetch();
   }
 
   // Render All + Filter
@@ -543,6 +573,7 @@
 
     container.innerHTML = packageData.map(createCard).join("");
     initSwipers();
+    initPackageDetailPrefetch();
     updateCount(packageData.length);
 
     renderFilter(container);
