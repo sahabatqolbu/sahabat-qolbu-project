@@ -122,7 +122,8 @@ export const viewport = {
 function LandingHeader() {
   return (
     <header
-      className="fixed left-0 right-0 top-0 z-50 transition-all duration-300"
+      className="fixed left-0 right-0 top-0 z-50 font-[var(--font-inter)] transition-all duration-300"
+      data-detail-header="true"
       id="header"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -148,7 +149,7 @@ function LandingHeader() {
                 </span>
               </span>
               <span className="js-company-tagline hidden text-xs text-gray-300 transition-colors duration-300 sm:block">
-                Cahaya Baitullah
+                Tour & Travel
               </span>
             </div>
           </Link>
@@ -257,7 +258,7 @@ function LandingHeader() {
 
 function LandingFooter() {
   return (
-    <footer className="bg-primary text-white">
+    <footer className="bg-primary font-[var(--font-inter)] text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-8 py-12 md:grid-cols-2 md:py-16 lg:grid-cols-4">
           <div className="lg:col-span-2">
@@ -273,7 +274,7 @@ function LandingFooter() {
                 <span className="text-lg font-bold">
                   Sahabat <span className="text-gold">Qolbu</span>
                 </span>
-                <span className="block text-xs text-gray-300">Cahaya Baitullah</span>
+                <span className="block text-xs text-gray-300">Tour & Travel</span>
               </div>
             </Link>
             <p className="mb-6 max-w-md leading-relaxed text-gray-300">
@@ -320,7 +321,7 @@ function LandingFooter() {
           </div>
 
           <div>
-            <h3 className="mb-4 text-lg font-bold">Menu</h3>
+            <h3 className="mb-4 font-[var(--font-inter)] text-lg font-bold">Menu</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/#beranda" className="text-gray-300 transition-colors hover:text-gold">
@@ -346,7 +347,7 @@ function LandingFooter() {
           </div>
 
           <div>
-            <h3 className="mb-4 text-lg font-bold">Kontak</h3>
+            <h3 className="mb-4 font-[var(--font-inter)] text-lg font-bold">Kontak</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-gold" />
@@ -817,8 +818,10 @@ export default async function LandingPackageDetailPage({
               const mobileMenuBtn = document.getElementById('mobileMenuBtn');
               const mobileMenu = document.getElementById('mobileMenu');
               const header = document.getElementById('header');
+              const isDetailHeader = header && header.getAttribute('data-detail-header') === 'true';
 
-              if (mobileMenuBtn && mobileMenu) {
+              if (mobileMenuBtn && mobileMenu && !mobileMenuBtn.dataset.bound) {
+                mobileMenuBtn.dataset.bound = 'true';
                 mobileMenuBtn.addEventListener('click', function() {
                   const isOpen = !mobileMenu.classList.contains('hidden');
                   mobileMenu.classList.toggle('hidden');
@@ -834,7 +837,7 @@ export default async function LandingPackageDetailPage({
               }
 
               function updateHeader() {
-                if (!header) return;
+                if (!header || !isDetailHeader) return;
                 if (window.scrollY > 50) {
                   header.classList.add('bg-primary', 'shadow-lg');
                 } else {
@@ -842,8 +845,12 @@ export default async function LandingPackageDetailPage({
                 }
               }
 
+              if (window.__sqDetailHeaderScrollHandler) {
+                window.removeEventListener('scroll', window.__sqDetailHeaderScrollHandler);
+              }
+              window.__sqDetailHeaderScrollHandler = updateHeader;
               updateHeader();
-              window.addEventListener('scroll', updateHeader, { passive: true });
+              window.addEventListener('scroll', window.__sqDetailHeaderScrollHandler, { passive: true });
             })();
           `,
         }}
