@@ -55,24 +55,20 @@ const getDescriptionItems = (value?: string) =>
     .filter(Boolean);
 
 const getPackageTypeLabel = (pkg: MarketingPackage) => {
-  const type = String(pkg.backendType || pkg.type || "").toUpperCase();
-  const name = pkg.name.toLowerCase();
+  const rawType = String(pkg.backendType || "").trim();
 
-  if (type.includes("RAMADHAN") || name.includes("ramadhan")) {
-    return "Umroh Ramadhan";
+  if (rawType) {
+    return rawType
+      .replace(/[_-]+/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
-  if (
-    type.includes("PLUS") ||
-    type.includes("EXTREME") ||
-    name.includes("plus") ||
-    name.includes("turki") ||
-    name.includes("dubai")
-  ) {
-    return "Umroh Plus";
-  }
-
-  return "Umroh Reguler";
+  return String(pkg.type || "UMRAH")
+    .replace(/[_-]+/g, " ")
+    .toLowerCase()
+    .replace(/\bumrah\b/g, "umroh")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
 export async function generateStaticParams() {
@@ -677,21 +673,11 @@ export default async function LandingPackageDetailPage({
   const heroDescription =
     descriptionItems[0] ||
     `Paket umroh ${pkg.duration || ""} hari bersama Sahabat Qolbu dengan pendampingan tim berpengalaman.`;
-  const itineraryItems = pkg.itinerary?.length
-    ? pkg.itinerary
-    : [
-        {
-          day: 1,
-          title: "Program perjalanan",
-          activities: descriptionItems.length
-            ? descriptionItems
-            : [
-                "Rincian perjalanan akan diinformasikan oleh admin Sahabat Qolbu sesuai paket yang dipilih.",
-              ],
-        },
-      ];
+  const packageDescription =
+    String(pkg.description || "").trim() ||
+    "Deskripsi paket akan diinformasikan lebih lanjut oleh admin Sahabat Qolbu.";
   const infoNav = [
-    ["rincian", "Rincian Perjalanan"],
+    ["deskripsi", "Deskripsi"],
     ["termasuk", "Termasuk"],
     ["tidak-termasuk", "Tidak Termasuk"],
     ["persyaratan", "Pendaftaran & Persyaratan"],
@@ -716,14 +702,12 @@ export default async function LandingPackageDetailPage({
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_390px]">
               <div>
                 <div className="overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-lg shadow-primary/10">
-                  <div
-                    className="aspect-[16/9] bg-primary bg-cover bg-center"
-                    role="img"
-                    aria-label={pkg.name}
-                    style={{ backgroundImage: `url("${heroImage}")` }}
-                  >
-                    <span className="sr-only">{pkg.name}</span>
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroImage}
+                    alt={pkg.name}
+                    className="block h-auto w-full bg-primary object-contain"
+                  />
                 </div>
 
                 <div className="mt-7 max-w-4xl">
@@ -788,12 +772,16 @@ export default async function LandingPackageDetailPage({
         </section>
 
         <nav className="sticky top-20 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
-            {infoNav.map(([id, label]) => (
+          <div className="mx-auto flex max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8">
+            {infoNav.map(([id, label], index) => (
               <a
                 key={id}
                 href={`#${id}`}
-                className="whitespace-nowrap rounded-sm border border-neutral-200 px-4 py-2 text-sm font-extrabold text-primary transition hover:border-gold hover:bg-gold hover:text-primary"
+                className={`whitespace-nowrap border-b-2 px-5 py-4 text-sm font-extrabold transition first:pl-0 ${
+                  index === 0
+                    ? "border-gold text-gold"
+                    : "border-transparent text-primary hover:border-gold hover:text-gold"
+                }`}
               >
                 {label}
               </a>
@@ -804,34 +792,9 @@ export default async function LandingPackageDetailPage({
         <section className="bg-white pb-16 pt-4 md:pb-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
             <article className="rounded-sm border border-neutral-200 bg-white px-5 py-2 shadow-sm sm:px-8">
-              <DetailSection id="rincian" title="Rincian Perjalanan">
-                <div className="space-y-5">
-                  {itineraryItems.map((item) => (
-                    <div
-                      key={`${item.day}-${item.title}`}
-                      className="rounded-sm border border-neutral-200 bg-neutral-50 p-5"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <span className="inline-flex w-fit items-center rounded-sm bg-primary px-3 py-1 text-sm font-extrabold text-white">
-                          Hari {item.day}
-                        </span>
-                        <h3 className="text-lg font-extrabold text-primary">
-                          {item.title}
-                        </h3>
-                      </div>
-                      <ul className="mt-4 space-y-2">
-                        {item.activities.map((activity, index) => (
-                          <li
-                            key={`${activity}-${index}`}
-                            className="flex gap-3 leading-7 text-neutral-700"
-                          >
-                            <CheckCircle2 className="mt-1 h-5 w-5 flex-none text-gold" />
-                            <span>{activity}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+              <DetailSection id="deskripsi" title="Deskripsi">
+                <div className="whitespace-pre-line text-sm font-medium leading-6 text-neutral-700 sm:text-base">
+                  {packageDescription}
                 </div>
               </DetailSection>
 
