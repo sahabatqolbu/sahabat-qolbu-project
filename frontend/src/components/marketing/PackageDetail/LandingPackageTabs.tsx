@@ -23,8 +23,8 @@ type LandingPackageTabsProps = {
 const tabs: { key: TabKey; label: string; helper: string; icon: typeof Info }[] = [
   {
     key: "program",
-    label: "Program",
-    helper: "Alur perjalanan",
+    label: "Deskripsi",
+    helper: "Cerita paket",
     icon: ClipboardList,
   },
   { key: "summary", label: "Ringkasan", helper: "Info utama", icon: Info },
@@ -152,8 +152,9 @@ export function LandingPackageTabs({
   const ActiveIcon = activeTabMeta.icon;
 
   return (
-    <section className="rounded-[1.75rem] border border-neutral-100 bg-neutral-50 p-3 shadow-xl shadow-primary/5">
-      <div className="grid gap-2 rounded-[1.35rem] bg-white p-2 sm:grid-cols-5">
+    <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-2xl shadow-primary/10">
+      <div className="border-b border-neutral-100 bg-white p-3">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
         {tabs.map(({ key, label, helper, icon: Icon }) => {
           const isActive = activeTab === key;
 
@@ -162,10 +163,10 @@ export function LandingPackageTabs({
               key={key}
               type="button"
               onClick={() => setActiveTab(key)}
-              className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
+              className={`flex min-w-[150px] items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
                 isActive
                   ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : "text-neutral-600 hover:bg-secondary/20 hover:text-primary"
+                  : "bg-neutral-50 text-neutral-600 hover:bg-secondary/20 hover:text-primary"
               }`}
             >
               <span
@@ -188,11 +189,12 @@ export function LandingPackageTabs({
             </button>
           );
         })}
+        </div>
       </div>
 
-      <div className="p-4 sm:p-6">
+      <div className="bg-[#FBFAF6] p-5 sm:p-7">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-primary">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-secondary">
             <ActiveIcon className="h-5 w-5" />
           </div>
           <div>
@@ -206,27 +208,24 @@ export function LandingPackageTabs({
         </div>
 
         {activeTab === "program" ? (
-          <div className="space-y-3">
+          <article className="rounded-3xl bg-white p-5 shadow-sm sm:p-7">
             {descriptionItems.length ? (
-              descriptionItems.map((item, index) => (
-                <div
-                  key={`${item}-${index}`}
-                  className="grid gap-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm sm:grid-cols-[44px_1fr]"
-                >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-sm font-black text-secondary">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <p className="text-base font-medium leading-relaxed text-neutral-700">
+              <div className="space-y-4">
+                {descriptionItems.map((item, index) => (
+                  <p
+                    key={`${item}-${index}`}
+                    className="text-base font-medium leading-8 text-neutral-700"
+                  >
                     {item}
                   </p>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
               <EmptyState>
                 Detail program akan diinformasikan oleh tim Sahabat Qolbu.
               </EmptyState>
             )}
-          </div>
+          </article>
         ) : null}
 
         {activeTab === "summary" ? (

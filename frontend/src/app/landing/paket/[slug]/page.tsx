@@ -255,127 +255,114 @@ export default async function LandingPackageDetailPage({
     <div className="min-h-screen bg-white font-sans text-primary">
       <LandingHeader />
 
-      <main>
-        <section className="relative overflow-hidden bg-primary text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,193,7,0.25),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_45%)]" />
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.86fr] lg:px-8 lg:py-16">
-            <div className="relative z-10">
-              <Link
-                href="/landing/paket"
-                className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Kembali ke Semua Paket
-              </Link>
+      <main className="bg-[#F7F5EF]">
+        <section className="relative min-h-[680px] overflow-hidden bg-primary text-white">
+          <Image
+            src={heroImage}
+            alt={pkg.name}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover opacity-55"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/88 to-primary/35" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,193,7,0.22),transparent_28%)]" />
 
+          <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl flex-col justify-end px-4 pb-10 pt-10 sm:px-6 lg:px-8">
+            <Link
+              href="/landing/paket"
+              className="mb-auto inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Kembali ke Semua Paket
+            </Link>
+
+            <div className="max-w-4xl">
               <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
                 <ShieldCheck className="h-4 w-4" />
-                Paket Umroh Resmi
+                Detail Paket Umroh
               </div>
-
-              <h1 className="max-w-4xl font-sans text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="font-sans text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
                 {pkg.name}
               </h1>
-              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-gray-200">
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-100">
                 {heroDescription}
               </p>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {[
-                  {
-                    label: "Berangkat",
-                    value: pkg.departureDate ? formatDate(pkg.departureDate) : "Menyusul",
-                    icon: CalendarDays,
-                  },
-                  { label: "Durasi", value: `${pkg.duration || "-"} Hari`, icon: Clock3 },
-                  { label: "Seat", value: `${seatsLeft} Tersisa`, icon: Users },
-                ].map(({ label, value, icon: Icon }) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"
-                  >
-                    <Icon className="mb-3 h-6 w-6 text-secondary" />
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
-                      {label}
-                    </p>
-                    <p className="mt-1 font-bold">{value}</p>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="relative z-10">
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/25">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[1.45rem] bg-primary/20">
-                  <Image
-                    src={heroImage}
-                    alt={pkg.name}
-                    fill
-                    priority
-                    sizes="(min-width: 1024px) 42vw, 100vw"
-                    className="object-cover"
-                  />
+            <div className="mt-10 grid gap-3 rounded-[2rem] border border-white/15 bg-white/10 p-3 backdrop-blur md:grid-cols-4">
+              {[
+                {
+                  label: "Mulai Dari",
+                  value: toCurrency(pkg.priceQuad),
+                  icon: ShieldCheck,
+                },
+                {
+                  label: "Berangkat",
+                  value: pkg.departureDate ? formatDate(pkg.departureDate) : "Menyusul",
+                  icon: CalendarDays,
+                },
+                { label: "Durasi", value: `${pkg.duration || "-"} Hari`, icon: Clock3 },
+                { label: "Seat", value: `${seatsLeft} Tersisa`, icon: Users },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="rounded-3xl bg-white p-5 text-primary">
+                  <Icon className="mb-4 h-6 w-6 text-secondary" />
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+                    {label}
+                  </p>
+                  <p className="mt-2 text-lg font-black">{value}</p>
                 </div>
-              </div>
-              <div className="-mt-8 mx-5 rounded-3xl bg-white p-5 text-primary shadow-2xl shadow-black/20">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Harga mulai dari
-                </p>
-                <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-                  <p className="text-3xl font-black">{toCurrency(pkg.priceQuad)}</p>
-                  <a
-                    href={whatsappLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-green-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-600"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    Konsultasi
-                  </a>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="bg-white">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8 lg:py-14">
+        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div className="space-y-8">
-              <div className="grid gap-4 md:grid-cols-3">
-                {[
-                  "Bimbingan manasik sebelum keberangkatan",
-                  "Akomodasi dan maskapai sesuai data paket",
-                  "Tim Sahabat Qolbu siap bantu konsultasi",
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className="flex gap-3 rounded-2xl border border-neutral-100 bg-neutral-50 p-4"
-                  >
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-green-500" />
-                    <p className="text-sm font-semibold leading-relaxed text-neutral-700">
-                      {item}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <section className="rounded-[2rem] bg-white p-6 shadow-xl shadow-primary/5 sm:p-8">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">
+                  Overview
+                </p>
+                <h2 className="mt-3 font-sans text-3xl font-black text-primary">
+                  Gambaran perjalanan
+                </h2>
+                <p className="mt-4 max-w-3xl text-base font-medium leading-8 text-neutral-700">
+                  {heroDescription}
+                </p>
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                  {[
+                    "Data paket langsung dari database Sahabat Qolbu.",
+                    "Detail hotel, maskapai, jadwal, dan fasilitas tersedia di tab.",
+                    "Tim kami siap bantu validasi seat dan kebutuhan jamaah.",
+                  ].map((item) => (
+                    <div key={item} className="flex gap-3 rounded-2xl bg-neutral-50 p-4">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-green-500" />
+                      <p className="text-sm font-semibold leading-relaxed text-neutral-700">
+                        {item}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
               <LandingPackageTabs pkg={pkg} descriptionItems={descriptionItems} />
 
               {gallery.length > 1 ? (
-                <section className="rounded-[1.75rem] border border-neutral-100 bg-neutral-50 p-3 shadow-xl shadow-primary/5">
-                  <div className="mb-4 px-2 pt-2">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
-                      Galeri Paket
+                <section className="rounded-[2rem] bg-white p-5 shadow-xl shadow-primary/5 sm:p-6">
+                  <div className="mb-5">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">
+                      Galeri
                     </p>
-                    <h2 className="mt-1 font-sans text-2xl font-black text-primary">
-                      Dokumentasi & visual paket
+                    <h2 className="mt-2 font-sans text-3xl font-black text-primary">
+                      Visual paket
                     </h2>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {gallery.slice(0, 6).map((image, index) => (
                       <div
                         key={image}
-                        className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-primary/10"
+                        className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-primary/10"
                       >
                         <Image
                           src={image}
@@ -392,28 +379,46 @@ export default async function LandingPackageDetailPage({
             </div>
 
             <aside className="lg:sticky lg:top-28 lg:self-start">
-              <div className="overflow-hidden rounded-[1.75rem] border border-neutral-100 bg-white shadow-2xl shadow-primary/10">
-                <div className="bg-primary p-6 text-white">
-                  <p className="text-sm font-semibold text-gray-300">
-                    Booking & konsultasi
-                  </p>
-                  <p className="mt-2 text-4xl font-black text-secondary">
+              <div className="overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-primary/15">
+                <div className="bg-primary p-7 text-white">
+                  <p className="text-sm font-semibold text-gray-300">Harga mulai dari</p>
+                  <p className="mt-3 text-4xl font-black text-secondary">
                     {toCurrency(pkg.priceQuad)}
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-300">
-                    Harga mengikuti ketersediaan seat dan konfigurasi kamar.
+                  <p className="mt-3 text-sm leading-relaxed text-gray-300">
+                    Konsultasikan konfigurasi kamar dan ketersediaan seat sebelum booking.
                   </p>
                 </div>
 
                 <div className="space-y-4 p-6">
-                  <div className="grid grid-cols-2 gap-3">
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-green-500 px-5 py-4 font-bold text-white transition hover:bg-green-600"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    Konsultasi via WhatsApp
+                  </a>
+
+                  {pkg.itineraryPdf ? (
+                    <a
+                      href={pkg.itineraryPdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary px-5 py-4 font-bold text-primary transition hover:bg-secondary-600"
+                    >
+                      <FileText className="h-5 w-5" />
+                      Lihat Itinerary PDF
+                    </a>
+                  ) : null}
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
                     <div className="rounded-2xl bg-neutral-50 p-4">
                       <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
                         Seat
                       </p>
-                      <p className="mt-1 text-2xl font-black text-primary">
-                        {seatsLeft}
-                      </p>
+                      <p className="mt-1 text-2xl font-black text-primary">{seatsLeft}</p>
                     </div>
                     <div className="rounded-2xl bg-neutral-50 p-4">
                       <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
@@ -424,28 +429,6 @@ export default async function LandingPackageDetailPage({
                       </p>
                     </div>
                   </div>
-
-                  <a
-                    href={whatsappLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-green-500 px-5 py-4 font-bold text-white transition hover:bg-green-600"
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                    Tanya Paket Ini
-                  </a>
-
-                  {pkg.itineraryPdf ? (
-                    <a
-                      href={pkg.itineraryPdf}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-4 font-bold text-white transition hover:bg-secondary hover:text-primary"
-                    >
-                      <FileText className="h-5 w-5" />
-                      Lihat Itinerary PDF
-                    </a>
-                  ) : null}
                 </div>
               </div>
             </aside>
