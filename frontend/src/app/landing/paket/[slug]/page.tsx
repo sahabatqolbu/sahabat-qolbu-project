@@ -121,51 +121,135 @@ export const viewport = {
 
 function LandingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-primary/95 text-white shadow-lg backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-8">
-        <Link href="/landing/" className="flex items-center gap-3">
-          <Image
-            src="/landing/images/icon.png"
-            alt="Logo Sahabat Qolbu"
-            width={48}
-            height={48}
-            className="h-10 w-10 object-contain lg:h-12 lg:w-12"
-            priority
-          />
-          <div className="leading-tight">
-            <span className="block text-lg font-black lg:text-xl">
-              Sahabat <span className="text-secondary">Qolbu</span>
-            </span>
-            <span className="hidden text-xs font-medium text-white/65 sm:block">
-              Cahaya Baitullah
-            </span>
-          </div>
-        </Link>
+    <header
+      className="fixed left-0 right-0 top-0 z-50 transition-all duration-300"
+      id="header"
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <nav className="flex h-16 items-center justify-between md:h-20">
+          <Link href="/landing/" className="flex items-center gap-2 md:gap-3">
+            <div className="flex h-10 w-10 items-center justify-center md:h-12 md:w-12">
+              <Image
+                src="/landing/images/icon.png"
+                alt="Logo Sahabat Qolbu"
+                width={48}
+                height={48}
+                className="h-full w-full object-contain"
+                priority
+              />
+            </div>
+            <div>
+              <span className="text-lg font-bold md:text-xl">
+                <span className="js-logo-sahabat text-white transition-colors duration-300">
+                  Sahabat
+                </span>{" "}
+                <span className="js-logo-qolbu text-secondary transition-colors duration-300">
+                  Qolbu
+                </span>
+              </span>
+              <span className="js-company-tagline hidden text-xs text-gray-300 transition-colors duration-300 sm:block">
+                Cahaya Baitullah
+              </span>
+            </div>
+          </Link>
 
-        <nav className="hidden items-center gap-7 text-sm font-bold md:flex">
-          <Link href="/landing/#beranda" className="text-white/85 hover:text-secondary">
+          <div className="hidden items-center gap-8 md:flex">
+            <Link
+              href="/landing/#beranda"
+              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+            >
+              Beranda
+            </Link>
+            <Link
+              href="/landing/#tentang"
+              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+            >
+              Tentang
+            </Link>
+            <Link
+              href="/landing/paket"
+              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+            >
+              Paket
+            </Link>
+            <Link
+              href="/landing/#testimoni"
+              className="nav-link font-medium text-white transition-colors hover:text-secondary"
+            >
+              Testimoni
+            </Link>
+            <a
+              href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik konsultasi tentang paket umroh")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full bg-gradient-to-r from-secondary to-secondary-400 px-5 py-2.5 font-semibold text-primary transition-opacity hover:opacity-90"
+            >
+              Hubungi Kami
+            </a>
+          </div>
+
+          <button
+            type="button"
+            className="p-2 text-white transition-colors hover:text-secondary md:hidden"
+            id="mobileMenuBtn"
+            aria-label="Buka menu navigasi"
+            aria-expanded="false"
+          >
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </nav>
+      </div>
+
+      <div
+        className="hidden border-t border-white/10 bg-primary md:hidden"
+        id="mobileMenu"
+      >
+        <div className="space-y-3 px-4 py-4">
+          <Link
+            href="/landing/#beranda"
+            className="block py-2 text-white transition-colors hover:text-secondary"
+          >
             Beranda
           </Link>
-          <Link href="/landing/#tentang" className="text-white/85 hover:text-secondary">
+          <Link
+            href="/landing/#tentang"
+            className="block py-2 text-white transition-colors hover:text-secondary"
+          >
             Tentang
           </Link>
-          <Link href="/landing/paket" className="text-secondary">
+          <Link
+            href="/landing/paket"
+            className="block py-2 text-white transition-colors hover:text-secondary"
+          >
             Paket
           </Link>
-          <Link href="/landing/#testimoni" className="text-white/85 hover:text-secondary">
+          <Link
+            href="/landing/#testimoni"
+            className="block py-2 text-white transition-colors hover:text-secondary"
+          >
             Testimoni
           </Link>
-        </nav>
-
-        <a
-          href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya ingin konsultasi paket umroh")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm font-black text-primary shadow-lg shadow-secondary/20 transition hover:bg-secondary-400"
-        >
-          <MessageCircle className="h-4 w-4" />
-          <span className="hidden sm:inline">Konsultasi</span>
-        </a>
+          <a
+            href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik konsultasi tentang paket umroh")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 block rounded-full bg-gradient-to-r from-secondary to-secondary-400 px-5 py-3 text-center font-semibold text-primary"
+          >
+            Hubungi Kami
+          </a>
+        </div>
       </div>
     </header>
   );
@@ -705,6 +789,45 @@ export default async function LandingPackageDetailPage({
       >
         <MessageCircle className="h-7 w-7" />
       </a>
+
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+              const mobileMenu = document.getElementById('mobileMenu');
+              const header = document.getElementById('header');
+
+              if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                  const isOpen = !mobileMenu.classList.contains('hidden');
+                  mobileMenu.classList.toggle('hidden');
+                  mobileMenuBtn.setAttribute('aria-expanded', String(!isOpen));
+                });
+
+                mobileMenu.querySelectorAll('a').forEach(function(link) {
+                  link.addEventListener('click', function() {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+                  });
+                });
+              }
+
+              function updateHeader() {
+                if (!header) return;
+                if (window.scrollY > 50) {
+                  header.classList.add('bg-primary', 'shadow-lg');
+                } else {
+                  header.classList.remove('bg-primary', 'shadow-lg');
+                }
+              }
+
+              updateHeader();
+              window.addEventListener('scroll', updateHeader, { passive: true });
+            })();
+          `,
+        }}
+      />
     </div>
   );
 }
