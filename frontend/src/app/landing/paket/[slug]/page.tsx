@@ -17,7 +17,6 @@ import {
   Phone,
   Plane,
   ShieldCheck,
-  Star,
   Users,
 } from "lucide-react";
 import { LandingPackageTabs } from "@/components/marketing/PackageDetail/LandingPackageTabs";
@@ -129,9 +128,11 @@ function LandingHeader() {
         <nav className="flex items-center justify-between h-16 md:h-20">
           <Link href="/landing/" className="flex items-center gap-2 md:gap-3">
             <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-              <img
+              <Image
                 src="/landing/images/icon.png"
                 alt="Logo Sahabat Qolbu"
+                width={48}
+                height={48}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -256,9 +257,11 @@ function LandingFooter() {
             <div className="flex items-center gap-3 mb-4">
               <Link href="/landing/" className="flex items-center gap-2 md:gap-3">
                 <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center">
-                  <img
+                  <Image
                     src="/landing/images/icon.png"
                     alt="Logo Sahabat Qolbu"
+                    width={48}
+                    height={48}
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -389,24 +392,6 @@ function LandingFooter() {
   );
 }
 
-function Stars({ rating }: { rating: number }) {
-  const safeRating = Math.max(0, Math.min(5, Math.round(rating)));
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <Star
-          key={index}
-          className={`h-3.5 w-3.5 ${
-            index < safeRating
-              ? "fill-secondary text-secondary"
-              : "fill-neutral-200 text-neutral-200"
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default async function LandingPackageDetailPage({
   params,
 }: {
@@ -445,10 +430,13 @@ export default async function LandingPackageDetailPage({
         {/* HERO */}
         <section className="relative min-h-[640px] flex items-center pt-16 md:pt-20">
           <div className="absolute inset-0">
-            <img
+            <Image
               src={heroImage}
               alt={pkg.name}
-              className="w-full h-full object-cover"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/40" />
           </div>
@@ -596,11 +584,13 @@ export default async function LandingPackageDetailPage({
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div className="relative">
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
-                  <img
+                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
+                  <Image
                     src={gallery[1] || gallery[0] || heroImage}
                     alt={pkg.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="object-cover"
                   />
                 </div>
                 <div className="absolute -bottom-6 -right-6 bg-white rounded-xl shadow-lg p-5 hidden sm:block">
@@ -654,8 +644,8 @@ export default async function LandingPackageDetailPage({
                 </ul>
 
                 <p className="italic text-gray-600 mb-6">
-                  "Sehingga Jamaah khusyu dalam menjalankan Ibadah Umroh sesuai
-                  Qur'an & Sunnah."
+                  &ldquo;Sehingga Jamaah khusyu dalam menjalankan Ibadah Umroh
+                  sesuai Qur&rsquo;an &amp; Sunnah.&rdquo;
                 </p>
 
                 <div className="grid sm:grid-cols-2 gap-4">
