@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins, Playfair_Display } from "next/font/google";
+import { Inter, Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { generateMetadata as getMetadata } from "@/lib/seo";
 import QueryProvider from "@/components/providers/QueryProvider";
@@ -20,6 +20,14 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
   display: "swap",
   weight: ["400", "500", "600", "700", "800", "900"],
+  preload: true,
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
   preload: true,
 });
 
@@ -74,7 +82,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${poppins.variable} ${playfair.variable} font-sans antialiased`}
+        className={`${poppins.variable} ${playfair.variable} ${inter.variable} font-sans antialiased`}
       >
         <QueryProvider>
           {children}

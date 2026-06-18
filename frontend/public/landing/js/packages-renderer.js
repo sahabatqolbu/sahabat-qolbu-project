@@ -45,7 +45,7 @@
     LA: { label: "LAND ARRANGEMENT", labelColor: "bg-emerald-600 text-white" },
   };
 
-  let packageData = Array.isArray(paket) ? paket : [];
+  let packageData = Array.isArray(window.paket) ? window.paket : [];
 
   function formatDateRange(startDate, endDate) {
     if (!startDate) return "Jadwal menyusul";
@@ -130,8 +130,9 @@
   function getCurrentWaNumber() {
     const contact = window.SQ_LANDING_CONTACT || {};
     const fromContact = contact.whatsappNumber || contact.whatsapp;
-    const digits = String(fromContact || WA || "").replace(/\D/g, "");
-    if (!digits) return WA;
+    const fallbackWa = window.WA || "6281255871984";
+    const digits = String(fromContact || fallbackWa || "").replace(/\D/g, "");
+    if (!digits) return fallbackWa;
     if (digits.startsWith("0")) return `62${digits.slice(1)}`;
     if (digits.startsWith("62")) return digits;
     if (digits.startsWith("8")) return `62${digits}`;
@@ -145,7 +146,7 @@
 
   function createDetailLink(packageItem) {
     const slug = packageItem.slug || slugifyPackageName(packageItem.nama);
-    return `/landing/paket/${encodeURIComponent(slug)}`;
+    return `/paket/${encodeURIComponent(slug)}`;
   }
 
   function updatePackageWhatsappLinks() {
@@ -447,11 +448,12 @@
     const filterDesktop = document.getElementById("filter-desktop");
     const filterMobile = document.getElementById("filter-mobile");
 
-    if (typeof tipeList === "undefined") return;
+    const typeList = Array.isArray(window.tipeList) ? window.tipeList : [];
+    if (typeList.length === 0) return;
 
     // === DESKTOP TABS ===
     if (filterDesktop) {
-      filterDesktop.innerHTML = tipeList
+      filterDesktop.innerHTML = typeList
         .map((t) => {
           const count = getCountByTipe(t.id);
           const isActive = t.id === "all";
@@ -517,7 +519,7 @@
 
     // === MOBILE DROPDOWN ===
     if (filterMobile) {
-      filterMobile.innerHTML = tipeList
+      filterMobile.innerHTML = typeList
         .map((t) => {
           const count = getCountByTipe(t.id);
           return `<option value="${t.id}">${t.nama} (${count})</option>`;
@@ -584,12 +586,24 @@
     if (el) el.textContent = n;
   }
 
-  document.addEventListener("DOMContentLoaded", async () => {
+  async function initPackageRendering() {
+    if (!Array.isArray(window.paket)) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    packageData = Array.isArray(window.paket) ? window.paket : packageData;
     await hydratePackagesFromApi();
     renderHome();
     renderAll();
     updatePackageWhatsappLinks();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPackageRendering);
+  } else {
+    initPackageRendering();
+  }
+
+  window.SQ_RENDER_PACKAGES = initPackageRendering;
 
   document.addEventListener("sq:landing-contact-updated", updatePackageWhatsappLinks);
 })();

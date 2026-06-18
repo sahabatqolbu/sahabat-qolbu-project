@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../../public/landing";
+@source "../../public/landing/js";
 
 @theme {
   /* Typography - Poppins as Primary */
@@ -31,6 +33,8 @@
   --color-secondary-800: #664D03;
   --color-secondary-900: #332701;
   --color-secondary: #FFC107;
+  --color-gold: #FFC107;
+  --color-gold-dark: #E6AC00;
 
   /* Rest of colors... */
   --color-neutral-50: #F9FAFB;
@@ -319,4 +323,80 @@
 
 .animate-scale-in {
   animation: scaleIn 0.4s ease-out;
+}
+
+.landing-static {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color: #1f2937;
+}
+
+.landing-static h1,
+.landing-static h2,
+.landing-static h3 {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.landing-detail h1,
+.landing-detail h2,
+.landing-detail h3 {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.landing-static .gradient-overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(10, 44, 69, 0.9) 0%,
+    rgba(10, 44, 69, 0.7) 100%
+  );
+}
+
+.landing-static .gold-gradient {
+  background: linear-gradient(135deg, #ffc107 0%, #ffd54f 100%);
+}
+
+.landing-static .bg-secondary {
+  background-color: #133c5a;
+}
+
+.landing-static .hover\:bg-secondary:hover {
+  background-color: #133c5a;
+}
+
+.landing-static .to-secondary {
+  --tw-gradient-to: #133c5a var(--tw-gradient-to-position);
+}
+
+.landing-static .animate-fade-in {
+  animation: landingFadeIn 0.6s ease-out;
+}
+
+.landing-static .paket-card .swiper {
+  position: relative;
+  height: 13.5rem;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.landing-static .paket-card .swiper > img,
+.landing-static .paket-card .swiper .slide > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .landing-static .paket-card .swiper {
+    height: 12.5rem;
+  }
+}
+
+@keyframes landingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

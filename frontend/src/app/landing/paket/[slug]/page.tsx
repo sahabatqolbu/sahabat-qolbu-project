@@ -127,7 +127,7 @@ function LandingHeader() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <nav className="flex h-16 items-center justify-between md:h-20">
-          <Link href="/landing/" className="flex items-center gap-2 md:gap-3">
+          <Link href="/" className="flex items-center gap-2 md:gap-3">
             <div className="flex h-10 w-10 items-center justify-center md:h-12 md:w-12">
               <Image
                 src="/landing/images/icon.png"
@@ -155,25 +155,25 @@ function LandingHeader() {
 
           <div className="hidden items-center gap-8 md:flex">
             <Link
-              href="/landing/#beranda"
+              href="/#beranda"
               className="nav-link font-medium text-white transition-colors hover:text-secondary"
             >
               Beranda
             </Link>
             <Link
-              href="/landing/#tentang"
+              href="/#tentang"
               className="nav-link font-medium text-white transition-colors hover:text-secondary"
             >
               Tentang
             </Link>
             <Link
-              href="/landing/paket"
+              href="/paket"
               className="nav-link font-medium text-white transition-colors hover:text-secondary"
             >
               Paket
             </Link>
             <Link
-              href="/landing/#testimoni"
+              href="/#testimoni"
               className="nav-link font-medium text-white transition-colors hover:text-secondary"
             >
               Testimoni
@@ -218,25 +218,25 @@ function LandingHeader() {
       >
         <div className="space-y-3 px-4 py-4">
           <Link
-            href="/landing/#beranda"
+            href="/#beranda"
             className="block py-2 text-white transition-colors hover:text-secondary"
           >
             Beranda
           </Link>
           <Link
-            href="/landing/#tentang"
+            href="/#tentang"
             className="block py-2 text-white transition-colors hover:text-secondary"
           >
             Tentang
           </Link>
           <Link
-            href="/landing/paket"
+            href="/paket"
             className="block py-2 text-white transition-colors hover:text-secondary"
           >
             Paket
           </Link>
           <Link
-            href="/landing/#testimoni"
+            href="/#testimoni"
             className="block py-2 text-white transition-colors hover:text-secondary"
           >
             Testimoni
@@ -261,7 +261,7 @@ function LandingFooter() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-8 py-12 md:grid-cols-2 md:py-16 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <Link href="/landing/" className="mb-4 flex items-center gap-3">
+              <Link href="/" className="mb-4 flex items-center gap-3">
               <Image
                 src="/landing/images/icon.png"
                 alt="Logo Sahabat Qolbu"
@@ -306,22 +306,22 @@ function LandingFooter() {
             <h3 className="mb-4 text-lg font-bold">Menu</h3>
             <ul className="space-y-3 text-white/70">
               <li>
-                <Link href="/landing/#beranda" className="hover:text-secondary">
+                <Link href="/#beranda" className="hover:text-secondary">
                   Beranda
                 </Link>
               </li>
               <li>
-                <Link href="/landing/#tentang" className="hover:text-secondary">
+                <Link href="/#tentang" className="hover:text-secondary">
                   Tentang Kami
                 </Link>
               </li>
               <li>
-                <Link href="/landing/paket" className="hover:text-secondary">
+                <Link href="/paket" className="hover:text-secondary">
                   Paket Umroh
                 </Link>
               </li>
               <li>
-                <Link href="/landing/#testimoni" className="hover:text-secondary">
+                <Link href="/#testimoni" className="hover:text-secondary">
                   Testimoni
                 </Link>
               </li>
@@ -409,7 +409,7 @@ function BookingPanel({
       <div className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-2xl shadow-primary/15">
         <div className="bg-primary p-6 text-white">
           <p className="text-sm font-semibold text-white/60">Mulai dari</p>
-          <p className="mt-1 font-display text-4xl font-black leading-none text-secondary">
+          <p className="mt-1 font-sans text-4xl font-black leading-none text-secondary">
             {toCurrency(pkg.priceQuad)}
           </p>
           <p className="mt-2 text-sm font-semibold text-white/65">
@@ -535,7 +535,7 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
               <p className="text-xs font-black uppercase tracking-[0.16em] text-secondary-700">
                 Hotel {hotel.city}
               </p>
-              <h3 className="mt-1 font-display text-xl font-black text-primary">
+              <h3 className="mt-1 font-sans text-xl font-black text-primary">
                 {hotel.name}
               </h3>
               <div className="mt-2 flex items-center gap-2">
@@ -593,7 +593,7 @@ export default async function LandingPackageDetailPage({
     `Paket umroh ${pkg.duration || ""} hari bersama Sahabat Qolbu dengan pendampingan tim berpengalaman.`;
 
   return (
-    <div className="min-h-screen bg-[#f7f5ef] text-neutral-800 antialiased">
+    <div className="landing-detail min-h-screen bg-white font-[var(--font-inter)] text-neutral-800 antialiased">
       <LandingHeader />
 
       <main>
@@ -608,13 +608,13 @@ export default async function LandingPackageDetailPage({
               className="object-cover opacity-55"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/55" />
-            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#f7f5ef] to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white to-transparent" />
           </div>
 
           <div className="relative mx-auto grid min-h-[680px] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8 lg:py-16">
             <div className="max-w-4xl">
               <Link
-                href="/landing/paket"
+                href="/paket"
                 className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-white/75 transition hover:text-secondary"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -631,7 +631,7 @@ export default async function LandingPackageDetailPage({
                 </span>
               </div>
 
-              <h1 className="max-w-4xl font-display text-4xl font-black leading-[1.04] text-white sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-4xl font-sans text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
                 {pkg.name}
               </h1>
               <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-white/78 sm:text-lg">
@@ -676,7 +676,7 @@ export default async function LandingPackageDetailPage({
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-secondary-700">
                   Paket Detail
                 </p>
-                <h2 className="mt-3 font-display text-3xl font-black leading-tight text-primary">
+                <h2 className="mt-3 font-sans text-3xl font-extrabold leading-tight text-primary">
                   Fokus ke ibadah, detail perjalanan sudah disiapkan.
                 </h2>
                 <div className="mt-6 grid gap-3">
@@ -702,7 +702,7 @@ export default async function LandingPackageDetailPage({
                       text: "Tim Sahabat Qolbu membantu dari konsultasi sampai keberangkatan.",
                     },
                   ].map(({ icon: Icon, title, text }) => (
-                    <div key={title} className="flex gap-4 rounded-2xl bg-[#f7f5ef] p-4">
+                    <div key={title} className="flex gap-4 rounded-2xl bg-gray-50 p-4">
                       <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-primary text-secondary">
                         <Icon className="h-5 w-5" />
                       </span>
@@ -741,7 +741,7 @@ export default async function LandingPackageDetailPage({
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between border-b border-neutral-100 pb-3">
                       <span className="font-bold text-neutral-500">{label}</span>
-                      <span className="font-display text-xl font-black text-primary">
+                      <span className="font-sans text-xl font-black text-primary">
                         {toCurrency(value)}
                       </span>
                     </div>
@@ -750,7 +750,7 @@ export default async function LandingPackageDetailPage({
               </div>
 
               <div className="rounded-[1.5rem] bg-primary p-6 text-white shadow-xl shadow-primary/15">
-                <p className="font-display text-2xl font-black">Butuh bantuan pilih paket?</p>
+                <p className="font-sans text-2xl font-black">Butuh bantuan pilih paket?</p>
                 <p className="mt-2 text-sm font-medium leading-6 text-white/70">
                   Konsultasikan jadwal, harga, dan kebutuhan keluarga langsung
                   dengan admin Sahabat Qolbu.
@@ -773,7 +773,7 @@ export default async function LandingPackageDetailPage({
           <RelatedPackages
             currentPackageId={pkg.id}
             packageType={pkg.type}
-            detailBasePath="/landing/paket"
+            detailBasePath="/paket"
           />
         </Suspense>
       </main>
