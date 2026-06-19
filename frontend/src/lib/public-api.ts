@@ -153,6 +153,7 @@ export interface MarketingPackage {
   priceTriple?: string;
   priceDouble: string;
   originalPrice?: string;
+  discountedPrice?: string;
   totalSeats: number;
   bookedSeats: number;
   image?: string;
@@ -385,6 +386,7 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     priceTriple: String(triplePrice),
     priceDouble: String(doublePrice),
     originalPrice: String(originalPrice),
+    discountedPrice: String(currentPrice),
     totalSeats: toNumber(pkg.totalSeats, 0),
     bookedSeats: toNumber(pkg.bookedSeats, 0),
     image: primaryImage,
@@ -422,7 +424,7 @@ const fetchApi = async <T>(path: string) => {
         Accept: "application/json",
       },
       next: {
-        revalidate: 300,
+        revalidate: 60,
       },
     });
 

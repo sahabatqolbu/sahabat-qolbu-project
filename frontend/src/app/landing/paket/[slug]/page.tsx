@@ -89,7 +89,7 @@ export async function generateStaticParams() {
 }
 
 export const dynamicParams = true;
-export const revalidate = 600;
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,
@@ -428,7 +428,8 @@ function BookingPanel({
   const seatPercent = pkg.totalSeats
     ? Math.round((seatsLeft / pkg.totalSeats) * 100)
     : 0;
-  const originalPrice = getOriginalPrice(pkg, pkg.priceQuad);
+  const topPrice = pkg.discountedPrice || pkg.priceQuad;
+  const originalPrice = getOriginalPrice(pkg, topPrice);
 
   return (
     <aside className="lg:sticky lg:top-24">
@@ -444,7 +445,7 @@ function BookingPanel({
             </p>
           ) : null}
           <p className="mt-1 text-3xl font-extrabold leading-none text-primary">
-            {toCurrency(pkg.priceQuad)}
+            {toCurrency(topPrice)}
           </p>
           <p className="mt-2 text-sm font-semibold text-neutral-500">
             per orang, kamar quad
