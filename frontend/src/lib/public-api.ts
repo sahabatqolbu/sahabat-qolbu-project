@@ -68,6 +68,10 @@ type BackendPackage = {
   returnDate?: string | null;
   price?: string | number | null;
   discountPrice?: string | number | null;
+  priceDouble?: string | number | null;
+  priceTriple?: string | number | null;
+  priceQuad?: string | number | null;
+  priceQuint?: string | number | null;
   totalSeats?: number | null;
   bookedSeats?: number | null;
   description?: string | null;
@@ -339,6 +343,9 @@ const mapHotel = (
 const mapPackage = (pkg: BackendPackage): MarketingPackage => {
   const currentPrice = toNumber(pkg.discountPrice ?? pkg.price, 0);
   const originalPrice = toNumber(pkg.price, currentPrice);
+  const quadPrice = toNumber(pkg.priceQuad, currentPrice) || currentPrice;
+  const triplePrice = toNumber(pkg.priceTriple, quadPrice) || quadPrice;
+  const doublePrice = toNumber(pkg.priceDouble, originalPrice) || originalPrice;
   const gallery = (pkg.images || [])
     .map((image) => resolveAssetUrl(image.imageUrl))
     .filter((value): value is string => Boolean(value));
@@ -374,9 +381,9 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
         starRating: 0,
       },
     hotelMadinah: mapHotel(pkg.hotelMadinah, "Masjid Nabawi"),
-    priceQuad: String(currentPrice),
-    priceTriple: String(currentPrice),
-    priceDouble: String(originalPrice),
+    priceQuad: String(quadPrice),
+    priceTriple: String(triplePrice),
+    priceDouble: String(doublePrice),
     originalPrice: String(originalPrice),
     totalSeats: toNumber(pkg.totalSeats, 0),
     bookedSeats: toNumber(pkg.bookedSeats, 0),
