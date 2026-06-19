@@ -147,6 +147,7 @@ export interface MarketingPackage {
   priceQuad: string;
   priceTriple?: string;
   priceDouble: string;
+  originalPrice?: string;
   totalSeats: number;
   bookedSeats: number;
   image?: string;
@@ -375,6 +376,7 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     priceQuad: String(currentPrice),
     priceTriple: String(currentPrice),
     priceDouble: String(originalPrice),
+    originalPrice: String(originalPrice),
     totalSeats: toNumber(pkg.totalSeats, 0),
     bookedSeats: toNumber(pkg.bookedSeats, 0),
     image: primaryImage,

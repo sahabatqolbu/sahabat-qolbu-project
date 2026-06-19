@@ -39,6 +39,18 @@ const toCurrency = (value?: string) => {
   return formatCurrency(Number.isFinite(parsed) ? parsed : 0);
 };
 
+const getNumericPrice = (value?: string) => {
+  const parsed = Number.parseInt(String(value || "0"), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getOriginalPrice = (pkg: MarketingPackage, currentPrice?: string) => {
+  const originalPrice = getNumericPrice(pkg.originalPrice);
+  const activePrice = getNumericPrice(currentPrice);
+
+  return originalPrice > activePrice ? pkg.originalPrice : undefined;
+};
+
 const getSeatsLeft = (pkg: MarketingPackage) =>
   Math.max(Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0), 0);
 
@@ -416,6 +428,7 @@ function BookingPanel({
   const seatPercent = pkg.totalSeats
     ? Math.round((seatsLeft / pkg.totalSeats) * 100)
     : 0;
+  const originalPrice = getOriginalPrice(pkg, pkg.priceQuad);
 
   return (
     <aside className="lg:sticky lg:top-24">
@@ -425,6 +438,11 @@ function BookingPanel({
             Pesan {pkg.name}
           </h2>
           <p className="mt-5 text-sm font-semibold text-neutral-500">From</p>
+          {originalPrice ? (
+            <p className="mt-1 text-lg font-extrabold text-neutral-400 line-through decoration-2">
+              {toCurrency(originalPrice)}
+            </p>
+          ) : null}
           <p className="mt-1 text-3xl font-extrabold leading-none text-primary">
             {toCurrency(pkg.priceQuad)}
           </p>
@@ -899,8 +917,15 @@ export default async function LandingPackageDetailPage({
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between border-b border-neutral-100 pb-3">
                       <span className="font-bold text-neutral-500">{label}</span>
-                      <span className="text-lg font-extrabold text-primary">
-                        {toCurrency(value)}
+                      <span className="text-right">
+                        {getOriginalPrice(pkg, value) ? (
+                          <span className="block text-xs font-extrabold text-neutral-400 line-through decoration-2">
+                            {toCurrency(getOriginalPrice(pkg, value))}
+                          </span>
+                        ) : null}
+                        <span className="block text-lg font-extrabold text-primary">
+                          {toCurrency(value)}
+                        </span>
                       </span>
                     </div>
                   ))}
