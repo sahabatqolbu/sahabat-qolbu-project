@@ -1,0 +1,1 @@
+ALTER TABLE `packages` ADD `excluded_facilities` text;

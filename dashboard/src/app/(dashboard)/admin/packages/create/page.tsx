@@ -583,15 +583,32 @@ export default function CreatePackagePage() {
                   </p>
                 </div>
 
+                {/* Tidak Termasuk */}
+                <div className="space-y-2">
+                  <Label htmlFor="excludedFacilities">Tidak Termasuk</Label>
+                  <Textarea
+                    id="excludedFacilities"
+                    placeholder="- Pengeluaran pribadi&#10;- Laundry&#10;- Kelebihan bagasi&#10;- Biaya di luar program"
+                    rows={5}
+                    {...register("excludedFacilities")}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Pisahkan setiap item dengan baris baru
+                  </p>
+                </div>
+
                 {/* Keterangan */}
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Keterangan Tambahan</Label>
+                  <Label htmlFor="notes">Keterangan Paket</Label>
                   <Textarea
                     id="notes"
-                    placeholder="Catatan atau keterangan tambahan..."
-                    rows={3}
+                    placeholder="- Keunggulan paket&#10;- Informasi khusus paket&#10;- Benefit tambahan"
+                    rows={5}
                     {...register("notes")}
                   />
+                  <p className="text-xs text-gray-500">
+                    Akan tampil sebagai Keunggulan Paket di halaman detail
+                  </p>
                 </div>
 
                 {/* Status */}

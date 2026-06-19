@@ -72,6 +72,7 @@ type BackendPackage = {
   bookedSeats?: number | null;
   description?: string | null;
   facilities?: string | null;
+  excludedFacilities?: string | null;
   notes?: string | null;
   itineraryPdf?: string | null;
   itinerary?: BackendItineraryItem[] | null;
@@ -386,7 +387,7 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
       toNonEmptyString(pkg.description) ||
       "Detail paket akan diinformasikan lebih lanjut oleh tim Sahabat Qolbu.",
     included: parseStringList(pkg.facilities),
-    excluded: undefined,
+    excluded: parseStringList(pkg.excludedFacilities),
     itinerary,
     itineraryPdf: resolveAssetUrl(pkg.itineraryPdf),
     documents: undefined,

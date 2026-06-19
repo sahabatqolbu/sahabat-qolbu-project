@@ -15,6 +15,7 @@ export interface Package {
   remainingSeats: number;
   description?: string;
   facilities?: string;
+  excludedFacilities?: string;
   notes?: string;
   isActive: boolean;
   isPublished: boolean;

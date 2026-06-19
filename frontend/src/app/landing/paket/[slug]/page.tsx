@@ -702,15 +702,7 @@ export default async function LandingPackageDetailPage({
   const packageDescription =
     String(pkg.description || "").trim() ||
     "Deskripsi paket akan diinformasikan lebih lanjut oleh admin Sahabat Qolbu.";
-  const packageAdvantages = [
-    `${pkg.duration || "-"} hari perjalanan dengan jadwal keberangkatan yang jelas.`,
-    `Menggunakan ${pkg.airline.name} untuk kenyamanan perjalanan jamaah.`,
-    `Hotel Makkah ${pkg.hotelMakkah.name}${pkg.hotelMakkah.distanceToHaram ? `, ${pkg.hotelMakkah.distanceToHaram}` : ""}.`,
-    pkg.hotelMadinah
-      ? `Hotel Madinah ${pkg.hotelMadinah.name}${pkg.hotelMadinah.distanceToMasjid ? `, ${pkg.hotelMadinah.distanceToMasjid}` : ""}.`
-      : "Akomodasi disesuaikan dengan program paket.",
-    "Pendampingan admin Sahabat Qolbu dari konsultasi sampai proses keberangkatan.",
-  ];
+  const packageAdvantages = pkg.terms?.length ? pkg.terms : undefined;
   const infoNav = [
     ["deskripsi", "Deskripsi"],
     ["termasuk", "Termasuk"],
@@ -853,13 +845,17 @@ export default async function LandingPackageDetailPage({
               <DetailSection id="tidak-termasuk" title="Tidak Termasuk">
                 <SimpleList
                   items={pkg.excluded}
-                  fallback="Pengeluaran pribadi, laundry, kelebihan bagasi, dan biaya lain di luar program."
+                  fallback="Informasi tidak termasuk belum diisi di dashboard."
                   icon={XCircle}
                 />
               </DetailSection>
 
               <DetailSection id="keunggulan" title="Keunggulan Paket">
-                <SimpleList items={packageAdvantages} fallback="" icon={CheckCircle2} />
+                <SimpleList
+                  items={packageAdvantages}
+                  fallback="Keunggulan paket belum diisi di dashboard."
+                  icon={CheckCircle2}
+                />
               </DetailSection>
 
               <DetailSection id="info" title="Informasi Lebih Lanjut">

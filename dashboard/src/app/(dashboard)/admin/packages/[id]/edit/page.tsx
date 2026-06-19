@@ -153,6 +153,7 @@ export default function EditPackagePage({ params }: PageProps) {
         totalSeats: pkg.totalSeats,
 
         facilities: pkg.facilities || "",
+        excludedFacilities: pkg.excludedFacilities || "",
         notes: pkg.notes || "",
 
         airlineId: pkg.airlineId,
@@ -715,8 +716,21 @@ export default function EditPackagePage({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Keterangan Tambahan</Label>
-                  <Textarea rows={3} {...register("notes")} />
+                  <Label htmlFor="excludedFacilities">Tidak Termasuk</Label>
+                  <Textarea
+                    rows={5}
+                    placeholder="Pisahkan setiap item dengan baris baru"
+                    {...register("excludedFacilities")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Keterangan Paket</Label>
+                  <Textarea
+                    rows={5}
+                    placeholder="Akan tampil sebagai Keunggulan Paket"
+                    {...register("notes")}
+                  />
                 </div>
 
                 {/* Status */}

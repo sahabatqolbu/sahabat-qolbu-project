@@ -229,6 +229,7 @@ export const packages = mysqlTable(
 
     // ===== FASILITAS & KETERANGAN =====
     facilities: text("facilities"), // bisa plain text atau JSON
+    excludedFacilities: text("excluded_facilities"), // Tidak termasuk dalam paket
     notes: text("notes"), // Keterangan tambahan
 
     itineraryPdf: varchar("itinerary_pdf", { length: 500 }),

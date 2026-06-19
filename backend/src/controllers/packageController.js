@@ -458,6 +458,7 @@ export const createPackage = async (req, res, next) => {
       priceQuint: parseDecimalString(data.priceQuint, "0.00"),
       totalSeats: parsePositiveInt(data.totalSeats, 45),
       facilities: data.facilities || null,
+      excludedFacilities: data.excludedFacilities || null,
       notes: data.notes || null,
       itineraryPdf,
       airlineId: parseOptionalForeignKey(data.airlineId, null),
@@ -614,6 +615,8 @@ export const updatePackage = async (req, res, next) => {
           ? parsePositiveInt(data.totalSeats, existingPackage.totalSeats)
           : existingPackage.totalSeats,
       facilities: data.facilities ?? existingPackage.facilities,
+      excludedFacilities:
+        data.excludedFacilities ?? existingPackage.excludedFacilities,
       notes: data.notes ?? existingPackage.notes,
       itineraryPdf,
       airlineId: parseOptionalForeignKey(data.airlineId, existingPackage.airlineId),
@@ -954,6 +957,7 @@ export const exportPackages = async (req, res, next) => {
           "Madinah - Quint": pkg.hotelMadinahQuint,
           Bandara: pkg.departureAirport?.name || "",
           Fasilitas: pkg.facilities || "",
+          "Tidak Termasuk": pkg.excludedFacilities || "",
           Keterangan: pkg.notes || "",
           "Status Aktif": pkg.isActive ? "Ya" : "Tidak",
           Published: pkg.isPublished ? "Ya" : "Tidak",
@@ -1027,6 +1031,7 @@ export const importPackages = async (req, res, next) => {
             discountPrice: row["Harga Diskon"] || null,
             totalSeats: row["Total Seat"] || 45,
             facilities: row["Fasilitas"] || null,
+            excludedFacilities: row["Tidak Termasuk"] || null,
             notes: row["Keterangan"] || null,
             isActive: row["Status Aktif"] === "Ya",
             isPublished: row["Published"] === "Ya",

@@ -45,6 +45,7 @@ export const createPackageSchema = z.object({
 
   // ===== FACILITIES =====
   facilities: z.string().optional(),
+  excludedFacilities: z.string().optional(),
   notes: z.string().optional(),
 
   // ===== AIRLINE =====
@@ -125,6 +126,7 @@ export const updatePackageSchema = z.object({
 
   // ===== FACILITIES =====
   facilities: z.string().optional(),
+  excludedFacilities: z.string().optional(),
   notes: z.string().optional(),
 
   // ===== AIRLINE =====
