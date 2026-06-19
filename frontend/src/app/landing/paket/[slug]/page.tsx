@@ -609,13 +609,21 @@ function DetailSection({
   id,
   title,
   children,
+  defaultActive = false,
 }: {
   id: string;
   title: string;
   children: ReactNode;
+  defaultActive?: boolean;
 }) {
   return (
-    <section id={id} className="scroll-mt-28 border-b border-neutral-200 py-8 last:border-b-0">
+    <section
+      id={`tab-${id}`}
+      role="tabpanel"
+      aria-labelledby={`tab-button-${id}`}
+      data-package-panel={id}
+      className={`scroll-mt-28 py-8 ${defaultActive ? "" : "hidden"}`}
+    >
       <h2 className="mb-5 text-2xl font-extrabold text-primary">{title}</h2>
       {children}
     </section>
@@ -676,11 +684,20 @@ export default async function LandingPackageDetailPage({
   const packageDescription =
     String(pkg.description || "").trim() ||
     "Deskripsi paket akan diinformasikan lebih lanjut oleh admin Sahabat Qolbu.";
+  const packageAdvantages = [
+    `${pkg.duration || "-"} hari perjalanan dengan jadwal keberangkatan yang jelas.`,
+    `Menggunakan ${pkg.airline.name} untuk kenyamanan perjalanan jamaah.`,
+    `Hotel Makkah ${pkg.hotelMakkah.name}${pkg.hotelMakkah.distanceToHaram ? `, ${pkg.hotelMakkah.distanceToHaram}` : ""}.`,
+    pkg.hotelMadinah
+      ? `Hotel Madinah ${pkg.hotelMadinah.name}${pkg.hotelMadinah.distanceToMasjid ? `, ${pkg.hotelMadinah.distanceToMasjid}` : ""}.`
+      : "Akomodasi disesuaikan dengan program paket.",
+    "Pendampingan admin Sahabat Qolbu dari konsultasi sampai proses keberangkatan.",
+  ];
   const infoNav = [
     ["deskripsi", "Deskripsi"],
     ["termasuk", "Termasuk"],
     ["tidak-termasuk", "Tidak Termasuk"],
-    ["persyaratan", "Pendaftaran & Persyaratan"],
+    ["keunggulan", "Keunggulan Paket"],
     ["info", "Informasi Lebih Lanjut"],
   ];
 
@@ -772,11 +789,20 @@ export default async function LandingPackageDetailPage({
         </section>
 
         <nav className="sticky top-20 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8">
+          <div
+            className="mx-auto flex max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8"
+            role="tablist"
+            aria-label="Detail paket"
+          >
             {infoNav.map(([id, label], index) => (
-              <a
+              <button
+                type="button"
                 key={id}
-                href={`#${id}`}
+                id={`tab-button-${id}`}
+                role="tab"
+                data-package-tab={id}
+                aria-controls={`tab-${id}`}
+                aria-selected={index === 0}
                 className={`whitespace-nowrap border-b-2 px-5 py-4 text-sm font-extrabold transition first:pl-0 ${
                   index === 0
                     ? "border-gold text-gold"
@@ -784,15 +810,15 @@ export default async function LandingPackageDetailPage({
                 }`}
               >
                 {label}
-              </a>
+              </button>
             ))}
           </div>
         </nav>
 
         <section className="bg-white pb-16 pt-4 md:pb-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
-            <article className="rounded-sm border border-neutral-200 bg-white px-5 py-2 shadow-sm sm:px-8">
-              <DetailSection id="deskripsi" title="Deskripsi">
+            <article className="rounded-sm border border-neutral-200 bg-white px-5 py-2 shadow-sm sm:px-8 lg:self-start">
+              <DetailSection id="deskripsi" title="Deskripsi" defaultActive>
                 <div className="whitespace-pre-line text-sm font-medium leading-6 text-neutral-700 sm:text-base">
                   {packageDescription}
                 </div>
@@ -814,12 +840,8 @@ export default async function LandingPackageDetailPage({
                 />
               </DetailSection>
 
-              <DetailSection id="persyaratan" title="Pendaftaran & Persyaratan">
-                <SimpleList
-                  items={pkg.terms}
-                  fallback="Paspor aktif, dokumen identitas, dan persyaratan tambahan mengikuti ketentuan keberangkatan terbaru."
-                  icon={ClipboardList}
-                />
+              <DetailSection id="keunggulan" title="Keunggulan Paket">
+                <SimpleList items={packageAdvantages} fallback="" icon={CheckCircle2} />
               </DetailSection>
 
               <DetailSection id="info" title="Informasi Lebih Lanjut">
@@ -963,6 +985,37 @@ export default async function LandingPackageDetailPage({
               window.__sqDetailHeaderScrollHandler = updateHeader;
               updateHeader();
               window.addEventListener('scroll', window.__sqDetailHeaderScrollHandler, { passive: true });
+
+              const tabButtons = Array.from(document.querySelectorAll('[data-package-tab]'));
+              const tabPanels = Array.from(document.querySelectorAll('[data-package-panel]'));
+
+              function activatePackageTab(tabId) {
+                tabButtons.forEach(function(button) {
+                  const isActive = button.getAttribute('data-package-tab') === tabId;
+                  button.setAttribute('aria-selected', String(isActive));
+                  button.classList.toggle('border-gold', isActive);
+                  button.classList.toggle('text-gold', isActive);
+                  button.classList.toggle('border-transparent', !isActive);
+                  button.classList.toggle('text-primary', !isActive);
+                });
+
+                tabPanels.forEach(function(panel) {
+                  panel.classList.toggle('hidden', panel.getAttribute('data-package-panel') !== tabId);
+                });
+              }
+
+              tabButtons.forEach(function(button) {
+                if (button.dataset.bound === 'true') return;
+                button.dataset.bound = 'true';
+                button.addEventListener('click', function() {
+                  activatePackageTab(button.getAttribute('data-package-tab'));
+                });
+              });
+
+              const initialTab = window.location.hash ? window.location.hash.replace('#', '').replace('tab-', '') : 'deskripsi';
+              if (tabButtons.some(function(button) { return button.getAttribute('data-package-tab') === initialTab; })) {
+                activatePackageTab(initialTab);
+              }
             })();
           `,
         }}
