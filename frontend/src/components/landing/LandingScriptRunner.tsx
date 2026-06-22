@@ -50,13 +50,21 @@ const setAccountState = (user: LandingUser | null) => {
   });
 
   if (user) {
-    guestElements.forEach((element) => element.classList.add("hidden"));
-    userElements.forEach((element) => element.classList.remove("hidden"));
+    guestElements.forEach((element) => {
+      element.hidden = true;
+    });
+    userElements.forEach((element) => {
+      element.hidden = false;
+    });
     return;
   }
 
-  guestElements.forEach((element) => element.classList.remove("hidden"));
-  userElements.forEach((element) => element.classList.add("hidden"));
+  guestElements.forEach((element) => {
+    element.hidden = false;
+  });
+  userElements.forEach((element) => {
+    element.hidden = true;
+  });
 };
 
 const syncAccountState = async () => {
