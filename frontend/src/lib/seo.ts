@@ -91,9 +91,9 @@ export function generateMetadata(page?: {
       },
     },
     icons: {
-      icon: "/landing/images/icon.png",
-      shortcut: "/landing/images/icon.png",
-      apple: "/landing/images/icon.png",
+      icon: "/favicon.png",
+      shortcut: "/favicon.png",
+      apple: "/favicon.png",
     },
     manifest: "/site.webmanifest",
     verification: {
