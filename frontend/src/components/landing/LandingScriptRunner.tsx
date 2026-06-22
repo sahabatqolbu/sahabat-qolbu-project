@@ -41,8 +41,9 @@ const setAccountState = (user: LandingUser | null) => {
   const dashboardUrl = getDashboardUrl(user?.role);
   const guestElements = document.querySelectorAll<HTMLElement>("[data-auth-guest]");
   const userElements = document.querySelectorAll<HTMLAnchorElement>("[data-auth-user]");
-  const dashboardLinks =
-    document.querySelectorAll<HTMLAnchorElement>("[data-auth-dashboard-link]");
+  const dashboardLinks = document.querySelectorAll<HTMLAnchorElement>(
+    "[data-auth-dashboard-link]",
+  );
 
   dashboardLinks.forEach((link) => {
     link.href = dashboardUrl;
