@@ -7,10 +7,15 @@ type StaticLandingHtmlProps = {
 };
 
 const scriptlessHtml = (html: string, fileName: StaticLandingHtmlProps["fileName"]) => {
+  const dashboardUrl = (
+    process.env.NEXT_PUBLIC_DASHBOARD_URL || "https://dashboard.sahabatqolbu.com"
+  ).replace(/\/+$/, "");
+
   let transformed = html
     .replace(/^[\s\S]*?<body[^>]*>/i, "")
     .replace(/<\/body>[\s\S]*$/i, "")
     .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/__DASHBOARD_URL__/g, dashboardUrl)
     .replace(/\s(?:id)="logo(Sahabat|Qolbu|Tagline)"/g, "")
     .replace(/href="\/landing\/#([^"]+)"/g, 'href="/#$1"')
     .replace(/href="\/landing\/paket"/g, 'href="/paket"')
