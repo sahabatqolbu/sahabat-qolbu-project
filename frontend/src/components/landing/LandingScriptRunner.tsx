@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { getDashboardUrl } from "@/lib/dashboard-url";
 
 declare global {
   interface Window {
@@ -14,6 +15,79 @@ const scripts = [
   "/landing/js/packages-renderer.js",
   "/landing/js/company-sync.js",
 ];
+
+type LandingUser = {
+  fullName?: string;
+  role?: string;
+};
+
+const getApiBaseUrl = () =>
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(
+    /\/+$/,
+    "",
+  );
+
+const parseStoredUser = (): LandingUser | null => {
+  try {
+    const stored = window.localStorage.getItem("user_data");
+    return stored ? (JSON.parse(stored) as LandingUser) : null;
+  } catch {
+    window.localStorage.removeItem("user_data");
+    return null;
+  }
+};
+
+const setAccountState = (user: LandingUser | null) => {
+  const dashboardUrl = getDashboardUrl(user?.role);
+  const guestElements = document.querySelectorAll<HTMLElement>("[data-auth-guest]");
+  const userElements = document.querySelectorAll<HTMLAnchorElement>("[data-auth-user]");
+  const dashboardLinks =
+    document.querySelectorAll<HTMLAnchorElement>("[data-auth-dashboard-link]");
+
+  dashboardLinks.forEach((link) => {
+    link.href = dashboardUrl;
+  });
+
+  if (user) {
+    guestElements.forEach((element) => element.classList.add("hidden"));
+    userElements.forEach((element) => element.classList.remove("hidden"));
+    return;
+  }
+
+  guestElements.forEach((element) => element.classList.remove("hidden"));
+  userElements.forEach((element) => element.classList.add("hidden"));
+};
+
+const syncAccountState = async () => {
+  const storedUser = parseStoredUser();
+  setAccountState(storedUser);
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/auth/me`, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      window.localStorage.removeItem("user_data");
+      setAccountState(null);
+      return;
+    }
+
+    const payload = await response.json();
+    const user = payload?.data as LandingUser | undefined;
+
+    if (user) {
+      window.localStorage.setItem("user_data", JSON.stringify(user));
+      setAccountState(user);
+      return;
+    }
+
+    setAccountState(null);
+  } catch {
+    // Keep the local state if the API cannot be reached from this page.
+  }
+};
 
 const loadScript = (src: string) =>
   new Promise<void>((resolve, reject) => {
@@ -85,6 +159,8 @@ export default function LandingScriptRunner() {
     });
 
     async function run() {
+      await syncAccountState();
+
       for (const script of scripts) {
         await loadScript(script);
       }

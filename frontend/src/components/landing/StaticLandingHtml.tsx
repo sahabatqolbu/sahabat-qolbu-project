@@ -1,15 +1,14 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import LandingScriptRunner from "./LandingScriptRunner";
+import { getDashboardBaseUrl } from "@/lib/dashboard-url";
 
 type StaticLandingHtmlProps = {
   fileName: "index.html" | "paket.html";
 };
 
 const scriptlessHtml = (html: string, fileName: StaticLandingHtmlProps["fileName"]) => {
-  const dashboardUrl = (
-    process.env.NEXT_PUBLIC_DASHBOARD_URL || "https://dashboard.sahabatqolbu.com"
-  ).replace(/\/+$/, "");
+  const dashboardUrl = getDashboardBaseUrl();
 
   let transformed = html
     .replace(/^[\s\S]*?<body[^>]*>/i, "")
