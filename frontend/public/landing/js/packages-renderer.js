@@ -45,7 +45,7 @@
     LA: { label: "LAND ARRANGEMENT", labelColor: "bg-emerald-600 text-white" },
   };
 
-  let packageData = Array.isArray(window.paket) ? window.paket : [];
+  let packageData = [];
 
   function formatDateRange(startDate, endDate) {
     if (!startDate) return "Jadwal menyusul";
@@ -186,7 +186,7 @@
 
   async function hydratePackagesFromApi() {
     try {
-      const response = await fetch(`${apiBase}/packages`, {
+      const response = await fetch(`${apiBase}/public/packages?page=1&limit=100`, {
         credentials: "include",
       });
 
@@ -198,8 +198,17 @@
 
       packageData = items.map(mapApiPackage);
     } catch {
-      // Keep fallback static data when API is unavailable.
+      packageData = [];
     }
+  }
+
+  function createEmptyState(message) {
+    return `
+      <div class="col-span-full rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
+        <p class="text-lg font-bold text-primary">Paket belum tersedia</p>
+        <p class="mt-2 text-sm text-gray-500">${message}</p>
+      </div>
+    `;
   }
 
   // Create Swipe Slider
@@ -559,6 +568,12 @@
   function renderHome() {
     const el = document.getElementById("paket-home");
     if (!el) return;
+
+    if (packageData.length === 0) {
+      el.innerHTML = createEmptyState("Data paket akan tampil otomatis setelah dipublish dari dashboard.");
+      return;
+    }
+
     el.innerHTML = packageData
       .filter((p) => p.featured)
       .slice(0, 6)
@@ -572,6 +587,13 @@
   function renderAll() {
     const container = document.getElementById("paket-all");
     if (!container) return;
+
+    if (packageData.length === 0) {
+      container.innerHTML = createEmptyState("Silakan cek kembali nanti atau hubungi admin untuk jadwal terbaru.");
+      updateCount(0);
+      renderFilter(container);
+      return;
+    }
 
     container.innerHTML = packageData.map(createCard).join("");
     initSwipers();
@@ -587,10 +609,6 @@
   }
 
   async function initPackageRendering() {
-    if (!Array.isArray(window.paket)) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-    packageData = Array.isArray(window.paket) ? window.paket : packageData;
     await hydratePackagesFromApi();
     renderHome();
     renderAll();
