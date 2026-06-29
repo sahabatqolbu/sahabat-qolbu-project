@@ -11,6 +11,7 @@ import {
   Package,
   FileText,
   CreditCard,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,14 @@ const jamaahNav = [
   { href: "/jamaah/payments", label: "Bayar", icon: CreditCard },
   { href: "/jamaah/documents", label: "Dokumen", icon: FileText },
   { href: "/jamaah/profile", label: "Profil", icon: UserCircle },
+];
+
+const calonJamaahNav = [
+  { href: "/calon-jamaah", label: "Beranda", icon: LayoutDashboard, exact: true },
+  { href: "/calon-jamaah/packages", label: "Paket", icon: Package },
+  { href: "/calon-jamaah/interests", label: "Diminati", icon: FileText },
+  { href: "/calon-jamaah/consultation", label: "Konsultasi", icon: MessageCircle },
+  { href: "/calon-jamaah/account", label: "Akun", icon: UserCircle },
 ];
 
 // ✅ PATHS DI MANA BOTTOM NAV DISEMBUNYIKAN
@@ -48,9 +57,10 @@ interface NavItem {
   exact?: boolean;
 }
 
-export function BottomNav({ role }: { role: "AGEN" | "JAMAAH" }) {
+export function BottomNav({ role }: { role: "AGEN" | "JAMAAH" | "CALON_JAMAAH" }) {
   const pathname = usePathname();
-  const navItems: NavItem[] = role === "AGEN" ? agenNav : jamaahNav;
+  const navItems: NavItem[] =
+    role === "AGEN" ? agenNav : role === "CALON_JAMAAH" ? calonJamaahNav : jamaahNav;
 
   // ✅ CHECK: Hide bottom nav kalau di form pages
   const shouldHide = HIDE_BOTTOM_NAV_PATHS.some((path) =>

@@ -11,6 +11,7 @@ import {
   Package,
   UserCircle,
   Users,
+  MessageCircle,
 } from "lucide-react";
 import { AuthStoreHydrator } from "@/components/auth/AuthStoreHydrator";
 import { DEFAULT_ROUTES, getRoleRedirectPath } from "@/lib/routeAccess";
@@ -31,6 +32,14 @@ const desktopJamaahNav = [
   { href: "/jamaah/payments", label: "Pembayaran", icon: CreditCard },
   { href: "/jamaah/profile", label: "Profil", icon: UserCircle },
   { href: "/jamaah/calendar", label: "Kalender", icon: Calendar },
+];
+
+const desktopCalonJamaahNav = [
+  { href: "/calon-jamaah", label: "Beranda", icon: LayoutDashboard },
+  { href: "/calon-jamaah/packages", label: "Paket", icon: Package },
+  { href: "/calon-jamaah/interests", label: "Diminati", icon: FileText },
+  { href: "/calon-jamaah/consultation", label: "Konsultasi", icon: MessageCircle },
+  { href: "/calon-jamaah/account", label: "Akun", icon: UserCircle },
 ];
 
 interface MobileLayoutProps {
@@ -93,7 +102,7 @@ export default async function MobileLayout({ children }: MobileLayoutProps) {
   }
 
   const redirectPath = getRoleRedirectPath(session.role, `/${session.role.toLowerCase()}`);
-  if (session.role !== "AGEN" && session.role !== "JAMAAH") {
+  if (!["AGEN", "JAMAAH", "CALON_JAMAAH"].includes(session.role)) {
     redirect(redirectPath ?? DEFAULT_ROUTES[session.role]);
   }
 
@@ -105,6 +114,8 @@ export default async function MobileLayout({ children }: MobileLayoutProps) {
       <div className="min-h-screen bg-gray-50">
         {session.role === "AGEN" ? (
           <DesktopNav title="Area Agen" items={desktopAgenNav} />
+        ) : session.role === "CALON_JAMAAH" ? (
+          <DesktopNav title="Area Calon Jamaah" items={desktopCalonJamaahNav} />
         ) : (
           <DesktopNav title="Area Jamaah" items={desktopJamaahNav} />
         )}
