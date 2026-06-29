@@ -23,6 +23,26 @@ import { useToast } from "@/hooks/use-toast";
 type ViewMode = "login" | "register" | "forgot-request" | "forgot-reset";
 
 const isEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
+const isPhoneNumber = (value: string) => /^[0-9+\-\s()]{8,20}$/.test(value);
+const isStrongPassword = (value: string) =>
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,128}$/.test(value);
+
+const mapRegisterFieldError = (field?: string) => {
+  switch (field) {
+    case "fullName":
+      return "fullName";
+    case "email":
+      return "registerEmail";
+    case "phone":
+      return "phone";
+    case "password":
+      return "registerPassword";
+    case "confirmPassword":
+      return "confirmPassword";
+    default:
+      return "";
+  }
+};
 
 function LoginContent() {
   const router = useRouter();
@@ -95,9 +115,34 @@ function LoginContent() {
       router.push("/verify-otp");
     },
     onError: (error: any) => {
-      const msg = error?.response?.data?.message || "Registrasi gagal";
-      setErrors({ general: msg });
-      toast({ variant: "destructive", title: "Registrasi Gagal", description: msg });
+      const responseData = error?.response?.data;
+      const backendErrors = Array.isArray(responseData?.errors)
+        ? responseData.errors
+        : [];
+      const fieldErrors = backendErrors.reduce(
+        (acc: Record<string, string>, item: { field?: string; message?: string }) => {
+          const fieldKey = mapRegisterFieldError(item?.field);
+          if (fieldKey && item?.message && !acc[fieldKey]) {
+            acc[fieldKey] = item.message;
+          }
+          return acc;
+        },
+        {},
+      );
+      const detailedMessage =
+        backendErrors.find((item: { message?: string }) => item?.message)?.message ||
+        responseData?.message ||
+        "Registrasi gagal";
+
+      setErrors({
+        ...fieldErrors,
+        general: detailedMessage,
+      });
+      toast({
+        variant: "destructive",
+        title: "Registrasi Gagal",
+        description: detailedMessage,
+      });
     },
   });
 
@@ -145,11 +190,27 @@ function LoginContent() {
 
   const validateRegister = () => {
     const newErrors: Record<string, string> = {};
-    if (!registerData.fullName.trim()) newErrors.fullName = "Nama lengkap wajib diisi";
+    const fullName = registerData.fullName.trim();
+    const phone = registerData.phone.trim();
+
+    if (!fullName) newErrors.fullName = "Nama lengkap wajib diisi";
+    else if (fullName.length < 2) newErrors.fullName = "Nama lengkap minimal 2 karakter";
+
     if (!registerData.email) newErrors.registerEmail = "Email wajib diisi";
     else if (!isEmail(registerData.email)) newErrors.registerEmail = "Format email tidak valid";
-    if (!registerData.phone.trim()) newErrors.phone = "Nomor WhatsApp wajib diisi";
-    if (registerData.password.length < 8) newErrors.registerPassword = "Password minimal 8 karakter";
+
+    if (!phone) newErrors.phone = "Nomor WhatsApp wajib diisi";
+    else if (!isPhoneNumber(phone)) {
+      newErrors.phone = "Format nomor WhatsApp tidak valid";
+    }
+
+    if (registerData.password.length < 8) {
+      newErrors.registerPassword = "Password minimal 8 karakter";
+    } else if (!isStrongPassword(registerData.password)) {
+      newErrors.registerPassword =
+        "Password harus mengandung huruf besar, huruf kecil, angka, dan karakter khusus";
+    }
+
     if (registerData.password !== registerData.confirmPassword) {
       newErrors.confirmPassword = "Konfirmasi password tidak sama";
     }
@@ -376,7 +437,7 @@ function LoginContent() {
               icon={Phone}
               value={registerData.phone}
               onChange={(value) => setRegisterData({ ...registerData, phone: value })}
-              placeholder="081234567890"
+              placeholder="081234567890 / +6281234567890"
               error={errors.phone}
             />
             <PasswordInput
