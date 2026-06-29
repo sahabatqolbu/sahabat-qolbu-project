@@ -502,6 +502,7 @@ export const getMarketingPackageBySlug = async (slug: string) => {
 
 export const getPublicAgentSlugs = async () => {
   const payload = await fetchApi<{ slugs?: string[] }>("/public/agents/slugs");
+
   return Array.isArray(payload?.slugs)
     ? payload.slugs.filter((slug): slug is string => Boolean(slug))
     : [];
@@ -550,3 +551,68 @@ export const getPublicAgentLanding = async (slug: string) => {
     },
   } satisfies PublicAgentLanding;
 };
+
+export interface CompanyProfile {
+  id: number;
+  companyName: string;
+  tagline?: string | null;
+  logo?: string | null;
+  address?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
+  youtube?: string | null;
+  tiktok?: string | null;
+  npwp?: string | null;
+  ppiu?: string | null;
+  iata?: string | null;
+  description?: string | null;
+  vision?: string | null;
+  mission?: string | null;
+  philosophy?: StructuredContentItem[];
+  targetMarket?: StructuredContentItem[];
+}
+
+export interface StructuredContentItem {
+  title: string;
+  description: string;
+}
+
+const normalizeStructuredContent = (value: unknown): StructuredContentItem[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => ({
+      title: toNonEmptyString((item as { title?: unknown })?.title),
+      description: toNonEmptyString((item as { description?: unknown })?.description),
+    }))
+    .filter((item) => item.title || item.description);
+};
+
+export const getCompanyProfile = cache(async (): Promise<CompanyProfile | null> => {
+  const profile = await fetchApi<CompanyProfile>("/master/company");
+  if (!profile) return null;
+  return {
+    ...profile,
+    logo: resolveAssetUrl(profile.logo),
+    philosophy: normalizeStructuredContent(profile.philosophy),
+    targetMarket: normalizeStructuredContent(profile.targetMarket),
+  };
+});
+
+export const getPublicCompanyProfile = cache(async (): Promise<CompanyProfile | null> => {
+  const profile = await fetchApi<CompanyProfile>("/public/company-profile");
+  if (!profile) return null;
+  return {
+    ...profile,
+    logo: resolveAssetUrl(profile.logo),
+    philosophy: normalizeStructuredContent(profile.philosophy),
+    targetMarket: normalizeStructuredContent(profile.targetMarket),
+  };
+});

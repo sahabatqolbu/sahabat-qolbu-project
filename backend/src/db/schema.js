@@ -188,6 +188,8 @@ export const companyProfile = mysqlTable("company_profile", {
   description: text("description"),
   vision: text("vision"),
   mission: text("mission"),
+  philosophy: json("philosophy"),
+  targetMarket: json("target_market"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(
     sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`

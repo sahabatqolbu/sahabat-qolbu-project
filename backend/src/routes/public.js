@@ -8,6 +8,7 @@ import {
   getPublicAgentLandingBySlug,
   getPublicAgentSlugs,
 } from "../controllers/publicAgentController.js";
+import { getPublicCompanyProfile } from "../controllers/companyController.js";
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.get("/health-check", (req, res) => res.json({ status: "API router is aliv
 // Public package listing (no auth required)
 router.get("/packages", getPublicPackages);
 router.get("/packages/:id", getPublicPackageById);
+router.get("/company-profile", getPublicCompanyProfile);
 router.get("/agents/slugs", getPublicAgentSlugs);
 router.get("/agents/:slug", getPublicAgentLandingBySlug);
 

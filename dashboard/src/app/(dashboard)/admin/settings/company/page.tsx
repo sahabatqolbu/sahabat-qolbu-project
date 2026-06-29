@@ -31,6 +31,9 @@ import {
   Upload,
   Image as ImageIcon,
   CheckCircle,
+  Plus,
+  Trash2,
+  Target,
 } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -172,6 +175,47 @@ export default function CompanyProfilePage() {
     setFormData({ ...formData, [field]: value });
   };
 
+  const getStructuredItems = (field: "philosophy" | "targetMarket") => {
+    return Array.isArray(formData[field]) ? formData[field] : [];
+  };
+
+  const addStructuredItem = (field: "philosophy" | "targetMarket") => {
+    const items = getStructuredItems(field);
+    if (items.length >= 6) {
+      toast({
+        variant: "destructive",
+        title: "Maksimal 6 item",
+        description: "Ringkas konten supaya landing page tetap enak dibaca.",
+      });
+      return;
+    }
+
+    handleChange(field, [...items, { title: "", description: "" }]);
+  };
+
+  const updateStructuredItem = (
+    field: "philosophy" | "targetMarket",
+    index: number,
+    key: "title" | "description",
+    value: string,
+  ) => {
+    const items = getStructuredItems(field);
+    handleChange(
+      field,
+      items.map((item: any, itemIndex: number) =>
+        itemIndex === index ? { ...item, [key]: value } : item,
+      ),
+    );
+  };
+
+  const removeStructuredItem = (field: "philosophy" | "targetMarket", index: number) => {
+    const items = getStructuredItems(field);
+    handleChange(
+      field,
+      items.filter((_: any, itemIndex: number) => itemIndex !== index),
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -217,11 +261,12 @@ export default function CompanyProfilePage() {
 
       <form onSubmit={handleSubmit}>
         <Tabs defaultValue="basic" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">Info Dasar</TabsTrigger>
             <TabsTrigger value="contact">Kontak</TabsTrigger>
             <TabsTrigger value="social">Sosial Media</TabsTrigger>
             <TabsTrigger value="about">Tentang</TabsTrigger>
+            <TabsTrigger value="brand">Brand</TabsTrigger>
           </TabsList>
 
           {/* ===== TAB: INFO DASAR ===== */}
@@ -567,6 +612,32 @@ export default function CompanyProfilePage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="brand">
+            <div className="space-y-6">
+              <StructuredRepeater
+                title="Filosofi"
+                description="Narasi nilai utama yang menjelaskan kenapa Sahabat Qolbu hadir."
+                field="philosophy"
+                icon={FileText}
+                items={getStructuredItems("philosophy")}
+                onAdd={addStructuredItem}
+                onUpdate={updateStructuredItem}
+                onRemove={removeStructuredItem}
+              />
+
+              <StructuredRepeater
+                title="Target Market"
+                description="Segment jamaah yang ingin dilayani, agar landing page lebih jelas arahnya."
+                field="targetMarket"
+                icon={Target}
+                items={getStructuredItems("targetMarket")}
+                onAdd={addStructuredItem}
+                onUpdate={updateStructuredItem}
+                onRemove={removeStructuredItem}
+              />
+            </div>
+          </TabsContent>
         </Tabs>
 
         {/* Submit Button */}
@@ -593,5 +664,92 @@ export default function CompanyProfilePage() {
         </Card>
       </form>
     </div>
+  );
+}
+
+function StructuredRepeater({
+  title,
+  description,
+  field,
+  icon: Icon,
+  items,
+  onAdd,
+  onUpdate,
+  onRemove,
+}: {
+  title: string;
+  description: string;
+  field: "philosophy" | "targetMarket";
+  icon: React.ComponentType<{ className?: string }>;
+  items: Array<{ title?: string; description?: string }>;
+  onAdd: (field: "philosophy" | "targetMarket") => void;
+  onUpdate: (
+    field: "philosophy" | "targetMarket",
+    index: number,
+    key: "title" | "description",
+    value: string,
+  ) => void;
+  onRemove: (field: "philosophy" | "targetMarket", index: number) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Icon className="h-5 w-5" />
+          {title}
+        </CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {items.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-gray-500">
+            Belum ada item. Tambahkan konten dari admin agar landing page tidak memakai dummy.
+          </div>
+        ) : (
+          items.map((item, index) => (
+            <div key={`${field}-${index}`} className="space-y-3 rounded-xl border p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-gray-700">Item {index + 1}</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemove(field, index)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Hapus
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Judul</Label>
+                <Input
+                  value={item.title || ""}
+                  onChange={(event) => onUpdate(field, index, "title", event.target.value)}
+                  placeholder={field === "philosophy" ? "Amanah dalam pelayanan" : "Keluarga muda"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Deskripsi</Label>
+                <Textarea
+                  rows={3}
+                  value={item.description || ""}
+                  onChange={(event) =>
+                    onUpdate(field, index, "description", event.target.value)
+                  }
+                  placeholder="Tulis penjelasan singkat untuk ditampilkan di landing page."
+                />
+              </div>
+            </div>
+          ))
+        )}
+
+        <Button type="button" variant="outline" onClick={() => onAdd(field)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Tambah {title}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

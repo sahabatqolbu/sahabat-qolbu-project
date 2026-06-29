@@ -4,6 +4,24 @@ import { eq } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { logger } from "../utils/logger.js";
 
+const normalizeStructuredItems = (value) => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => ({
+      title: String(item?.title || "").trim(),
+      description: String(item?.description || "").trim(),
+    }))
+    .filter((item) => item.title || item.description)
+    .slice(0, 6);
+};
+
+const mapPublicCompanyProfile = (profile) => ({
+  ...profile,
+  philosophy: normalizeStructuredItems(profile?.philosophy),
+  targetMarket: normalizeStructuredItems(profile?.targetMarket),
+});
+
 // ===== GET COMPANY PROFILE =====
 export const getCompanyProfile = async (req, res, next) => {
   try {
@@ -25,7 +43,7 @@ export const getCompanyProfile = async (req, res, next) => {
       });
     }
 
-    return successResponse(res, profile);
+    return successResponse(res, mapPublicCompanyProfile(profile));
   } catch (error) {
     logger.error("Get company profile error", error);
     next(error);
@@ -73,6 +91,8 @@ export const updateCompanyProfile = async (req, res, next) => {
         description: data.description || null,
         vision: data.vision || null,
         mission: data.mission || null,
+        philosophy: normalizeStructuredItems(data.philosophy),
+        targetMarket: normalizeStructuredItems(data.targetMarket),
       });
 
       logger.info("Company profile created", { result });
@@ -98,6 +118,14 @@ export const updateCompanyProfile = async (req, res, next) => {
         description: data.description ?? existing.description,
         vision: data.vision ?? existing.vision,
         mission: data.mission ?? existing.mission,
+        philosophy:
+          data.philosophy !== undefined
+            ? normalizeStructuredItems(data.philosophy)
+            : normalizeStructuredItems(existing.philosophy),
+        targetMarket:
+          data.targetMarket !== undefined
+            ? normalizeStructuredItems(data.targetMarket)
+            : normalizeStructuredItems(existing.targetMarket),
         updatedAt: new Date(),
       };
 
@@ -112,6 +140,28 @@ export const updateCompanyProfile = async (req, res, next) => {
     return successResponse(res, null, "Profil perusahaan berhasil diupdate");
   } catch (error) {
     logger.error("Update company profile error", error);
+    next(error);
+  }
+};
+
+export const getPublicCompanyProfile = async (req, res, next) => {
+  try {
+    const profile = await db.query.companyProfile.findFirst({
+      where: eq(companyProfile.id, 1),
+    });
+
+    if (!profile) {
+      return successResponse(res, {
+        vision: null,
+        mission: null,
+        philosophy: [],
+        targetMarket: [],
+      });
+    }
+
+    return successResponse(res, mapPublicCompanyProfile(profile));
+  } catch (error) {
+    logger.error("Get public company profile error", error);
     next(error);
   }
 };
