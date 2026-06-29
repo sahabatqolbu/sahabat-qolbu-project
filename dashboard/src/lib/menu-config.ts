@@ -61,6 +61,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       href: "/admin/jamaah",
       icon: UserCheck,
     },
+    {
+      label: "Calon Jamaah",
+      href: "/admin/prospects",
+      icon: UserCheck,
+    },
     // ✅ NEW: Tab Agen (terpisah dari users)
     {
       label: "Kelola Agen",
@@ -301,6 +306,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
     {
       label: "Kelola Jamaah",
       href: "/staff/jamaah",
+      icon: UserCheck,
+    },
+    {
+      label: "Calon Jamaah",
+      href: "/staff/prospects",
       icon: UserCheck,
     },
     {

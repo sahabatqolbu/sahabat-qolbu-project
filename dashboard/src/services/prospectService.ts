@@ -47,6 +47,33 @@ export interface ProspectInterest {
   discountPrice?: string | number | null;
 }
 
+export interface AdminProspect {
+  id: number;
+  followUpStatus: string;
+  sourceType?: string | null;
+  sourceSlug?: string | null;
+  convertedJamaahId?: number | null;
+  convertedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  userId: number;
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  isEmailVerified?: boolean;
+  latestInterest?: ProspectInterest | null;
+}
+
+export interface ProspectFollowUp {
+  id: number;
+  status: string;
+  note?: string | null;
+  createdAt?: string;
+  actorUserId?: number;
+  actorName?: string;
+  actorRole?: string;
+}
+
 export const packageSlug = (pkg: Pick<PublicPackage, "id" | "name">) => {
   const slug = String(pkg.name || "paket")
     .toLowerCase()
@@ -131,5 +158,36 @@ export const prospectService = {
       success: Boolean(match),
       data: match || null,
     };
+  },
+
+  getAdminProspects: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => {
+    const response = await api.get("/prospects/admin", { params });
+    return response.data;
+  },
+
+  getAdminProspectDetail: async (id: number | string) => {
+    const response = await api.get(`/prospects/admin/${id}`);
+    return response.data;
+  },
+
+  addFollowUp: async (
+    id: number | string,
+    data: { status: string; note?: string | null },
+  ) => {
+    const response = await api.post(`/prospects/admin/${id}/follow-ups`, data);
+    return response.data;
+  },
+
+  adminConvert: async (id: number | string, packageId: number) => {
+    const response = await api.post(`/prospects/admin/${id}/convert`, {
+      packageId,
+      actionType: "CONVERT_REQUEST",
+    });
+    return response.data;
   },
 };
