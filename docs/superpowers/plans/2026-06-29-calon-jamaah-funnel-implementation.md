@@ -1278,7 +1278,7 @@ git commit -m "feat: polish landing calon jamaah funnel"
 - Modify: auth-related backend/dashboard files as needed
 - Modify: `docs/DEPLOYMENT_RUNBOOK.md`
 
-- [ ] **Step 1: Harden auth limits**
+- [x] **Step 1: Harden auth limits**
 
 Ensure these paths are rate limited:
 
@@ -1290,7 +1290,7 @@ Ensure these paths are rate limited:
 
 Add OTP cooldown if not already enforced.
 
-- [ ] **Step 2: Document optional CAPTCHA env defaults**
+- [x] **Step 2: Document optional CAPTCHA env defaults**
 
 Backend env docs:
 
@@ -1307,6 +1307,18 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 ```
 
 - [ ] **Step 3: Full verification**
+
+Automated checks completed locally on 2026-06-29:
+
+- `backend npm test`
+- `backend npm run check:migrations`
+- `backend npm run check:api-contract`
+- `dashboard npm run lint`
+- `dashboard npm run build`
+- `frontend npm run lint`
+- `frontend npm run build`
+
+Manual staging checks remain pending because they require a deployed environment, valid email OTP delivery, and role sessions.
 
 Run:
 
@@ -1337,7 +1349,7 @@ Manual staging checks:
 - landing FAQ/gallery render from database
 - mobile dashboard is usable at 390px width
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add backend/src/middlewares/rateLimiter.js docs/DEPLOYMENT_RUNBOOK.md

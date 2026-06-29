@@ -23,7 +23,10 @@ const isBcryptHash = (value) =>
 
 const getAuthCookieOptions = (req) => {
   const cookieSecureOverride = process.env.COOKIE_SECURE;
-  const forwardedProto = req?.get?.("x-forwarded-proto")?.split(",")?.[0]?.trim();
+  const forwardedProto = req
+    ?.get?.("x-forwarded-proto")
+    ?.split(",")?.[0]
+    ?.trim();
   const requestIsHttps = Boolean(req?.secure) || forwardedProto === "https";
 
   const isSecureCookie =
@@ -49,6 +52,42 @@ const getAuthCookieOptions = (req) => {
     path: "/",
     ...(cookieDomain ? { domain: cookieDomain } : {}),
   };
+};
+
+const getOtpExpiryMinutes = () => {
+  const parsed = Number.parseInt(process.env.OTP_EXPIRY_MINUTES || "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 5;
+};
+
+const getOtpCooldownSeconds = () => {
+  const parsed = Number.parseInt(process.env.OTP_COOLDOWN_SECONDS || "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 60;
+};
+
+const getOtpCooldownRemainingSeconds = (user) => {
+  if (!user?.otp || !user?.otpExpiry) return 0;
+
+  const expiryMs = new Date(user.otpExpiry).getTime();
+  if (!Number.isFinite(expiryMs) || expiryMs <= Date.now()) return 0;
+
+  const issuedAtMs = expiryMs - getOtpExpiryMinutes() * 60 * 1000;
+  const elapsedSeconds = Math.floor((Date.now() - issuedAtMs) / 1000);
+  const remainingSeconds = getOtpCooldownSeconds() - elapsedSeconds;
+
+  return Math.max(0, remainingSeconds);
+};
+
+const rejectIfOtpCooldownActive = (res, user) => {
+  const remainingSeconds = getOtpCooldownRemainingSeconds(user);
+  if (remainingSeconds <= 0) return false;
+
+  res.setHeader("Retry-After", String(remainingSeconds));
+  errorResponse(
+    res,
+    `Kode OTP baru bisa diminta lagi dalam ${remainingSeconds} detik.`,
+    429,
+  );
+  return true;
 };
 
 const findUserByEmail = async (email) => {
@@ -115,7 +154,11 @@ export const registerCalonJamaah = async (req, res, next) => {
         email: normalizedEmail,
         ip: req.ip,
       });
-      return errorResponse(res, "Permintaan terlalu cepat. Silakan coba lagi.", 400);
+      return errorResponse(
+        res,
+        "Permintaan terlalu cepat. Silakan coba lagi.",
+        400,
+      );
     }
 
     const existingUser = await findUserByEmail(normalizedEmail);
@@ -157,9 +200,13 @@ export const registerCalonJamaah = async (req, res, next) => {
     );
 
     if (!emailResult.success) {
-      logger.error("Failed to send calon jamaah register OTP", emailResult.error, {
-        userId,
-      });
+      logger.error(
+        "Failed to send calon jamaah register OTP",
+        emailResult.error,
+        {
+          userId,
+        },
+      );
       return errorResponse(
         res,
         "Akun dibuat, tetapi OTP gagal dikirim. Silakan request ulang OTP.",
@@ -207,7 +254,9 @@ export const login = async (req, res, next) => {
     });
 
     if (!user) {
-      logger.security("Login failed - user not found", { email: normalizedEmail });
+      logger.security("Login failed - user not found", {
+        email: normalizedEmail,
+      });
       return unauthorizedResponse(res, "Email atau password salah");
     }
 
@@ -218,7 +267,10 @@ export const login = async (req, res, next) => {
       logger.debug("Login password mode", { userId: user.id, mode: "bcrypt" });
       isPasswordValid = await comparePassword(password, user.password);
     } else {
-      logger.debug("Login password mode", { userId: user.id, mode: "legacy-plain" });
+      logger.debug("Login password mode", {
+        userId: user.id,
+        mode: "legacy-plain",
+      });
       isPasswordValid = password === user.password;
 
       if (isPasswordValid) {
@@ -240,24 +292,28 @@ export const login = async (req, res, next) => {
 
     if (!isPasswordValid) {
       logger.debug("Login password check failed", { userId: user.id });
-      logger.security("Login failed - invalid password", { 
+      logger.security("Login failed - invalid password", {
         userId: user.id,
-        email: normalizedEmail 
+        email: normalizedEmail,
       });
       return unauthorizedResponse(res, "Email atau password salah");
     }
 
     // Check if user is active
     if (!user.isActive) {
-      logger.security("Login failed - inactive account", { 
+      logger.security("Login failed - inactive account", {
         userId: user.id,
-        email: normalizedEmail 
+        email: normalizedEmail,
       });
       return errorResponse(
         res,
         "Akun Anda telah dinonaktifkan. Hubungi admin.",
-        403
+        403,
       );
+    }
+
+    if (rejectIfOtpCooldownActive(res, user)) {
+      return;
     }
 
     // Generate OTP
@@ -276,14 +332,19 @@ export const login = async (req, res, next) => {
 
     // Send OTP via email (async via queue)
     const emailResult = await sendOTPEmail(user, otp);
-    
+
     if (!emailResult.success) {
-      logger.error("Failed to send OTP email", emailResult.error, { userId: user.id });
+      logger.error("Failed to send OTP email", emailResult.error, {
+        userId: user.id,
+      });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
     const emailStatus = emailResult.queued ? "queued" : "sent";
-    logger.info(`OTP email ${emailStatus} successfully`, { userId: user.id, jobId: emailResult.jobId });
+    logger.info(`OTP email ${emailStatus} successfully`, {
+      userId: user.id,
+      jobId: emailResult.jobId,
+    });
 
     return successResponse(
       res,
@@ -291,7 +352,7 @@ export const login = async (req, res, next) => {
         email: user.email,
         expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
-      "Silakan cek email Anda untuk kode OTP"
+      "Silakan cek email Anda untuk kode OTP",
     );
   } catch (error) {
     logger.error("Login error", error);
@@ -313,16 +374,18 @@ export const verifyOTPLogin = async (req, res, next) => {
     const user = await findUserByEmail(normalizedEmail);
 
     if (!user) {
-      logger.security("OTP verification failed - user not found", { email: normalizedEmail });
+      logger.security("OTP verification failed - user not found", {
+        email: normalizedEmail,
+      });
       return errorResponse(res, "User tidak ditemukan", 404);
     }
 
     // Verify OTP
     const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
     if (!otpValidation.valid) {
-      logger.security("OTP verification failed - invalid OTP", { 
+      logger.security("OTP verification failed - invalid OTP", {
         userId: user.id,
-        reason: otpValidation.message 
+        reason: otpValidation.message,
       });
       return errorResponse(res, otpValidation.message, 400);
     }
@@ -346,7 +409,10 @@ export const verifyOTPLogin = async (req, res, next) => {
       role: user.role,
     });
 
-    logger.security("User logged in successfully", { userId: user.id, email: user.email });
+    logger.security("User logged in successfully", {
+      userId: user.id,
+      email: user.email,
+    });
 
     res.cookie("access_token", token, getAuthCookieOptions(req));
 
@@ -361,7 +427,7 @@ export const verifyOTPLogin = async (req, res, next) => {
           phone: user.phone,
         },
       },
-      "Login berhasil"
+      "Login berhasil",
     );
   } catch (error) {
     logger.error("OTP verification error", error);
@@ -384,8 +450,12 @@ export const requestOTP = async (req, res, next) => {
       return successResponse(
         res,
         { email: normalizedEmail },
-        "Jika email terdaftar, OTP baru telah dikirim"
+        "Jika email terdaftar, OTP baru telah dikirim",
       );
+    }
+
+    if (rejectIfOtpCooldownActive(res, user)) {
+      return;
     }
 
     // Generate new OTP
@@ -403,14 +473,19 @@ export const requestOTP = async (req, res, next) => {
 
     // Send OTP
     const emailResult = await sendOTPEmail(user, otp);
-    
+
     if (!emailResult.success) {
-      logger.error("Failed to send OTP email", emailResult.error, { userId: user.id });
+      logger.error("Failed to send OTP email", emailResult.error, {
+        userId: user.id,
+      });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
     const emailStatus = emailResult.queued ? "queued" : "sent";
-    logger.info(`OTP email ${emailStatus}`, { userId: user.id, jobId: emailResult.jobId });
+    logger.info(`OTP email ${emailStatus}`, {
+      userId: user.id,
+      jobId: emailResult.jobId,
+    });
 
     return successResponse(
       res,
@@ -418,7 +493,7 @@ export const requestOTP = async (req, res, next) => {
         email: user.email,
         expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
-      "OTP baru telah dikirim"
+      "OTP baru telah dikirim",
     );
   } catch (error) {
     logger.error("Request OTP error", error);
@@ -471,6 +546,10 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
       return errorResponse(res, "User tidak ditemukan", 404);
     }
 
+    if (rejectIfOtpCooldownActive(res, user)) {
+      return;
+    }
+
     // Generate OTP
     const otp = generateOTP();
     const otpExpiry = getOTPExpiry();
@@ -487,18 +566,24 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
 
     // Send OTP via email (async via queue)
     const emailResult = await sendOTPEmail(user, otp);
-    
+
     if (!emailResult.success) {
-      logger.error("Failed to send password change OTP", emailResult.error, { userId });
+      logger.error("Failed to send password change OTP", emailResult.error, {
+        userId,
+      });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
     const emailStatus = emailResult.queued ? "queued" : "sent";
-    logger.info(`Password change OTP ${emailStatus}`, { userId, jobId: emailResult.jobId });
+    logger.info(`Password change OTP ${emailStatus}`, {
+      userId,
+      jobId: emailResult.jobId,
+    });
 
     // Mask email for response
     const [local, domain] = user.email.split("@");
-    const maskedEmail = local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
+    const maskedEmail =
+      local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
 
     return successResponse(
       res,
@@ -506,7 +591,7 @@ export const requestPasswordChangeOTP = async (req, res, next) => {
         email: maskedEmail,
         expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
-      "Kode OTP telah dikirim ke email Anda"
+      "Kode OTP telah dikirim ke email Anda",
     );
   } catch (error) {
     logger.error("Request password change OTP error", error);
@@ -553,7 +638,11 @@ export const changePasswordWithOTP = async (req, res, next) => {
 
     res.clearCookie("access_token", getAuthCookieOptions(req));
 
-    return successResponse(res, null, "Password berhasil diubah. Silakan login kembali.");
+    return successResponse(
+      res,
+      null,
+      "Password berhasil diubah. Silakan login kembali.",
+    );
   } catch (error) {
     logger.error("Change password error", error);
     next(error);
@@ -573,6 +662,10 @@ export const requestEmailChangeOTP = async (req, res, next) => {
       return errorResponse(res, "User tidak ditemukan", 404);
     }
 
+    if (rejectIfOtpCooldownActive(res, user)) {
+      return;
+    }
+
     // Generate OTP
     const otp = generateOTP();
     const otpExpiry = getOTPExpiry();
@@ -589,18 +682,24 @@ export const requestEmailChangeOTP = async (req, res, next) => {
 
     // Send OTP via email to current email (async via queue)
     const emailResult = await sendOTPEmail(user, otp);
-    
+
     if (!emailResult.success) {
-      logger.error("Failed to send email change OTP", emailResult.error, { userId });
+      logger.error("Failed to send email change OTP", emailResult.error, {
+        userId,
+      });
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
     const emailStatus = emailResult.queued ? "queued" : "sent";
-    logger.info(`Email change OTP ${emailStatus}`, { userId, jobId: emailResult.jobId });
+    logger.info(`Email change OTP ${emailStatus}`, {
+      userId,
+      jobId: emailResult.jobId,
+    });
 
     // Mask email for response
     const [local, domain] = user.email.split("@");
-    const maskedEmail = local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
+    const maskedEmail =
+      local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
 
     return successResponse(
       res,
@@ -608,7 +707,7 @@ export const requestEmailChangeOTP = async (req, res, next) => {
         email: maskedEmail,
         expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
-      "Kode OTP telah dikirim ke email Anda saat ini"
+      "Kode OTP telah dikirim ke email Anda saat ini",
     );
   } catch (error) {
     logger.error("Request email change OTP error", error);
@@ -657,10 +756,10 @@ export const changeEmailWithOTP = async (req, res, next) => {
       })
       .where(eq(users.id, userId));
 
-    logger.security("Email changed successfully", { 
-      userId, 
+    logger.security("Email changed successfully", {
+      userId,
       oldEmail: user.email,
-      newEmail: normalizedNewEmail 
+      newEmail: normalizedNewEmail,
     });
 
     res.clearCookie("access_token", getAuthCookieOptions(req));
@@ -668,7 +767,7 @@ export const changeEmailWithOTP = async (req, res, next) => {
     return successResponse(
       res,
       null,
-      "Email berhasil diubah. Silakan login kembali dengan email baru."
+      "Email berhasil diubah. Silakan login kembali dengan email baru.",
     );
   } catch (error) {
     logger.error("Change email error", error);
@@ -707,7 +806,15 @@ export const requestForgotPasswordOTP = async (req, res, next) => {
 
     // Check if user is active
     if (!user.isActive) {
-      return errorResponse(res, "Akun Anda telah dinonaktifkan. Hubungi admin.", 403);
+      return errorResponse(
+        res,
+        "Akun Anda telah dinonaktifkan. Hubungi admin.",
+        403,
+      );
+    }
+
+    if (rejectIfOtpCooldownActive(res, user)) {
+      return;
     }
 
     // Generate OTP
@@ -726,18 +833,26 @@ export const requestForgotPasswordOTP = async (req, res, next) => {
 
     // Send OTP via email (async via queue)
     const emailResult = await sendOTPEmail(user, otp);
-    
+
     if (!emailResult.success) {
-      logger.error("Failed to send forgot password OTP email", emailResult.error, { userId: user.id });
+      logger.error(
+        "Failed to send forgot password OTP email",
+        emailResult.error,
+        { userId: user.id },
+      );
       return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
     }
 
     const emailStatus = emailResult.queued ? "queued" : "sent";
-    logger.info(`Forgot password OTP email ${emailStatus} successfully`, { userId: user.id, jobId: emailResult.jobId });
+    logger.info(`Forgot password OTP email ${emailStatus} successfully`, {
+      userId: user.id,
+      jobId: emailResult.jobId,
+    });
 
     // Mask email for response
     const [local, domain] = user.email.split("@");
-    const maskedEmail = local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
+    const maskedEmail =
+      local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
 
     return successResponse(
       res,
@@ -745,7 +860,7 @@ export const requestForgotPasswordOTP = async (req, res, next) => {
         email: maskedEmail,
         expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
       },
-      "Kode OTP telah dikirim ke email Anda"
+      "Kode OTP telah dikirim ke email Anda",
     );
   } catch (error) {
     logger.error("Request forgot password OTP error", error);
@@ -772,13 +887,19 @@ export const resetPasswordWithOTP = async (req, res, next) => {
 
     // Check if user is active
     if (!user.isActive) {
-      return errorResponse(res, "Akun Anda telah dinonaktifkan. Hubungi admin.", 403);
+      return errorResponse(
+        res,
+        "Akun Anda telah dinonaktifkan. Hubungi admin.",
+        403,
+      );
     }
 
     // Verify OTP
     const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
     if (!otpValidation.valid) {
-      logger.security("Forgot password reset failed - invalid OTP", { userId: user.id });
+      logger.security("Forgot password reset failed - invalid OTP", {
+        userId: user.id,
+      });
       return errorResponse(res, otpValidation.message, 400);
     }
 
@@ -801,7 +922,11 @@ export const resetPasswordWithOTP = async (req, res, next) => {
     // Clear access_token cookie if logged in
     res.clearCookie("access_token", getAuthCookieOptions(req));
 
-    return successResponse(res, null, "Password berhasil diubah. Silakan login kembali.");
+    return successResponse(
+      res,
+      null,
+      "Password berhasil diubah. Silakan login kembali.",
+    );
   } catch (error) {
     logger.error("Forgot password reset error", error);
     next(error);
