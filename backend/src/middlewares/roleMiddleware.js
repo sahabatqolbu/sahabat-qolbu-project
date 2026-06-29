@@ -31,6 +31,7 @@ export const requireAdmin = authorize(["ADMIN"]);
 export const requireFinance = authorize(["FINANCE"]);
 export const requireAgen = authorize(["AGEN"]);
 export const requireJamaah = authorize(["JAMAAH"]);
+export const requireCalonJamaah = authorize(["CALON_JAMAAH"]);
 
 // Multiple roles
 export const requireAdminOrFinance = authorize(["ADMIN", "FINANCE"]);

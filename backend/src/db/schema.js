@@ -27,7 +27,14 @@ export const users = mysqlTable(
     email: varchar("email", { length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }).notNull(),
 
-    role: mysqlEnum("role", ["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"])
+    role: mysqlEnum("role", [
+      "ADMIN",
+      "FINANCE",
+      "STAFF",
+      "AGEN",
+      "JAMAAH",
+      "CALON_JAMAAH",
+    ])
       .notNull()
       .default("JAMAAH"),
 
@@ -351,6 +358,99 @@ export const packageItinerary = mysqlTable(
   (table) => ({
     packageIdx: index("package_idx").on(table.packageId),
     dayIdx: index("day_idx").on(table.dayNumber),
+  })
+);
+
+// =====================================================
+// PROSPECT / CALON JAMAAH LEADS
+// =====================================================
+export const prospectJamaah = mysqlTable(
+  "prospect_jamaah",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    followUpStatus: mysqlEnum("follow_up_status", [
+      "BARU",
+      "DIHUBUNGI",
+      "TERTARIK",
+      "BELUM_RESPON",
+      "CONVERTED",
+    ])
+      .notNull()
+      .default("BARU"),
+    sourceType: mysqlEnum("source_type", [
+      "GENERAL",
+      "AGENT",
+      "REFERRAL",
+    ]).default("GENERAL"),
+    sourceSlug: varchar("source_slug", { length: 150 }),
+    sourceAgentId: int("source_agent_id").references(() => users.id),
+    convertedJamaahId: int("converted_jamaah_id"),
+    convertedAt: datetime("converted_at"),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    userIdx: index("user_idx").on(table.userId),
+    statusIdx: index("status_idx").on(table.followUpStatus),
+    sourceIdx: index("source_idx").on(table.sourceType, table.sourceSlug),
+  })
+);
+
+export const prospectPackageInterests = mysqlTable(
+  "prospect_package_interests",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    prospectId: int("prospect_id")
+      .notNull()
+      .references(() => prospectJamaah.id, { onDelete: "cascade" }),
+    packageId: int("package_id")
+      .notNull()
+      .references(() => packages.id, { onDelete: "cascade" }),
+    actionType: mysqlEnum("action_type", [
+      "SAVED",
+      "WHATSAPP_CONSULT",
+      "CONVERT_REQUEST",
+    ]).notNull(),
+    sourcePath: varchar("source_path", { length: 500 }),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    prospectIdx: index("prospect_idx").on(table.prospectId),
+    packageIdx: index("package_idx").on(table.packageId),
+    actionIdx: index("action_idx").on(table.actionType),
+  })
+);
+
+export const prospectFollowUps = mysqlTable(
+  "prospect_follow_ups",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    prospectId: int("prospect_id")
+      .notNull()
+      .references(() => prospectJamaah.id, { onDelete: "cascade" }),
+    actorUserId: int("actor_user_id")
+      .notNull()
+      .references(() => users.id),
+    status: mysqlEnum("status", [
+      "BARU",
+      "DIHUBUNGI",
+      "TERTARIK",
+      "BELUM_RESPON",
+      "CONVERTED",
+    ]).notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    prospectIdx: index("prospect_idx").on(table.prospectId),
+    actorIdx: index("actor_idx").on(table.actorUserId),
+    statusIdx: index("status_idx").on(table.status),
   })
 );
 

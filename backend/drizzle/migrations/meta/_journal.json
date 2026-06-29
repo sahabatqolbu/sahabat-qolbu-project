@@ -85,6 +85,13 @@
       "when": 1781838299785,
       "tag": "0011_legal_kingpin",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1782710000000,
+      "tag": "0012_add_calon_jamaah_prospects",
+      "breakpoints": true
     }
   ]
 }

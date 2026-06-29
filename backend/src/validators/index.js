@@ -123,7 +123,9 @@ export const userSchemas = {
       .regex(patterns.password, messages.password.pattern),
     fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
     phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid").optional().nullable(),
-    role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"]).default("JAMAAH"),
+    role: z
+      .enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"])
+      .default("JAMAAH"),
   }),
 
   update: z.object({
@@ -147,13 +149,15 @@ export const adminUserSchemas = {
       .transform((val) => val.toLowerCase().trim()),
     fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
     phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid"),
-    role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"]),
+    role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"]),
     packageId: z.union([z.string(), z.number()]).optional(),
   }),
   update: z.object({
     fullName: z.string().min(2).max(255).optional(),
     phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid").optional().nullable(),
-    role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"]).optional(),
+    role: z
+      .enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"])
+      .optional(),
     isActive: z.boolean().optional(),
   }),
 };
