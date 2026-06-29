@@ -19,5 +19,5 @@ export default async function PackagesRedirectPage({
   }
 
   const suffix = query.toString();
-  redirect(suffix ? `/landing/paket?${suffix}` : "/landing/paket");
+  redirect(suffix ? `/paket?${suffix}` : "/paket");
 }

@@ -20,7 +20,7 @@ export default function PackageDetailClient({ pkg }: Props) {
       <section className="bg-neutral-50 pb-8 pt-32">
         <div className="container-custom">
           <Link
-            href="/landing/paket"
+            href="/paket"
             className="group mb-6 inline-flex items-center gap-2 font-semibold text-primary transition-colors hover:text-secondary"
           >
             <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
@@ -32,7 +32,7 @@ export default function PackageDetailClient({ pkg }: Props) {
               Beranda
             </Link>
             <span>/</span>
-            <Link href="/landing/paket" className="transition-colors hover:text-primary">
+            <Link href="/paket" className="transition-colors hover:text-primary">
               Paket
             </Link>
             <span>/</span>

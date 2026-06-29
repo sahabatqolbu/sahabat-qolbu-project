@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@source "../../public/landing";
-@source "../../public/landing/js";
 
 @theme {
   /* Typography - Poppins as Primary */
@@ -326,14 +324,21 @@
 }
 
 .landing-static {
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif !important;
   color: #1f2937;
 }
 
 .landing-static h1,
 .landing-static h2,
-.landing-static h3 {
-  font-family: var(--font-inter), system-ui, sans-serif;
+.landing-static h3,
+.landing-static h4,
+.landing-static h5,
+.landing-static h6 {
+  font-family: var(--font-inter), system-ui, sans-serif !important;
+}
+
+.landing-static .font-display {
+  font-family: var(--font-inter), system-ui, sans-serif !important;
 }
 
 .landing-detail h1,

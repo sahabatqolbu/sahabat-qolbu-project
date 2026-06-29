@@ -13,7 +13,7 @@ interface PackageFiltersProps {
 
 export default function PackageFilters({
   onClose,
-  basePath = "/landing/paket",
+  basePath = "/paket",
 }: PackageFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

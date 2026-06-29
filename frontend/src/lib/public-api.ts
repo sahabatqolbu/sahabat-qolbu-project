@@ -280,7 +280,10 @@ const parseStringList = (value?: string | string[] | null) => {
   return [text];
 };
 
-const parseActivities = (value?: string[] | string | null, description?: string | null) => {
+const parseActivities = (
+  value?: string[] | string | null,
+  description?: string | null,
+) => {
   const list = parseStringList(value);
   if (list?.length) return list;
 
@@ -288,7 +291,10 @@ const parseActivities = (value?: string[] | string | null, description?: string 
   return descriptionText ? [descriptionText] : [];
 };
 
-const mapPackageType = (rawType?: string | null, packageName?: string | null): MarketingPackageType => {
+const mapPackageType = (
+  rawType?: string | null,
+  packageName?: string | null,
+): MarketingPackageType => {
   const normalizedName = String(packageName || "").toLowerCase();
   const normalizedType = String(rawType || "").toUpperCase();
 
@@ -376,11 +382,10 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
       name: toNonEmptyString(pkg.airline?.name, "Maskapai belum tersedia"),
       logo: resolveAssetUrl(pkg.airline?.logo),
     },
-    hotelMakkah:
-      mapHotel(pkg.hotelMakkah, "Masjidil Haram") || {
-        name: "Hotel Makkah belum tersedia",
-        starRating: 0,
-      },
+    hotelMakkah: mapHotel(pkg.hotelMakkah, "Masjidil Haram") || {
+      name: "Hotel Makkah belum tersedia",
+      starRating: 0,
+    },
     hotelMadinah: mapHotel(pkg.hotelMadinah, "Masjid Nabawi"),
     priceQuad: String(quadPrice),
     priceTriple: String(triplePrice),
@@ -439,36 +444,43 @@ const fetchApi = async <T>(path: string) => {
   }
 };
 
-export const getMarketingPackages = cache(async (): Promise<MarketingPackage[]> => {
-  const firstPage = await fetchApi<PublicPackagesPayload>("/public/packages?page=1&limit=100");
-
-  if (!firstPage) {
-    return [];
-  }
-
-  const collectedPackages = [...(firstPage.packages || [])];
-  const totalPages = Math.max(1, toNumber(firstPage.pagination?.totalPages, 1));
-
-  for (let page = 2; page <= totalPages; page += 1) {
-    const nextPage = await fetchApi<PublicPackagesPayload>(
-      `/public/packages?page=${page}&limit=100`,
+export const getMarketingPackages = cache(
+  async (): Promise<MarketingPackage[]> => {
+    const firstPage = await fetchApi<PublicPackagesPayload>(
+      "/public/packages?page=1&limit=100",
     );
 
-    if (nextPage?.packages?.length) {
-      collectedPackages.push(...nextPage.packages);
+    if (!firstPage) {
+      return [];
     }
-  }
 
-  const uniquePackages = Array.from(
-    new Map(collectedPackages.map((pkg) => [pkg.id, pkg])).values(),
-  );
+    const collectedPackages = [...(firstPage.packages || [])];
+    const totalPages = Math.max(
+      1,
+      toNumber(firstPage.pagination?.totalPages, 1),
+    );
 
-  return sortPackagesByDeparture(
-    uniquePackages
-      .filter((pkg) => pkg.isPublished !== false)
-      .map((pkg) => mapPackage(pkg)),
-  );
-});
+    for (let page = 2; page <= totalPages; page += 1) {
+      const nextPage = await fetchApi<PublicPackagesPayload>(
+        `/public/packages?page=${page}&limit=100`,
+      );
+
+      if (nextPage?.packages?.length) {
+        collectedPackages.push(...nextPage.packages);
+      }
+    }
+
+    const uniquePackages = Array.from(
+      new Map(collectedPackages.map((pkg) => [pkg.id, pkg])).values(),
+    );
+
+    return sortPackagesByDeparture(
+      uniquePackages
+        .filter((pkg) => pkg.isPublished !== false)
+        .map((pkg) => mapPackage(pkg)),
+    );
+  },
+);
 
 export const getMarketingPackageSlugs = async (): Promise<string[]> => {
   const packages = await getMarketingPackages();
@@ -584,35 +596,89 @@ export interface StructuredContentItem {
   description: string;
 }
 
-const normalizeStructuredContent = (value: unknown): StructuredContentItem[] => {
+export interface PublicFaq {
+  id: number;
+  category?: string | null;
+  question: string;
+  answer: string;
+  sortOrder?: number | null;
+}
+
+export interface PublicGalleryImage {
+  id: number;
+  title?: string | null;
+  description?: string | null;
+  imageUrl: string;
+  category?: string | null;
+  sortOrder?: number | null;
+}
+
+const normalizeStructuredContent = (
+  value: unknown,
+): StructuredContentItem[] => {
   if (!Array.isArray(value)) return [];
 
   return value
     .map((item) => ({
       title: toNonEmptyString((item as { title?: unknown })?.title),
-      description: toNonEmptyString((item as { description?: unknown })?.description),
+      description: toNonEmptyString(
+        (item as { description?: unknown })?.description,
+      ),
     }))
     .filter((item) => item.title || item.description);
 };
 
-export const getCompanyProfile = cache(async (): Promise<CompanyProfile | null> => {
-  const profile = await fetchApi<CompanyProfile>("/master/company");
-  if (!profile) return null;
-  return {
-    ...profile,
-    logo: resolveAssetUrl(profile.logo),
-    philosophy: normalizeStructuredContent(profile.philosophy),
-    targetMarket: normalizeStructuredContent(profile.targetMarket),
-  };
+export const getCompanyProfile = cache(
+  async (): Promise<CompanyProfile | null> => {
+    const profile = await fetchApi<CompanyProfile>("/master/company");
+    if (!profile) return null;
+    return {
+      ...profile,
+      logo: resolveAssetUrl(profile.logo),
+      philosophy: normalizeStructuredContent(profile.philosophy),
+      targetMarket: normalizeStructuredContent(profile.targetMarket),
+    };
+  },
+);
+
+export const getPublicCompanyProfile = cache(
+  async (): Promise<CompanyProfile | null> => {
+    const profile = await fetchApi<CompanyProfile>("/public/company-profile");
+    if (!profile) return null;
+    return {
+      ...profile,
+      logo: resolveAssetUrl(profile.logo),
+      philosophy: normalizeStructuredContent(profile.philosophy),
+      targetMarket: normalizeStructuredContent(profile.targetMarket),
+    };
+  },
+);
+
+export const getPublicFaqs = cache(async (): Promise<PublicFaq[]> => {
+  const payload = await fetchApi<{ faqs?: PublicFaq[] }>("/public/faqs");
+
+  return Array.isArray(payload?.faqs)
+    ? payload.faqs.filter((faq) => faq.question && faq.answer)
+    : [];
 });
 
-export const getPublicCompanyProfile = cache(async (): Promise<CompanyProfile | null> => {
-  const profile = await fetchApi<CompanyProfile>("/public/company-profile");
-  if (!profile) return null;
-  return {
-    ...profile,
-    logo: resolveAssetUrl(profile.logo),
-    philosophy: normalizeStructuredContent(profile.philosophy),
-    targetMarket: normalizeStructuredContent(profile.targetMarket),
-  };
-});
+export const getPublicGallery = cache(
+  async (): Promise<PublicGalleryImage[]> => {
+    const payload = await fetchApi<{
+      gallery?: (Omit<PublicGalleryImage, "imageUrl"> & {
+        imageUrl?: string | null;
+      })[];
+    }>("/public/gallery");
+
+    if (!Array.isArray(payload?.gallery)) {
+      return [];
+    }
+
+    return payload.gallery
+      .map((item) => ({
+        ...item,
+        imageUrl: resolveAssetUrl(item.imageUrl) || "",
+      }))
+      .filter((item): item is PublicGalleryImage => Boolean(item.imageUrl));
+  },
+);

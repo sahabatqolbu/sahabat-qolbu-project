@@ -7,10 +7,10 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <div className="landing-static">
       <Navbar />
       <main>{children}</main>
       <Footer />
-    </>
+    </div>
   );
 }

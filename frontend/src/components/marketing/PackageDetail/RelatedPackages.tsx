@@ -11,7 +11,7 @@ interface Props {
 export default async function RelatedPackages({
   currentPackageId,
   packageType,
-  detailBasePath = "/landing/paket",
+  detailBasePath = "/paket",
 }: Props) {
   const data = await getMarketingPackages();
   const relatedPackages = data

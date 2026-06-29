@@ -3,6 +3,20 @@ import { faqs } from "../db/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 
+// ===== GET PUBLIC FAQs =====
+export const getPublicFaqs = async (req, res, next) => {
+  try {
+    const activeFaqs = await db.query.faqs.findMany({
+      where: eq(faqs.isActive, true),
+      orderBy: [faqs.sortOrder, desc(faqs.createdAt)],
+    });
+
+    return successResponse(res, { faqs: activeFaqs });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ===== GET ALL FAQs =====
 export const getAllFAQs = async (req, res, next) => {
   try {
@@ -47,7 +61,7 @@ export const createFAQ = async (req, res, next) => {
       res,
       { id: newFAQ.id },
       "FAQ berhasil ditambahkan",
-      201
+      201,
     );
   } catch (error) {
     next(error);

@@ -3,6 +3,19 @@ import { gallery } from "../db/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 
+export const getPublicGallery = async (req, res, next) => {
+  try {
+    const activeGallery = await db.query.gallery.findMany({
+      where: eq(gallery.isActive, true),
+      orderBy: [gallery.sortOrder, desc(gallery.createdAt)],
+    });
+
+    return successResponse(res, { gallery: activeGallery });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getAllGallery = async (req, res, next) => {
   try {
     const { category, isActive } = req.query;
@@ -28,7 +41,8 @@ export const getAllGallery = async (req, res, next) => {
 
 export const createGallery = async (req, res, next) => {
   try {
-    const { title, description, imageUrl, category, isActive, sortOrder } = req.body;
+    const { title, description, imageUrl, category, isActive, sortOrder } =
+      req.body;
 
     if (!imageUrl) {
       return errorResponse(res, "imageUrl wajib diisi", 400);
@@ -60,7 +74,8 @@ export const createGallery = async (req, res, next) => {
 export const updateGallery = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, imageUrl, category, isActive, sortOrder } = req.body;
+    const { title, description, imageUrl, category, isActive, sortOrder } =
+      req.body;
 
     const existing = await db.query.gallery.findFirst({
       where: eq(gallery.id, parseInt(id, 10)),

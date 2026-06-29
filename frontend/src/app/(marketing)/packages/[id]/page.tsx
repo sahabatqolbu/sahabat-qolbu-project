@@ -10,5 +10,5 @@ export default async function PackageDetailRedirectPage({
 }) {
   const { id } = await params;
   const pkg = await getMarketingPackageById(id);
-  redirect(pkg ? `/landing/paket/${pkg.slug}` : "/landing/paket");
+  redirect(pkg ? `/paket/${pkg.slug}` : "/paket");
 }

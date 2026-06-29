@@ -1,27 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Poppins, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { generateMetadata as getMetadata } from "@/lib/seo";
 import QueryProvider from "@/components/providers/QueryProvider";
+import { BrandingProvider } from "@/components/providers/BrandingProvider";
 import { Toaster } from "@/components/ui/toaster";
-
-// Poppins - Font Utama (Standard)
-const poppins = Poppins({
-  subsets: ["latin"],
-  variable: "--font-poppins",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-  preload: true,
-});
-
-// Playfair Display - Font Display (Heading Khusus)
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
-  preload: true,
-});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -85,11 +68,13 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${poppins.variable} ${playfair.variable} ${inter.variable} font-sans antialiased`}
+        className={`${inter.variable} font-sans antialiased`}
       >
         <QueryProvider>
-          {children}
-          <Toaster />
+          <BrandingProvider>
+            {children}
+            <Toaster />
+          </BrandingProvider>
         </QueryProvider>
       </body>
     </html>

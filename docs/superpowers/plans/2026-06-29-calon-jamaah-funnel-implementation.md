@@ -946,7 +946,7 @@ npm run lint
 npm run build
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add dashboard/src/app/(mobile)/layout.tsx dashboard/src/app/(mobile)/calon-jamaah dashboard/src/services/prospectService.ts
@@ -1146,7 +1146,7 @@ git commit -m "feat: add database backed brand content"
 - Modify: `frontend/src/lib/public-api.ts`
 - Modify: current landing page file after confirming active route path
 
-- [ ] **Step 1: Add public endpoints**
+- [x] **Step 1: Add public endpoints**
 
 Expose:
 
@@ -1157,7 +1157,7 @@ router.get("/gallery", getPublicGallery);
 
 FAQ returns active ordered items only. Gallery returns active ordered images only.
 
-- [ ] **Step 2: Add frontend API functions**
+- [x] **Step 2: Add frontend API functions**
 
 In `frontend/src/lib/public-api.ts`:
 
@@ -1173,7 +1173,7 @@ export const getPublicGallery = cache(async () => {
 });
 ```
 
-- [ ] **Step 3: Render sections**
+- [x] **Step 3: Render sections**
 
 In the active landing page:
 
@@ -1183,7 +1183,7 @@ In the active landing page:
 - mobile 1-2 columns
 - desktop 3-4 columns
 
-- [ ] **Step 4: Run checks**
+- [x] **Step 4: Run checks**
 
 ```bash
 cd backend
