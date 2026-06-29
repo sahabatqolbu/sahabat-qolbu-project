@@ -1,8 +1,8 @@
-// dashboard/src/app/login/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import type { ComponentType, ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "@/services/authService";
 import { useOTPStore } from "@/stores/otpStore";
@@ -17,51 +17,61 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, Loader2, Mail, Lock, ArrowLeft, Key } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Key, Loader2, Lock, Mail, Phone, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type ViewMode = "login" | "forgot-request" | "forgot-reset";
+type ViewMode = "login" | "register" | "forgot-request" | "forgot-reset";
 
-export default function LoginPage() {
+const isEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
+
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const setOTPData = useOTPStore((state) => state.setOTPData);
 
+  const nextPath = searchParams.get("next") || "";
+  const initialTab = searchParams.get("tab");
+
   const [viewMode, setViewMode] = useState<ViewMode>("login");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [registerData, setRegisterData] = useState({
+    fullName: "",
     email: "",
+    phone: "",
     password: "",
+    confirmPassword: "",
+    honeypot: "",
+    formStartedAt: Date.now(),
   });
   const [forgotEmail, setForgotEmail] = useState("");
-  const [resetData, setResetData] = useState({
-    otp: "",
-    newPassword: "",
-  });
-  
+  const [resetData, setResetData] = useState({ otp: "", newPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Login Mutation
+  useEffect(() => {
+    if (initialTab === "register") {
+      setViewMode("register");
+    }
+  }, [initialTab]);
+
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      // Save email and expiry for OTP page
-      setOTPData(formData.email, data.data.expiresIn);
-
+      setOTPData(formData.email, data.data.expiresIn, nextPath);
       toast({
-        title: "✅ OTP Terkirim",
-        description: data.data.message,
+        title: "OTP Terkirim",
+        description: "Kode OTP sudah dikirim ke email Anda.",
       });
-
-      // Redirect to OTP verification
       router.push("/verify-otp");
     },
     onError: (error: any) => {
       const status = error?.response?.status;
       const rawMessage = String(error?.response?.data?.message || "");
-
       let errorMessage = rawMessage || "Login gagal";
+
       if (status >= 500) {
         errorMessage = "Server sedang bermasalah. Silakan coba lagi beberapa saat.";
       }
@@ -69,43 +79,49 @@ export default function LoginPage() {
         errorMessage = "Akun ini belum bisa login. Silakan hubungi admin untuk reset password.";
       }
 
-      toast({
-        variant: "destructive",
-        title: "❌ Login Gagal",
-        description: errorMessage,
-      });
-
       setErrors({ general: errorMessage });
+      toast({ variant: "destructive", title: "Login Gagal", description: errorMessage });
     },
   });
 
-  // Forgot Password Request Mutation
+  const registerMutation = useMutation({
+    mutationFn: authService.registerCalonJamaah,
+    onSuccess: (data) => {
+      setOTPData(registerData.email, data.data.expiresIn, nextPath);
+      toast({
+        title: "Registrasi Berhasil",
+        description: "Kode OTP sudah dikirim ke email Anda.",
+      });
+      router.push("/verify-otp");
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || "Registrasi gagal";
+      setErrors({ general: msg });
+      toast({ variant: "destructive", title: "Registrasi Gagal", description: msg });
+    },
+  });
+
   const forgotRequestMutation = useMutation({
     mutationFn: authService.requestForgotPasswordOTP,
     onSuccess: (data: any) => {
       toast({
-        title: "✅ OTP Terkirim",
+        title: "OTP Terkirim",
         description: data.message || "Kode OTP reset password telah dikirim ke email Anda",
       });
       setViewMode("forgot-reset");
     },
     onError: (error: any) => {
       const msg = error?.response?.data?.message || "Gagal mengirim request OTP";
-      toast({
-        variant: "destructive",
-        title: "❌ Request Gagal",
-        description: msg,
-      });
       setErrors({ forgotEmail: msg });
+      toast({ variant: "destructive", title: "Request Gagal", description: msg });
     },
   });
 
-  // Forgot Password Reset Mutation
   const forgotResetMutation = useMutation({
     mutationFn: authService.resetPasswordWithOTP,
     onSuccess: (data: any) => {
       toast({
-        title: "✅ Password Berhasil Direset",
+        title: "Password Berhasil Direset",
         description: data.message || "Password berhasil diubah. Silakan login kembali.",
       });
       setFormData({ email: forgotEmail, password: "" });
@@ -113,449 +129,438 @@ export default function LoginPage() {
     },
     onError: (error: any) => {
       const msg = error?.response?.data?.message || "Gagal mereset password";
-      toast({
-        variant: "destructive",
-        title: "❌ Reset Gagal",
-        description: msg,
-      });
       setErrors({ resetOtp: msg });
+      toast({ variant: "destructive", title: "Reset Gagal", description: msg });
     },
   });
 
-  // Validation
-  const validate = () => {
+  const validateLogin = () => {
     const newErrors: Record<string, string> = {};
+    if (!formData.email) newErrors.email = "Email wajib diisi";
+    else if (!isEmail(formData.email)) newErrors.email = "Format email tidak valid";
+    if (!formData.password) newErrors.password = "Password wajib diisi";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    if (!formData.email) {
-      newErrors.email = "Email wajib diisi";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Format email tidak valid";
+  const validateRegister = () => {
+    const newErrors: Record<string, string> = {};
+    if (!registerData.fullName.trim()) newErrors.fullName = "Nama lengkap wajib diisi";
+    if (!registerData.email) newErrors.registerEmail = "Email wajib diisi";
+    else if (!isEmail(registerData.email)) newErrors.registerEmail = "Format email tidak valid";
+    if (!registerData.phone.trim()) newErrors.phone = "Nomor WhatsApp wajib diisi";
+    if (registerData.password.length < 8) newErrors.registerPassword = "Password minimal 8 karakter";
+    if (registerData.password !== registerData.confirmPassword) {
+      newErrors.confirmPassword = "Konfirmasi password tidak sama";
     }
-
-    if (!formData.password) {
-      newErrors.password = "Password wajib diisi";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password minimal 6 karakter";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validateForgotRequest = () => {
     const newErrors: Record<string, string> = {};
-    if (!forgotEmail) {
-      newErrors.forgotEmail = "Email wajib diisi";
-    } else if (!/\S+@\S+\.\S+/.test(forgotEmail)) {
-      newErrors.forgotEmail = "Format email tidak valid";
-    }
+    if (!forgotEmail) newErrors.forgotEmail = "Email wajib diisi";
+    else if (!isEmail(forgotEmail)) newErrors.forgotEmail = "Format email tidak valid";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validateForgotReset = () => {
     const newErrors: Record<string, string> = {};
-    if (!resetData.otp) {
-      newErrors.resetOtp = "Kode OTP wajib diisi";
-    } else if (resetData.otp.length !== 6) {
-      newErrors.resetOtp = "Kode OTP harus 6 digit";
-    }
-    if (!resetData.newPassword) {
-      newErrors.newPassword = "Password baru wajib diisi";
-    } else if (resetData.newPassword.length < 8) {
-      newErrors.newPassword = "Password baru minimal 8 karakter";
-    }
+    if (resetData.otp.length !== 6) newErrors.resetOtp = "Kode OTP harus 6 digit";
+    if (resetData.newPassword.length < 8) newErrors.newPassword = "Password baru minimal 8 karakter";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle Submit Login
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (loginMutation.isPending) return;
-
-    if (validate()) {
-      loginMutation.mutate(formData);
+  const switchMode = (mode: ViewMode) => {
+    setErrors({});
+    setViewMode(mode);
+    if (mode === "register") {
+      setRegisterData((prev) => ({ ...prev, formStartedAt: Date.now() }));
     }
   };
 
-  // View: Forgot Password OTP Request
-  if (viewMode === "forgot-request") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 p-4">
-        <div className="w-full max-w-md">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-              <img
-                src="/images/icon.png"
-                alt="Sahabat Qolbu Logo"
-                className="w-12 h-12"
-              />
-            </div>
-            <h1 className="text-3xl font-serif font-bold text-white mb-2">
-              Sahabat Qolbu
-            </h1>
-            <p className="text-primary-100">Sistem Manajemen Umrah & Haji</p>
-          </div>
-
-          <Card className="shadow-2xl">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("login");
-                    setErrors({});
-                  }}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                <CardTitle className="text-2xl">Lupa Password</CardTitle>
-              </div>
-              <CardDescription>
-                Masukkan email terdaftar untuk menerima kode verifikasi OTP reset password.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (forgotRequestMutation.isPending) return;
-                  if (validateForgotRequest()) {
-                    forgotRequestMutation.mutate({ email: forgotEmail });
-                  }
-                }}
-                className="space-y-4"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="forgotEmail">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="forgotEmail"
-                      type="email"
-                      placeholder="nama@email.com"
-                      className="pl-10"
-                      value={forgotEmail}
-                      onChange={(e) => {
-                        setForgotEmail(e.target.value);
-                        setErrors({ ...errors, forgotEmail: "" });
-                      }}
-                      disabled={forgotRequestMutation.isPending}
-                    />
-                  </div>
-                  {errors.forgotEmail && (
-                    <p className="text-sm text-red-500">{errors.forgotEmail}</p>
-                  )}
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                  size="lg"
-                  disabled={forgotRequestMutation.isPending}
-                >
-                  {forgotRequestMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Mengirim OTP...
-                    </>
-                  ) : (
-                    "Kirim Kode OTP"
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // View: Forgot Password OTP Verification & Reset
-  if (viewMode === "forgot-reset") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 p-4">
-        <div className="w-full max-w-md">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-              <img
-                src="/images/icon.png"
-                alt="Sahabat Qolbu Logo"
-                className="w-12 h-12"
-              />
-            </div>
-            <h1 className="text-3xl font-serif font-bold text-white mb-2">
-              Sahabat Qolbu
-            </h1>
-            <p className="text-primary-100">Sistem Manajemen Umrah & Haji</p>
-          </div>
-
-          <Card className="shadow-2xl">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("forgot-request");
-                    setErrors({});
-                  }}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                <CardTitle className="text-2xl">Reset Password</CardTitle>
-              </div>
-              <CardDescription>
-                Masukkan kode OTP yang dikirim ke email Anda dan masukkan password baru.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (forgotResetMutation.isPending) return;
-                  if (validateForgotReset()) {
-                    forgotResetMutation.mutate({
-                      email: forgotEmail,
-                      otp: resetData.otp,
-                      newPassword: resetData.newPassword,
-                    });
-                  }
-                }}
-                className="space-y-4"
-              >
-                {/* OTP Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="resetOtp">Kode OTP</Label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="resetOtp"
-                      type="text"
-                      placeholder="Masukkan 6 digit OTP"
-                      maxLength={6}
-                      className="pl-10"
-                      value={resetData.otp}
-                      onChange={(e) => {
-                        setResetData({ ...resetData, otp: e.target.value.replace(/\D/g, "") });
-                        setErrors({ ...errors, resetOtp: "" });
-                      }}
-                      disabled={forgotResetMutation.isPending}
-                    />
-                  </div>
-                  {errors.resetOtp && (
-                    <p className="text-sm text-red-500">{errors.resetOtp}</p>
-                  )}
-                </div>
-
-                {/* New Password Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">Password Baru</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      placeholder="Minimal 8 karakter"
-                      className="pl-10 pr-10"
-                      value={resetData.newPassword}
-                      onChange={(e) => {
-                        setResetData({ ...resetData, newPassword: e.target.value });
-                        setErrors({ ...errors, newPassword: "" });
-                      }}
-                      disabled={forgotResetMutation.isPending}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                  {errors.newPassword && (
-                    <p className="text-sm text-red-500">{errors.newPassword}</p>
-                  )}
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                  size="lg"
-                  disabled={forgotResetMutation.isPending}
-                >
-                  {forgotResetMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Menyimpan Password...
-                    </>
-                  ) : (
-                    "Reset Password"
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // View: Login Form
-  return (
+  const renderShell = (children: ReactNode) => (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-            <img
-              src="/images/icon.png"
-              alt="Sahabat Qolbu Logo"
-              className="w-12 h-12"
-            />
+            <img src="/images/icon.png" alt="Sahabat Qolbu Logo" className="w-12 h-12" />
           </div>
-          <h1 className="text-3xl font-serif font-bold text-white mb-2">
-            Sahabat Qolbu
-          </h1>
+          <h1 className="text-3xl font-serif font-bold text-white mb-2">Sahabat Qolbu</h1>
           <p className="text-primary-100">Sistem Manajemen Umrah & Haji</p>
         </div>
-
-        {/* Login Card */}
-        <Card className="shadow-2xl">
-          <CardHeader>
-            <CardTitle className="text-2xl">Masuk</CardTitle>
-            <CardDescription>
-              Masukkan email dan password Anda untuk melanjutkan
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* General Error */}
-              {errors.general && (
-                <Alert variant="destructive">
-                  <AlertDescription>{errors.general}</AlertDescription>
-                </Alert>
-              )}
-
-              {/* Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="nama@email.com"
-                    className="pl-10"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
-                      setErrors({ ...errors, email: "" });
-                    }}
-                    disabled={loginMutation.isPending}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email}</p>
-                )}
-              </div>
-
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
-                    value={formData.password}
-                    onChange={(e) => {
-                      setFormData({ ...formData, password: e.target.value });
-                      setErrors({ ...errors, password: "" });
-                    }}
-                    disabled={loginMutation.isPending}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password}</p>
-                )}
-              </div>
-
-              {/* Forgot Password */}
-              <div className="text-right">
-                <button
-                  type="button"
-                  className="text-sm text-primary hover:underline"
-                  onClick={() => {
-                    setViewMode("forgot-request");
-                    setErrors({});
-                  }}
-                >
-                  Lupa Password?
-                </button>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                size="lg"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  "Masuk"
-                )}
-              </Button>
-            </form>
-
-            {/* Info */}
-            <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Belum punya akun?</p>
-              <p className="mt-1">
-                Hubungi{" "}
-                <span className="font-semibold text-primary">Admin</span> atau{" "}
-                <span className="font-semibold text-primary">Agen</span> untuk
-                mendaftar
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
+        {children}
         <p className="text-center text-primary-100 text-sm mt-6">
           © {new Date().getFullYear()} Sahabat Qolbu. All rights reserved.
         </p>
       </div>
     </div>
+  );
+
+  if (viewMode === "forgot-request") {
+    return renderShell(
+      <Card className="shadow-2xl">
+        <CardHeader>
+          <button
+            type="button"
+            onClick={() => switchMode("login")}
+            className="mb-2 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+          >
+            <ArrowLeft className="h-4 w-4" /> Kembali
+          </button>
+          <CardTitle className="text-2xl">Lupa Password</CardTitle>
+          <CardDescription>Masukkan email terdaftar untuk menerima kode OTP reset password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (validateForgotRequest()) forgotRequestMutation.mutate({ email: forgotEmail });
+            }}
+            className="space-y-4"
+          >
+            <FieldError message={errors.forgotEmail} />
+            <IconInput
+              id="forgotEmail"
+              label="Email"
+              type="email"
+              icon={Mail}
+              value={forgotEmail}
+              onChange={(value) => setForgotEmail(value)}
+              placeholder="nama@email.com"
+            />
+            <SubmitButton pending={forgotRequestMutation.isPending} label="Kirim Kode OTP" pendingLabel="Mengirim OTP..." />
+          </form>
+        </CardContent>
+      </Card>,
+    );
+  }
+
+  if (viewMode === "forgot-reset") {
+    return renderShell(
+      <Card className="shadow-2xl">
+        <CardHeader>
+          <button
+            type="button"
+            onClick={() => switchMode("forgot-request")}
+            className="mb-2 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+          >
+            <ArrowLeft className="h-4 w-4" /> Kembali
+          </button>
+          <CardTitle className="text-2xl">Reset Password</CardTitle>
+          <CardDescription>Masukkan kode OTP dan password baru Anda.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (validateForgotReset()) {
+                forgotResetMutation.mutate({
+                  email: forgotEmail,
+                  otp: resetData.otp,
+                  newPassword: resetData.newPassword,
+                });
+              }
+            }}
+            className="space-y-4"
+          >
+            <FieldError message={errors.resetOtp || errors.newPassword} />
+            <IconInput
+              id="resetOtp"
+              label="Kode OTP"
+              icon={Key}
+              value={resetData.otp}
+              onChange={(value) => setResetData({ ...resetData, otp: value.replace(/\D/g, "").slice(0, 6) })}
+              placeholder="6 digit OTP"
+            />
+            <PasswordInput
+              id="newPassword"
+              label="Password Baru"
+              value={resetData.newPassword}
+              show={showNewPassword}
+              onToggle={() => setShowNewPassword(!showNewPassword)}
+              onChange={(value) => setResetData({ ...resetData, newPassword: value })}
+            />
+            <SubmitButton pending={forgotResetMutation.isPending} label="Reset Password" pendingLabel="Menyimpan..." />
+          </form>
+        </CardContent>
+      </Card>,
+    );
+  }
+
+  return renderShell(
+    <Card className="shadow-2xl">
+      <CardHeader>
+        <div className="grid grid-cols-2 rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => switchMode("login")}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              viewMode === "login" ? "bg-white text-primary shadow-sm" : "text-gray-500"
+            }`}
+          >
+            Masuk
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("register")}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              viewMode === "register" ? "bg-white text-primary shadow-sm" : "text-gray-500"
+            }`}
+          >
+            Daftar
+          </button>
+        </div>
+        <CardTitle className="pt-4 text-2xl">
+          {viewMode === "register" ? "Daftar Calon Jamaah" : "Masuk"}
+        </CardTitle>
+        <CardDescription>
+          {viewMode === "register"
+            ? "Buat akun untuk melihat paket dan mulai konsultasi perjalanan umroh."
+            : "Masukkan email dan password Anda untuk melanjutkan."}
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent>
+        {errors.general && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{errors.general}</AlertDescription>
+          </Alert>
+        )}
+
+        {viewMode === "register" ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!validateRegister()) return;
+              registerMutation.mutate({
+                ...registerData,
+                sourceType: "GENERAL",
+                sourceSlug: null,
+              });
+            }}
+            className="space-y-4"
+          >
+            <input
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              className="hidden"
+              value={registerData.honeypot}
+              onChange={(e) => setRegisterData({ ...registerData, honeypot: e.target.value })}
+            />
+            <IconInput
+              id="fullName"
+              label="Nama Lengkap"
+              icon={User}
+              value={registerData.fullName}
+              onChange={(value) => setRegisterData({ ...registerData, fullName: value })}
+              placeholder="Nama sesuai identitas"
+              error={errors.fullName}
+            />
+            <IconInput
+              id="registerEmail"
+              label="Email"
+              type="email"
+              icon={Mail}
+              value={registerData.email}
+              onChange={(value) => setRegisterData({ ...registerData, email: value })}
+              placeholder="nama@email.com"
+              error={errors.registerEmail}
+            />
+            <IconInput
+              id="phone"
+              label="Nomor WhatsApp"
+              icon={Phone}
+              value={registerData.phone}
+              onChange={(value) => setRegisterData({ ...registerData, phone: value })}
+              placeholder="081234567890"
+              error={errors.phone}
+            />
+            <PasswordInput
+              id="registerPassword"
+              label="Password"
+              value={registerData.password}
+              show={showRegisterPassword}
+              onToggle={() => setShowRegisterPassword(!showRegisterPassword)}
+              onChange={(value) => setRegisterData({ ...registerData, password: value })}
+              error={errors.registerPassword}
+            />
+            <PasswordInput
+              id="confirmPassword"
+              label="Konfirmasi Password"
+              value={registerData.confirmPassword}
+              show={showRegisterPassword}
+              onToggle={() => setShowRegisterPassword(!showRegisterPassword)}
+              onChange={(value) => setRegisterData({ ...registerData, confirmPassword: value })}
+              error={errors.confirmPassword}
+            />
+            <SubmitButton pending={registerMutation.isPending} label="Daftar" pendingLabel="Mendaftarkan..." />
+          </form>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (validateLogin()) loginMutation.mutate(formData);
+            }}
+            className="space-y-4"
+          >
+            <IconInput
+              id="email"
+              label="Email"
+              type="email"
+              icon={Mail}
+              value={formData.email}
+              onChange={(value) => setFormData({ ...formData, email: value })}
+              placeholder="nama@email.com"
+              error={errors.email}
+            />
+            <PasswordInput
+              id="password"
+              label="Password"
+              value={formData.password}
+              show={showPassword}
+              onToggle={() => setShowPassword(!showPassword)}
+              onChange={(value) => setFormData({ ...formData, password: value })}
+              error={errors.password}
+            />
+            <div className="text-right">
+              <button
+                type="button"
+                className="text-sm text-primary hover:underline"
+                onClick={() => switchMode("forgot-request")}
+              >
+                Lupa Password?
+              </button>
+            </div>
+            <SubmitButton pending={loginMutation.isPending} label="Masuk" pendingLabel="Memproses..." />
+          </form>
+        )}
+      </CardContent>
+    </Card>,
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-sm text-red-500">{message}</p>;
+}
+
+function IconInput({
+  id,
+  label,
+  value,
+  onChange,
+  icon: Icon,
+  placeholder,
+  type = "text",
+  error,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  icon: ComponentType<{ className?: string }>;
+  placeholder?: string;
+  type?: string;
+  error?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Icon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <Input
+          id={id}
+          type={type}
+          placeholder={placeholder}
+          className="pl-10"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+      <FieldError message={error} />
+    </div>
+  );
+}
+
+function PasswordInput({
+  id,
+  label,
+  value,
+  onChange,
+  show,
+  onToggle,
+  error,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  error?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <Input
+          id={id}
+          type={show ? "text" : "password"}
+          placeholder="Minimal 8 karakter"
+          className="pl-10 pr-10"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+        >
+          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
+      <FieldError message={error} />
+    </div>
+  );
+}
+
+function SubmitButton({
+  pending,
+  label,
+  pendingLabel,
+}: {
+  pending: boolean;
+  label: string;
+  pendingLabel: string;
+}) {
+  return (
+    <Button
+      type="submit"
+      className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+      size="lg"
+      disabled={pending}
+    >
+      {pending ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          {pendingLabel}
+        </>
+      ) : (
+        label
+      )}
+    </Button>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -6,6 +6,7 @@ export const DEFAULT_ROUTES: Record<DashboardRole, string> = {
   STAFF: "/staff",
   AGEN: "/agen",
   JAMAAH: "/jamaah",
+  CALON_JAMAAH: "/calon-jamaah",
 };
 
 export const ROLE_PREFIXES: Record<DashboardRole, string[]> = {
@@ -14,6 +15,7 @@ export const ROLE_PREFIXES: Record<DashboardRole, string[]> = {
   STAFF: ["/staff"],
   AGEN: ["/agen"],
   JAMAAH: ["/jamaah"],
+  CALON_JAMAAH: ["/calon-jamaah"],
 };
 
 const STAFF_BLOCKED_PREFIXES = ["/staff/reports", "/staff/transactions"];

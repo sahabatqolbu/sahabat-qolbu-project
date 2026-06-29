@@ -4,7 +4,8 @@ import { persist } from "zustand/middleware";
 interface OTPState {
   email: string;
   expiresIn: string;
-  setOTPData: (email: string, expiresIn: string) => void;
+  nextPath: string;
+  setOTPData: (email: string, expiresIn: string, nextPath?: string) => void;
   clearOTPData: () => void;
 }
 
@@ -13,19 +14,20 @@ export const useOTPStore = create<OTPState>()(
     (set) => ({
       email: "",
       expiresIn: "",
+      nextPath: "",
 
-      setOTPData: (email, expiresIn) => {
-        console.log("📝 Saving OTP data:", { email, expiresIn });
-        set({ email, expiresIn });
+      setOTPData: (email, expiresIn, nextPath = "") => {
+        console.log("Saving OTP data:", { email, expiresIn, nextPath });
+        set({ email, expiresIn, nextPath });
       },
 
       clearOTPData: () => {
-        console.log("🗑️ Clearing OTP data");
-        set({ email: "", expiresIn: "" });
+        console.log("Clearing OTP data");
+        set({ email: "", expiresIn: "", nextPath: "" });
       },
     }),
     {
-      name: "otp-storage", // 🔥 ADD PERSIST
-    }
-  )
+      name: "otp-storage",
+    },
+  ),
 );

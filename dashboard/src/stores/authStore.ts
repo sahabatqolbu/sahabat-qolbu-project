@@ -8,7 +8,7 @@ export interface User {
   id: number;
   email: string;
   fullName: string;
-  role: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH";
+  role: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH" | "CALON_JAMAAH";
   phone: string | null;
 }
 

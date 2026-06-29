@@ -39,7 +39,27 @@ export interface RequestOTPRequest {
   email: string;
 }
 
+export interface RegisterCalonJamaahRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  sourceType?: "GENERAL" | "AGENT" | "REFERRAL";
+  sourceSlug?: string | null;
+  honeypot: string;
+  formStartedAt: number;
+}
+
 export const authService = {
+  registerCalonJamaah: async (data: RegisterCalonJamaahRequest) => {
+    const response = await api.post<LoginResponse>(
+      "/auth/register/calon-jamaah",
+      data,
+    );
+    return response.data;
+  },
+
   // Login - Generate OTP
   login: async (data: LoginRequest) => {
     const response = await api.post<LoginResponse>("/auth/login", data);

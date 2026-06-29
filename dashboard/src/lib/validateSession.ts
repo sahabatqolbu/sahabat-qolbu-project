@@ -1,6 +1,12 @@
 import { jwtVerify, type JWTPayload } from "jose";
 
-export type DashboardRole = "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH";
+export type DashboardRole =
+  | "ADMIN"
+  | "FINANCE"
+  | "STAFF"
+  | "AGEN"
+  | "JAMAAH"
+  | "CALON_JAMAAH";
 
 export interface ValidatedSession {
   userId: number;
@@ -21,7 +27,14 @@ export interface SessionAuthUser {
   phone: string | null;
 }
 
-const VALID_ROLES: DashboardRole[] = ["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"];
+const VALID_ROLES: DashboardRole[] = [
+  "ADMIN",
+  "FINANCE",
+  "STAFF",
+  "AGEN",
+  "JAMAAH",
+  "CALON_JAMAAH",
+];
 
 const encoder = new TextEncoder();
 

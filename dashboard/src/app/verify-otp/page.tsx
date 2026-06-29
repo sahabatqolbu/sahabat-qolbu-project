@@ -23,7 +23,7 @@ export default function VerifyOTPPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const { email, expiresIn, clearOTPData } = useOTPStore();
+  const { email, expiresIn, nextPath, clearOTPData } = useOTPStore();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [otp, setOtp] = useState("");
@@ -77,9 +77,16 @@ export default function VerifyOTPPage() {
         STAFF: "/staff",
         AGEN: "/agen",
         JAMAAH: "/jamaah",
+        CALON_JAMAAH: "/calon-jamaah",
       };
 
-      const targetRoute = roleRoutes[data.data.user.role] || "/login";
+      const defaultRoute = roleRoutes[data.data.user.role] || "/login";
+      const safeNext =
+        nextPath.startsWith("/calon-jamaah") &&
+        data.data.user.role === "CALON_JAMAAH"
+          ? nextPath
+          : "";
+      const targetRoute = safeNext || defaultRoute;
 
       // Small delay to ensure state is saved
       setTimeout(() => {
