@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { users } from "../db/schema.js";
+import { prospectJamaah, users } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
 import { comparePassword, hashPassword } from "../utils/password.js";
 import { generateToken } from "../utils/jwt.js";
@@ -91,6 +91,102 @@ const findUserById = async (userId) => {
       updatedAt: true,
     },
   });
+};
+
+// =====================================================
+// PUBLIC CALON JAMAAH REGISTRATION
+// =====================================================
+export const registerCalonJamaah = async (req, res, next) => {
+  try {
+    const {
+      fullName,
+      email,
+      phone,
+      password,
+      sourceType = "GENERAL",
+      sourceSlug = null,
+      formStartedAt,
+    } = req.validatedBody || req.body;
+    const normalizedEmail = normalizeEmail(email);
+    const elapsedMs = formStartedAt ? Date.now() - Number(formStartedAt) : 0;
+
+    if (elapsedMs > 0 && elapsedMs < 1500) {
+      logger.security("Calon jamaah register blocked - submit too fast", {
+        email: normalizedEmail,
+        ip: req.ip,
+      });
+      return errorResponse(res, "Permintaan terlalu cepat. Silakan coba lagi.", 400);
+    }
+
+    const existingUser = await findUserByEmail(normalizedEmail);
+    if (existingUser) {
+      return errorResponse(res, "Email sudah terdaftar. Silakan login.", 409);
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const otp = generateOTP();
+    const otpExpiry = getOTPExpiry();
+
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email: normalizedEmail,
+        password: hashedPassword,
+        fullName,
+        phone,
+        role: "CALON_JAMAAH",
+        otp,
+        otpExpiry,
+        isActive: true,
+        isEmailVerified: false,
+      })
+      .$returningId();
+
+    const userId = Number(newUser.id);
+
+    await db.insert(prospectJamaah).values({
+      userId,
+      followUpStatus: "BARU",
+      sourceType,
+      sourceSlug,
+    });
+
+    const emailResult = await sendOTPEmail(
+      { id: userId, email: normalizedEmail, fullName },
+      otp,
+    );
+
+    if (!emailResult.success) {
+      logger.error("Failed to send calon jamaah register OTP", emailResult.error, {
+        userId,
+      });
+      return errorResponse(
+        res,
+        "Akun dibuat, tetapi OTP gagal dikirim. Silakan request ulang OTP.",
+        500,
+      );
+    }
+
+    logger.security("Calon jamaah registered", {
+      userId,
+      email: normalizedEmail,
+      sourceType,
+      sourceSlug,
+    });
+
+    return successResponse(
+      res,
+      {
+        email: normalizedEmail,
+        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
+      },
+      "Registrasi berhasil. Silakan cek email Anda untuk kode OTP",
+      201,
+    );
+  } catch (error) {
+    logger.error("Calon jamaah registration error", error);
+    next(error);
+  }
 };
 
 // =====================================================

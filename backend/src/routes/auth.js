@@ -2,8 +2,13 @@
 import express from "express";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { validate, authSchemas } from "../validators/index.js";
-import { authLimiter, otpLimiter } from "../middlewares/rateLimiter.js";
 import {
+    authLimiter,
+    createAccountLimiter,
+    otpLimiter,
+} from "../middlewares/rateLimiter.js";
+import {
+    registerCalonJamaah,
     login,
     verifyOTPLogin,
     requestOTP,
@@ -20,6 +25,12 @@ import {
 const router = express.Router();
 
 // Public auth routes
+router.post(
+    "/register/calon-jamaah",
+    createAccountLimiter,
+    validate(authSchemas.registerCalonJamaah),
+    registerCalonJamaah
+);
 router.post("/login", authLimiter, validate(authSchemas.login), login);
 router.post("/verify-otp", otpLimiter, validate(authSchemas.verifyOTP), verifyOTPLogin);
 router.post("/request-otp", authLimiter, validate(authSchemas.requestOTP), requestOTP);

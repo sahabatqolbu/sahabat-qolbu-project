@@ -105,6 +105,34 @@ export const authSchemas = {
       .max(128, messages.password.max)
       .regex(patterns.password, messages.password.pattern),
   }),
+
+  registerCalonJamaah: z.object({
+    fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
+    email: z
+      .string()
+      .min(1, messages.email.required)
+      .email(messages.email.invalid)
+      .transform((val) => val.toLowerCase().trim()),
+    phone: z.string().regex(patterns.phone, "Format nomor WhatsApp tidak valid"),
+    password: z
+      .string()
+      .min(8, messages.password.min)
+      .max(128, messages.password.max)
+      .regex(patterns.password, messages.password.pattern),
+    confirmPassword: z.string(),
+    sourceType: z.enum(["GENERAL", "AGENT", "REFERRAL"]).optional().default("GENERAL"),
+    sourceSlug: z.string().max(150).optional().nullable(),
+    honeypot: z.string().max(0).optional().default(""),
+    formStartedAt: z.coerce.number().optional(),
+  }).superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        path: ["confirmPassword"],
+        code: z.ZodIssueCode.custom,
+        message: "Konfirmasi password tidak sama",
+      });
+    }
+  }),
 };
 
 /**
