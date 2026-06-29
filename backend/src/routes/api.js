@@ -9,6 +9,7 @@ import agenRoutes, { adminAgenAliasRouter } from "./agen.js";
 import notificationRoutes from "./notifications.js";
 import calendarRoutes from "./calendar.js";
 import publicRoutes from "./public.js";
+import prospectRoutes from "./prospect.js";
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.use("/admin/agen", adminAgenAliasRouter);
 router.use("/agen", agenRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/calendar", calendarRoutes);
+router.use("/prospects", prospectRoutes);
 router.use("/", publicRoutes);
 
 export default router;

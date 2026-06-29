@@ -402,6 +402,31 @@ export const paginationSchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
+export const prospectSchemas = {
+  interest: z.object({
+    packageId: z.coerce.number().int().positive(),
+    actionType: z.enum(["SAVED", "WHATSAPP_CONSULT", "CONVERT_REQUEST"]),
+    sourcePath: z.string().max(500).optional().nullable(),
+  }),
+
+  followUp: z.object({
+    status: z.enum([
+      "BARU",
+      "DIHUBUNGI",
+      "TERTARIK",
+      "BELUM_RESPON",
+      "CONVERTED",
+    ]),
+    note: z.string().max(2000).optional().nullable(),
+  }),
+
+  listQuery: paginationSchema.extend({
+    status: z
+      .enum(["BARU", "DIHUBUNGI", "TERTARIK", "BELUM_RESPON", "CONVERTED"])
+      .optional(),
+  }),
+};
+
 /**
  * Validation middleware factory
  * Usage: router.post('/route', validate(schema), controller)
