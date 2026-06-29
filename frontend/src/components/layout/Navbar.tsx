@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import { getDashboardBaseUrl, getDashboardUrl } from "@/lib/dashboard-url";
 
 const navigation = [
   { name: "Beranda", href: "/#beranda" },
@@ -19,6 +20,7 @@ export default function Navbar() {
     typeof window !== "undefined" ? window.scrollY > 50 : false,
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dashboardHref, setDashboardHref] = useState("");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,10 +31,41 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const apiBase = (
+      process.env.NEXT_PUBLIC_API_URL || "https://api.sahabatqolbu.com/api"
+    ).replace(/\/+$/, "");
+
+    fetch(`${apiBase}/auth/me`, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (!active) return;
+        const role = payload?.data?.user?.role || payload?.data?.role;
+        if (role) {
+          setDashboardHref(getDashboardUrl(role));
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setDashboardHref("");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const messageConsult = encodeURIComponent(
     "Assalamualaikum, saya lihat di website sahabatqolbu.com  dan tertarik konsultasi tentang paket umroh",
   );
   const waConsultLink = `https://wa.me/${branding.whatsappNumber}?text=${messageConsult}`;
+  const authHref = dashboardHref || `${getDashboardBaseUrl()}/login`;
+  const authLabel = dashboardHref ? "Dashboard" : "Login";
 
   return (
     <header
@@ -87,10 +120,10 @@ export default function Navbar() {
             </div>
             <div className="flex items-center gap-3 border-l border-white/20 pl-5">
               <Link
-                href="/login"
+                href={authHref}
                 className="nav-link text-white hover:text-gold transition-colors font-semibold"
               >
-                Login
+                {authLabel}
               </Link>
               <a
                 href={waConsultLink}
@@ -150,11 +183,11 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              href="/login"
+              href={authHref}
               className="block text-white hover:text-gold py-2 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Login
+              {authLabel}
             </Link>
             <a
               href={waConsultLink}

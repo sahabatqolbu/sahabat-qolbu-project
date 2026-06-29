@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
 
 const fallbackImg =
   "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&q=80";
@@ -64,7 +65,8 @@ function formatDateRange(startDate?: string, endDate?: string) {
   }
 
   const sameMonth =
-    start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+    start.getMonth() === end.getMonth() &&
+    start.getFullYear() === end.getFullYear();
 
   if (sameMonth) {
     const monthYear = new Intl.DateTimeFormat("id-ID", {
@@ -87,15 +89,14 @@ function formatDateRange(startDate?: string, endDate?: string) {
   return `${fmt.format(start)} - ${endFmt.format(end)}`;
 }
 
-export default function PackageCard({
-  pkg,
-  viewMode = "grid",
-  detailBasePath = "/paket",
-}: Props) {
+export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   const branding = useBranding();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const images = pkg.gallery && pkg.gallery.length > 0 ? pkg.gallery : [pkg.image || fallbackImg];
+  const images =
+    pkg.gallery && pkg.gallery.length > 0
+      ? pkg.gallery
+      : [pkg.image || fallbackImg];
   const hasMultiple = images.length > 1;
 
   // Map package raw type to tipeList IDs
@@ -133,6 +134,7 @@ export default function PackageCard({
   }
 
   const detailLink = `${detailBasePath}/${pkg.slug}`;
+  const registerLink = getCalonJamaahPackageRegisterUrl(pkg.slug);
   const waMessage = `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${pkg.name}*`;
   const waLink = `https://wa.me/${branding.whatsappNumber || "6281255871984"}?text=${encodeURIComponent(waMessage)}`;
 
@@ -155,9 +157,16 @@ export default function PackageCard({
   };
 
   return (
-    <div className={cn("paket-card group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300", pkg.featured && "ring-2 ring-gold")} data-tipe={rawType.toLowerCase()}>
-      <div className={cn("relative overflow-hidden", hasMultiple ? "mb-3" : "")}>
-        
+    <div
+      className={cn(
+        "paket-card group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
+        pkg.featured && "ring-2 ring-gold",
+      )}
+      data-tipe={rawType.toLowerCase()}
+    >
+      <div
+        className={cn("relative overflow-hidden", hasMultiple ? "mb-3" : "")}
+      >
         {/* Slider */}
         <div className="swiper">
           <div
@@ -184,8 +193,18 @@ export default function PackageCard({
                 onClick={prevSlide}
                 className="arrow arrow-prev absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center text-gray-700 z-10 opacity-0 group-hover:opacity-100 shadow-md transition-all cursor-pointer"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
               <button
@@ -193,8 +212,18 @@ export default function PackageCard({
                 onClick={nextSlide}
                 className="arrow arrow-next absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center text-gray-700 z-10 opacity-0 group-hover:opacity-100 shadow-md transition-all cursor-pointer"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
 
@@ -206,7 +235,7 @@ export default function PackageCard({
                     onClick={setSlide(i)}
                     className={cn(
                       "dot w-2 h-2 rounded-full transition-all cursor-pointer",
-                      i === currentSlide ? "bg-primary w-5" : "bg-gray-300"
+                      i === currentSlide ? "bg-primary w-5" : "bg-gray-300",
                     )}
                   />
                 ))}
@@ -217,15 +246,30 @@ export default function PackageCard({
 
         {/* Badges */}
         <div className="absolute top-3 left-3 z-20 pointer-events-none">
-          <span className={cn(labelColor, "text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg")}>
+          <span
+            className={cn(
+              labelColor,
+              "text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg",
+            )}
+          >
             {label}
           </span>
         </div>
 
         {hasMultiple && (
           <div className="absolute top-3 right-3 z-20 bg-black/50 text-white text-[10px] font-medium px-2 py-1 rounded-full flex items-center gap-1 pointer-events-none">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
             {images.length}
           </div>
@@ -238,8 +282,18 @@ export default function PackageCard({
         </h3>
 
         <div className="flex items-center gap-2 text-gray-500 text-sm mb-4 mt-auto">
-          <svg className="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg
+            className="w-4 h-4 text-gold"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
           <span>{formatDateRange(pkg.departureDate, pkg.returnDate)}</span>
           <span className="text-gray-300">•</span>
@@ -249,19 +303,25 @@ export default function PackageCard({
         <div className="grid grid-cols-2 gap-2 mt-auto">
           <Link
             href={detailLink}
-            className="js-package-detail-link flex items-center justify-center w-full bg-primary hover:bg-secondary text-white hover:text-primary font-semibold py-3 rounded-xl transition-colors text-center text-sm"
+            className="js-package-detail-link flex items-center justify-center w-full border border-primary bg-white text-primary hover:bg-primary hover:text-white font-semibold py-3 rounded-xl transition-colors text-center text-sm"
           >
             Detail
           </Link>
           <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="js-package-wa-link flex items-center justify-center w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors text-center text-sm"
+            href={registerLink}
+            className="js-package-register-link flex items-center justify-center w-full bg-primary hover:bg-secondary text-white hover:text-primary font-semibold py-3 rounded-xl transition-colors text-center text-sm"
           >
-            Tanya
+            Daftar Paket
           </a>
         </div>
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="js-package-wa-link mt-2 flex items-center justify-center w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors text-center text-sm"
+        >
+          Tanya via WhatsApp
+        </a>
       </div>
     </div>
   );

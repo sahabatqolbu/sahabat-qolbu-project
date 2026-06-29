@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import type { ReactNode } from "react";
@@ -12,10 +11,8 @@ import {
   Download,
   Hotel,
   Info,
-  Mail,
   MapPin,
   MessageCircle,
-  Phone,
   Plane,
   Star,
   Train,
@@ -28,6 +25,7 @@ import {
   getPublicAgentLanding,
   type MarketingPackage,
 } from "@/lib/public-api";
+import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Params = Promise<{ slug: string }>;
@@ -55,7 +53,12 @@ const getSeatsLeft = (pkg: MarketingPackage) =>
 const getDescriptionItems = (value?: string) =>
   String(value || "")
     .split(/\r?\n/)
-    .map((item) => item.replace(/^[-*\s]+/, "").replace(/\*+/g, "").trim())
+    .map((item) =>
+      item
+        .replace(/^[-*\s]+/, "")
+        .replace(/\*+/g, "")
+        .trim(),
+    )
     .filter(Boolean);
 
 const getPackageTypeLabel = (pkg: MarketingPackage) => {
@@ -169,7 +172,9 @@ function BookingPanel({
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
               Hotel Makkah
             </p>
-            <p className="mt-1 font-extrabold text-primary">{pkg.hotelMakkah.name}</p>
+            <p className="mt-1 font-extrabold text-primary">
+              {pkg.hotelMakkah.name}
+            </p>
             {pkg.hotelMakkah.distanceToHaram ? (
               <p className="mt-1 text-sm font-semibold text-neutral-500">
                 {pkg.hotelMakkah.distanceToHaram}
@@ -181,7 +186,9 @@ function BookingPanel({
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
                 Hotel Madinah
               </p>
-              <p className="mt-1 font-extrabold text-primary">{pkg.hotelMadinah.name}</p>
+              <p className="mt-1 font-extrabold text-primary">
+                {pkg.hotelMadinah.name}
+              </p>
               {pkg.hotelMadinah.distanceToMasjid ? (
                 <p className="mt-1 text-sm font-semibold text-neutral-500">
                   {pkg.hotelMadinah.distanceToMasjid}
@@ -210,7 +217,9 @@ function BookingPanel({
               Pilih waktu pemberangkatan {pkg.name}
             </p>
             <div className="mt-3 rounded-sm border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-bold text-primary">
-              {pkg.departureDate ? formatDate(pkg.departureDate, "long") : "Waktu pemberangkatan belum tersedia"}
+              {pkg.departureDate
+                ? formatDate(pkg.departureDate, "long")
+                : "Waktu pemberangkatan belum tersedia"}
             </div>
             <div className="mt-3 flex items-center justify-between text-xs font-extrabold text-neutral-500">
               <span>{seatsLeft} seat tersisa</span>
@@ -225,12 +234,10 @@ function BookingPanel({
           </div>
           <a
             href={bookingLink}
-            target="_blank"
-            rel="noopener noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-5 py-4 font-extrabold text-white transition hover:bg-primary-700"
           >
-            <MessageCircle className="h-5 w-5" />
-            Pesan via WhatsApp
+            <ClipboardList className="h-5 w-5" />
+            Daftar Paket
           </a>
           <a
             href={consultLink}
@@ -301,14 +308,11 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
               </h3>
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex">
-                  {Array.from({ length: Math.max(0, Math.min(5, hotel.rating)) }).map(
-                    (_, index) => (
-                      <Star
-                        key={index}
-                        className="h-4 w-4 fill-gold text-gold"
-                      />
-                    ),
-                  )}
+                  {Array.from({
+                    length: Math.max(0, Math.min(5, hotel.rating)),
+                  }).map((_, index) => (
+                    <Star key={index} className="h-4 w-4 fill-gold text-gold" />
+                  ))}
                 </div>
                 <span className="text-xs font-bold text-neutral-500">
                   {hotel.rating || "-"} Bintang
@@ -367,7 +371,10 @@ function SimpleList({
   return (
     <ul className="space-y-3">
       {listItems.map((item, index) => (
-        <li key={`${item}-${index}`} className="flex gap-3 leading-7 text-neutral-700">
+        <li
+          key={`${item}-${index}`}
+          className="flex gap-3 leading-7 text-neutral-700"
+        >
           <Icon className="mt-1 h-5 w-5 flex-none text-gold" />
           <span>{item}</span>
         </li>
@@ -410,13 +417,21 @@ export default async function LandingPackageDetailPage({
     notFound();
   }
 
-  const getWhatsappLink = (pkg: MarketingPackage, intent: "consult" | "book") => {
-    const action = intent === "book" ? "ingin booking seat" : "tertarik konsultasi";
+  const getWhatsappLink = (
+    pkg: MarketingPackage,
+    intent: "consult" | "book",
+  ) => {
+    const action =
+      intent === "book" ? "ingin booking seat" : "tertarik konsultasi";
     const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan ${action} paket ${pkg.name}`;
     return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
   };
 
-  const gallery = pkg.gallery?.length ? pkg.gallery : pkg.image ? [pkg.image] : [];
+  const gallery = pkg.gallery?.length
+    ? pkg.gallery
+    : pkg.image
+      ? [pkg.image]
+      : [];
   const fallbackHeroImage =
     "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1920&q=80";
   const heroImageSource = gallery[0];
@@ -426,7 +441,7 @@ export default async function LandingPackageDetailPage({
       : fallbackHeroImage;
   const seatsLeft = getSeatsLeft(pkg);
   const consultLink = getWhatsappLink(pkg, "consult");
-  const bookingLink = getWhatsappLink(pkg, "book");
+  const bookingLink = getCalonJamaahPackageRegisterUrl(pkg.slug);
   const descriptionItems = getDescriptionItems(pkg.description);
   const typeLabel = getPackageTypeLabel(pkg);
   const heroDescription =
@@ -485,7 +500,9 @@ export default async function LandingPackageDetailPage({
                     {
                       icon: CalendarDays,
                       label: "Berangkat",
-                      value: pkg.departureDate ? formatDate(pkg.departureDate) : "Menyusul",
+                      value: pkg.departureDate
+                        ? formatDate(pkg.departureDate)
+                        : "Menyusul",
                     },
                     {
                       icon: ClipboardList,
@@ -595,11 +612,13 @@ export default async function LandingPackageDetailPage({
                     <Info className="mt-1 h-5 w-5 flex-none text-gold" />
                     <div>
                       <p className="font-extrabold text-primary">
-                        Detail harga, jadwal, dan ketersediaan seat bisa berubah mengikuti kondisi maskapai dan hotel.
+                        Detail harga, jadwal, dan ketersediaan seat bisa berubah
+                        mengikuti kondisi maskapai dan hotel.
                       </p>
                       <p className="mt-2 leading-7 text-neutral-700">
-                        Hubungi admin Sahabat Qolbu untuk validasi jadwal, pilihan kamar,
-                        dokumen, dan arahan pembayaran sebelum booking.
+                        Hubungi admin Sahabat Qolbu untuk validasi jadwal,
+                        pilihan kamar, dokumen, dan arahan pembayaran sebelum
+                        booking.
                       </p>
                     </div>
                   </div>
@@ -642,8 +661,13 @@ export default async function LandingPackageDetailPage({
                     ["Triple", pkg.priceTriple || pkg.priceQuad],
                     ["Double", pkg.priceDouble],
                   ].map(([label, value]) => (
-                    <div key={label} className="flex items-center justify-between border-b border-neutral-100 pb-3">
-                      <span className="font-bold text-neutral-500">{label}</span>
+                    <div
+                      key={label}
+                      className="flex items-center justify-between border-b border-neutral-100 pb-3"
+                    >
+                      <span className="font-bold text-neutral-500">
+                        {label}
+                      </span>
                       <span className="text-right">
                         {getOriginalPrice(pkg, value) ? (
                           <span className="block text-xs font-extrabold text-neutral-400 line-through decoration-2">
@@ -660,7 +684,9 @@ export default async function LandingPackageDetailPage({
               </div>
 
               <div className="rounded-sm bg-primary p-6 text-white shadow-lg shadow-primary/15">
-                <p className="text-xl font-extrabold">Butuh bantuan pilih paket?</p>
+                <p className="text-xl font-extrabold">
+                  Butuh bantuan pilih paket?
+                </p>
                 <p className="mt-2 text-sm font-medium leading-6 text-gray-300">
                   Konsultasikan jadwal, harga, dan kebutuhan keluarga langsung
                   dengan admin Sahabat Qolbu.

@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import PackageCard from "@/components/marketing/PackageCard";
+import { getCalonJamaahRegisterUrl } from "@/lib/dashboard-url";
 import {
   getMarketingPackages,
+  getPublicCompanyProfile,
   getPublicFaqs,
   getPublicGallery,
+  type CompanyProfile,
   type MarketingPackage,
   type PublicFaq,
   type PublicGalleryImage,
@@ -18,16 +21,25 @@ export default function MarketingHomePage() {
   const [packages, setPackages] = useState<MarketingPackage[]>([]);
   const [faqs, setFaqs] = useState<PublicFaq[]>([]);
   const [galleryImages, setGalleryImages] = useState<PublicGalleryImage[]>([]);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    Promise.all([getMarketingPackages(), getPublicFaqs(), getPublicGallery()])
-      .then(([packageData, faqData, galleryData]) => {
+    Promise.all([
+      getMarketingPackages(),
+      getPublicFaqs(),
+      getPublicGallery(),
+      getPublicCompanyProfile(),
+    ])
+      .then(([packageData, faqData, galleryData, profileData]) => {
         if (active) {
           setPackages(packageData);
           setFaqs(faqData);
           setGalleryImages(galleryData);
+          setCompanyProfile(profileData);
           setLoading(false);
         }
       })
@@ -44,11 +56,24 @@ export default function MarketingHomePage() {
   }, []);
 
   const featuredPackages = packages.slice(0, 6);
+  const philosophyItems = companyProfile?.philosophy || [];
+  const targetMarketItems = companyProfile?.targetMarket || [];
+  const hasBrandContent = Boolean(
+    companyProfile?.vision ||
+    companyProfile?.mission ||
+    philosophyItems.length ||
+    targetMarketItems.length,
+  );
+  const companyDescription = (
+    companyProfile?.description ||
+    "adalah travel umroh resmi yang tergabung dalam Asosiasi Mutiara Haji Indonesia. Fokus kami bukan hanya memberangkatkan jamaah umroh, tetapi juga membangun pelayanan, edukasi, dan pendampingan yang lebih baik bagi tamu-tamu Allah."
+  ).trim();
 
   const messageConsult = encodeURIComponent(
     `Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik dengan paket umroh ${branding.companyName}`,
   );
   const waHeroLink = `https://wa.me/${branding.whatsappNumber}?text=${messageConsult}`;
+  const registerUrl = getCalonJamaahRegisterUrl();
 
   return (
     <div className="min-h-screen bg-white font-sans antialiased text-gray-800">
@@ -86,10 +111,7 @@ export default function MarketingHomePage() {
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-gray-200 mb-8 max-w-2xl leading-relaxed">
-              {branding.companyName} melayani perjalanan umroh sesuai
-              Al-Qur&apos;an dan Sunnah, dengan legalitas resmi, pembimbing
-              terpercaya, jadwal keberangkatan jelas, serta fasilitas perjalanan
-              yang transparan.
+              {`${branding.companyName} melayani perjalanan umroh sesuai Al-Qur'an dan Sunnah, dengan legalitas resmi, pembimbing terpercaya, jadwal keberangkatan jelas, serta fasilitas perjalanan yang transparan.`}
             </p>
 
             {/* Promo Badge */}
@@ -101,19 +123,23 @@ export default function MarketingHomePage() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href={waHeroLink}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={registerUrl}
                 className="gold-gradient text-primary font-bold px-8 py-4 rounded-full text-center hover:opacity-90 transition-all hover:scale-105 inline-flex items-center justify-center gap-2"
               >
                 <svg
                   className="w-5 h-5"
-                  fill="currentColor"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"
+                  />
                 </svg>
-                Booking Seat Sekarang
+                Daftar Jadi Calon Jamaah
               </a>
               <Link
                 href="/paket"
@@ -240,11 +266,7 @@ export default function MarketingHomePage() {
               </h2>
               <div className="prose text-gray-600 mb-8 leading-relaxed">
                 <p className="mb-4">
-                  <strong>{branding.companyName}</strong> adalah travel umroh
-                  resmi yang tergabung dalam Asosiasi Mutiara Haji Indonesia.
-                  Fokus kami bukan hanya memberangkatkan jamaah umroh, tetapi
-                  juga membangun pelayanan, edukasi, dan pendampingan yang lebih
-                  baik bagi tamu-tamu Allah.
+                  <strong>{branding.companyName}</strong> {companyDescription}
                 </p>
                 <p className="mb-4">
                   Kami berkomitmen memberikan bimbingan ibadah intensif, jadwal
@@ -353,8 +375,102 @@ export default function MarketingHomePage() {
               </div>
             </div>
           </div>
+
+          {hasBrandContent ? (
+            <div className="mt-14 grid gap-5 lg:grid-cols-3">
+              {companyProfile?.vision || companyProfile?.mission ? (
+                <div className="rounded-2xl bg-primary p-6 text-white shadow-lg shadow-primary/10 lg:col-span-1">
+                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold">
+                    Arah Pelayanan
+                  </span>
+                  {companyProfile?.vision ? (
+                    <div className="mt-5">
+                      <h3 className="text-xl font-bold">Visi</h3>
+                      <p className="mt-2 text-sm leading-7 text-gray-200">
+                        {companyProfile.vision}
+                      </p>
+                    </div>
+                  ) : null}
+                  {companyProfile?.mission ? (
+                    <div className="mt-5 border-t border-white/10 pt-5">
+                      <h3 className="text-xl font-bold">Misi</h3>
+                      <p className="mt-2 whitespace-pre-line text-sm leading-7 text-gray-200">
+                        {companyProfile.mission}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {philosophyItems.length > 0 ? (
+                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold">
+                    Filosofi
+                  </span>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    {philosophyItems.map((item, index) => (
+                      <div
+                        key={`${item.title}-${index}`}
+                        className="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                      >
+                        <h3 className="font-bold text-primary">
+                          {item.title || `Prinsip ${index + 1}`}
+                        </h3>
+                        {item.description ? (
+                          <p className="mt-2 text-sm leading-6 text-gray-600">
+                            {item.description}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </section>
+
+      {targetMarketItems.length > 0 ? (
+        <section className="border-y border-gray-100 bg-white py-14 md:py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+              <div>
+                <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+                  Market Sahabat Qolbu
+                </span>
+                <h2 className="mt-2 text-3xl font-bold text-primary md:text-4xl">
+                  Untuk Calon Jamaah yang Ingin Memilih dengan Tenang
+                </h2>
+                <p className="mt-4 leading-7 text-gray-600">
+                  Informasi ini ditarik dari dashboard admin agar positioning
+                  layanan selalu bisa diperbarui mengikuti kebutuhan market.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {targetMarketItems.map((item, index) => (
+                  <div
+                    key={`${item.title}-${index}`}
+                    className="rounded-2xl border border-gray-100 bg-gray-50 p-5"
+                  >
+                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-gold">
+                      {index + 1}
+                    </div>
+                    <h3 className="font-bold text-primary">
+                      {item.title || `Segmen ${index + 1}`}
+                    </h3>
+                    {item.description ? (
+                      <p className="mt-2 text-sm leading-6 text-gray-600">
+                        {item.description}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* KEUNGGULAN */}
       <section className="py-16 md:py-24 bg-primary text-white relative overflow-hidden">

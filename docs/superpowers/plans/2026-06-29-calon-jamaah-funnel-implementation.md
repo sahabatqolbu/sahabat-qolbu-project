@@ -1210,7 +1210,7 @@ git commit -m "feat: render public faq and gallery"
 - Modify: package card/detail components or static landing renderer depending on active route state
 - Modify: `frontend/src/lib/dashboard-url.ts` if needed
 
-- [ ] **Step 1: Confirm active landing route**
+- [x] **Step 1: Confirm active landing route**
 
 Run:
 
@@ -1221,7 +1221,7 @@ npm run build
 
 Inspect route table to identify whether `/`, `/landing`, and `/paket` are served by static `public/landing` HTML or the newer `(marketing)` route files. Apply changes only to the active route files.
 
-- [ ] **Step 2: Update CTA URLs**
+- [x] **Step 2: Update CTA URLs**
 
 Package `Daftar Paket` CTA must link to dashboard auth with slug context:
 
@@ -1235,7 +1235,7 @@ For already logged-in users with `CALON_JAMAAH`, link directly to:
 https://dashboard.sahabatqolbu.com/calon-jamaah/packages/[slug]
 ```
 
-- [ ] **Step 3: Redesign sections incrementally**
+- [x] **Step 3: Redesign sections incrementally**
 
 Preserve current navy/gold brand. Improve:
 
@@ -1248,7 +1248,7 @@ Preserve current navy/gold brand. Improve:
 
 Do not replace the entire visual language in one pass.
 
-- [ ] **Step 4: Verify responsive behavior**
+- [x] **Step 4: Verify responsive behavior**
 
 Run local frontend and capture desktop/mobile screenshots with Playwright if available:
 
@@ -1259,7 +1259,7 @@ npx playwright screenshot http://localhost:3000 landing-desktop.png --viewport-s
 npx playwright screenshot http://localhost:3000 landing-mobile.png --viewport-size=390,1200
 ```
 
-- [ ] **Step 5: Run checks and commit**
+- [x] **Step 5: Run checks and commit**
 
 ```bash
 cd frontend
