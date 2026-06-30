@@ -384,21 +384,21 @@
 
 .landing-static .paket-card .swiper {
   position: relative;
-  height: 13.5rem;
+  height: clamp(15rem, 44vw, 21rem);
   overflow: hidden;
-  background: #f3f4f6;
+  background: #f8fafc;
 }
 
 .landing-static .paket-card .swiper > img,
 .landing-static .paket-card .swiper .slide > img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 @media (max-width: 640px) {
   .landing-static .paket-card .swiper {
-    height: 12.5rem;
+    height: 16rem;
   }
 }
 

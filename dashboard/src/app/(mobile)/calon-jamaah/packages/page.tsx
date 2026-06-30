@@ -76,12 +76,12 @@ export default function CalonJamaahPackagesPage() {
             return (
               <Link key={pkg.id} href={`/calon-jamaah/packages/${packageSlug(pkg)}`}>
                 <Card className="h-full overflow-hidden rounded-2xl border-0 shadow-sm transition hover:shadow-md">
-                  <div className="h-40 bg-gray-100">
+                  <div className="h-56 bg-gray-50">
                     {primaryImage?.imageUrl ? (
                       <img
                         src={getImageUrl(primaryImage.imageUrl)}
                         alt={pkg.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-gray-300">

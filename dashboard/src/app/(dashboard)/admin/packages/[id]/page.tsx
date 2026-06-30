@@ -484,7 +484,7 @@ export default function PackageDetailPage({ params }: PageProps) {
                       <img
                         src={getImageUrl(image.imageUrl)} // ✅ TAMBAHIN getImageUrl()
                         alt={`Brosur ${index + 1}`}
-                        className="w-full object-cover rounded-lg"
+                        className="w-full max-h-[78vh] object-contain rounded-lg bg-gray-50"
                         onError={(e) => {
                           // ✅ FALLBACK kalo error
                           console.error("❌ Image load error:", image.imageUrl);

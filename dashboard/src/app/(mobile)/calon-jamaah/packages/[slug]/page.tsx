@@ -111,11 +111,11 @@ export default function CalonJamaahPackageDetailPage({ params }: PageProps) {
       <Header title="Detail Paket" />
       <main className="mx-auto max-w-5xl space-y-4 px-4 py-5 md:px-8">
         <Card className="overflow-hidden rounded-2xl border-0 shadow-lg">
-          <div className="h-56 bg-gray-100 md:h-80">
+          <div className="bg-gray-50">
             {primaryImage?.imageUrl ? (
-              <img src={getImageUrl(primaryImage.imageUrl)} alt={pkg.name} className="h-full w-full object-cover" />
+              <img src={getImageUrl(primaryImage.imageUrl)} alt={pkg.name} className="block h-auto max-h-[78vh] w-full object-contain" />
             ) : (
-              <div className="flex h-full items-center justify-center text-gray-300">
+              <div className="flex h-56 items-center justify-center text-gray-300 md:h-80">
                 <Package className="h-16 w-16" />
               </div>
             )}

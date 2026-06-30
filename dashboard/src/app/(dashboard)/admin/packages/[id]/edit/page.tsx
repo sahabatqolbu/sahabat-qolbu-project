@@ -1005,7 +1005,7 @@ export default function EditPackagePage({ params }: PageProps) {
                         <img
                           src={getImageUrl(image.imageUrl)} // ✅ PAKAI getImageUrl()
                           alt={image.caption || "Package image"}
-                          className="w-full h-32 object-cover rounded-lg border"
+                          className="w-full h-48 object-contain rounded-lg border bg-gray-50"
                           onError={(e) => {
                             console.error(
                               "❌ Image load error:",

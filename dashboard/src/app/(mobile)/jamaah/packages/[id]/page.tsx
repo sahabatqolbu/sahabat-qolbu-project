@@ -113,13 +113,14 @@ export default function JamaahPackageDetailPage({ params }: PageProps) {
 
       <div className="p-4 space-y-4">
         <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
-          <div className="relative h-48 w-full bg-gray-100">
+          <div className="w-full bg-gray-50">
             {primaryImage?.imageUrl ? (
               <Image
                 src={getImageUrl(primaryImage.imageUrl)}
                 alt={pkg.name}
-                fill
-                className="object-cover"
+                width={1200}
+                height={1600}
+                className="h-auto max-h-[72vh] w-full object-contain"
                 unoptimized
               />
             ) : null}

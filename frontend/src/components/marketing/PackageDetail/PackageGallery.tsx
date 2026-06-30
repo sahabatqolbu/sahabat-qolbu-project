@@ -15,12 +15,14 @@ export default function PackageGallery({ images }: Props) {
     <div className="mb-8">
       <div className="relative mb-4 overflow-hidden rounded-3xl">
         {activeImage ? (
-          <div
-            className="aspect-[16/10] w-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${activeImage})` }}
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={activeImage}
+            alt="Poster paket"
+            className="block h-auto max-h-[78vh] w-full bg-neutral-100 object-contain"
           />
         ) : (
-          <div className="flex aspect-[16/10] w-full items-center justify-center bg-neutral-100 text-center text-neutral-500">
+          <div className="flex min-h-72 w-full items-center justify-center bg-neutral-100 text-center text-neutral-500">
             Gambar paket belum tersedia
           </div>
         )}
@@ -39,10 +41,8 @@ export default function PackageGallery({ images }: Props) {
               }`}
               type="button"
             >
-              <div
-                className="h-full w-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${image})` }}
-              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image} alt={`Poster paket ${index + 1}`} className="h-full w-full bg-neutral-100 object-contain" />
             </button>
           ))}
         </div>

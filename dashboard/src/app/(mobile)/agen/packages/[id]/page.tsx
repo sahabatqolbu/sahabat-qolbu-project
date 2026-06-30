@@ -259,18 +259,19 @@ export default function PackageDetailPage() {
     <ProfileGuard requireComplete={true}>
       <div className="min-h-screen bg-gray-50 pb-32 md:max-w-7xl md:px-6 mx-auto">
         {/* Image Gallery */}
-        <div className="relative h-64 w-full bg-[var(--color-primary-100)]">
+        <div className="relative w-full bg-[var(--color-primary-100)]">
           {sortedImages.length > 0 ? (
             <>
               <Image
                 src={getImageUrl(sortedImages[currentImageIndex]?.imageUrl)}
                 alt={pkg.name}
-                fill
-                className="object-cover"
+                width={1200}
+                height={1600}
+                className="h-auto max-h-[78vh] w-full object-contain"
                 unoptimized
               />
               {/* Overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
 
               {/* Image navigation */}
               {sortedImages.length > 1 && (
@@ -312,7 +313,7 @@ export default function PackageDetailPage() {
               )}
             </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--color-primary-100)] to-[var(--color-primary-200)]">
+            <div className="flex h-64 w-full items-center justify-center bg-gradient-to-br from-[var(--color-primary-100)] to-[var(--color-primary-200)]">
               <FileText className="h-16 w-16 text-[var(--color-primary-300)]" />
             </div>
           )}

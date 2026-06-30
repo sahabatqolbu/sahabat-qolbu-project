@@ -168,7 +168,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
         className={cn("relative overflow-hidden", hasMultiple ? "mb-3" : "")}
       >
         {/* Slider */}
-        <div className="swiper">
+        <div className="swiper border-b border-gray-100">
           <div
             className="track flex transition-transform duration-300 ease-out h-full"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -179,7 +179,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
                 <img
                   src={img}
                   alt={`Slide ${i + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   draggable="false"
                 />
               </div>

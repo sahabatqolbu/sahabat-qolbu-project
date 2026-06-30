@@ -409,13 +409,13 @@ export default function PackagesPage() {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden">
+                                    <div className="w-10 h-12 rounded bg-gray-50 overflow-hidden border">
                                       <img
                                         src={getImageUrl(
                                           pkg.images[0].imageUrl
                                         )} // ✅ TAMBAHIN getImageUrl()
                                         alt={pkg.name}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-contain"
                                         onError={(e) => {
                                           // ✅ FALLBACK kalo image error
                                           e.currentTarget.src =
@@ -430,7 +430,7 @@ export default function PackagesPage() {
                                 </Tooltip>
                               </TooltipProvider>
                             ) : (
-                              <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
+                              <div className="w-10 h-12 rounded bg-gray-100 flex items-center justify-center">
                                 <ImageIcon className="w-4 h-4 text-gray-400" />
                               </div>
                             )}

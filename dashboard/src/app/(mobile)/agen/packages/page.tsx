@@ -201,13 +201,13 @@ export default function PackagesPage() {
                     }}
                   >
                     {/* Image Section */}
-                    <div className="relative aspect-[4/3] w-full overflow-hidden">
+                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-50">
                       {displayImage ? (
                         <Image
                           src={getImageUrl(displayImage.imageUrl)}
                           alt={pkg.name}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="object-contain"
                           unoptimized
                         />
                       ) : (
@@ -217,7 +217,7 @@ export default function PackagesPage() {
                       )}
 
                       {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
                       {/* Type Badge */}
                       <div className="absolute top-1.5 left-1.5">

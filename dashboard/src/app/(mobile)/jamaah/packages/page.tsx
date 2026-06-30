@@ -214,11 +214,11 @@ export default function JamaahPackagePage() {
         {/* Package Header */}
         <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
           {primaryImage ? (
-            <div className="h-52 w-full bg-gray-100">
+            <div className="w-full bg-gray-50">
               <img
                 src={getAssetUrl(primaryImage)}
                 alt={packageData.name}
-                className="h-full w-full object-cover"
+                className="block h-auto max-h-[72vh] w-full object-contain"
               />
             </div>
           ) : null}
@@ -276,7 +276,7 @@ export default function JamaahPackagePage() {
                     <img
                       src={getAssetUrl(img.imageUrl)}
                       alt={img.caption || packageData.name}
-                      className="h-20 w-full object-cover"
+                      className="h-24 w-full object-contain bg-gray-50"
                     />
                   </a>
                 ))}

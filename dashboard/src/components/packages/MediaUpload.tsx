@@ -133,13 +133,13 @@ export function MediaUpload({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {existingImages.map((img) => (
                   <div key={img.id} className="relative group">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
+                    <div className="aspect-[3/4] rounded-lg overflow-hidden bg-gray-50 border">
                       <Image
                         src={getImageUrl(img.imageUrl)}
                         alt={img.caption || "Package image"}
                         width={200}
                         height={200}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                     {onDeleteImage && (
@@ -168,13 +168,13 @@ export function MediaUpload({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {imagePreviews.map((preview, index) => (
                   <div key={index} className="relative group">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
+                    <div className="aspect-[3/4] rounded-lg overflow-hidden bg-gray-50 border">
                       <Image
                         src={preview}
                         alt={`Preview ${index + 1}`}
                         width={200}
                         height={200}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                     <Button
