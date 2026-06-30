@@ -57,9 +57,20 @@ const BrandingContext = createContext<BrandingData>(defaultBranding);
 export const useBranding = () => useContext(BrandingContext);
 
 const getApiBaseUrl = () => {
-  return (
+  const configured = (
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
   ).replace(/\/+$/, "");
+
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1" &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/api/i.test(configured)
+  ) {
+    return "https://api.sahabatqolbu.com/api";
+  }
+
+  return configured;
 };
 
 const toAbsoluteUrl = (path?: string | null) => {
@@ -92,8 +103,7 @@ function BrandingInnerProvider({ children }: { children: React.ReactNode }) {
     async function loadBranding() {
       try {
         // Fetch company profile
-        const companyRes = await fetch(`${apiBase}/master/company`, {
-          credentials: "include",
+        const companyRes = await fetch(`${apiBase}/public/company-profile`, {
           headers: { Accept: "application/json" },
         });
         const companyPayload = companyRes.ok ? await companyRes.json() : null;
@@ -132,7 +142,10 @@ function BrandingInnerProvider({ children }: { children: React.ReactNode }) {
         // If agent slug is provided, load agent details
         if (agentSlug) {
           const agentRes = await fetch(
-            `${apiBase}/agents/${encodeURIComponent(agentSlug)}`,
+            `${apiBase}/public/agents/${encodeURIComponent(agentSlug)}`,
+            {
+              headers: { Accept: "application/json" },
+            },
           );
           if (agentRes.ok) {
             const agentPayload = await agentRes.json();
