@@ -19,6 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 import RelatedPackages from "@/components/marketing/PackageDetail/RelatedPackages";
+import PackageDetailNav from "@/components/marketing/PackageDetail/PackageDetailNav";
 import {
   getMarketingPackageBySlug,
   getMarketingPackageSlugs,
@@ -450,11 +451,11 @@ export default async function LandingPackageDetailPage({
     "Deskripsi paket akan diinformasikan lebih lanjut oleh admin Sahabat Qolbu.";
   const packageAdvantages = pkg.terms?.length ? pkg.terms : undefined;
   const infoNav = [
-    ["deskripsi", "Deskripsi"],
-    ["termasuk", "Termasuk"],
-    ["tidak-termasuk", "Tidak Termasuk"],
-    ["keunggulan", "Keunggulan Paket"],
-    ["info", "Informasi Lebih Lanjut"],
+    { id: "deskripsi", label: "Deskripsi" },
+    { id: "termasuk", label: "Termasuk" },
+    { id: "tidak-termasuk", label: "Tidak Termasuk" },
+    { id: "keunggulan", label: "Keunggulan Paket" },
+    { id: "info", label: "Informasi Lebih Lanjut" },
   ];
 
   return (
@@ -544,29 +545,7 @@ export default async function LandingPackageDetailPage({
           </div>
         </section>
 
-        <nav className="sticky top-20 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
-          <div
-            className="mx-auto flex max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8"
-            role="tablist"
-            aria-label="Detail paket"
-          >
-            {infoNav.map(([id, label], index) => (
-              <a
-                href={`#tab-${id}`}
-                key={id}
-                id={`tab-button-${id}`}
-                data-package-tab={id}
-                className={`whitespace-nowrap border-b-2 px-5 py-4 text-sm font-extrabold transition first:pl-0 ${
-                  index === 0
-                    ? "border-gold text-gold"
-                    : "border-transparent text-primary hover:border-gold hover:text-gold"
-                }`}
-              >
-                {label}
-              </a>
-            ))}
-          </div>
-        </nav>
+        <PackageDetailNav items={infoNav} />
 
         <section className="bg-white pb-16 pt-4 md:pb-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
@@ -718,78 +697,6 @@ export default async function LandingPackageDetailPage({
       >
         <MessageCircle className="h-7 w-7" />
       </a>
-
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-              const mobileMenu = document.getElementById('mobileMenu');
-              const header = document.getElementById('header');
-              const isDetailHeader = header && header.getAttribute('data-detail-header') === 'true';
-
-              if (mobileMenuBtn && mobileMenu && !mobileMenuBtn.dataset.bound) {
-                mobileMenuBtn.dataset.bound = 'true';
-                mobileMenuBtn.addEventListener('click', function() {
-                  const isOpen = !mobileMenu.classList.contains('hidden');
-                  mobileMenu.classList.toggle('hidden');
-                  mobileMenuBtn.setAttribute('aria-expanded', String(!isOpen));
-                });
-
-                mobileMenu.querySelectorAll('a').forEach(function(link) {
-                  link.addEventListener('click', function() {
-                    mobileMenu.classList.add('hidden');
-                    mobileMenuBtn.setAttribute('aria-expanded', 'false');
-                  });
-                });
-              }
-
-              function updateHeader() {
-                if (!header || !isDetailHeader) return;
-                header.classList.add('bg-primary', 'shadow-lg');
-              }
-
-              if (window.__sqDetailHeaderScrollHandler) {
-                window.removeEventListener('scroll', window.__sqDetailHeaderScrollHandler);
-              }
-              window.__sqDetailHeaderScrollHandler = updateHeader;
-              updateHeader();
-              window.addEventListener('scroll', window.__sqDetailHeaderScrollHandler, { passive: true });
-
-              const tabButtons = Array.from(document.querySelectorAll('[data-package-tab]'));
-              const tabPanels = Array.from(document.querySelectorAll('[data-package-panel]'));
-
-              function activatePackageTab(tabId) {
-                tabButtons.forEach(function(button) {
-                  const isActive = button.getAttribute('data-package-tab') === tabId;
-                  button.setAttribute('aria-selected', String(isActive));
-                  button.classList.toggle('border-gold', isActive);
-                  button.classList.toggle('text-gold', isActive);
-                  button.classList.toggle('border-transparent', !isActive);
-                  button.classList.toggle('text-primary', !isActive);
-                });
-
-                tabPanels.forEach(function(panel) {
-                  panel.classList.toggle('hidden', panel.getAttribute('data-package-panel') !== tabId);
-                });
-              }
-
-              tabButtons.forEach(function(button) {
-                if (button.dataset.bound === 'true') return;
-                button.dataset.bound = 'true';
-                button.addEventListener('click', function() {
-                  activatePackageTab(button.getAttribute('data-package-tab'));
-                });
-              });
-
-              const initialTab = window.location.hash ? window.location.hash.replace('#', '').replace('tab-', '') : 'deskripsi';
-              if (tabButtons.some(function(button) { return button.getAttribute('data-package-tab') === initialTab; })) {
-                activatePackageTab(initialTab);
-              }
-            })();
-          `,
-        }}
-      />
     </div>
   );
 }
