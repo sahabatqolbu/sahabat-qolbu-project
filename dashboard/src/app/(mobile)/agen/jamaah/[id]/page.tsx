@@ -55,6 +55,7 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { BottomNav } from "@/components/mobile/BottomNav";
 import { useToast } from "@/hooks/use-toast";
+import { getImageUrl } from "@/lib/utils";
 
 
 interface PageProps {
@@ -320,7 +321,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
                 {jamaah.fotoUrl ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL}${jamaah.fotoUrl}`}
+                    src={getImageUrl(jamaah.fotoUrl)}
                     alt="Foto"
                     className="w-full h-full object-cover"
                   />
@@ -1007,12 +1008,12 @@ export default function JamaahDetailPage({ params }: PageProps) {
                           {isUploaded ? (
                             <>
                               <img
-                                src={`${process.env.NEXT_PUBLIC_API_URL}${url}`}
+                                src={getImageUrl(url)}
                                 alt={doc.label}
                                 className="w-full h-full object-cover"
                               />
                               <a
-                                href={`${process.env.NEXT_PUBLIC_API_URL}${url}`}
+                                href={getImageUrl(url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all"

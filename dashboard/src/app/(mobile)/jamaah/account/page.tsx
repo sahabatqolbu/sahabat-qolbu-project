@@ -39,6 +39,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { getImageUrl } from "@/lib/utils";
 
 export default function AccountInfoPage() {
   const { logout, user } = useAuthStore();
@@ -225,7 +226,7 @@ export default function AccountInfoPage() {
               <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center">
                 {profile?.fotoUrl ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL}${profile.fotoUrl}`}
+                    src={getImageUrl(profile.fotoUrl)}
                     alt="Foto"
                     className="h-full w-full rounded-full object-cover"
                   />

@@ -28,6 +28,7 @@ import {
 import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { getImageUrl } from "@/lib/utils";
 
 export default function JamaahProfilePage() {
   const { logout } = useAuthStore();
@@ -72,7 +73,7 @@ export default function JamaahProfilePage() {
           <div className="h-20 w-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
             {profile?.fotoUrl ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL}${profile.fotoUrl}`}
+                src={getImageUrl(profile.fotoUrl)}
                 alt="Foto"
                 className="h-full w-full rounded-full object-cover"
               />

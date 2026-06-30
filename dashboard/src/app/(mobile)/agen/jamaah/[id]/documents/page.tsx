@@ -25,6 +25,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { BottomNav } from "@/components/mobile/BottomNav";
+import { getImageUrl } from "@/lib/utils";
 
 const DOCUMENT_TYPES = [
   { key: "fotoUrl", label: "Pas Foto", icon: Camera, required: true },
@@ -228,7 +229,7 @@ export default function DocumentsPage() {
                     >
                       {url ? (
                         <img
-                          src={`${process.env.NEXT_PUBLIC_API_URL}${url}`}
+                          src={getImageUrl(url)}
                           alt={doc.label}
                           className="w-full h-full object-cover rounded-lg"
                         />
@@ -255,7 +256,7 @@ export default function DocumentsPage() {
                   <div className="flex items-center gap-2">
                     {url && (
                       <a
-                        href={`${process.env.NEXT_PUBLIC_API_URL}${url}`}
+                        href={getImageUrl(url)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -339,7 +340,7 @@ export default function DocumentsPage() {
                   <div className="flex items-center gap-2">
                     {url && (
                       <a
-                        href={`${process.env.NEXT_PUBLIC_API_URL}${url}`}
+                        href={getImageUrl(url)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

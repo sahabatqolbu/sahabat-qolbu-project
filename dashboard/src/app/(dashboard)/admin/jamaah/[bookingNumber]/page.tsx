@@ -107,6 +107,7 @@ import {
   Save,
 } from "lucide-react";
 import Link from "next/link";
+import { getImageUrl } from "@/lib/utils";
 
 interface InlineFormState {
   namaPaspor: string;
@@ -2701,7 +2702,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
                         </div>
                         {url && (
                           <a
-                            href={`${process.env.NEXT_PUBLIC_API_URL}${url}`}
+                            href={getImageUrl(url)}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
