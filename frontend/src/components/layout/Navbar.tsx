@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import { getDashboardBaseUrl, getDashboardUrl } from "@/lib/dashboard-url";
@@ -16,6 +17,9 @@ const navigation = [
 
 export default function Navbar() {
   const branding = useBranding();
+  const pathname = usePathname();
+  const isSolidHeader =
+    pathname?.startsWith("/paket/") || pathname?.startsWith("/packages/");
   const [isScrolled, setIsScrolled] = useState(() =>
     typeof window !== "undefined" ? window.scrollY > 50 : false,
   );
@@ -72,7 +76,7 @@ export default function Navbar() {
       id="header"
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        isScrolled ? "bg-primary shadow-lg" : "",
+        isSolidHeader || isScrolled ? "bg-primary shadow-lg" : "",
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

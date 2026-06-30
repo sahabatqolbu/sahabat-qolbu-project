@@ -336,12 +336,10 @@ function DetailSection({
   id,
   title,
   children,
-  defaultActive = false,
 }: {
   id: string;
   title: string;
   children: ReactNode;
-  defaultActive?: boolean;
 }) {
   return (
     <section
@@ -349,7 +347,7 @@ function DetailSection({
       role="tabpanel"
       aria-labelledby={`tab-button-${id}`}
       data-package-panel={id}
-      className={`scroll-mt-28 py-8 ${defaultActive ? "" : "hidden"}`}
+      className="scroll-mt-32 py-8"
     >
       <h2 className="mb-5 text-2xl font-extrabold text-primary">{title}</h2>
       {children}
@@ -553,14 +551,11 @@ export default async function LandingPackageDetailPage({
             aria-label="Detail paket"
           >
             {infoNav.map(([id, label], index) => (
-              <button
-                type="button"
+              <a
+                href={`#tab-${id}`}
                 key={id}
                 id={`tab-button-${id}`}
-                role="tab"
                 data-package-tab={id}
-                aria-controls={`tab-${id}`}
-                aria-selected={index === 0}
                 className={`whitespace-nowrap border-b-2 px-5 py-4 text-sm font-extrabold transition first:pl-0 ${
                   index === 0
                     ? "border-gold text-gold"
@@ -568,7 +563,7 @@ export default async function LandingPackageDetailPage({
                 }`}
               >
                 {label}
-              </button>
+              </a>
             ))}
           </div>
         </nav>
@@ -576,7 +571,7 @@ export default async function LandingPackageDetailPage({
         <section className="bg-white pb-16 pt-4 md:pb-24">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
             <article className="rounded-sm border border-neutral-200 bg-white px-5 py-2 shadow-sm sm:px-8 lg:self-start">
-              <DetailSection id="deskripsi" title="Deskripsi" defaultActive>
+              <DetailSection id="deskripsi" title="Deskripsi">
                 <div className="whitespace-pre-line text-sm font-medium leading-6 text-neutral-700 sm:text-base">
                   {packageDescription}
                 </div>
