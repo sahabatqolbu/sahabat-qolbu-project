@@ -206,7 +206,7 @@ export default function EditPackagePage({ params }: PageProps) {
       const diff = Math.ceil(
         (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
       );
-      return diff > 0 ? diff : 0;
+      return diff >= 0 ? diff + 1 : 0;
     }
     return pkg?.duration || 0;
   };

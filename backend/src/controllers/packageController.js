@@ -84,6 +84,15 @@ const parseDecimalString = (value, fallback = "0.00") => {
   return parsed.toFixed(2);
 };
 
+const calculateInclusiveDuration = (departureDateValue, returnDateValue) => {
+  const departureDate = new Date(departureDateValue);
+  const returnDate = new Date(returnDateValue);
+  const diffDays = Math.ceil(
+    (returnDate - departureDate) / (1000 * 60 * 60 * 24),
+  );
+  return diffDays >= 0 ? diffDays + 1 : 0;
+};
+
 const parseBoolean = (value, fallback) => {
   if (typeof value === "boolean") return value;
   if (typeof value === "string") {
@@ -332,6 +341,7 @@ export const getAllPackages = async (req, res, next) => {
 
       return {
         ...pkg,
+        duration: calculateInclusiveDuration(pkg.departureDate, pkg.returnDate),
         bookedSeats,
         remainingSeats,
         daysUntilDeparture,
@@ -435,10 +445,9 @@ export const createPackage = async (req, res, next) => {
       return errorResponse(res, validation.errors.join(", "), 400);
     }
 
-    const departureDate = new Date(data.departureDate);
-    const returnDate = new Date(data.returnDate);
-    const duration = Math.ceil(
-      (returnDate - departureDate) / (1000 * 60 * 60 * 24),
+    const duration = calculateInclusiveDuration(
+      data.departureDate,
+      data.returnDate,
     );
 
     const itineraryPdf = req.uploadedFile ? req.uploadedFile.path : null;
@@ -560,10 +569,9 @@ export const updatePackage = async (req, res, next) => {
 
     let duration = existingPackage.duration;
     if (data.departureDate && data.returnDate) {
-      const departureDate = new Date(data.departureDate);
-      const returnDate = new Date(data.returnDate);
-      duration = Math.ceil(
-        (returnDate - departureDate) / (1000 * 60 * 60 * 24),
+      duration = calculateInclusiveDuration(
+        data.departureDate,
+        data.returnDate,
       );
     }
 
@@ -1013,10 +1021,9 @@ export const importPackages = async (req, res, next) => {
 
     for (const row of data) {
       try {
-        const departureDate = new Date(row["Tgl Berangkat"]);
-        const returnDate = new Date(row["Tgl Pulang"]);
-        const duration = Math.ceil(
-          (returnDate - departureDate) / (1000 * 60 * 60 * 24),
+        const duration = calculateInclusiveDuration(
+          row["Tgl Berangkat"],
+          row["Tgl Pulang"],
         );
 
         await withGeneratedPackageCodeRetry(async (code) => {
@@ -1210,6 +1217,10 @@ export const getPublicPackageById = async (req, res, next) => {
 
     return successResponse(res, {
       ...packageData,
+      duration: calculateInclusiveDuration(
+        packageData.departureDate,
+        packageData.returnDate,
+      ),
       bookedSeats,
       remainingSeats,
       daysUntilDeparture,

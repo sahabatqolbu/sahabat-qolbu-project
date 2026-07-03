@@ -228,6 +228,19 @@ const toNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
+const calculateInclusiveDuration = (
+  departureDate?: string | null,
+  returnDate?: string | null,
+) => {
+  if (!departureDate || !returnDate) return 0;
+  const departure = new Date(departureDate);
+  const returning = new Date(returnDate);
+  const diffDays = Math.ceil(
+    (returning.getTime() - departure.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  return diffDays >= 0 ? diffDays + 1 : 0;
+};
+
 const resolveAssetUrl = (value?: string | null) => {
   if (!value) return undefined;
   if (/^https?:\/\//i.test(value)) return value;
@@ -368,6 +381,12 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     : undefined;
 
   const name = toNonEmptyString(pkg.name, "Paket Umroh");
+  const departureDate = toNonEmptyString(pkg.departureDate);
+  const returnDate = toNonEmptyString(pkg.returnDate);
+  const inclusiveDuration = calculateInclusiveDuration(
+    departureDate,
+    returnDate,
+  );
 
   return {
     id: pkg.id,
@@ -375,9 +394,9 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     code: toNonEmptyString(pkg.code, `PKG-${pkg.id}`),
     name,
     type: mapPackageType(pkg.type, pkg.name),
-    duration: toNumber(pkg.duration, 0),
-    departureDate: toNonEmptyString(pkg.departureDate),
-    returnDate: toNonEmptyString(pkg.returnDate),
+    duration: inclusiveDuration || toNumber(pkg.duration, 0),
+    departureDate,
+    returnDate,
     airline: {
       name: toNonEmptyString(pkg.airline?.name, "Maskapai belum tersedia"),
       logo: resolveAssetUrl(pkg.airline?.logo),
