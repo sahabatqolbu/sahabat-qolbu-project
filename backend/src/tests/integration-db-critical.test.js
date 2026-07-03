@@ -76,7 +76,7 @@ describe("integration db critical path", () => {
     }
   });
 
-  it("covers login -> verify OTP lifecycle with DB", async (t) => {
+  it("covers password login session lifecycle with DB", async (t) => {
     if (!dbReady) {
       t.skip(
         "DB integration tests disabled or DB not available (set ENABLE_DB_INTEGRATION_TESTS=true)"
@@ -85,7 +85,7 @@ describe("integration db critical path", () => {
     }
 
     const suffix = createSuffix();
-    const email = `integration.otp.${suffix}@example.com`;
+    const email = `integration.login.${suffix}@example.com`;
     const password = "Passw0rd!";
     const hashed = await hashPassword(password);
 
@@ -112,27 +112,18 @@ describe("integration db critical path", () => {
     const loginBody = await loginRes.json();
     assert.equal(loginRes.status, 200);
     assert.equal(loginBody.success, true);
-    assert.equal(loginBody.data.email, email);
+    assert.equal(loginBody.data.user.email, email);
 
     const dbUserAfterLogin = await db.query.users.findFirst({
       where: eq(users.id, userId),
-      columns: { otp: true, otpExpiry: true },
+      columns: { otp: true, otpExpiry: true, lastLogin: true },
     });
 
-    assert.ok(dbUserAfterLogin?.otp, "OTP should be generated");
+    assert.equal(dbUserAfterLogin?.otp, null);
+    assert.equal(dbUserAfterLogin?.otpExpiry, null);
+    assert.ok(dbUserAfterLogin?.lastLogin, "lastLogin should be updated");
 
-    const verifyRes = await fetch(`${baseUrl}/api/auth/verify-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, otp: dbUserAfterLogin.otp }),
-    });
-
-    const verifyBody = await verifyRes.json();
-    assert.equal(verifyRes.status, 200);
-    assert.equal(verifyBody.success, true);
-    assert.equal(verifyBody.data.user.email, email);
-
-    const setCookie = verifyRes.headers.get("set-cookie") || "";
+    const setCookie = loginRes.headers.get("set-cookie") || "";
     assert.match(setCookie, /access_token=/);
   });
 

@@ -1,6 +1,7 @@
 import { db } from "../db/index.js";
 import { prospectJamaah, users } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
+import crypto from "node:crypto";
 import { comparePassword, hashPassword } from "../utils/password.js";
 import { generateToken } from "../utils/jwt.js";
 import { generateOTP, getOTPExpiry, verifyOTP } from "../utils/otp.js";
@@ -90,6 +91,98 @@ const rejectIfOtpCooldownActive = (res, user) => {
   return true;
 };
 
+const roleDefaultRoutes = {
+  ADMIN: "/admin",
+  FINANCE: "/finance",
+  STAFF: "/staff",
+  AGEN: "/agen",
+  JAMAAH: "/jamaah",
+  CALON_JAMAAH: "/calon-jamaah",
+};
+
+const getDashboardUrl = () =>
+  (process.env.DASHBOARD_URL || "https://dashboard.sahabatqolbu.com").replace(
+    /\/$/,
+    "",
+  );
+
+const normalizeNextPath = (nextPath) => {
+  if (!nextPath || typeof nextPath !== "string") return "";
+  if (!nextPath.startsWith("/") || nextPath.startsWith("//")) return "";
+  if (nextPath.includes("\\")) return "";
+  return nextPath;
+};
+
+const getDashboardRedirectUrl = (role, nextPath = "") => {
+  const safeNextPath = normalizeNextPath(nextPath);
+  const targetPath = safeNextPath || roleDefaultRoutes[role] || "/login";
+  return new URL(targetPath, getDashboardUrl()).toString();
+};
+
+const getGoogleOAuthCookieOptions = (req) => ({
+  ...getAuthCookieOptions(req),
+  maxAge: 10 * 60 * 1000,
+});
+
+const clearGoogleOAuthCookies = (req, res) => {
+  const options = getGoogleOAuthCookieOptions(req);
+  res.clearCookie("google_oauth_state", options);
+  res.clearCookie("google_oauth_next", options);
+};
+
+const getGoogleOAuthConfig = () => {
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const callbackUrl =
+    process.env.GOOGLE_CALLBACK_URL?.trim() ||
+    "https://api.sahabatqolbu.com/api/auth/google/callback";
+
+  if (!clientId || !clientSecret) {
+    return null;
+  }
+
+  return { clientId, clientSecret, callbackUrl };
+};
+
+const issueAuthSession = async (
+  req,
+  res,
+  user,
+  message = "Login berhasil",
+  statusCode = 200,
+) => {
+  await db
+    .update(users)
+    .set({
+      lastLogin: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, user.id));
+
+  const token = generateToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  res.cookie("access_token", token, getAuthCookieOptions(req));
+
+  return successResponse(
+    res,
+    {
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        phone: user.phone || null,
+      },
+    },
+    message,
+    statusCode,
+  );
+};
+
 const findUserByEmail = async (email) => {
   return db.query.users.findFirst({
     where: sql`LOWER(TRIM(email)) = LOWER(TRIM(${email}))`,
@@ -167,8 +260,6 @@ export const registerCalonJamaah = async (req, res, next) => {
     }
 
     const hashedPassword = await hashPassword(password);
-    const otp = generateOTP();
-    const otpExpiry = getOTPExpiry();
 
     const [newUser] = await db
       .insert(users)
@@ -178,8 +269,6 @@ export const registerCalonJamaah = async (req, res, next) => {
         fullName,
         phone,
         role: "CALON_JAMAAH",
-        otp,
-        otpExpiry,
         isActive: true,
         isEmailVerified: false,
       })
@@ -194,26 +283,6 @@ export const registerCalonJamaah = async (req, res, next) => {
       sourceSlug,
     });
 
-    const emailResult = await sendOTPEmail(
-      { id: userId, email: normalizedEmail, fullName },
-      otp,
-    );
-
-    if (!emailResult.success) {
-      logger.error(
-        "Failed to send calon jamaah register OTP",
-        emailResult.error,
-        {
-          userId,
-        },
-      );
-      return errorResponse(
-        res,
-        "Akun dibuat, tetapi OTP gagal dikirim. Silakan request ulang OTP.",
-        500,
-      );
-    }
-
     logger.security("Calon jamaah registered", {
       userId,
       email: normalizedEmail,
@@ -221,13 +290,17 @@ export const registerCalonJamaah = async (req, res, next) => {
       sourceSlug,
     });
 
-    return successResponse(
+    return issueAuthSession(
+      req,
       res,
       {
+        id: userId,
         email: normalizedEmail,
-        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
+        fullName,
+        role: "CALON_JAMAAH",
+        phone,
       },
-      "Registrasi berhasil. Silakan cek email Anda untuk kode OTP",
+      "Registrasi berhasil",
       201,
     );
   } catch (error) {
@@ -237,7 +310,7 @@ export const registerCalonJamaah = async (req, res, next) => {
 };
 
 // =====================================================
-// LOGIN - GENERATE OTP
+// LOGIN - PASSWORD
 // =====================================================
 export const login = async (req, res, next) => {
   try {
@@ -312,50 +385,202 @@ export const login = async (req, res, next) => {
       );
     }
 
-    if (rejectIfOtpCooldownActive(res, user)) {
-      return;
+    logger.security("User logged in successfully", {
+      userId: user.id,
+      email: user.email,
+    });
+
+    return issueAuthSession(req, res, user, "Login berhasil");
+  } catch (error) {
+    logger.error("Login error", error);
+    next(error);
+  }
+};
+
+// =====================================================
+// GOOGLE OAUTH
+// =====================================================
+export const startGoogleOAuth = async (req, res) => {
+  const config = getGoogleOAuthConfig();
+  if (!config) {
+    return errorResponse(res, "Google login belum dikonfigurasi.", 503);
+  }
+
+  const state = crypto.randomBytes(24).toString("hex");
+  const nextPath = normalizeNextPath(req.query?.next);
+  const cookieOptions = getGoogleOAuthCookieOptions(req);
+
+  res.cookie("google_oauth_state", state, cookieOptions);
+  res.cookie("google_oauth_next", nextPath, cookieOptions);
+
+  const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  authUrl.searchParams.set("client_id", config.clientId);
+  authUrl.searchParams.set("redirect_uri", config.callbackUrl);
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set("scope", "openid email profile");
+  authUrl.searchParams.set("state", state);
+  authUrl.searchParams.set("prompt", "select_account");
+
+  return res.redirect(authUrl.toString());
+};
+
+export const handleGoogleOAuthCallback = async (req, res, next) => {
+  try {
+    const config = getGoogleOAuthConfig();
+    if (!config) {
+      return res.redirect(`${getDashboardUrl()}/login?error=google_config`);
     }
 
-    // Generate OTP
-    const otp = generateOTP();
-    const otpExpiry = getOTPExpiry();
+    const { code, state, error } = req.query || {};
+    const expectedState = req.cookies?.google_oauth_state;
+    const nextPath = req.cookies?.google_oauth_next || "";
+    clearGoogleOAuthCookies(req, res);
 
-    // Update user with OTP
+    if (error) {
+      logger.security("Google OAuth rejected", { error });
+      return res.redirect(`${getDashboardUrl()}/login?error=google_cancelled`);
+    }
+
+    if (
+      !code ||
+      !state ||
+      !expectedState ||
+      state !== expectedState
+    ) {
+      logger.security("Google OAuth state mismatch", {
+        hasCode: Boolean(code),
+        hasState: Boolean(state),
+        hasExpectedState: Boolean(expectedState),
+      });
+      return res.redirect(`${getDashboardUrl()}/login?error=google_state`);
+    }
+
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code: String(code),
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        redirect_uri: config.callbackUrl,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const body = await tokenResponse.text();
+      logger.error("Google token exchange failed", { status: tokenResponse.status, body });
+      return res.redirect(`${getDashboardUrl()}/login?error=google_token`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const userInfoResponse = await fetch(
+      "https://openidconnect.googleapis.com/v1/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+        },
+      },
+    );
+
+    if (!userInfoResponse.ok) {
+      const body = await userInfoResponse.text();
+      logger.error("Google userinfo request failed", {
+        status: userInfoResponse.status,
+        body,
+      });
+      return res.redirect(`${getDashboardUrl()}/login?error=google_profile`);
+    }
+
+    const googleUser = await userInfoResponse.json();
+    const email = normalizeEmail(googleUser.email);
+
+    if (!email || googleUser.email_verified !== true) {
+      logger.security("Google OAuth rejected unverified email", { email });
+      return res.redirect(`${getDashboardUrl()}/login?error=google_unverified`);
+    }
+
+    let user = await findUserByEmail(email);
+
+    if (user && !user.isActive) {
+      return res.redirect(`${getDashboardUrl()}/login?error=inactive`);
+    }
+
+    if (!user) {
+      const generatedPassword = crypto.randomBytes(32).toString("base64url");
+      const hashedPassword = await hashPassword(generatedPassword);
+      const fullName = googleUser.name || email.split("@")[0];
+
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email,
+          password: hashedPassword,
+          fullName,
+          role: "CALON_JAMAAH",
+          isActive: true,
+          isEmailVerified: true,
+        })
+        .$returningId();
+
+      const userId = Number(newUser.id);
+
+      await db.insert(prospectJamaah).values({
+        userId,
+        followUpStatus: "BARU",
+        sourceType: "GENERAL",
+        sourceSlug: "google",
+      });
+
+      user = {
+        id: userId,
+        email,
+        fullName,
+        phone: null,
+        role: "CALON_JAMAAH",
+        isActive: true,
+      };
+
+      logger.security("Calon jamaah registered with Google", {
+        userId,
+        email,
+      });
+    } else if (!user.isEmailVerified) {
+      await db
+        .update(users)
+        .set({
+          isEmailVerified: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id));
+      user.isEmailVerified = true;
+    }
+
     await db
       .update(users)
       .set({
-        otp: otp,
-        otpExpiry: otpExpiry,
+        lastLogin: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));
 
-    // Send OTP via email (async via queue)
-    const emailResult = await sendOTPEmail(user, otp);
-
-    if (!emailResult.success) {
-      logger.error("Failed to send OTP email", emailResult.error, {
-        userId: user.id,
-      });
-      return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
-    }
-
-    const emailStatus = emailResult.queued ? "queued" : "sent";
-    logger.info(`OTP email ${emailStatus} successfully`, {
+    const token = generateToken({
       userId: user.id,
-      jobId: emailResult.jobId,
+      email: user.email,
+      role: user.role,
     });
 
-    return successResponse(
-      res,
-      {
-        email: user.email,
-        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
-      },
-      "Silakan cek email Anda untuk kode OTP",
-    );
+    res.cookie("access_token", token, getAuthCookieOptions(req));
+
+    logger.security("Google OAuth login succeeded", {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return res.redirect(getDashboardRedirectUrl(user.role, nextPath));
   } catch (error) {
-    logger.error("Login error", error);
+    logger.error("Google OAuth callback error", error);
     next(error);
   }
 };

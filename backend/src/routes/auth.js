@@ -20,6 +20,8 @@ import {
   logout,
   requestForgotPasswordOTP,
   resetPasswordWithOTP,
+  startGoogleOAuth,
+  handleGoogleOAuthCallback,
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -32,6 +34,8 @@ router.post(
   registerCalonJamaah,
 );
 router.post("/login", authLimiter, validate(authSchemas.login), login);
+router.get("/google", authLimiter, startGoogleOAuth);
+router.get("/google/callback", authLimiter, handleGoogleOAuthCallback);
 router.post(
   "/verify-otp",
   otpLimiter,

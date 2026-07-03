@@ -5,7 +5,8 @@ import type { ComponentType, ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "@/services/authService";
-import { useOTPStore } from "@/stores/otpStore";
+import { useAuthStore, type User as AuthUser } from "@/stores/authStore";
+import { DEFAULT_ROUTES } from "@/lib/routeAccess";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Eye, EyeOff, Key, Loader2, Lock, Mail, Phone, User } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Key, Loader2, Lock, Mail, Phone, User as UserIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type ViewMode = "login" | "register" | "forgot-request" | "forgot-reset";
@@ -48,10 +49,11 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const setOTPData = useOTPStore((state) => state.setOTPData);
+  const setAuth = useAuthStore((state) => state.setAuth);
 
-  const nextPath = searchParams.get("next") || "";
+  const nextPath = searchParams.get("next") || searchParams.get("redirect") || "";
   const initialTab = searchParams.get("tab");
+  const authError = searchParams.get("error");
 
   const [viewMode, setViewMode] = useState<ViewMode>("login");
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -77,15 +79,43 @@ function LoginContent() {
     }
   }, [initialTab]);
 
+  useEffect(() => {
+    if (!authError) return;
+
+    const messages: Record<string, string> = {
+      google_config: "Google login belum dikonfigurasi.",
+      google_cancelled: "Login Google dibatalkan.",
+      google_state: "Sesi login Google kedaluwarsa. Silakan coba lagi.",
+      google_token: "Gagal menghubungkan akun Google. Silakan coba lagi.",
+      google_profile: "Gagal membaca profil Google. Silakan coba lagi.",
+      google_unverified: "Email Google belum terverifikasi.",
+      inactive: "Akun Anda telah dinonaktifkan. Hubungi admin.",
+    };
+
+    setErrors({
+      general: messages[authError] || "Login Google gagal. Silakan coba lagi.",
+    });
+  }, [authError]);
+
+  const redirectAfterAuth = (user: AuthUser) => {
+    setAuth(user);
+    const safeNextPath =
+      nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "";
+    router.push(safeNextPath || DEFAULT_ROUTES[user.role] || "/login");
+  };
+
+  const startGoogleLogin = () => {
+    window.location.href = authService.getGoogleAuthUrl(nextPath);
+  };
+
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      setOTPData(formData.email, data.data.expiresIn, nextPath);
+      redirectAfterAuth(data.data.user);
       toast({
-        title: "OTP Terkirim",
-        description: "Kode OTP sudah dikirim ke email Anda.",
+        title: "Login Berhasil",
+        description: "Anda berhasil masuk ke dashboard.",
       });
-      router.push("/verify-otp");
     },
     onError: (error: any) => {
       const status = error?.response?.status;
@@ -107,12 +137,11 @@ function LoginContent() {
   const registerMutation = useMutation({
     mutationFn: authService.registerCalonJamaah,
     onSuccess: (data) => {
-      setOTPData(registerData.email, data.data.expiresIn, nextPath);
+      redirectAfterAuth(data.data.user);
       toast({
         title: "Registrasi Berhasil",
-        description: "Kode OTP sudah dikirim ke email Anda.",
+        description: "Akun calon jamaah berhasil dibuat.",
       });
-      router.push("/verify-otp");
     },
     onError: (error: any) => {
       const responseData = error?.response?.data;
@@ -415,7 +444,7 @@ function LoginContent() {
             <IconInput
               id="fullName"
               label="Nama Lengkap"
-              icon={User}
+              icon={UserIcon}
               value={registerData.fullName}
               onChange={(value) => setRegisterData({ ...registerData, fullName: value })}
               placeholder="Nama sesuai identitas"
@@ -459,6 +488,7 @@ function LoginContent() {
               error={errors.confirmPassword}
             />
             <SubmitButton pending={registerMutation.isPending} label="Daftar" pendingLabel="Mendaftarkan..." />
+            <GoogleButton onClick={startGoogleLogin} label="Daftar dengan Google" />
           </form>
         ) : (
           <form
@@ -497,10 +527,34 @@ function LoginContent() {
               </button>
             </div>
             <SubmitButton pending={loginMutation.isPending} label="Masuk" pendingLabel="Memproses..." />
+            <GoogleButton onClick={startGoogleLogin} label="Masuk dengan Google" />
           </form>
         )}
       </CardContent>
     </Card>,
+  );
+}
+
+function GoogleButton({
+  onClick,
+  label,
+}: {
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="w-full gap-3"
+      size="lg"
+      onClick={onClick}
+    >
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-sm font-bold text-blue-600">
+        G
+      </span>
+      {label}
+    </Button>
   );
 }
 

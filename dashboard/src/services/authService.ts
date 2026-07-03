@@ -10,9 +10,13 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   data: {
-    email: string;
-    message: string;
-    expiresIn: string;
+    user: {
+      id: number;
+      email: string;
+      fullName: string;
+      role: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH" | "CALON_JAMAAH";
+      phone: string | null;
+    };
   };
 }
 
@@ -52,6 +56,15 @@ export interface RegisterCalonJamaahRequest {
 }
 
 export const authService = {
+  getGoogleAuthUrl: (nextPath?: string) => {
+    const baseUrl = api.defaults.baseURL || "https://api.sahabatqolbu.com/api";
+    const url = new URL(`${baseUrl.replace(/\/$/, "")}/auth/google`);
+    if (nextPath?.startsWith("/") && !nextPath.startsWith("//")) {
+      url.searchParams.set("next", nextPath);
+    }
+    return url.toString();
+  },
+
   registerCalonJamaah: async (data: RegisterCalonJamaahRequest) => {
     const response = await api.post<LoginResponse>(
       "/auth/register/calon-jamaah",
@@ -60,7 +73,7 @@ export const authService = {
     return response.data;
   },
 
-  // Login - Generate OTP
+  // Login
   login: async (data: LoginRequest) => {
     const response = await api.post<LoginResponse>("/auth/login", data);
     return response.data;
