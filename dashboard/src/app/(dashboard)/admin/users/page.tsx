@@ -71,8 +71,10 @@ const getRoleBadge = (role: string) => {
   const variants: Record<string, string> = {
     ADMIN: "bg-purple-100 text-purple-800 border-purple-200",
     FINANCE: "bg-green-100 text-green-800 border-green-200",
+    STAFF: "bg-orange-100 text-orange-800 border-orange-200",
     AGEN: "bg-blue-100 text-blue-800 border-blue-200",
     JAMAAH: "bg-gray-100 text-gray-800 border-gray-200",
+    CALON_JAMAAH: "bg-amber-100 text-amber-800 border-amber-200",
   };
   return variants[role] || variants.JAMAAH;
 };
@@ -342,6 +344,7 @@ export default function UsersPage() {
                 {!isStaff && !isFinance && <SelectItem value="STAFF">Staff</SelectItem>}
                 <SelectItem value="AGEN">Agen</SelectItem>
                 <SelectItem value="JAMAAH">Jamaah</SelectItem>
+                {!isStaff && !isFinance && <SelectItem value="CALON_JAMAAH">Calon Jamaah</SelectItem>}
               </SelectContent>
             </Select>
 
@@ -657,7 +660,7 @@ export default function UsersPage() {
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 <strong>💡 Info Format:</strong> Kolom wajib adalah `fullName`, `email`, dan `role`
-                {isStaff ? " (AGEN, JAMAAH)." : " (ADMIN, FINANCE, STAFF, AGEN, JAMAAH)."}
+                {isStaff ? " (AGEN, JAMAAH)." : " (ADMIN, FINANCE, STAFF, AGEN, JAMAAH, CALON_JAMAAH)."}
               </p>
             </div>
 

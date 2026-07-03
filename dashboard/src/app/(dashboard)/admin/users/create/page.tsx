@@ -306,6 +306,7 @@ export default function CreateUserPage() {
                     {!isStaff && !isFinance && <SelectItem value="STAFF">Staff</SelectItem>}
                     <SelectItem value="AGEN">Agen</SelectItem>
                     <SelectItem value="JAMAAH">Jamaah</SelectItem>
+                    {!isStaff && !isFinance && <SelectItem value="CALON_JAMAAH">Calon Jamaah</SelectItem>}
                   </SelectContent>
                 </Select>
                 {errors.role && (

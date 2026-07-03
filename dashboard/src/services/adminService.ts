@@ -1,6 +1,14 @@
 // dashboard/src/services/adminService.ts
 import api from "@/lib/axios";
 
+type UserRole =
+  | "ADMIN"
+  | "FINANCE"
+  | "STAFF"
+  | "AGEN"
+  | "JAMAAH"
+  | "CALON_JAMAAH";
+
 export const adminService = {
   dashboard: {
     getStats: async () => {
@@ -44,7 +52,7 @@ export const adminService = {
       fullName: string;
       email: string;
       phone: string;
-      role: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH"; // ✅ TAMBAH STAFF
+      role: UserRole;
       packageId?: number | null; // ✅ TAMBAH INI (optional untuk JAMAAH)
     }) => {
       const response = await api.post("/admin/users", data);
@@ -56,7 +64,7 @@ export const adminService = {
       data: {
         fullName?: string;
         phone?: string;
-        role?: "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH"; // ✅ TAMBAH STAFF
+        role?: UserRole;
         isActive?: boolean;
       },
     ) => {

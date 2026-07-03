@@ -15,7 +15,7 @@ export const createUserSchema = z.object({
     .max(15, "Nomor HP maksimal 15 digit")
     .regex(/^[0-9+]+$/, "Nomor HP hanya boleh angka dan tanda +"),
 
-  role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"]),
+  role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"]),
 
   packageId: z.number().int().positive().optional(),
 });
@@ -34,7 +34,9 @@ export const updateUserSchema = z.object({
     .regex(/^[0-9+]+$/, "Nomor HP hanya boleh angka dan tanda +")
     .optional(),
 
-  role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH"]).optional(), // ✅ TAMBAH STAFF
+  role: z
+    .enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"])
+    .optional(),
 
   isActive: z.boolean().optional(),
 
