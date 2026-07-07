@@ -134,6 +134,11 @@ describe("api integration lite", () => {
     assert.equal(payload.code, "SECURITY_INVALID_ORIGIN");
   });
 
+  it("allows direct static access to public gallery upload folder", async () => {
+    const response = await fetch(`${baseUrl}/uploads/gallery/not-existing.webp`);
+
+    assert.notEqual(response.status, 403);
+  });
   it("blocks direct static access to protected upload folders", async () => {
     const response = await fetch(`${baseUrl}/uploads/payments/not-allowed.jpg`);
     const payload = await response.json();
@@ -223,3 +228,4 @@ describe("api integration lite", () => {
     assert.equal(payload.code, "RESOURCE_NOT_FOUND");
   });
 });
+

@@ -188,6 +188,7 @@ const publicUploadsOnly = (req, res, next) => {
     "packages",
     "itinerary",
     "general",
+    "gallery",
   ]);
 
   const protectedFolders = new Set([
@@ -273,3 +274,4 @@ app.use(errorHandler);
 logger.info("✅ Application middleware configured successfully");
 
 export default app;
+
