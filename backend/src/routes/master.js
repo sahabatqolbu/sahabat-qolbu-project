@@ -123,8 +123,8 @@ router.delete("/faqs/:id", authenticate, authorize(["ADMIN"]), deleteFAQ);
 // GALLERY
 // =====================================================
 router.get("/gallery", getAllGallery);
-router.post("/gallery", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("gallery"), createGallery);
-router.put("/gallery/:id", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("gallery"), updateGallery);
+router.post("/gallery", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("gallery", { outputFormat: "webp" }), createGallery);
+router.put("/gallery/:id", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("gallery", { outputFormat: "webp" }), updateGallery);
 router.delete("/gallery/:id", authenticate, authorize(["ADMIN"]), deleteGallery);
 
 // =====================================================
@@ -169,3 +169,4 @@ router.put("/periods/:id", authenticate, authorize(["ADMIN"]), periodController.
 router.delete("/periods/:id", authenticate, authorize(["ADMIN"]), periodController.deletePeriod);
 
 export default router;
+

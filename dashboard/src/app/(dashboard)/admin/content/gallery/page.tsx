@@ -65,6 +65,7 @@ interface GalleryItem {
   category: GalleryCategory;
   isActive: boolean;
   sortOrder: number;
+  createdAt?: string | null;
 }
 
 interface GalleryFormData {
@@ -72,9 +73,11 @@ interface GalleryFormData {
   description: string;
   imageUrl: string;
   category: GalleryCategory;
-  isActive: boolean;
-  sortOrder: number;
+  galleryDate: string;
 }
+
+const GALLERY_ENDPOINT = "/master/gallery";
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp"];
 
 const GALLERY_CATEGORIES: Array<{ value: GalleryCategory; label: string }> = [
   { value: "KEBERANGKATAN", label: "Keberangkatan" },
@@ -83,6 +86,26 @@ const GALLERY_CATEGORIES: Array<{ value: GalleryCategory; label: string }> = [
   { value: "KEGIATAN", label: "Kegiatan" },
   { value: "LAINNYA", label: "Lainnya" },
 ];
+
+const todayInputValue = () => new Date().toISOString().slice(0, 10);
+
+const toDateInputValue = (value?: string | null) => {
+  if (!value) return todayInputValue();
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return todayInputValue();
+  return parsed.toISOString().slice(0, 10);
+};
+
+const formatGalleryDate = (value?: string | null) => {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
+};
 
 const getErrorMessage = (error: unknown): string => {
   if (typeof error !== "object" || error === null) {
@@ -115,14 +138,13 @@ export default function AdminGalleryPage() {
     description: "",
     imageUrl: "",
     category: "LAINNYA",
-    isActive: true,
-    sortOrder: 0,
+    galleryDate: todayInputValue(),
   });
 
   const { data, isLoading } = useQuery({
     queryKey: ["gallery"],
     queryFn: async () => {
-      const res = await api.get("/gallery");
+      const res = await api.get(GALLERY_ENDPOINT);
       return res.data;
     },
   });
@@ -134,13 +156,10 @@ export default function AdminGalleryPage() {
     body.append("title", payload.title);
     body.append("description", payload.description);
     body.append("category", payload.category);
-    body.append("isActive", String(payload.isActive));
-    body.append("sortOrder", String(payload.sortOrder));
+    body.append("galleryDate", payload.galleryDate);
 
     if (selectedFile) {
       body.append("image", selectedFile);
-    } else if (payload.imageUrl) {
-      body.append("imageUrl", payload.imageUrl);
     }
 
     return body;
@@ -148,7 +167,7 @@ export default function AdminGalleryPage() {
 
   const createMutation = useMutation({
     mutationFn: (payload: GalleryFormData) =>
-      api.post("/gallery", buildPayload(payload), {
+      api.post(GALLERY_ENDPOINT, buildPayload(payload), {
         headers: { "Content-Type": "multipart/form-data" },
       }),
     onSuccess: () => {
@@ -168,7 +187,7 @@ export default function AdminGalleryPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: GalleryFormData }) =>
-      api.put(`/gallery/${id}`, buildPayload(payload), {
+      api.put(`${GALLERY_ENDPOINT}/${id}`, buildPayload(payload), {
         headers: { "Content-Type": "multipart/form-data" },
       }),
     onSuccess: () => {
@@ -187,7 +206,7 @@ export default function AdminGalleryPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/gallery/${id}`),
+    mutationFn: (id: number) => api.delete(`${GALLERY_ENDPOINT}/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gallery"] });
       setDeleteDialogOpen(false);
@@ -208,8 +227,7 @@ export default function AdminGalleryPage() {
       description: "",
       imageUrl: "",
       category: "LAINNYA",
-      isActive: true,
-      sortOrder: 0,
+      galleryDate: todayInputValue(),
     });
     setSelectedFile(null);
     setEditMode(false);
@@ -224,8 +242,7 @@ export default function AdminGalleryPage() {
       description: item.description || "",
       imageUrl: item.imageUrl,
       category: item.category,
-      isActive: item.isActive,
-      sortOrder: item.sortOrder,
+      galleryDate: toDateInputValue(item.createdAt),
     });
     setEditMode(true);
     setDialogOpen(true);
@@ -233,11 +250,11 @@ export default function AdminGalleryPage() {
 
   const handleFileChange = (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast({
         variant: "destructive",
         title: "Format tidak valid",
-        description: "Silakan pilih file gambar.",
+        description: "Upload hanya mendukung JPG, PNG, WebP, GIF, atau BMP.",
       });
       return;
     }
@@ -247,7 +264,7 @@ export default function AdminGalleryPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!editMode && !selectedFile && !formData.imageUrl) {
+    if (!editMode && !selectedFile) {
       toast({ variant: "destructive", title: "Gambar wajib diupload" });
       return;
     }
@@ -286,7 +303,7 @@ export default function AdminGalleryPage() {
       <Card>
         <CardHeader>
           <CardTitle>Daftar Gallery</CardTitle>
-          <CardDescription>Total {galleryItems.length} image</CardDescription>
+          <CardDescription>Total {galleryItems.length} image, otomatis diurutkan dari tanggal terbaru</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -305,7 +322,7 @@ export default function AdminGalleryPage() {
                   <TableHead>Preview</TableHead>
                   <TableHead>Judul</TableHead>
                   <TableHead>Kategori</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Tanggal</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -330,12 +347,8 @@ export default function AdminGalleryPage() {
                         {GALLERY_CATEGORIES.find((c) => c.value === item.category)?.label || item.category}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {item.isActive ? (
-                        <Badge variant="outline" className="bg-green-100 text-green-800">Aktif</Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-gray-100 text-gray-800">Nonaktif</Badge>
-                      )}
+                    <TableCell className="text-sm text-gray-600">
+                      {formatGalleryDate(item.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -396,6 +409,15 @@ export default function AdminGalleryPage() {
             </div>
 
             <div className="space-y-2">
+              <Label>Tanggal</Label>
+              <Input
+                type="date"
+                value={formData.galleryDate}
+                onChange={(e) => setFormData((prev) => ({ ...prev, galleryDate: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Gambar</Label>
               {formData.imageUrl && !selectedFile && (
                 <img
@@ -409,67 +431,34 @@ export default function AdminGalleryPage() {
                 {selectedFile ? selectedFile.name : editMode ? "Upload gambar baru" : "Upload gambar"}
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/bmp"
                   className="hidden"
                   onChange={(e) => handleFileChange(e.target.files?.[0])}
                 />
               </label>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Kategori</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      category: value as GalleryCategory,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GALLERY_CATEGORIES.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Urutan</Label>
-                <Input
-                  type="number"
-                  value={formData.sortOrder}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      sortOrder: parseInt(e.target.value || "0", 10),
-                    }))
-                  }
-                />
-              </div>
+              <p className="text-xs text-gray-500">Format gambar akan otomatis dikonversi menjadi WebP.</p>
             </div>
 
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label>Kategori</Label>
               <Select
-                value={formData.isActive ? "active" : "inactive"}
+                value={formData.category}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, isActive: value === "active" }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    category: value as GalleryCategory,
+                  }))
                 }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Aktif</SelectItem>
-                  <SelectItem value="inactive">Nonaktif</SelectItem>
+                  {GALLERY_CATEGORIES.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

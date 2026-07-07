@@ -1,24 +1,25 @@
 import { db } from "../db/index.js";
 import { gallery } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 
-const parseBoolean = (value, fallback) => {
-  if (value === undefined || value === null || value === "") return fallback;
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") return value.toLowerCase() === "true";
-  return Boolean(value);
+const parseGalleryDate = (value) => {
+  if (!value) return new Date();
+
+  const normalized = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return null;
+  }
+
+  const parsed = new Date(`${normalized}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const parseSortOrder = (value, fallback = 0) => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
 export const getPublicGallery = async (req, res, next) => {
   try {
     const activeGallery = await db.query.gallery.findMany({
       where: eq(gallery.isActive, true),
-      orderBy: [gallery.sortOrder, desc(gallery.createdAt)],
+      orderBy: [desc(gallery.createdAt)],
     });
 
     return successResponse(res, { gallery: activeGallery });
@@ -40,8 +41,8 @@ export const getAllGallery = async (req, res, next) => {
     }
 
     const allGallery = await db.query.gallery.findMany({
-      where: conditions.length > 0 ? conditions[0] : undefined,
-      orderBy: [gallery.sortOrder, desc(gallery.createdAt)],
+      where: conditions.length > 0 ? and(...conditions) : undefined,
+      orderBy: [desc(gallery.createdAt)],
     });
 
     return successResponse(res, allGallery);
@@ -52,11 +53,16 @@ export const getAllGallery = async (req, res, next) => {
 
 export const createGallery = async (req, res, next) => {
   try {
-    const { title, description, category, isActive, sortOrder } = req.body;
-    const imageUrl = req.uploadedFile?.path || req.body.imageUrl;
+    const { title, description, category, galleryDate } = req.body;
+    const imageUrl = req.uploadedFile?.path;
+    const createdAt = parseGalleryDate(galleryDate);
 
     if (!imageUrl) {
       return errorResponse(res, "Gambar wajib diupload", 400);
+    }
+
+    if (!createdAt) {
+      return errorResponse(res, "Tanggal gallery tidak valid", 400);
     }
 
     const [newGallery] = await db
@@ -66,8 +72,9 @@ export const createGallery = async (req, res, next) => {
         description: description || null,
         imageUrl,
         category: category || "LAINNYA",
-        isActive: parseBoolean(isActive, true),
-        sortOrder: parseSortOrder(sortOrder, 0),
+        isActive: true,
+        sortOrder: 0,
+        createdAt,
       })
       .$returningId();
 
@@ -85,8 +92,9 @@ export const createGallery = async (req, res, next) => {
 export const updateGallery = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, category, isActive, sortOrder } = req.body;
-    const imageUrl = req.uploadedFile?.path || req.body.imageUrl;
+    const { title, description, category, galleryDate } = req.body;
+    const imageUrl = req.uploadedFile?.path;
+    const createdAt = parseGalleryDate(galleryDate);
 
     const existing = await db.query.gallery.findFirst({
       where: eq(gallery.id, parseInt(id, 10)),
@@ -96,6 +104,10 @@ export const updateGallery = async (req, res, next) => {
       return errorResponse(res, "Gallery tidak ditemukan", 404);
     }
 
+    if (!createdAt) {
+      return errorResponse(res, "Tanggal gallery tidak valid", 400);
+    }
+
     await db
       .update(gallery)
       .set({
@@ -103,8 +115,9 @@ export const updateGallery = async (req, res, next) => {
         description: description ?? existing.description,
         imageUrl: imageUrl ?? existing.imageUrl,
         category: category ?? existing.category,
-        isActive: parseBoolean(isActive, existing.isActive),
-        sortOrder: parseSortOrder(sortOrder, existing.sortOrder),
+        isActive: true,
+        sortOrder: 0,
+        createdAt,
       })
       .where(eq(gallery.id, parseInt(id, 10)));
 
