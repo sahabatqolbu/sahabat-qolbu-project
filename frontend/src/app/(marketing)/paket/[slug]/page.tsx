@@ -22,7 +22,6 @@ import RelatedPackages from "@/components/marketing/PackageDetail/RelatedPackage
 import PackageDetailNav from "@/components/marketing/PackageDetail/PackageDetailNav";
 import {
   getMarketingPackageBySlug,
-  getMarketingPackageSlugs,
   getPublicAgentLanding,
   type MarketingPackage,
 } from "@/lib/public-api";
@@ -79,13 +78,8 @@ const getPackageTypeLabel = (pkg: MarketingPackage) => {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
-export async function generateStaticParams() {
-  const slugs = await getMarketingPackageSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
-
-export const dynamicParams = true;
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function generateMetadata({
   params,
@@ -700,3 +694,4 @@ export default async function LandingPackageDetailPage({
     </div>
   );
 }
+

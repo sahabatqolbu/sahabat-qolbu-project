@@ -123,8 +123,8 @@ router.delete("/faqs/:id", authenticate, authorize(["ADMIN"]), deleteFAQ);
 // GALLERY
 // =====================================================
 router.get("/gallery", getAllGallery);
-router.post("/gallery", authenticate, authorize(["ADMIN"]), createGallery);
-router.put("/gallery/:id", authenticate, authorize(["ADMIN"]), updateGallery);
+router.post("/gallery", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("gallery"), createGallery);
+router.put("/gallery/:id", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("gallery"), updateGallery);
 router.delete("/gallery/:id", authenticate, authorize(["ADMIN"]), deleteGallery);
 
 // =====================================================

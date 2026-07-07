@@ -90,6 +90,7 @@ export const optimizeImage = (folder, options = {}) => async (req, res, next) =>
       "itinerary",
       "jamaah",
       "general",
+      "gallery",
     ];
 
     if (!validFolders.includes(folder)) {

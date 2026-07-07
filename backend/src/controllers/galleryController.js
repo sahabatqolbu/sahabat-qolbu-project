@@ -3,6 +3,17 @@ import { gallery } from "../db/schema.js";
 import { eq, desc } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 
+const parseBoolean = (value, fallback) => {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") return value.toLowerCase() === "true";
+  return Boolean(value);
+};
+
+const parseSortOrder = (value, fallback = 0) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
 export const getPublicGallery = async (req, res, next) => {
   try {
     const activeGallery = await db.query.gallery.findMany({
@@ -41,11 +52,11 @@ export const getAllGallery = async (req, res, next) => {
 
 export const createGallery = async (req, res, next) => {
   try {
-    const { title, description, imageUrl, category, isActive, sortOrder } =
-      req.body;
+    const { title, description, category, isActive, sortOrder } = req.body;
+    const imageUrl = req.uploadedFile?.path || req.body.imageUrl;
 
     if (!imageUrl) {
-      return errorResponse(res, "imageUrl wajib diisi", 400);
+      return errorResponse(res, "Gambar wajib diupload", 400);
     }
 
     const [newGallery] = await db
@@ -55,8 +66,8 @@ export const createGallery = async (req, res, next) => {
         description: description || null,
         imageUrl,
         category: category || "LAINNYA",
-        isActive: isActive ?? true,
-        sortOrder: sortOrder || 0,
+        isActive: parseBoolean(isActive, true),
+        sortOrder: parseSortOrder(sortOrder, 0),
       })
       .$returningId();
 
@@ -74,8 +85,8 @@ export const createGallery = async (req, res, next) => {
 export const updateGallery = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, imageUrl, category, isActive, sortOrder } =
-      req.body;
+    const { title, description, category, isActive, sortOrder } = req.body;
+    const imageUrl = req.uploadedFile?.path || req.body.imageUrl;
 
     const existing = await db.query.gallery.findFirst({
       where: eq(gallery.id, parseInt(id, 10)),
@@ -92,8 +103,8 @@ export const updateGallery = async (req, res, next) => {
         description: description ?? existing.description,
         imageUrl: imageUrl ?? existing.imageUrl,
         category: category ?? existing.category,
-        isActive: isActive ?? existing.isActive,
-        sortOrder: sortOrder ?? existing.sortOrder,
+        isActive: parseBoolean(isActive, existing.isActive),
+        sortOrder: parseSortOrder(sortOrder, existing.sortOrder),
       })
       .where(eq(gallery.id, parseInt(id, 10)));
 

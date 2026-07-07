@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
+import { getImageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -51,6 +52,7 @@ import {
   Edit,
   Trash2,
   Loader2,
+  Upload,
 } from "lucide-react";
 
 type GalleryCategory = "KEBERANGKATAN" | "HOTEL" | "MASJID" | "KEGIATAN" | "LAINNYA";
@@ -106,6 +108,7 @@ export default function AdminGalleryPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState<GalleryFormData>({
     title: "",
@@ -126,18 +129,38 @@ export default function AdminGalleryPage() {
 
   const galleryItems: GalleryItem[] = Array.isArray(data?.data) ? data.data : [];
 
+  const buildPayload = (payload: GalleryFormData) => {
+    const body = new FormData();
+    body.append("title", payload.title);
+    body.append("description", payload.description);
+    body.append("category", payload.category);
+    body.append("isActive", String(payload.isActive));
+    body.append("sortOrder", String(payload.sortOrder));
+
+    if (selectedFile) {
+      body.append("image", selectedFile);
+    } else if (payload.imageUrl) {
+      body.append("imageUrl", payload.imageUrl);
+    }
+
+    return body;
+  };
+
   const createMutation = useMutation({
-    mutationFn: (payload: GalleryFormData) => api.post("/gallery", payload),
+    mutationFn: (payload: GalleryFormData) =>
+      api.post("/gallery", buildPayload(payload), {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gallery"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "✅ Item gallery berhasil ditambahkan" });
+      toast({ title: "Item gallery berhasil ditambahkan" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal menambah gallery",
+        title: "Gagal menambah gallery",
         description: getErrorMessage(error),
       });
     },
@@ -145,17 +168,19 @@ export default function AdminGalleryPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: GalleryFormData }) =>
-      api.put(`/gallery/${id}`, payload),
+      api.put(`/gallery/${id}`, buildPayload(payload), {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gallery"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "✅ Item gallery berhasil diupdate" });
+      toast({ title: "Item gallery berhasil diupdate" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal update gallery",
+        title: "Gagal update gallery",
         description: getErrorMessage(error),
       });
     },
@@ -166,12 +191,12 @@ export default function AdminGalleryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gallery"] });
       setDeleteDialogOpen(false);
-      toast({ title: "✅ Item gallery berhasil dihapus" });
+      toast({ title: "Item gallery berhasil dihapus" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal hapus gallery",
+        title: "Gagal hapus gallery",
         description: getErrorMessage(error),
       });
     },
@@ -186,12 +211,14 @@ export default function AdminGalleryPage() {
       isActive: true,
       sortOrder: 0,
     });
+    setSelectedFile(null);
     setEditMode(false);
     setSelectedItem(null);
   };
 
   const handleEdit = (item: GalleryItem) => {
     setSelectedItem(item);
+    setSelectedFile(null);
     setFormData({
       title: item.title || "",
       description: item.description || "",
@@ -204,14 +231,35 @@ export default function AdminGalleryPage() {
     setDialogOpen(true);
   };
 
+  const handleFileChange = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({
+        variant: "destructive",
+        title: "Format tidak valid",
+        description: "Silakan pilih file gambar.",
+      });
+      return;
+    }
+    setSelectedFile(file);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!editMode && !selectedFile && !formData.imageUrl) {
+      toast({ variant: "destructive", title: "Gambar wajib diupload" });
+      return;
+    }
+
     if (editMode && selectedItem) {
       updateMutation.mutate({ id: selectedItem.id, payload: formData });
       return;
     }
     createMutation.mutate(formData);
   };
+
+  const pending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -266,7 +314,7 @@ export default function AdminGalleryPage() {
                   <TableRow key={item.id}>
                     <TableCell>
                       <img
-                        src={item.imageUrl}
+                        src={getImageUrl(item.imageUrl)}
                         alt={item.title || "gallery image"}
                         className="w-16 h-16 rounded object-cover border"
                       />
@@ -348,13 +396,24 @@ export default function AdminGalleryPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input
-                value={formData.imageUrl}
-                onChange={(e) => setFormData((prev) => ({ ...prev, imageUrl: e.target.value }))}
-                placeholder="https://..."
-                required
-              />
+              <Label>Gambar</Label>
+              {formData.imageUrl && !selectedFile && (
+                <img
+                  src={getImageUrl(formData.imageUrl)}
+                  alt="Preview gallery"
+                  className="h-32 w-full rounded-md border object-cover"
+                />
+              )}
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm text-gray-600 hover:bg-gray-50">
+                <Upload className="h-4 w-4" />
+                {selectedFile ? selectedFile.name : editMode ? "Upload gambar baru" : "Upload gambar"}
+                <Input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileChange(e.target.files?.[0])}
+                />
+              </label>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -419,13 +478,8 @@ export default function AdminGalleryPage() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Batal
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {(createMutation.isPending || updateMutation.isPending) && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
+              <Button type="submit" disabled={pending}>
+                {pending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editMode ? "Update" : "Simpan"}
               </Button>
             </DialogFooter>

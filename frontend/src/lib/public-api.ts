@@ -447,9 +447,7 @@ const fetchApi = async <T>(path: string) => {
       headers: {
         Accept: "application/json",
       },
-      next: {
-        revalidate: 60,
-      },
+      cache: "no-store",
     });
 
     if (!response.ok) {
