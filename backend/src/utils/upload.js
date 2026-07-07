@@ -1,6 +1,7 @@
 // backend/src/utils/upload.js
 import multer from "multer";
 import { Jimp } from "jimp";
+import sharp from "sharp";
 import path from "path";
 import { promises as fs } from "fs";
 import { fileURLToPath } from "url";
@@ -125,16 +126,26 @@ export const optimizeImage = (folder, options = {}) => async (req, res, next) =>
     // Ensure directory exists
     await fs.mkdir(uploadDir, { recursive: true });
 
-    // Process image with Jimp
-    const image = await Jimp.read(req.file.buffer);
+    if (extension === "webp") {
+      await sharp(req.file.buffer)
+        .rotate()
+        .resize({
+          width: 1000,
+          height: 1000,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 82 })
+        .toFile(outputPath);
+    } else {
+      const image = await Jimp.read(req.file.buffer);
 
-    // Resize if larger than 1000px
-    if (image.width > 1000 || image.height > 1000) {
-      image.scaleToFit({ w: 1000, h: 1000 });
+      if (image.width > 1000 || image.height > 1000) {
+        image.scaleToFit({ w: 1000, h: 1000 });
+      }
+
+      await image.write(outputPath);
     }
-
-    // Save as JPEG
-    await image.write(outputPath);
 
     req.uploadedFile = {
       filename: filename,
@@ -406,3 +417,5 @@ export const deleteFile = async (filePath) => {
 };
 
 export { UPLOAD_BASE };
+
+
