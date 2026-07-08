@@ -54,13 +54,31 @@ import {
   Trash2,
   X,
   FileText,
-  Eye
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
+
+type PackageType = UpdatePackageFormData["type"];
+
+const PACKAGE_TYPES: PackageType[] = [
+  "FULL_SERVICE",
+  "EXTREME",
+  "SEMI_MANDIRI",
+  "FLEKSIBILITAS",
+  "KONSORSIUM",
+  "LA",
+];
+
+const normalizePackageType = (value: unknown): PackageType => {
+  const normalized = String(value || "").trim().toUpperCase();
+  return PACKAGE_TYPES.includes(normalized as PackageType)
+    ? (normalized as PackageType)
+    : "FULL_SERVICE";
+};
 
 export default function EditPackagePage({ params }: PageProps) {
   const { id: packageId } = use(params);
@@ -71,10 +89,6 @@ export default function EditPackagePage({ params }: PageProps) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [hasPdfChanged, setHasPdfChanged] = useState(false);
-
-  // const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-  
 
   const {
     register,
@@ -87,6 +101,9 @@ export default function EditPackagePage({ params }: PageProps) {
   } = useForm<UpdatePackageFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(updatePackageSchema) as any,
+    defaultValues: {
+      type: "FULL_SERVICE",
+    },
   });
 
   const isDirty = isDirtyFromForm || hasPdfChanged || uploadingPdf;
@@ -122,21 +139,12 @@ export default function EditPackagePage({ params }: PageProps) {
   const hotelsMakkah = hotels.filter((h: any) => h.city === "MAKKAH");
   const hotelsMadinah = hotels.filter((h: any) => h.city === "MADINAH");
 
-  // Populate form when data loaded
   useEffect(() => {
-    // ✅ TUNGGU SAMPAI PKG DAN AIRPORTS READY
     if (pkg && airports.length > 0) {
-      console.log("📦 Populating form with data:", {
-        pkg: pkg.code,
-        type: pkg.type, // ✅ TAMBAH LOG INI
-        departureAirportId: pkg.departureAirportId,
-        airportsCount: airports.length,
-      });
-
       reset({
         name: pkg.name,
         description: pkg.description || "",
-        type: pkg.type || "FULL_SERVICE", // ✅ TAMBAH FALLBACK
+        type: normalizePackageType(pkg.type),
 
         departureDate: pkg.departureDate?.split("T")[0] || "",
         returnDate: pkg.returnDate?.split("T")[0] || "",
@@ -188,12 +196,8 @@ export default function EditPackagePage({ params }: PageProps) {
         isPublished: pkg.isPublished,
       });
 
-      console.log(
-        "✅ Form populated with departureAirportId:",
-        pkg.departureAirportId
-      );
     }
-  }, [pkg, airports, reset]); // ✅ TAMBAHKAN airports
+  }, [pkg, airports, reset]);
 
   // Watch values
   const watchDepartureDate = watch("departureDate");
@@ -475,56 +479,53 @@ export default function EditPackagePage({ params }: PageProps) {
                     <Controller
                       name="type"
                       control={control}
-                      render={({ field }) => {
-                        console.log("🔍 TYPE SELECT VALUE:", field.value); // ✅ LOG DEBUG
-                        return (
-                          <Select
-                            value={field.value || "FULL_SERVICE"} // ✅ FALLBACK
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih Tipe Paket" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="FULL_SERVICE">
-                                <div className="flex items-center gap-2">
-                                  <Badge className="bg-blue-100 text-blue-800">
-                                    Full Service
-                                  </Badge>
-                                  <span className="text-xs text-gray-500">
-                                    Standar + lengkap
-                                  </span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="EXTREME">
-                                <Badge className="bg-red-100 text-red-800">
-                                  Extreme
+                      render={({ field }) => (
+                        <Select
+                          value={normalizePackageType(field.value)}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Tipe Paket" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FULL_SERVICE">
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-blue-100 text-blue-800">
+                                  Full Service
                                 </Badge>
-                              </SelectItem>
-                              <SelectItem value="SEMI_MANDIRI">
-                                <Badge className="bg-orange-100 text-orange-800">
-                                  Semi Mandiri
-                                </Badge>
-                              </SelectItem>
-                              <SelectItem value="FLEKSIBILITAS">
-                                <Badge className="bg-purple-100 text-purple-800">
-                                  Fleksibilitas
-                                </Badge>
-                              </SelectItem>
-                              <SelectItem value="KONSORSIUM">
-                                <Badge className="bg-indigo-100 text-indigo-800">
-                                  Konsorsium
-                                </Badge>
-                              </SelectItem>
-                              <SelectItem value="LA">
-                                <Badge className="bg-green-100 text-green-800">
-                                  Land Arrangement
-                                </Badge>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        );
-                      }}
+                                <span className="text-xs text-gray-500">
+                                  Standar + lengkap
+                                </span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="EXTREME">
+                              <Badge className="bg-red-100 text-red-800">
+                                Extreme
+                              </Badge>
+                            </SelectItem>
+                            <SelectItem value="SEMI_MANDIRI">
+                              <Badge className="bg-orange-100 text-orange-800">
+                                Semi Mandiri
+                              </Badge>
+                            </SelectItem>
+                            <SelectItem value="FLEKSIBILITAS">
+                              <Badge className="bg-purple-100 text-purple-800">
+                                Fleksibilitas
+                              </Badge>
+                            </SelectItem>
+                            <SelectItem value="KONSORSIUM">
+                              <Badge className="bg-indigo-100 text-indigo-800">
+                                Konsorsium
+                              </Badge>
+                            </SelectItem>
+                            <SelectItem value="LA">
+                              <Badge className="bg-green-100 text-green-800">
+                                Land Arrangement
+                              </Badge>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     />
                     {errors.type && (
                       <p className="text-sm text-red-500">
@@ -624,7 +625,7 @@ export default function EditPackagePage({ params }: PageProps) {
                       <Input
                         type="number"
                         className="pl-10"
-                        {...register("discountPrice", { valueAsNumber: true })}
+                        {...register("discountPrice")}
                       />
                     </div>
                   </div>

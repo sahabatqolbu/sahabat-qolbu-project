@@ -468,7 +468,7 @@ export default function CreatePackagePage() {
                         type="number"
                         placeholder="Kosongkan jika tidak ada"
                         className="pl-10"
-                        {...register("discountPrice", { valueAsNumber: true })}
+                        {...register("discountPrice")}
                       />
                     </div>
                   </div>
