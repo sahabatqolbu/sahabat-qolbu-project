@@ -695,8 +695,7 @@ export default function MarketingHomePage() {
                 Momen Perjalanan Jamaah
               </h2>
               <p className="text-gray-600">
-                Dokumentasi kegiatan dan perjalanan yang dikelola langsung dari
-                dashboard admin.
+                Momen jamaah Sahabat Qolbu dalam perjalanan ibadah.
               </p>
             </div>
 
@@ -704,7 +703,7 @@ export default function MarketingHomePage() {
               {galleryImages.map((image) => (
                 <figure
                   key={image.id}
-                  className="group break-inside-avoid overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100"
+                  className="group relative break-inside-avoid overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-100"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -714,14 +713,12 @@ export default function MarketingHomePage() {
                     className="w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                   />
                   {image.title || image.description ? (
-                    <figcaption className="p-4">
+                    <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4 pt-12 text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                       {image.title ? (
-                        <h3 className="font-semibold text-primary">
-                          {image.title}
-                        </h3>
+                        <h3 className="font-semibold">{image.title}</h3>
                       ) : null}
                       {image.description ? (
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-white/80">
                           {image.description}
                         </p>
                       ) : null}

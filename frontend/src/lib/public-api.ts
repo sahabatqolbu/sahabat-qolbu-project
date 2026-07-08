@@ -1,5 +1,3 @@
-import { cache } from "react";
-
 const DEFAULT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "production"
@@ -461,43 +459,38 @@ const fetchApi = async <T>(path: string) => {
   }
 };
 
-export const getMarketingPackages = cache(
-  async (): Promise<MarketingPackage[]> => {
-    const firstPage = await fetchApi<PublicPackagesPayload>(
-      "/public/packages?page=1&limit=100",
+export const getMarketingPackages = async (): Promise<MarketingPackage[]> => {
+  const firstPage = await fetchApi<PublicPackagesPayload>(
+    "/public/packages?page=1&limit=100",
+  );
+
+  if (!firstPage) {
+    return [];
+  }
+
+  const collectedPackages = [...(firstPage.packages || [])];
+  const totalPages = Math.max(1, toNumber(firstPage.pagination?.totalPages, 1));
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    const nextPage = await fetchApi<PublicPackagesPayload>(
+      `/public/packages?page=${page}&limit=100`,
     );
 
-    if (!firstPage) {
-      return [];
+    if (nextPage?.packages?.length) {
+      collectedPackages.push(...nextPage.packages);
     }
+  }
 
-    const collectedPackages = [...(firstPage.packages || [])];
-    const totalPages = Math.max(
-      1,
-      toNumber(firstPage.pagination?.totalPages, 1),
-    );
+  const uniquePackages = Array.from(
+    new Map(collectedPackages.map((pkg) => [pkg.id, pkg])).values(),
+  );
 
-    for (let page = 2; page <= totalPages; page += 1) {
-      const nextPage = await fetchApi<PublicPackagesPayload>(
-        `/public/packages?page=${page}&limit=100`,
-      );
-
-      if (nextPage?.packages?.length) {
-        collectedPackages.push(...nextPage.packages);
-      }
-    }
-
-    const uniquePackages = Array.from(
-      new Map(collectedPackages.map((pkg) => [pkg.id, pkg])).values(),
-    );
-
-    return sortPackagesByDeparture(
-      uniquePackages
-        .filter((pkg) => pkg.isPublished !== false)
-        .map((pkg) => mapPackage(pkg)),
-    );
-  },
-);
+  return sortPackagesByDeparture(
+    uniquePackages
+      .filter((pkg) => pkg.isPublished !== false)
+      .map((pkg) => mapPackage(pkg)),
+  );
+};
 
 export const getMarketingPackageSlugs = async (): Promise<string[]> => {
   const packages = await getMarketingPackages();
@@ -645,20 +638,18 @@ const normalizeStructuredContent = (
     .filter((item) => item.title || item.description);
 };
 
-export const getCompanyProfile = cache(
-  async (): Promise<CompanyProfile | null> => {
-    const profile = await fetchApi<CompanyProfile>("/master/company");
-    if (!profile) return null;
-    return {
-      ...profile,
-      logo: resolveAssetUrl(profile.logo),
-      philosophy: normalizeStructuredContent(profile.philosophy),
-      targetMarket: normalizeStructuredContent(profile.targetMarket),
-    };
-  },
-);
+export const getCompanyProfile = async (): Promise<CompanyProfile | null> => {
+  const profile = await fetchApi<CompanyProfile>("/master/company");
+  if (!profile) return null;
+  return {
+    ...profile,
+    logo: resolveAssetUrl(profile.logo),
+    philosophy: normalizeStructuredContent(profile.philosophy),
+    targetMarket: normalizeStructuredContent(profile.targetMarket),
+  };
+};
 
-export const getPublicCompanyProfile = cache(
+export const getPublicCompanyProfile =
   async (): Promise<CompanyProfile | null> => {
     const profile = await fetchApi<CompanyProfile>("/public/company-profile");
     if (!profile) return null;
@@ -668,34 +659,31 @@ export const getPublicCompanyProfile = cache(
       philosophy: normalizeStructuredContent(profile.philosophy),
       targetMarket: normalizeStructuredContent(profile.targetMarket),
     };
-  },
-);
+  };
 
-export const getPublicFaqs = cache(async (): Promise<PublicFaq[]> => {
+export const getPublicFaqs = async (): Promise<PublicFaq[]> => {
   const payload = await fetchApi<{ faqs?: PublicFaq[] }>("/public/faqs");
 
   return Array.isArray(payload?.faqs)
     ? payload.faqs.filter((faq) => faq.question && faq.answer)
     : [];
-});
+};
 
-export const getPublicGallery = cache(
-  async (): Promise<PublicGalleryImage[]> => {
-    const payload = await fetchApi<{
-      gallery?: (Omit<PublicGalleryImage, "imageUrl"> & {
-        imageUrl?: string | null;
-      })[];
-    }>("/public/gallery");
+export const getPublicGallery = async (): Promise<PublicGalleryImage[]> => {
+  const payload = await fetchApi<{
+    gallery?: (Omit<PublicGalleryImage, "imageUrl"> & {
+      imageUrl?: string | null;
+    })[];
+  }>("/public/gallery");
 
-    if (!Array.isArray(payload?.gallery)) {
-      return [];
-    }
+  if (!Array.isArray(payload?.gallery)) {
+    return [];
+  }
 
-    return payload.gallery
-      .map((item) => ({
-        ...item,
-        imageUrl: resolveAssetUrl(item.imageUrl) || "",
-      }))
-      .filter((item): item is PublicGalleryImage => Boolean(item.imageUrl));
-  },
-);
+  return payload.gallery
+    .map((item) => ({
+      ...item,
+      imageUrl: resolveAssetUrl(item.imageUrl) || "",
+    }))
+    .filter((item): item is PublicGalleryImage => Boolean(item.imageUrl));
+};
