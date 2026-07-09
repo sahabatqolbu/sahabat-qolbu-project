@@ -298,7 +298,6 @@ function PackagesInnerPage() {
           </div>
         </div>
       </section>
-
       {/* Grid Section */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -325,43 +324,59 @@ function PackagesInnerPage() {
           )}
         </div>
       </section>
-
       {/* CTA Section */}
-      <section className="py-12">
-        <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-6 md:p-8 text-center">
-            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-gold"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+      <section className="relative overflow-hidden bg-primary py-16 md:py-20">
+        <div className="absolute inset-x-0 top-0 h-px bg-gold/50" />
+        <div className="absolute right-0 top-0 h-72 w-72 translate-x-1/3 rounded-full bg-gold/10 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-72 w-72 -translate-x-1/3 rounded-full bg-black/10 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 rounded-xl border border-white/10 bg-white/[0.05] p-6 shadow-2xl shadow-black/10 md:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:p-10">
+            <div>
+              <span className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gold">
+                Butuh Bantuan Pilih Paket?
+              </span>
+              <h2 className="mt-5 text-3xl font-bold leading-tight text-white md:text-4xl">
+                Konsultasi Dulu Sebelum Menentukan Keberangkatan
+              </h2>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-gray-200">
+                Tim kami bantu cocokkan jadwal, budget, hotel, maskapai, dan
+                kebutuhan keluarga agar pilihan paket lebih tenang.
+              </p>
+              <a
+                href={waContactLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-7 inline-flex items-center justify-center gap-3 rounded-md bg-gold px-7 py-4 text-base font-bold text-primary shadow-lg shadow-gold/20 transition hover:bg-gold-dark"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+                <svg
+                  className="h-5 w-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
+                </svg>
+                Chat WhatsApp
+              </a>
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
-              Butuh Bantuan?
-            </h2>
-            <p className="text-gray-300 text-sm mb-6">
-              Konsultasi gratis, kami bantu carikan paket yang cocok
-            </p>
-            <a
-              href={waContactLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-full transition-colors"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
-              </svg>
-              Chat WhatsApp
-            </a>
+
+            <div className="grid gap-3">
+              {[
+                "Rekomendasi paket sesuai jadwal dan budget",
+                "Penjelasan fasilitas hotel, maskapai, dan itinerary",
+                "Arahan pendaftaran calon jamaah dari awal",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-4 rounded-lg border border-white/10 bg-white/[0.06] p-4"
+                >
+                  <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-bold text-primary">
+                    ✓
+                  </span>
+                  <p className="text-sm leading-6 text-gray-100">{item}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
