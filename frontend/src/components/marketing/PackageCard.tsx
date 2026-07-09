@@ -223,7 +223,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   return (
     <div
       className={cn(
-        "paket-card group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
+        "paket-card group flex h-full flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
         pkg.featured && "ring-2 ring-gold",
       )}
       data-tipe={rawType.toLowerCase()}
@@ -232,7 +232,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
         className={cn("relative overflow-hidden", hasMultiple ? "mb-3" : "")}
       >
         {/* Slider */}
-        <div className="swiper border-b border-gray-100">
+        <div className="swiper aspect-square border-b border-gray-100">
           <div
             className="track flex transition-transform duration-300 ease-out h-full"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}

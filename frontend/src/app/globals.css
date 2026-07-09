@@ -384,7 +384,7 @@
 
 .landing-static .paket-card .swiper {
   position: relative;
-  height: clamp(15rem, 44vw, 21rem);
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   background: #f8fafc;
 }
@@ -394,12 +394,6 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-@media (max-width: 640px) {
-  .landing-static .paket-card .swiper {
-    height: 16rem;
-  }
 }
 
 @keyframes landingFadeIn {
