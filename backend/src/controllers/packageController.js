@@ -104,14 +104,17 @@ const parseBoolean = (value, fallback) => {
 };
 
 const normalizePackageType = (value) => {
-  const candidate = String(value || "FULL_SERVICE").trim().toUpperCase();
+  const candidate = String(value || "FULL_SERVICE")
+    .trim()
+    .toUpperCase();
   return PACKAGE_TYPES.has(candidate) ? candidate : null;
 };
 
 const validatePackagePayload = (data = {}, isUpdate = false) => {
   const errors = [];
 
-  const type = data.type !== undefined ? normalizePackageType(data.type) : undefined;
+  const type =
+    data.type !== undefined ? normalizePackageType(data.type) : undefined;
   if (data.type !== undefined && !type) {
     errors.push("Tipe paket tidak valid");
   }
@@ -131,10 +134,15 @@ const validatePackagePayload = (data = {}, isUpdate = false) => {
   if (data.departureDate || data.returnDate) {
     const departureDate = new Date(data.departureDate);
     const returnDate = new Date(data.returnDate);
-    if (Number.isNaN(departureDate.getTime()) || Number.isNaN(returnDate.getTime())) {
+    if (
+      Number.isNaN(departureDate.getTime()) ||
+      Number.isNaN(returnDate.getTime())
+    ) {
       errors.push("Format tanggal paket tidak valid");
     } else if (returnDate < departureDate) {
-      errors.push("Tanggal pulang tidak boleh lebih awal dari tanggal berangkat");
+      errors.push(
+        "Tanggal pulang tidak boleh lebih awal dari tanggal berangkat",
+      );
     }
   }
 
@@ -171,17 +179,27 @@ const removeFileIfExists = async (absolutePath) => {
     await fs.promises.unlink(absolutePath);
   } catch (error) {
     if (error?.code !== "ENOENT") {
-      logger.warn("Failed deleting uploaded file", { path: absolutePath, error: error?.message });
+      logger.warn("Failed deleting uploaded file", {
+        path: absolutePath,
+        error: error?.message,
+      });
     }
   }
 };
 
 const isDuplicateCodeError = (error) => {
   const message = String(error?.message || "").toLowerCase();
-  return Number(error?.errno) === 1062 || message.includes("duplicate") || message.includes("unique");
+  return (
+    Number(error?.errno) === 1062 ||
+    message.includes("duplicate") ||
+    message.includes("unique")
+  );
 };
 
-const withGeneratedPackageCodeRetry = async (createWithCode, maxAttempts = 5) => {
+const withGeneratedPackageCodeRetry = async (
+  createWithCode,
+  maxAttempts = 5,
+) => {
   let lastError = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -193,7 +211,10 @@ const withGeneratedPackageCodeRetry = async (createWithCode, maxAttempts = 5) =>
         throw error;
       }
       lastError = error;
-      logger.warn("Package code collision detected, retrying", { attempt, code });
+      logger.warn("Package code collision detected, retrying", {
+        attempt,
+        code,
+      });
     }
   }
 
@@ -262,12 +283,46 @@ const getDaysUntilDeparture = (departureDate) => {
   return diffDays;
 };
 
+const PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE = 7;
+
+const getPackageBookingState = ({ remainingSeats, daysUntilDeparture }) => {
+  if (remainingSeats <= 0) {
+    return {
+      bookingStatus: "SOLD_OUT",
+      bookingStatusLabel: "Sold Out",
+      isBookable: false,
+    };
+  }
+
+  if (daysUntilDeparture <= PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE) {
+    return {
+      bookingStatus: "CLOSED",
+      bookingStatusLabel:
+        daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Tutup",
+      isBookable: false,
+    };
+  }
+
+  return {
+    bookingStatus: "OPEN",
+    bookingStatusLabel: "Tersedia",
+    isBookable: true,
+  };
+};
+
 // =====================================================
 // GET ALL PACKAGES (with Stats)
 // =====================================================
 export const getAllPackages = async (req, res, next) => {
   try {
-    const { search, type, isActive, isPublished, page = 1, limit = 10 } = req.query;
+    const {
+      search,
+      type,
+      isActive,
+      isPublished,
+      page = 1,
+      limit = 10,
+    } = req.query;
     const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
     const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
     const offset = (parsedPage - 1) * parsedLimit;
@@ -308,22 +363,27 @@ export const getAllPackages = async (req, res, next) => {
     });
 
     const allPackageIds = allPackages.map((pkg) => pkg.id);
-    const bookedSeatsByPackageId = await getBookedSeatsByPackageIds(allPackageIds);
+    const bookedSeatsByPackageId =
+      await getBookedSeatsByPackageIds(allPackageIds);
 
     const packagesWithStats = allPackages.map((pkg) => {
       const bookedSeats = bookedSeatsByPackageId.get(pkg.id) || 0;
       const remainingSeats = pkg.totalSeats - bookedSeats;
       const daysUntilDeparture = getDaysUntilDeparture(pkg.departureDate);
+      const bookingState = getPackageBookingState({
+        remainingSeats,
+        daysUntilDeparture,
+      });
 
       const airlineTermin1 = parseFloat(pkg.airlineTermin1Amount) || 0;
       const airlineTermin2 = parseFloat(pkg.airlineTermin2Amount) || 0;
       const airlinePaymentTotal = airlineTermin1 + airlineTermin2;
       const airlinePaymentStatus =
         pkg.airlineTermin1Status === "PAID" &&
-          pkg.airlineTermin2Status === "PAID"
+        pkg.airlineTermin2Status === "PAID"
           ? "PAID"
           : pkg.airlineTermin1Status === "PAID" ||
-            pkg.airlineTermin2Status === "PAID"
+              pkg.airlineTermin2Status === "PAID"
             ? "PARTIAL"
             : "UNPAID";
 
@@ -345,6 +405,7 @@ export const getAllPackages = async (req, res, next) => {
         bookedSeats,
         remainingSeats,
         daysUntilDeparture,
+        ...bookingState,
         airlinePaymentTotal,
         airlinePaymentStatus,
         hotelMakkahRooms,
@@ -421,12 +482,17 @@ export const getPackageById = async (req, res, next) => {
     const bookedSeats = await getBookedSeats(packageData.id);
     const remainingSeats = packageData.totalSeats - bookedSeats;
     const daysUntilDeparture = getDaysUntilDeparture(packageData.departureDate);
+    const bookingState = getPackageBookingState({
+      remainingSeats,
+      daysUntilDeparture,
+    });
 
     return successResponse(res, {
       ...packageData,
       bookedSeats,
       remainingSeats,
       daysUntilDeparture,
+      ...bookingState,
     });
   } catch (error) {
     next(error);
@@ -473,10 +539,16 @@ export const createPackage = async (req, res, next) => {
       airlineId: parseOptionalForeignKey(data.airlineId, null),
       airlineStatus: data.airlineStatus || "PLANNING",
       airlineIssuedDate: data.airlineIssuedDate || null,
-      airlineTermin1Amount: parseDecimalString(data.airlineTermin1Amount, "0.00"),
+      airlineTermin1Amount: parseDecimalString(
+        data.airlineTermin1Amount,
+        "0.00",
+      ),
       airlineTermin1Date: data.airlineTermin1Date || null,
       airlineTermin1Status: data.airlineTermin1Status || "UNPAID",
-      airlineTermin2Amount: parseDecimalString(data.airlineTermin2Amount, "0.00"),
+      airlineTermin2Amount: parseDecimalString(
+        data.airlineTermin2Amount,
+        "0.00",
+      ),
       airlineTermin2Date: data.airlineTermin2Date || null,
       airlineTermin2Status: data.airlineTermin2Status || "UNPAID",
       hotelMakkahId: parseOptionalForeignKey(data.hotelMakkahId, null),
@@ -491,12 +563,17 @@ export const createPackage = async (req, res, next) => {
       hotelMadinahTriple: parsePositiveInt(data.hotelMadinahTriple, 0),
       hotelMadinahQuad: parsePositiveInt(data.hotelMadinahQuad, 0),
       hotelMadinahQuint: parsePositiveInt(data.hotelMadinahQuint, 0),
-      departureAirportId: parseOptionalForeignKey(data.departureAirportId, null),
+      departureAirportId: parseOptionalForeignKey(
+        data.departureAirportId,
+        null,
+      ),
       isActive: parseBoolean(data.isActive, true),
       isPublished: parseBoolean(data.isPublished, false),
     };
 
-    logger.debug("Create package insert", { hasImages: Boolean(data.images?.length) });
+    logger.debug("Create package insert", {
+      hasImages: Boolean(data.images?.length),
+    });
 
     const [newPackage] = await withGeneratedPackageCodeRetry(async (code) => {
       return db
@@ -600,7 +677,10 @@ export const updatePackage = async (req, res, next) => {
           : existingPackage.price,
       discountPrice:
         data.discountPrice !== undefined
-          ? parseDecimalString(data.discountPrice, existingPackage.discountPrice)
+          ? parseDecimalString(
+              data.discountPrice,
+              existingPackage.discountPrice,
+            )
           : existingPackage.discountPrice,
       priceDouble:
         data.priceDouble !== undefined
@@ -627,7 +707,10 @@ export const updatePackage = async (req, res, next) => {
         data.excludedFacilities ?? existingPackage.excludedFacilities,
       notes: data.notes ?? existingPackage.notes,
       itineraryPdf,
-      airlineId: parseOptionalForeignKey(data.airlineId, existingPackage.airlineId),
+      airlineId: parseOptionalForeignKey(
+        data.airlineId,
+        existingPackage.airlineId,
+      ),
       airlineStatus: data.airlineStatus ?? existingPackage.airlineStatus,
       airlineIssuedDate:
         data.airlineIssuedDate ?? existingPackage.airlineIssuedDate,
@@ -749,7 +832,9 @@ export const updatePackage = async (req, res, next) => {
     });
 
     // ✅ SYNC KE CALENDAR
-    logger.info("Syncing updated package to calendar", { packageId: parseInt(id, 10) });
+    logger.info("Syncing updated package to calendar", {
+      packageId: parseInt(id, 10),
+    });
     await syncPackageEvent(updatedPackage);
 
     return successResponse(res, updatedPackage, "Paket berhasil diupdate");
@@ -871,7 +956,9 @@ export const deletePackage = async (req, res, next) => {
     }
 
     // ✅ DELETE CALENDAR EVENTS
-    logger.info("Deleting package calendar events", { packageId: parseInt(id, 10) });
+    logger.info("Deleting package calendar events", {
+      packageId: parseInt(id, 10),
+    });
     await db
       .delete(calendarEvents)
       .where(eq(calendarEvents.packageId, parseInt(id)));
@@ -982,7 +1069,8 @@ export const exportPackages = async (req, res, next) => {
 
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=packages-${new Date().toISOString().split("T")[0]
+      `attachment; filename=packages-${
+        new Date().toISOString().split("T")[0]
       }.xlsx`,
     );
     res.setHeader(
@@ -1185,6 +1273,7 @@ export const getPublicPackages = async (req, res, next) => {
     query: {
       ...req.query,
       isActive: "true",
+      isPublished: "true",
     },
   };
 
@@ -1195,7 +1284,11 @@ export const getPublicPackageById = async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     const packageData = await db.query.packages.findFirst({
-      where: and(eq(packages.id, id), eq(packages.isActive, true), eq(packages.isPublished, true)),
+      where: and(
+        eq(packages.id, id),
+        eq(packages.isActive, true),
+        eq(packages.isPublished, true),
+      ),
       with: {
         hotelMakkah: true,
         hotelMadinah: true,
@@ -1214,6 +1307,10 @@ export const getPublicPackageById = async (req, res, next) => {
     const bookedSeats = await getBookedSeats(packageData.id);
     const remainingSeats = packageData.totalSeats - bookedSeats;
     const daysUntilDeparture = getDaysUntilDeparture(packageData.departureDate);
+    const bookingState = getPackageBookingState({
+      remainingSeats,
+      daysUntilDeparture,
+    });
 
     return successResponse(res, {
       ...packageData,
@@ -1224,6 +1321,7 @@ export const getPublicPackageById = async (req, res, next) => {
       bookedSeats,
       remainingSeats,
       daysUntilDeparture,
+      ...bookingState,
     });
   } catch (error) {
     next(error);

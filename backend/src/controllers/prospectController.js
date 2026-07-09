@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like, or } from "drizzle-orm";
+import { and, count, desc, eq, like, or, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import {
   jamaahData,
@@ -41,6 +41,46 @@ const getPublishedPackage = async (packageId) => {
   });
 };
 
+const PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE = 7;
+
+const getDaysUntilDeparture = (departureDate) => {
+  const today = new Date();
+  const departure = new Date(departureDate);
+  return Math.ceil((departure - today) / (1000 * 60 * 60 * 24));
+};
+
+const getBookedSeats = async (packageId) => {
+  const [result] = await db
+    .select({ count: count() })
+    .from(jamaahData)
+    .where(
+      and(
+        eq(jamaahData.packageId, packageId),
+        sql`${jamaahData.registrationStatus} IN ('DRAFT','PENDING_DOCUMENT','PENDING_PAYMENT','VERIFIED','APPROVED')`,
+      ),
+    );
+
+  return Number(result?.count || 0);
+};
+
+const getPackageClosedReason = async (packageData) => {
+  const bookedSeats = await getBookedSeats(packageData.id);
+  const remainingSeats = Number(packageData.totalSeats || 0) - bookedSeats;
+
+  if (remainingSeats <= 0) {
+    return "Kursi paket sudah penuh";
+  }
+
+  if (
+    getDaysUntilDeparture(packageData.departureDate) <=
+    PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE
+  ) {
+    return "Pendaftaran paket sudah ditutup";
+  }
+
+  return null;
+};
+
 const getProspectInterests = async (prospectId, limit = 20) => {
   return db
     .select({
@@ -60,7 +100,10 @@ const getProspectInterests = async (prospectId, limit = 20) => {
     .from(prospectPackageInterests)
     .leftJoin(packages, eq(prospectPackageInterests.packageId, packages.id))
     .where(eq(prospectPackageInterests.prospectId, prospectId))
-    .orderBy(desc(prospectPackageInterests.createdAt), desc(prospectPackageInterests.id))
+    .orderBy(
+      desc(prospectPackageInterests.createdAt),
+      desc(prospectPackageInterests.id),
+    )
     .limit(limit);
 };
 
@@ -81,7 +124,12 @@ const getFollowUps = async (prospectId) => {
     .orderBy(desc(prospectFollowUps.createdAt), desc(prospectFollowUps.id));
 };
 
-const insertInterest = async ({ prospectId, packageId, actionType, sourcePath }) => {
+const insertInterest = async ({
+  prospectId,
+  packageId,
+  actionType,
+  sourcePath,
+}) => {
   const [inserted] = await db
     .insert(prospectPackageInterests)
     .values({
@@ -117,10 +165,23 @@ const buildInitialJamaahValues = ({ userId, packageData, bookingNumber }) => {
   };
 };
 
-const convertProspect = async ({ prospect, packageId, sourcePath, actorUserId }) => {
+const convertProspect = async ({
+  prospect,
+  packageId,
+  sourcePath,
+  actorUserId,
+}) => {
   const packageData = await getPublishedPackage(packageId);
   if (!packageData) {
-    return { error: "Paket tidak ditemukan atau belum dipublikasikan", statusCode: 404 };
+    return {
+      error: "Paket tidak ditemukan atau belum dipublikasikan",
+      statusCode: 404,
+    };
+  }
+
+  const closedReason = await getPackageClosedReason(packageData);
+  if (closedReason) {
+    return { error: closedReason, statusCode: 400 };
   }
 
   await insertInterest({
@@ -136,7 +197,10 @@ const convertProspect = async ({ prospect, packageId, sourcePath, actorUserId })
   });
 
   if (existingJamaah) {
-    await db.update(users).set({ role: "JAMAAH" }).where(eq(users.id, prospect.userId));
+    await db
+      .update(users)
+      .set({ role: "JAMAAH" })
+      .where(eq(users.id, prospect.userId));
     await db
       .update(prospectJamaah)
       .set({
@@ -165,7 +229,10 @@ const convertProspect = async ({ prospect, packageId, sourcePath, actorUserId })
       }),
   );
 
-  await db.update(users).set({ role: "JAMAAH" }).where(eq(users.id, prospect.userId));
+  await db
+    .update(users)
+    .set({ role: "JAMAAH" })
+    .where(eq(users.id, prospect.userId));
   await db
     .update(prospectJamaah)
     .set({
@@ -209,7 +276,9 @@ export const getMyProspectSummary = async (req, res, next) => {
       recentInterests: interests,
     });
   } catch (error) {
-    logger.error("Get prospect summary error", error, { userId: req.user?.userId });
+    logger.error("Get prospect summary error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -224,7 +293,17 @@ export const saveMyPackageInterest = async (req, res, next) => {
     const { packageId, actionType, sourcePath } = req.validatedBody;
     const packageData = await getPublishedPackage(packageId);
     if (!packageData) {
-      return notFoundResponse(res, "Paket tidak ditemukan atau belum dipublikasikan");
+      return notFoundResponse(
+        res,
+        "Paket tidak ditemukan atau belum dipublikasikan",
+      );
+    }
+
+    if (actionType !== "WHATSAPP_CONSULT") {
+      const closedReason = await getPackageClosedReason(packageData);
+      if (closedReason) {
+        return errorResponse(res, closedReason, 400);
+      }
     }
 
     const inserted = await insertInterest({
@@ -234,7 +313,10 @@ export const saveMyPackageInterest = async (req, res, next) => {
       sourcePath,
     });
 
-    if (actionType === "WHATSAPP_CONSULT" && prospect.followUpStatus === "BARU") {
+    if (
+      actionType === "WHATSAPP_CONSULT" &&
+      prospect.followUpStatus === "BARU"
+    ) {
       await db
         .update(prospectJamaah)
         .set({ followUpStatus: "TERTARIK" })
@@ -248,7 +330,9 @@ export const saveMyPackageInterest = async (req, res, next) => {
       201,
     );
   } catch (error) {
-    logger.error("Save prospect interest error", error, { userId: req.user?.userId });
+    logger.error("Save prospect interest error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -293,7 +377,9 @@ export const convertMyProspectToJamaah = async (req, res, next) => {
       result.created ? 201 : 200,
     );
   } catch (error) {
-    logger.error("Convert own prospect error", error, { userId: req.user?.userId });
+    logger.error("Convert own prospect error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -460,7 +546,12 @@ export const addProspectFollowUp = async (req, res, next) => {
       .set({ followUpStatus: status })
       .where(eq(prospectJamaah.id, id));
 
-    return successResponse(res, { id: inserted.id }, "Follow up berhasil disimpan", 201);
+    return successResponse(
+      res,
+      { id: inserted.id },
+      "Follow up berhasil disimpan",
+      201,
+    );
   } catch (error) {
     next(error);
   }
@@ -494,7 +585,9 @@ export const adminConvertProspectToJamaah = async (req, res, next) => {
 
     return successResponse(res, result, "Calon jamaah berhasil dikonversi");
   } catch (error) {
-    logger.error("Admin convert prospect error", error, { userId: req.user?.userId });
+    logger.error("Admin convert prospect error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };

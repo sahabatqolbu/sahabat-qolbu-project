@@ -38,6 +38,9 @@ export interface Package {
 
   // Computed
   daysUntilDeparture?: number;
+  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string;
+  bookingStatusLabel?: string;
+  isBookable?: boolean;
 }
 
 export const packageService = {

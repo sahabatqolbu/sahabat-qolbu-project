@@ -112,6 +112,28 @@ export default function PackageDetailPage({ params }: PageProps) {
     }
   };
 
+  const getBookingStatusBadge = (packageData: any) => {
+    if (
+      packageData.bookingStatus === "SOLD_OUT" ||
+      packageData.remainingSeats <= 0
+    ) {
+      return <Badge variant="destructive">Sold Out</Badge>;
+    }
+
+    if (
+      packageData.bookingStatus === "CLOSED" ||
+      packageData.isBookable === false
+    ) {
+      return (
+        <Badge className="bg-slate-100 text-slate-800">
+          {packageData.bookingStatusLabel || "Paket Tutup"}
+        </Badge>
+      );
+    }
+
+    return <Badge className="bg-green-100 text-green-800">Buka Daftar</Badge>;
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -185,6 +207,7 @@ export default function PackageDetailPage({ params }: PageProps) {
               {pkg.isPublished && (
                 <Badge className="bg-blue-100 text-blue-800">Published</Badge>
               )}
+              {getBookingStatusBadge(pkg)}
             </div>
             <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">
               {pkg.name}

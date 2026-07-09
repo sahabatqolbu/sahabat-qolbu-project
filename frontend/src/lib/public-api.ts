@@ -84,6 +84,11 @@ type BackendPackage = {
   images?: BackendPackageImage[] | null;
   isPublished?: boolean | null;
   isActive?: boolean | null;
+  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string | null;
+  bookingStatusLabel?: string | null;
+  isBookable?: boolean | null;
+  daysUntilDeparture?: number | null;
+  remainingSeats?: number | null;
 };
 
 type PublicPackagesPayload = {
@@ -154,6 +159,11 @@ export interface MarketingPackage {
   discountedPrice?: string;
   totalSeats: number;
   bookedSeats: number;
+  remainingSeats?: number;
+  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string;
+  bookingStatusLabel?: string;
+  isBookable?: boolean;
+  daysUntilDeparture?: number;
   image?: string;
   gallery?: string[];
   featured?: boolean;
@@ -411,6 +421,14 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     discountedPrice: String(currentPrice),
     totalSeats: toNumber(pkg.totalSeats, 0),
     bookedSeats: toNumber(pkg.bookedSeats, 0),
+    remainingSeats: toNumber(
+      pkg.remainingSeats,
+      Math.max(toNumber(pkg.totalSeats, 0) - toNumber(pkg.bookedSeats, 0), 0),
+    ),
+    bookingStatus: toNonEmptyString(pkg.bookingStatus, "OPEN"),
+    bookingStatusLabel: toNonEmptyString(pkg.bookingStatusLabel, "Tersedia"),
+    isBookable: pkg.isBookable !== false,
+    daysUntilDeparture: toNumber(pkg.daysUntilDeparture, 9999),
     image: primaryImage,
     gallery,
     featured: false,

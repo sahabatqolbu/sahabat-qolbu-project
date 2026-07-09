@@ -218,6 +218,22 @@ export default function PackagesPage() {
     }
   };
 
+  const getBookingStatusBadge = (pkg: Package) => {
+    if (pkg.bookingStatus === "SOLD_OUT" || pkg.remainingSeats <= 0) {
+      return <Badge variant="destructive">Sold Out</Badge>;
+    }
+
+    if (pkg.bookingStatus === "CLOSED" || pkg.isBookable === false) {
+      return (
+        <Badge className="bg-slate-100 text-slate-800">
+          {pkg.bookingStatusLabel || "Paket Tutup"}
+        </Badge>
+      );
+    }
+
+    return <Badge className="bg-green-100 text-green-800">Aktif</Badge>;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -501,7 +517,7 @@ export default function PackagesPage() {
                               className="w-16 h-1.5 mt-1"
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                              Sisa: {pkg.remainingSeats || pkg.totalSeats}
+                              Sisa: {pkg.remainingSeats ?? pkg.totalSeats}
                             </p>
                           </div>
                         </TableCell>
@@ -554,12 +570,10 @@ export default function PackagesPage() {
 
                         {/* Status */}
                         <TableCell>
-                          {pkg.isActive ? (
-                            <Badge className="bg-green-100 text-green-800">
-                              Aktif
-                            </Badge>
-                          ) : (
+                          {!pkg.isActive ? (
                             <Badge variant="secondary">Nonaktif</Badge>
+                          ) : (
+                            getBookingStatusBadge(pkg)
                           )}
                         </TableCell>
 

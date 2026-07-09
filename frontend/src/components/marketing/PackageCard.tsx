@@ -37,6 +37,11 @@ interface PackageCardProps {
   priceDouble: string;
   totalSeats: number;
   bookedSeats: number;
+  remainingSeats?: number;
+  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string;
+  bookingStatusLabel?: string;
+  isBookable?: boolean;
+  daysUntilDeparture?: number;
   image?: string;
   gallery?: string[];
   featured?: boolean;
@@ -89,6 +94,64 @@ function formatDateRange(startDate?: string, endDate?: string) {
   return `${fmt.format(start)} - ${endFmt.format(end)}`;
 }
 
+function getDaysUntilDeparture(departureDate?: string) {
+  if (!departureDate) return 9999;
+  const departure = new Date(departureDate);
+  if (Number.isNaN(departure.getTime())) return 9999;
+
+  const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const startOfDeparture = new Date(
+    departure.getFullYear(),
+    departure.getMonth(),
+    departure.getDate(),
+  );
+
+  return Math.ceil(
+    (startOfDeparture.getTime() - startOfToday.getTime()) /
+      (1000 * 60 * 60 * 24),
+  );
+}
+
+function getPackageAvailability(pkg: PackageCardProps) {
+  const remainingSeats =
+    pkg.remainingSeats ?? Math.max(pkg.totalSeats - pkg.bookedSeats, 0);
+  const daysUntilDeparture =
+    pkg.daysUntilDeparture ?? getDaysUntilDeparture(pkg.departureDate);
+  const status = String(pkg.bookingStatus || "").toUpperCase();
+
+  if (status === "SOLD_OUT" || remainingSeats <= 0) {
+    return {
+      isBookable: false,
+      label: "Sold Out",
+      badgeClass: "bg-red-600 text-white",
+      buttonLabel: "Sold Out",
+    };
+  }
+
+  if (status === "CLOSED" || daysUntilDeparture <= 7) {
+    return {
+      isBookable: false,
+      label:
+        pkg.bookingStatusLabel ||
+        (daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Tutup"),
+      badgeClass: "bg-slate-900 text-white",
+      buttonLabel: "Paket Tutup",
+    };
+  }
+
+  return {
+    isBookable: pkg.isBookable !== false,
+    label: "",
+    badgeClass: "",
+    buttonLabel: "Daftar Paket",
+  };
+}
+
 export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   const branding = useBranding();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -135,6 +198,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
 
   const detailLink = `${detailBasePath}/${pkg.slug}`;
   const registerLink = getCalonJamaahPackageRegisterUrl(pkg.slug);
+  const availability = getPackageAvailability(pkg);
   const waMessage = `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${pkg.name}*`;
   const waLink = `https://wa.me/${branding.whatsappNumber || "6281255871984"}?text=${encodeURIComponent(waMessage)}`;
 
@@ -274,6 +338,18 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
             {images.length}
           </div>
         )}
+
+        {!availability.isBookable && (
+          <div
+            className={cn(
+              "absolute right-3 top-3 z-30 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide shadow-lg",
+              availability.badgeClass,
+              hasMultiple && "top-10",
+            )}
+          >
+            {availability.label}
+          </div>
+        )}
       </div>
 
       <div className="p-4 pt-2 flex flex-col flex-1">
@@ -307,12 +383,18 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
           >
             Detail
           </Link>
-          <a
-            href={registerLink}
-            className="js-package-register-link flex items-center justify-center w-full bg-primary hover:bg-secondary text-white hover:text-primary font-semibold py-3 rounded-xl transition-colors text-center text-sm"
-          >
-            Daftar Paket
-          </a>
+          {availability.isBookable ? (
+            <a
+              href={registerLink}
+              className="js-package-register-link flex items-center justify-center w-full bg-primary hover:bg-secondary text-white hover:text-primary font-semibold py-3 rounded-xl transition-colors text-center text-sm"
+            >
+              Daftar Paket
+            </a>
+          ) : (
+            <span className="flex items-center justify-center w-full bg-gray-200 text-gray-500 font-semibold py-3 rounded-xl text-center text-sm cursor-not-allowed">
+              {availability.buttonLabel}
+            </span>
+          )}
         </div>
         <a
           href={waLink}

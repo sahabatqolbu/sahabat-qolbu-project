@@ -48,7 +48,42 @@ const getOriginalPrice = (pkg: MarketingPackage, currentPrice?: string) => {
 };
 
 const getSeatsLeft = (pkg: MarketingPackage) =>
-  Math.max(Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0), 0);
+  Math.max(
+    Number(
+      pkg.remainingSeats ??
+        Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0),
+    ),
+    0,
+  );
+
+const getPackageAvailability = (pkg: MarketingPackage, seatsLeft: number) => {
+  const status = String(pkg.bookingStatus || "").toUpperCase();
+
+  if (status === "SOLD_OUT" || seatsLeft <= 0) {
+    return {
+      isBookable: false,
+      label: "Sold Out",
+      description: "Seat paket ini sudah penuh.",
+      buttonLabel: "Sold Out",
+    };
+  }
+
+  if (status === "CLOSED" || pkg.isBookable === false) {
+    return {
+      isBookable: false,
+      label: pkg.bookingStatusLabel || "Paket Tutup",
+      description: "Pendaftaran paket ini sudah ditutup.",
+      buttonLabel: "Paket Tutup",
+    };
+  }
+
+  return {
+    isBookable: true,
+    label: "Tersedia",
+    description: "",
+    buttonLabel: "Daftar Paket",
+  };
+};
 
 const getDescriptionItems = (value?: string) =>
   String(value || "")
@@ -132,6 +167,7 @@ function BookingPanel({
     : 0;
   const topPrice = pkg.discountedPrice || pkg.priceQuad;
   const originalPrice = getOriginalPrice(pkg, topPrice);
+  const availability = getPackageAvailability(pkg, seatsLeft);
 
   return (
     <aside className="lg:sticky lg:top-24">
@@ -227,13 +263,30 @@ function BookingPanel({
               />
             </div>
           </div>
-          <a
-            href={bookingLink}
-            className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-5 py-4 font-extrabold text-white transition hover:bg-primary-700"
-          >
-            <ClipboardList className="h-5 w-5" />
-            Daftar Paket
-          </a>
+          {!availability.isBookable ? (
+            <div className="rounded-sm border border-neutral-200 bg-neutral-50 p-4">
+              <p className="font-extrabold text-primary">
+                {availability.label}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-neutral-500">
+                {availability.description}
+              </p>
+            </div>
+          ) : null}
+          {availability.isBookable ? (
+            <a
+              href={bookingLink}
+              className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-5 py-4 font-extrabold text-white transition hover:bg-primary-700"
+            >
+              <ClipboardList className="h-5 w-5" />
+              Daftar Paket
+            </a>
+          ) : (
+            <span className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-sm bg-neutral-200 px-5 py-4 font-extrabold text-neutral-500">
+              <ClipboardList className="h-5 w-5" />
+              {availability.buttonLabel}
+            </span>
+          )}
           <a
             href={consultLink}
             target="_blank"
@@ -694,4 +747,3 @@ export default async function LandingPackageDetailPage({
     </div>
   );
 }
-
