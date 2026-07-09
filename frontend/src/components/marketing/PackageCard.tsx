@@ -94,6 +94,19 @@ function formatDateRange(startDate?: string, endDate?: string) {
   return `${fmt.format(start)} - ${endFmt.format(end)}`;
 }
 
+function formatPrice(price?: string) {
+  const amount = Number(price);
+  if (!price || Number.isNaN(amount) || amount <= 0) return "Harga menyusul";
+
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  })
+    .format(amount)
+    .replace(/\s/g, "");
+}
+
 function getDaysUntilDeparture(departureDate?: string) {
   if (!departureDate) return 9999;
   const departure = new Date(departureDate);
@@ -199,6 +212,9 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   const detailLink = `${detailBasePath}/${pkg.slug}`;
   const registerLink = getCalonJamaahPackageRegisterUrl(pkg.slug);
   const availability = getPackageAvailability(pkg);
+  const displayPrice = formatPrice(
+    pkg.priceQuad || pkg.priceTriple || pkg.priceDouble,
+  );
   const waMessage = `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${pkg.name}*`;
   const waLink = `https://wa.me/${branding.whatsappNumber || "6281255871984"}?text=${encodeURIComponent(waMessage)}`;
 
@@ -223,7 +239,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   return (
     <div
       className={cn(
-        "paket-card group flex h-full flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
+        "paket-card group flex h-full flex-col bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
         pkg.featured && "ring-2 ring-gold",
       )}
       data-tipe={rawType.toLowerCase()}
@@ -352,12 +368,24 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
         )}
       </div>
 
-      <div className="p-4 pt-2 flex flex-col flex-1">
+      <div className="p-4 pt-3 flex flex-col flex-1">
         <h3 className="font-bold text-primary text-lg leading-tight mb-2 min-h-[3rem] line-clamp-2">
           {pkg.name}
         </h3>
 
-        <div className="flex items-center gap-2 text-gray-500 text-sm mb-4 mt-auto">
+        <div className="mb-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+            Harga Mulai
+          </p>
+          <p className="text-xl font-extrabold leading-tight text-primary">
+            {displayPrice}
+          </p>
+          {displayPrice !== "Harga menyusul" ? (
+            <p className="text-xs text-gray-500">per jamaah</p>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
           <svg
             className="w-4 h-4 text-gold"
             fill="none"
@@ -376,22 +404,43 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
           <span>{pkg.duration ? `${pkg.duration} Hari` : "-"}</span>
         </div>
 
+        <div className="mb-4 space-y-2 rounded-md border border-gray-100 bg-gray-50 p-3 text-sm">
+          <div className="grid grid-cols-[92px_1fr] gap-2">
+            <span className="text-gray-500">Hotel Makkah</span>
+            <span className="font-semibold text-primary line-clamp-1">
+              {pkg.hotelMakkah?.name || "-"}
+            </span>
+          </div>
+          <div className="grid grid-cols-[92px_1fr] gap-2">
+            <span className="text-gray-500">Hotel Madinah</span>
+            <span className="font-semibold text-primary line-clamp-1">
+              {pkg.hotelMadinah?.name || "-"}
+            </span>
+          </div>
+          <div className="grid grid-cols-[92px_1fr] gap-2">
+            <span className="text-gray-500">Maskapai</span>
+            <span className="font-semibold text-primary line-clamp-1">
+              {pkg.airline?.name || "-"}
+            </span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-2 mt-auto">
           <Link
             href={detailLink}
-            className="js-package-detail-link flex items-center justify-center w-full border border-primary bg-white text-primary hover:bg-primary hover:text-white font-semibold py-3 rounded-xl transition-colors text-center text-sm"
+            className="js-package-detail-link flex items-center justify-center w-full border border-primary bg-white text-primary hover:bg-primary hover:text-white font-semibold py-3 rounded-md transition-colors text-center text-sm"
           >
             Detail
           </Link>
           {availability.isBookable ? (
             <a
               href={registerLink}
-              className="js-package-register-link flex items-center justify-center w-full bg-primary hover:bg-secondary text-white hover:text-primary font-semibold py-3 rounded-xl transition-colors text-center text-sm"
+              className="js-package-register-link flex items-center justify-center w-full bg-primary hover:bg-secondary text-white hover:text-primary font-semibold py-3 rounded-md transition-colors text-center text-sm"
             >
               Daftar Paket
             </a>
           ) : (
-            <span className="flex items-center justify-center w-full bg-gray-200 text-gray-500 font-semibold py-3 rounded-xl text-center text-sm cursor-not-allowed">
+            <span className="flex items-center justify-center w-full bg-gray-200 text-gray-500 font-semibold py-3 rounded-md text-center text-sm cursor-not-allowed">
               {availability.buttonLabel}
             </span>
           )}
@@ -400,7 +449,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="js-package-wa-link mt-2 flex items-center justify-center w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors text-center text-sm"
+          className="js-package-wa-link mt-2 flex items-center justify-center w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-md transition-colors text-center text-sm"
         >
           Tanya via WhatsApp
         </a>
