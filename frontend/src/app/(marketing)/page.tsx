@@ -222,6 +222,304 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
+      {/* PAKET UMROH */}
+      <section id="paket" className="py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+              Paket Umroh
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
+              Seat Terbatas! Booking Sekarang
+            </h2>
+            <p className="text-gray-600 font-medium">
+              Rasakan Kekhusyukan Saat Beribadah bersama Sahabat Qolbu
+            </p>
+            <div className="mt-4 bg-primary/5 inline-block px-4 py-2 rounded-lg text-sm sm:text-base">
+              <span className="text-primary font-bold">
+                📢 Satu-satunya Travel Umroh dengan Tim Medis Pribadi!
+              </span>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : featuredPackages.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
+              <p className="text-lg font-bold text-primary">
+                Paket belum tersedia
+              </p>
+              <p className="mt-2 text-sm text-gray-500">
+                Data paket akan tampil otomatis setelah dipublish.
+              </p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredPackages.map((pkg) => (
+                <PackageCard key={pkg.id} pkg={pkg} />
+              ))}
+            </div>
+          )}
+
+          {/* Lihat Semua Button */}
+          <div className="text-center mt-10">
+            <Link
+              href="/paket"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-secondary text-white font-semibold px-8 py-4 rounded-full transition-colors"
+            >
+              <span>Lihat Semua Paket</span>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
+            </Link>
+          </div>
+
+          {/* Urgency Alert */}
+          <div className="mt-10 p-4 bg-red-50 border border-red-100 rounded-xl max-w-2xl mx-auto text-center animate-pulse">
+            <p className="text-red-600 font-bold">
+              ⚠️ Segera booking seat sebelum kehabisan!
+            </p>
+            <p className="text-sm text-red-500">
+              Kuota setiap keberangkatan terbatas untuk menjaga kenyamanan
+              jamaah.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {galleryImages.length > 0 ? (
+        <section id="gallery" className="py-16 md:py-24 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mb-10">
+              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+                Gallery
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
+                Momen Perjalanan Jamaah
+              </h2>
+              <p className="text-gray-600">
+                Momen jamaah Sahabat Qolbu dalam perjalanan ibadah.
+              </p>
+            </div>
+
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5">
+              {galleryImages.map((image) => (
+                <figure
+                  key={image.id}
+                  className="group relative break-inside-avoid overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-100"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.imageUrl}
+                    alt={image.title || "Dokumentasi Sahabat Qolbu"}
+                    loading="lazy"
+                    className="w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  />
+                  {image.title || image.description ? (
+                    <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4 pt-12 text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      {image.title ? (
+                        <h3 className="font-semibold">{image.title}</h3>
+                      ) : null}
+                      {image.description ? (
+                        <p className="mt-1 text-sm text-white/80">
+                          {image.description}
+                        </p>
+                      ) : null}
+                    </figcaption>
+                  ) : null}
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {faqs.length > 0 ? (
+        <section id="faq" className="py-16 md:py-24 bg-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+                FAQ
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
+                Pertanyaan yang Sering Ditanyakan
+              </h2>
+              <p className="text-gray-600">
+                Jawaban singkat untuk membantu calon jamaah memahami layanan
+                sebelum konsultasi.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {faqs.map((faq, index) => (
+                <details
+                  key={faq.id}
+                  className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm open:border-gold/40 open:bg-gold/5"
+                  open={index === 0}
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left font-semibold text-primary">
+                    <span>{faq.question}</span>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary transition group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-4 leading-relaxed text-gray-600">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* KEUNGGULAN */}
+      <section className="py-16 md:py-24 bg-primary text-white relative overflow-hidden">
+        {/* Pattern Background */}
+        <div className="absolute inset-0 opacity-5">
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            <pattern
+              id="grid"
+              width="10"
+              height="10"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 10 0 L 0 0 0 10"
+                fill="none"
+                stroke="white"
+                strokeWidth="0.5"
+              />
+            </pattern>
+            <rect width="100" height="100" fill="url(#grid)" />
+          </svg>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+              Keunggulan Kami
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
+              Mengapa Sahabat Qolbu?
+            </h2>
+            <p className="text-gray-300">
+              KAMI PASTIKAN pelayanan terbaik untuk kenyamanan ibadah Anda
+            </p>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Harga Terbaik</h3>
+              <p className="text-gray-300 text-sm">
+                Paket Umroh dan Haji dengan fasilitas terbaik di kelasnya.
+              </p>
+            </div>
+
+            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Sesuai Syariat</h3>
+              <p className="text-gray-300 text-sm">
+                Kegiatan ibadah InsyaAllah sesuai Al-Quran & Sunnah.
+              </p>
+            </div>
+
+            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Tim Medis Pribadi</h3>
+              <p className="text-gray-300 text-sm">
+                Satu-satunya travel umroh dengan pendampingan tim medis pribadi.
+              </p>
+            </div>
+
+            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
+              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Jadwal Tepat</h3>
+              <p className="text-gray-300 text-sm">
+                Tanggal berangkat, nomor pesawat & itinerary sudah tertera.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* TENTANG KAMI */}
       <section id="tentang" className="py-16 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -467,304 +765,6 @@ export default function MarketingHomePage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* KEUNGGULAN */}
-      <section className="py-16 md:py-24 bg-primary text-white relative overflow-hidden">
-        {/* Pattern Background */}
-        <div className="absolute inset-0 opacity-5">
-          <svg
-            className="w-full h-full"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
-            <pattern
-              id="grid"
-              width="10"
-              height="10"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 10 0 L 0 0 0 10"
-                fill="none"
-                stroke="white"
-                strokeWidth="0.5"
-              />
-            </pattern>
-            <rect width="100" height="100" fill="url(#grid)" />
-          </svg>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-              Keunggulan Kami
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-              Mengapa Sahabat Qolbu?
-            </h2>
-            <p className="text-gray-300">
-              KAMI PASTIKAN pelayanan terbaik untuk kenyamanan ibadah Anda
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Harga Terbaik</h3>
-              <p className="text-gray-300 text-sm">
-                Paket Umroh dan Haji dengan fasilitas terbaik di kelasnya.
-              </p>
-            </div>
-
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Sesuai Syariat</h3>
-              <p className="text-gray-300 text-sm">
-                Kegiatan ibadah InsyaAllah sesuai Al-Quran & Sunnah.
-              </p>
-            </div>
-
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Tim Medis Pribadi</h3>
-              <p className="text-gray-300 text-sm">
-                Satu-satunya travel umroh dengan pendampingan tim medis pribadi.
-              </p>
-            </div>
-
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Jadwal Tepat</h3>
-              <p className="text-gray-300 text-sm">
-                Tanggal berangkat, nomor pesawat & itinerary sudah tertera.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PAKET UMROH */}
-      <section id="paket" className="py-16 md:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-              Paket Umroh
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
-              Seat Terbatas! Booking Sekarang
-            </h2>
-            <p className="text-gray-600 font-medium">
-              Rasakan Kekhusyukan Saat Beribadah bersama Sahabat Qolbu
-            </p>
-            <div className="mt-4 bg-primary/5 inline-block px-4 py-2 rounded-lg text-sm sm:text-base">
-              <span className="text-primary font-bold">
-                📢 Satu-satunya Travel Umroh dengan Tim Medis Pribadi!
-              </span>
-            </div>
-          </div>
-
-          {/* Cards Grid */}
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : featuredPackages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
-              <p className="text-lg font-bold text-primary">
-                Paket belum tersedia
-              </p>
-              <p className="mt-2 text-sm text-gray-500">
-                Data paket akan tampil otomatis setelah dipublish.
-              </p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredPackages.map((pkg) => (
-                <PackageCard key={pkg.id} pkg={pkg} />
-              ))}
-            </div>
-          )}
-
-          {/* Lihat Semua Button */}
-          <div className="text-center mt-10">
-            <Link
-              href="/paket"
-              className="inline-flex items-center gap-2 bg-primary hover:bg-secondary text-white font-semibold px-8 py-4 rounded-full transition-colors"
-            >
-              <span>Lihat Semua Paket</span>
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </Link>
-          </div>
-
-          {/* Urgency Alert */}
-          <div className="mt-10 p-4 bg-red-50 border border-red-100 rounded-xl max-w-2xl mx-auto text-center animate-pulse">
-            <p className="text-red-600 font-bold">
-              ⚠️ Segera booking seat sebelum kehabisan!
-            </p>
-            <p className="text-sm text-red-500">
-              Kuota setiap keberangkatan terbatas untuk menjaga kenyamanan
-              jamaah.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {galleryImages.length > 0 ? (
-        <section id="gallery" className="py-16 md:py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl mb-10">
-              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-                Gallery
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
-                Momen Perjalanan Jamaah
-              </h2>
-              <p className="text-gray-600">
-                Momen jamaah Sahabat Qolbu dalam perjalanan ibadah.
-              </p>
-            </div>
-
-            <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5">
-              {galleryImages.map((image) => (
-                <figure
-                  key={image.id}
-                  className="group relative break-inside-avoid overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-100"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image.imageUrl}
-                    alt={image.title || "Dokumentasi Sahabat Qolbu"}
-                    loading="lazy"
-                    className="w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                  {image.title || image.description ? (
-                    <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4 pt-12 text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                      {image.title ? (
-                        <h3 className="font-semibold">{image.title}</h3>
-                      ) : null}
-                      {image.description ? (
-                        <p className="mt-1 text-sm text-white/80">
-                          {image.description}
-                        </p>
-                      ) : null}
-                    </figcaption>
-                  ) : null}
-                </figure>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {faqs.length > 0 ? (
-        <section id="faq" className="py-16 md:py-24 bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-                FAQ
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
-                Pertanyaan yang Sering Ditanyakan
-              </h2>
-              <p className="text-gray-600">
-                Jawaban singkat untuk membantu calon jamaah memahami layanan
-                sebelum konsultasi.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {faqs.map((faq, index) => (
-                <details
-                  key={faq.id}
-                  className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm open:border-gold/40 open:bg-gold/5"
-                  open={index === 0}
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left font-semibold text-primary">
-                    <span>{faq.question}</span>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary transition group-open:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-4 leading-relaxed text-gray-600">
-                    {faq.answer}
-                  </p>
-                </details>
-              ))}
             </div>
           </div>
         </section>
