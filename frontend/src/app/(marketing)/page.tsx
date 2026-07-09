@@ -301,96 +301,10 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      {galleryImages.length > 0 ? (
-        <section id="gallery" className="py-16 md:py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl mb-10">
-              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-                Gallery
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
-                Momen Perjalanan Jamaah
-              </h2>
-              <p className="text-gray-600">
-                Momen jamaah Sahabat Qolbu dalam perjalanan ibadah.
-              </p>
-            </div>
-
-            <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5">
-              {galleryImages.map((image) => (
-                <figure
-                  key={image.id}
-                  className="group relative break-inside-avoid overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-100"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image.imageUrl}
-                    alt={image.title || "Dokumentasi Sahabat Qolbu"}
-                    loading="lazy"
-                    className="w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                  {image.title || image.description ? (
-                    <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4 pt-12 text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                      {image.title ? (
-                        <h3 className="font-semibold">{image.title}</h3>
-                      ) : null}
-                      {image.description ? (
-                        <p className="mt-1 text-sm text-white/80">
-                          {image.description}
-                        </p>
-                      ) : null}
-                    </figcaption>
-                  ) : null}
-                </figure>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {faqs.length > 0 ? (
-        <section id="faq" className="py-16 md:py-24 bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-                FAQ
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
-                Pertanyaan yang Sering Ditanyakan
-              </h2>
-              <p className="text-gray-600">
-                Jawaban singkat untuk membantu calon jamaah memahami layanan
-                sebelum konsultasi.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {faqs.map((faq, index) => (
-                <details
-                  key={faq.id}
-                  className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm open:border-gold/40 open:bg-gold/5"
-                  open={index === 0}
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left font-semibold text-primary">
-                    <span>{faq.question}</span>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary transition group-open:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-4 leading-relaxed text-gray-600">
-                    {faq.answer}
-                  </p>
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       {/* KEUNGGULAN */}
-      <section className="py-16 md:py-24 bg-primary text-white relative overflow-hidden">
+      <section className="relative overflow-hidden bg-[#082338] py-16 text-white md:py-24">
         {/* Pattern Background */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-10">
           <svg
             className="w-full h-full"
             viewBox="0 0 100 100"
@@ -413,24 +327,28 @@ export default function MarketingHomePage() {
           </svg>
         </div>
 
+        <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
+        <div className="absolute -left-28 bottom-0 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+          <div className="mx-auto mb-12 max-w-3xl text-center">
+            <span className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gold">
               Keunggulan Kami
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
+            <h2 className="mt-5 text-3xl font-bold md:text-4xl">
               Mengapa Sahabat Qolbu?
             </h2>
-            <p className="text-gray-300">
-              KAMI PASTIKAN pelayanan terbaik untuk kenyamanan ibadah Anda
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-gray-300">
+              Setiap detail perjalanan disiapkan agar jamaah bisa fokus
+              beribadah dengan jadwal, fasilitas, dan pendampingan yang jelas.
             </p>
           </div>
 
           {/* Features Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="group rounded-lg border border-white/10 bg-white/[0.06] p-6 text-left shadow-2xl shadow-black/10 transition hover:-translate-y-1 hover:border-gold/50 hover:bg-white/[0.09]">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-gold text-primary shadow-lg shadow-gold/20">
                 <svg
                   className="w-8 h-8 text-primary"
                   fill="none"
@@ -445,14 +363,14 @@ export default function MarketingHomePage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Harga Terbaik</h3>
-              <p className="text-gray-300 text-sm">
+              <h3 className="mb-2 text-lg font-bold">Harga Terbaik</h3>
+              <p className="text-sm leading-6 text-gray-300">
                 Paket Umroh dan Haji dengan fasilitas terbaik di kelasnya.
               </p>
             </div>
 
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="group rounded-lg border border-white/10 bg-white/[0.06] p-6 text-left shadow-2xl shadow-black/10 transition hover:-translate-y-1 hover:border-gold/50 hover:bg-white/[0.09]">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-gold text-primary shadow-lg shadow-gold/20">
                 <svg
                   className="w-8 h-8 text-primary"
                   fill="none"
@@ -467,14 +385,14 @@ export default function MarketingHomePage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Sesuai Syariat</h3>
-              <p className="text-gray-300 text-sm">
+              <h3 className="mb-2 text-lg font-bold">Sesuai Syariat</h3>
+              <p className="text-sm leading-6 text-gray-300">
                 Kegiatan ibadah InsyaAllah sesuai Al-Quran & Sunnah.
               </p>
             </div>
 
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="group rounded-lg border border-white/10 bg-white/[0.06] p-6 text-left shadow-2xl shadow-black/10 transition hover:-translate-y-1 hover:border-gold/50 hover:bg-white/[0.09]">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-gold text-primary shadow-lg shadow-gold/20">
                 <svg
                   className="w-8 h-8 text-primary"
                   fill="none"
@@ -489,14 +407,14 @@ export default function MarketingHomePage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Tim Medis Pribadi</h3>
-              <p className="text-gray-300 text-sm">
+              <h3 className="mb-2 text-lg font-bold">Tim Medis Pribadi</h3>
+              <p className="text-sm leading-6 text-gray-300">
                 Satu-satunya travel umroh dengan pendampingan tim medis pribadi.
               </p>
             </div>
 
-            <div className="text-center p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition">
-              <div className="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="group rounded-lg border border-white/10 bg-white/[0.06] p-6 text-left shadow-2xl shadow-black/10 transition hover:-translate-y-1 hover:border-gold/50 hover:bg-white/[0.09]">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-md bg-gold text-primary shadow-lg shadow-gold/20">
                 <svg
                   className="w-8 h-8 text-primary"
                   fill="none"
@@ -511,8 +429,8 @@ export default function MarketingHomePage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Jadwal Tepat</h3>
-              <p className="text-gray-300 text-sm">
+              <h3 className="mb-2 text-lg font-bold">Jadwal Tepat</h3>
+              <p className="text-sm leading-6 text-gray-300">
                 Tanggal berangkat, nomor pesawat & itinerary sudah tertera.
               </p>
             </div>
@@ -770,35 +688,160 @@ export default function MarketingHomePage() {
         </section>
       ) : null}
 
-      {/* CTA SECTION */}
-      <section className="py-16 md:py-24 bg-gradient-to-br from-primary to-secondary relative overflow-hidden">
-        {/* Decorative Elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gold/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gold/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+      {galleryImages.length > 0 ? (
+        <section id="gallery" className="py-16 md:py-24 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mb-10">
+              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+                Gallery
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
+                Momen Perjalanan Jamaah
+              </h2>
+              <p className="text-gray-600">
+                Momen jamaah Sahabat Qolbu dalam perjalanan ibadah.
+              </p>
+            </div>
 
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-            Wujudkan Rindu Baitullah Bersama Kami
-          </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            &quot;Rasakan Kekhusyukan Saat Beribadah&quot;. Segera amankan seat
-            Anda untuk keberangkatan terdekat.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href={waHeroLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="gold-gradient text-primary font-bold px-10 py-4 rounded-full text-lg hover:opacity-90 transition-all hover:scale-105 inline-flex items-center justify-center gap-3"
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
-              Hubungi via WhatsApp
-            </a>
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5">
+              {galleryImages.map((image) => (
+                <figure
+                  key={image.id}
+                  className="group relative break-inside-avoid overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-100"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.imageUrl}
+                    alt={image.title || "Dokumentasi Sahabat Qolbu"}
+                    loading="lazy"
+                    className="w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  />
+                  {image.title || image.description ? (
+                    <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4 pt-12 text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                      {image.title ? (
+                        <h3 className="font-semibold">{image.title}</h3>
+                      ) : null}
+                      {image.description ? (
+                        <p className="mt-1 text-sm text-white/80">
+                          {image.description}
+                        </p>
+                      ) : null}
+                    </figcaption>
+                  ) : null}
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* CTA SECTION */}
+      <section className="relative overflow-hidden bg-white py-16 md:py-24">
+        {/* Decorative Elements */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+        <div className="absolute right-0 top-0 h-72 w-72 translate-x-1/3 rounded-full bg-gold/15 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-72 w-72 -translate-x-1/3 rounded-full bg-primary/10 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="overflow-hidden rounded-xl bg-primary shadow-2xl shadow-primary/20">
+            <div className="grid gap-0 lg:grid-cols-[1.08fr_0.92fr]">
+              <div className="p-8 md:p-10 lg:p-12">
+                <span className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gold">
+                  Siap Konsultasi?
+                </span>
+                <h2 className="mt-6 text-3xl font-bold leading-tight text-white md:text-4xl lg:text-5xl">
+                  Wujudkan Rindu Baitullah Bersama Kami
+                </h2>
+                <p className="mt-5 max-w-2xl text-base leading-8 text-gray-200 md:text-lg">
+                  &quot;Rasakan Kekhusyukan Saat Beribadah&quot;. Tim kami siap
+                  bantu jelaskan paket, jadwal, fasilitas, dan alur pendaftaran.
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href={waHeroLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-3 rounded-md bg-gold px-7 py-4 text-base font-bold text-primary shadow-lg shadow-gold/20 transition hover:bg-gold-dark"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                    Hubungi via WhatsApp
+                  </a>
+                  <Link
+                    href="/paket"
+                    className="inline-flex items-center justify-center rounded-md border border-white/25 px-7 py-4 text-base font-bold text-white transition hover:bg-white hover:text-primary"
+                  >
+                    Lihat Semua Paket
+                  </Link>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 bg-white/[0.06] p-8 md:p-10 lg:border-l lg:border-t-0 lg:p-12">
+                <div className="grid gap-4">
+                  {[
+                    "Konsultasi paket dan jadwal keberangkatan",
+                    "Arahan pendaftaran calon jamaah",
+                    "Informasi hotel, maskapai, dan fasilitas",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-start gap-4 rounded-lg border border-white/10 bg-white/[0.06] p-4"
+                    >
+                      <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-bold text-primary">
+                        ✓
+                      </span>
+                      <p className="text-sm leading-6 text-gray-100">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+      {faqs.length > 0 ? (
+        <section id="faq" className="py-16 md:py-24 bg-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+                FAQ
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
+                Pertanyaan yang Sering Ditanyakan
+              </h2>
+              <p className="text-gray-600">
+                Jawaban singkat untuk membantu calon jamaah memahami layanan
+                sebelum konsultasi.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {faqs.map((faq, index) => (
+                <details
+                  key={faq.id}
+                  className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm open:border-gold/40 open:bg-gold/5"
+                  open={index === 0}
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left font-semibold text-primary">
+                    <span>{faq.question}</span>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary transition group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-4 leading-relaxed text-gray-600">
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
