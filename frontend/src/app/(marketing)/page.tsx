@@ -302,33 +302,10 @@ export default function MarketingHomePage() {
       </section>
 
       {/* KEUNGGULAN */}
-      <section className="relative overflow-hidden bg-[#082338] py-16 text-white md:py-24">
-        {/* Pattern Background */}
-        <div className="absolute inset-0 opacity-10">
-          <svg
-            className="w-full h-full"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
-            <pattern
-              id="grid"
-              width="10"
-              height="10"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 10 0 L 0 0 0 10"
-                fill="none"
-                stroke="white"
-                strokeWidth="0.5"
-              />
-            </pattern>
-            <rect width="100" height="100" fill="url(#grid)" />
-          </svg>
-        </div>
-
+      <section className="relative overflow-hidden bg-primary py-16 text-white md:py-24">
+        <div className="absolute inset-x-0 top-0 h-px bg-gold/50" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gold/20" />
         <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
-        <div className="absolute -left-28 bottom-0 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -736,14 +713,15 @@ export default function MarketingHomePage() {
       ) : null}
 
       {/* CTA SECTION */}
-      <section className="relative overflow-hidden bg-white py-16 md:py-24">
+      <section className="relative overflow-hidden bg-primary py-16 md:py-24">
         {/* Decorative Elements */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
-        <div className="absolute right-0 top-0 h-72 w-72 translate-x-1/3 rounded-full bg-gold/15 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-72 w-72 -translate-x-1/3 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gold/50" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-black/15" />
+        <div className="absolute right-0 top-0 h-72 w-72 translate-x-1/3 rounded-full bg-gold/10 blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-72 w-72 -translate-x-1/3 rounded-full bg-black/10 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-xl bg-primary shadow-2xl shadow-primary/20">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] shadow-2xl shadow-black/10">
             <div className="grid gap-0 lg:grid-cols-[1.08fr_0.92fr]">
               <div className="p-8 md:p-10 lg:p-12">
                 <span className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gold">
