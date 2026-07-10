@@ -44,9 +44,53 @@ const getPublishedPackage = async (packageId) => {
 const PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE = 7;
 
 const getDaysUntilDeparture = (departureDate) => {
+  if (!departureDate) {
+    return 9999;
+  }
+
   const today = new Date();
   const departure = new Date(departureDate);
+  if (Number.isNaN(departure.getTime())) {
+    return 9999;
+  }
+
   return Math.ceil((departure - today) / (1000 * 60 * 60 * 24));
+};
+
+const hasPositivePrice = (packageData = {}) =>
+  [
+    packageData.discountPrice,
+    packageData.priceQuad,
+    packageData.priceTriple,
+    packageData.priceDouble,
+    packageData.price,
+  ].some((value) => Number.parseFloat(value || 0) > 0);
+
+const isPackageComingSoon = (packageData = {}) => {
+  const departureDate = new Date(packageData.departureDate);
+  const returnDate = new Date(packageData.returnDate);
+  const hasValidDates =
+    !Number.isNaN(departureDate.getTime()) &&
+    !Number.isNaN(returnDate.getTime()) &&
+    returnDate >= departureDate;
+  const hasCoreInventory = Number(packageData.totalSeats || 0) > 0;
+  const hasCoreVendors = Boolean(
+    packageData.airlineId &&
+    packageData.hotelMakkahId &&
+    packageData.hotelMadinahId,
+  );
+  const hasConfirmedVendors =
+    String(packageData.airlineStatus || "").toUpperCase() === "CONFIRMED" &&
+    String(packageData.hotelMakkahStatus || "").toUpperCase() === "CONFIRMED" &&
+    String(packageData.hotelMadinahStatus || "").toUpperCase() === "CONFIRMED";
+
+  return (
+    !hasValidDates ||
+    !hasPositivePrice(packageData) ||
+    !hasCoreInventory ||
+    !hasCoreVendors ||
+    !hasConfirmedVendors
+  );
 };
 
 const getBookedSeats = async (packageId) => {
@@ -64,6 +108,10 @@ const getBookedSeats = async (packageId) => {
 };
 
 const getPackageClosedReason = async (packageData) => {
+  if (isPackageComingSoon(packageData)) {
+    return "Paket masih Coming Soon";
+  }
+
   const bookedSeats = await getBookedSeats(packageData.id);
   const remainingSeats = Number(packageData.totalSeats || 0) - bookedSeats;
 

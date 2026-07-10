@@ -276,8 +276,16 @@ const getBookedSeatsByPackageIds = async (packageIds = []) => {
 // HELPER: Calculate Days Until Departure
 // =====================================================
 const getDaysUntilDeparture = (departureDate) => {
+  if (!departureDate) {
+    return 9999;
+  }
+
   const today = new Date();
   const departure = new Date(departureDate);
+  if (Number.isNaN(departure.getTime())) {
+    return 9999;
+  }
+
   const diffTime = departure - today;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays;
@@ -285,7 +293,53 @@ const getDaysUntilDeparture = (departureDate) => {
 
 const PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE = 7;
 
-const getPackageBookingState = ({ remainingSeats, daysUntilDeparture }) => {
+const hasPositivePrice = (pkg = {}) =>
+  [
+    pkg.discountPrice,
+    pkg.priceQuad,
+    pkg.priceTriple,
+    pkg.priceDouble,
+    pkg.price,
+  ].some((value) => Number.parseFloat(value || 0) > 0);
+
+const isPackageComingSoon = (pkg = {}) => {
+  const departureDate = new Date(pkg.departureDate);
+  const returnDate = new Date(pkg.returnDate);
+  const hasValidDates =
+    !Number.isNaN(departureDate.getTime()) &&
+    !Number.isNaN(returnDate.getTime()) &&
+    returnDate >= departureDate;
+  const hasCoreInventory = Number(pkg.totalSeats || 0) > 0;
+  const hasCoreVendors = Boolean(
+    pkg.airlineId && pkg.hotelMakkahId && pkg.hotelMadinahId,
+  );
+  const hasConfirmedVendors =
+    String(pkg.airlineStatus || "").toUpperCase() === "CONFIRMED" &&
+    String(pkg.hotelMakkahStatus || "").toUpperCase() === "CONFIRMED" &&
+    String(pkg.hotelMadinahStatus || "").toUpperCase() === "CONFIRMED";
+
+  return (
+    !hasValidDates ||
+    !hasPositivePrice(pkg) ||
+    !hasCoreInventory ||
+    !hasCoreVendors ||
+    !hasConfirmedVendors
+  );
+};
+
+const getPackageBookingState = ({
+  pkg,
+  remainingSeats,
+  daysUntilDeparture,
+}) => {
+  if (isPackageComingSoon(pkg)) {
+    return {
+      bookingStatus: "COMING_SOON",
+      bookingStatusLabel: "Coming Soon",
+      isBookable: false,
+    };
+  }
+
   if (remainingSeats <= 0) {
     return {
       bookingStatus: "SOLD_OUT",
@@ -371,6 +425,7 @@ export const getAllPackages = async (req, res, next) => {
       const remainingSeats = pkg.totalSeats - bookedSeats;
       const daysUntilDeparture = getDaysUntilDeparture(pkg.departureDate);
       const bookingState = getPackageBookingState({
+        pkg,
         remainingSeats,
         daysUntilDeparture,
       });
@@ -483,6 +538,7 @@ export const getPackageById = async (req, res, next) => {
     const remainingSeats = packageData.totalSeats - bookedSeats;
     const daysUntilDeparture = getDaysUntilDeparture(packageData.departureDate);
     const bookingState = getPackageBookingState({
+      pkg: packageData,
       remainingSeats,
       daysUntilDeparture,
     });
@@ -1308,6 +1364,7 @@ export const getPublicPackageById = async (req, res, next) => {
     const remainingSeats = packageData.totalSeats - bookedSeats;
     const daysUntilDeparture = getDaysUntilDeparture(packageData.departureDate);
     const bookingState = getPackageBookingState({
+      pkg: packageData,
       remainingSeats,
       daysUntilDeparture,
     });

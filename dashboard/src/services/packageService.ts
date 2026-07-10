@@ -4,7 +4,13 @@ export interface Package {
   id: number;
   code: string;
   name: string;
-  type: "FULL_SERVICE" | "EXTREME" | "SEMI_MANDIRI" | "FLEKSIBILITAS" | "KONSORSIUM" | "LA";
+  type:
+    | "FULL_SERVICE"
+    | "EXTREME"
+    | "SEMI_MANDIRI"
+    | "FLEKSIBILITAS"
+    | "KONSORSIUM"
+    | "LA";
   departureDate: string;
   returnDate: string;
   duration: number;
@@ -38,7 +44,7 @@ export interface Package {
 
   // Computed
   daysUntilDeparture?: number;
-  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string;
+  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | "COMING_SOON" | string;
   bookingStatusLabel?: string;
   isBookable?: boolean;
 }
@@ -144,7 +150,7 @@ export const packageService = {
       "📤 uploadItineraryPdf → packageId:",
       packageId,
       "file:",
-      file.name
+      file.name,
     );
 
     const response = await api.post(
@@ -154,7 +160,7 @@ export const packageService = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
 
     return response.data;
@@ -163,7 +169,7 @@ export const packageService = {
   // ===== DELETE ITINERARY PDF =====
   deleteItineraryPdf: async (packageId: number) => {
     const response = await api.delete(
-      `/admin/packages/${packageId}/itinerary-pdf`
+      `/admin/packages/${packageId}/itinerary-pdf`,
     );
     return response.data;
   },
@@ -184,7 +190,7 @@ export const packageService = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
 
     return response.data;
@@ -204,13 +210,11 @@ export const packageService = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
 
     return response.data;
   },
-
-
 
   // ===== DELETE IMAGE =====
   deleteImage: async (imageId: number) => {

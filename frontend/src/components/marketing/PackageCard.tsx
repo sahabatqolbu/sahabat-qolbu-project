@@ -38,7 +38,7 @@ interface PackageCardProps {
   totalSeats: number;
   bookedSeats: number;
   remainingSeats?: number;
-  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string;
+  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | "COMING_SOON" | string;
   bookingStatusLabel?: string;
   isBookable?: boolean;
   daysUntilDeparture?: number;
@@ -136,32 +136,90 @@ function getPackageAvailability(pkg: PackageCardProps) {
   const daysUntilDeparture =
     pkg.daysUntilDeparture ?? getDaysUntilDeparture(pkg.departureDate);
   const status = String(pkg.bookingStatus || "").toUpperCase();
+  const hasSellablePrice = [
+    pkg.priceQuad,
+    pkg.priceTriple,
+    pkg.priceDouble,
+  ].some((value) => Number(value) > 0);
+  const hasCoreInfo =
+    Boolean(pkg.departureDate && pkg.returnDate) &&
+    hasSellablePrice &&
+    Boolean(pkg.airline?.name) &&
+    !String(pkg.airline?.name || "")
+      .toLowerCase()
+      .includes("belum tersedia") &&
+    Boolean(pkg.hotelMakkah?.name) &&
+    !String(pkg.hotelMakkah?.name || "")
+      .toLowerCase()
+      .includes("belum tersedia") &&
+    Boolean(pkg.hotelMadinah?.name) &&
+    !String(pkg.hotelMadinah?.name || "")
+      .toLowerCase()
+      .includes("belum tersedia");
+
+  if (status === "COMING_SOON" || (!status && !hasCoreInfo)) {
+    return {
+      isBookable: false,
+      status: "COMING_SOON",
+      label: pkg.bookingStatusLabel || "Coming Soon",
+      badgeClass: "bg-gold text-primary ring-2 ring-white",
+      buttonLabel: "Coming Soon",
+      overlayLabel: "COMING SOON",
+      cardClass: "border border-gold/40 bg-gold/5",
+      imageClass: "saturate-50 opacity-80",
+    };
+  }
 
   if (status === "SOLD_OUT" || remainingSeats <= 0) {
     return {
       isBookable: false,
+      status: "SOLD_OUT",
       label: "Sold Out",
-      badgeClass: "bg-red-600 text-white",
+      badgeClass: "bg-red-600 text-white ring-2 ring-white",
       buttonLabel: "Sold Out",
+      overlayLabel: "SOLD OUT",
+      cardClass: "border border-red-200 bg-red-50/40",
+      imageClass: "grayscale opacity-55",
     };
   }
 
   if (status === "CLOSED" || daysUntilDeparture <= 7) {
     return {
       isBookable: false,
+      status: "CLOSED",
       label:
         pkg.bookingStatusLabel ||
         (daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Tutup"),
-      badgeClass: "bg-slate-900 text-white",
+      badgeClass: "bg-slate-900 text-white ring-2 ring-white",
       buttonLabel: "Paket Tutup",
+      overlayLabel: daysUntilDeparture < 0 ? "SUDAH BERANGKAT" : "PAKET TUTUP",
+      cardClass: "border border-slate-300 bg-slate-50",
+      imageClass: "grayscale opacity-60",
+    };
+  }
+
+  if (!hasCoreInfo) {
+    return {
+      isBookable: false,
+      status: "COMING_SOON",
+      label: pkg.bookingStatusLabel || "Coming Soon",
+      badgeClass: "bg-gold text-primary ring-2 ring-white",
+      buttonLabel: "Coming Soon",
+      overlayLabel: "COMING SOON",
+      cardClass: "border border-gold/40 bg-gold/5",
+      imageClass: "saturate-50 opacity-80",
     };
   }
 
   return {
     isBookable: pkg.isBookable !== false,
+    status: "OPEN",
     label: "",
     badgeClass: "",
     buttonLabel: "Daftar Paket",
+    overlayLabel: "",
+    cardClass: "",
+    imageClass: "",
   };
 }
 
@@ -239,8 +297,9 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   return (
     <div
       className={cn(
-        "paket-card group flex h-full flex-col bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
+        "paket-card group flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:shadow-xl",
         pkg.featured && "ring-2 ring-gold",
+        availability.cardClass,
       )}
       data-tipe={rawType.toLowerCase()}
     >
@@ -259,7 +318,10 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
                 <img
                   src={img}
                   alt={`Slide ${i + 1}`}
-                  className="w-full h-full object-contain"
+                  className={cn(
+                    "h-full w-full object-contain transition duration-300",
+                    availability.imageClass,
+                  )}
                   draggable="false"
                 />
               </div>
@@ -356,15 +418,30 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
         )}
 
         {!availability.isBookable && (
-          <div
-            className={cn(
-              "absolute right-3 top-3 z-30 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide shadow-lg",
-              availability.badgeClass,
-              hasMultiple && "top-10",
-            )}
-          >
-            {availability.label}
-          </div>
+          <>
+            <div className="pointer-events-none absolute inset-0 z-20 bg-black/20" />
+            <div className="pointer-events-none absolute inset-x-4 top-1/2 z-30 flex -translate-y-1/2 justify-center">
+              <span
+                className={cn(
+                  "rounded-md px-4 py-2 text-center text-sm font-black uppercase tracking-[0.18em] shadow-2xl",
+                  availability.status === "COMING_SOON"
+                    ? "bg-gold text-primary"
+                    : "bg-white text-primary",
+                )}
+              >
+                {availability.overlayLabel}
+              </span>
+            </div>
+            <div
+              className={cn(
+                "absolute right-3 top-3 z-40 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide shadow-lg",
+                availability.badgeClass,
+                hasMultiple && "top-10",
+              )}
+            >
+              {availability.label}
+            </div>
+          </>
         )}
       </div>
 

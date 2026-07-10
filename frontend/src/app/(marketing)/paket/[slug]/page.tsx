@@ -68,6 +68,16 @@ const getPackageAvailability = (pkg: MarketingPackage, seatsLeft: number) => {
     };
   }
 
+  if (status === "COMING_SOON") {
+    return {
+      isBookable: false,
+      label: pkg.bookingStatusLabel || "Coming Soon",
+      description:
+        "Detail paket ini sedang dilengkapi. Silakan hubungi admin untuk info awal.",
+      buttonLabel: "Coming Soon",
+    };
+  }
+
   if (status === "CLOSED" || pkg.isBookable === false) {
     return {
       isBookable: false,

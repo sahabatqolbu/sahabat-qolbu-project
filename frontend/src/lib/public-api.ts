@@ -84,7 +84,8 @@ type BackendPackage = {
   images?: BackendPackageImage[] | null;
   isPublished?: boolean | null;
   isActive?: boolean | null;
-  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string | null;
+  bookingStatus?:
+    "OPEN" | "CLOSED" | "SOLD_OUT" | "COMING_SOON" | string | null;
   bookingStatusLabel?: string | null;
   isBookable?: boolean | null;
   daysUntilDeparture?: number | null;
@@ -160,7 +161,7 @@ export interface MarketingPackage {
   totalSeats: number;
   bookedSeats: number;
   remainingSeats?: number;
-  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | string;
+  bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | "COMING_SOON" | string;
   bookingStatusLabel?: string;
   isBookable?: boolean;
   daysUntilDeparture?: number;

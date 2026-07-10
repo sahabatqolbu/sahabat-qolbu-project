@@ -120,6 +120,14 @@ export default function PackageDetailPage({ params }: PageProps) {
       return <Badge variant="destructive">Sold Out</Badge>;
     }
 
+    if (packageData.bookingStatus === "COMING_SOON") {
+      return (
+        <Badge className="bg-amber-100 text-amber-800">
+          {packageData.bookingStatusLabel || "Coming Soon"}
+        </Badge>
+      );
+    }
+
     if (
       packageData.bookingStatus === "CLOSED" ||
       packageData.isBookable === false
@@ -346,13 +354,11 @@ export default function PackageDetailPage({ params }: PageProps) {
                         {format(
                           new Date(pkg.airlineIssuedDate),
                           "dd MMM yyyy",
-                          { locale: localeId }
+                          { locale: localeId },
                         )}
                       </span>
                     </div>
                   )}
-
-
                 </div>
               ) : (
                 <p className="text-gray-500 text-center py-4">
@@ -373,20 +379,36 @@ export default function PackageDetailPage({ params }: PageProps) {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 border rounded-lg bg-gray-50 text-center">
-                  <p className="text-xs text-gray-500 mb-1 font-medium">Double (2 org)</p>
-                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceDouble || 0)}</p>
+                  <p className="text-xs text-gray-500 mb-1 font-medium">
+                    Double (2 org)
+                  </p>
+                  <p className="font-bold text-gray-900">
+                    {formatCurrency(pkg.priceDouble || 0)}
+                  </p>
                 </div>
                 <div className="p-3 border rounded-lg bg-gray-50 text-center">
-                  <p className="text-xs text-gray-500 mb-1 font-medium">Triple (3 org)</p>
-                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceTriple || 0)}</p>
+                  <p className="text-xs text-gray-500 mb-1 font-medium">
+                    Triple (3 org)
+                  </p>
+                  <p className="font-bold text-gray-900">
+                    {formatCurrency(pkg.priceTriple || 0)}
+                  </p>
                 </div>
                 <div className="p-3 border rounded-lg bg-gray-50 text-center">
-                  <p className="text-xs text-gray-500 mb-1 font-medium">Quad (4 org)</p>
-                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceQuad || 0)}</p>
+                  <p className="text-xs text-gray-500 mb-1 font-medium">
+                    Quad (4 org)
+                  </p>
+                  <p className="font-bold text-gray-900">
+                    {formatCurrency(pkg.priceQuad || 0)}
+                  </p>
                 </div>
                 <div className="p-3 border rounded-lg bg-gray-50 text-center">
-                  <p className="text-xs text-gray-500 mb-1 font-medium">Quint (5 org)</p>
-                  <p className="font-bold text-gray-900">{formatCurrency(pkg.priceQuint || 0)}</p>
+                  <p className="text-xs text-gray-500 mb-1 font-medium">
+                    Quint (5 org)
+                  </p>
+                  <p className="font-bold text-gray-900">
+                    {formatCurrency(pkg.priceQuint || 0)}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -452,7 +474,9 @@ export default function PackageDetailPage({ params }: PageProps) {
                 <CardTitle>Deskripsi</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 text-sm whitespace-pre-wrap">{pkg.description}</p>
+                <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                  {pkg.description}
+                </p>
               </CardContent>
             </Card>
           )}
@@ -591,7 +615,6 @@ export default function PackageDetailPage({ params }: PageProps) {
               </Button>
             </CardContent>
           </Card>
-
         </div>
       </div>
     </div>

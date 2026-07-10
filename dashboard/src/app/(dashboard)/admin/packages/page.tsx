@@ -223,6 +223,14 @@ export default function PackagesPage() {
       return <Badge variant="destructive">Sold Out</Badge>;
     }
 
+    if (pkg.bookingStatus === "COMING_SOON") {
+      return (
+        <Badge className="bg-amber-100 text-amber-800">
+          {pkg.bookingStatusLabel || "Coming Soon"}
+        </Badge>
+      );
+    }
+
     if (pkg.bookingStatus === "CLOSED" || pkg.isBookable === false) {
       return (
         <Badge className="bg-slate-100 text-slate-800">
@@ -244,37 +252,39 @@ export default function PackagesPage() {
           </h1>
           <p className="text-gray-600 mt-1">Manajemen paket perjalanan umrah</p>
         </div>
-        {!isFinanceReadOnly && <div className="flex gap-2">
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept=".xlsx,.xls"
-            onChange={handleImport}
-          />
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importMutation.isPending}
-          >
-            {importMutation.isPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 mr-2" />
-            )}
-            Import
-          </Button>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Link href="/admin/packages/create">
-            <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Paket
+        {!isFinanceReadOnly && (
+          <div className="flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".xlsx,.xls"
+              onChange={handleImport}
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importMutation.isPending}
+            >
+              {importMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Import
             </Button>
-          </Link>
-        </div>}
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Link href="/admin/packages/create">
+              <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Paket
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -288,7 +298,9 @@ export default function PackagesPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <Users className="h-5 w-5 text-blue-600" />
-              <span className="text-2xl font-bold">{summary?.totalSeats || 0}</span>
+              <span className="text-2xl font-bold">
+                {summary?.totalSeats || 0}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -302,11 +314,14 @@ export default function PackagesPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="text-2xl font-bold">{summary?.bookedSeats || 0}</span>
+              <span className="text-2xl font-bold">
+                {summary?.bookedSeats || 0}
+              </span>
             </div>
             {summary && summary.totalSeats > 0 && (
               <p className="text-xs text-gray-500 mt-2">
-                {Math.round((summary.bookedSeats / summary.totalSeats) * 100)}% dari total seat
+                {Math.round((summary.bookedSeats / summary.totalSeats) * 100)}%
+                dari total seat
               </p>
             )}
           </CardContent>
@@ -321,7 +336,9 @@ export default function PackagesPage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <Calendar className="h-5 w-5 text-orange-600" />
-              <span className="text-2xl font-bold">{summary?.remainingSeats || 0}</span>
+              <span className="text-2xl font-bold">
+                {summary?.remainingSeats || 0}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -383,12 +400,14 @@ export default function PackagesPage() {
             <div className="text-center py-12">
               <FileSpreadsheet className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">Belum ada paket</p>
-              {!isFinanceReadOnly && <Link href="/admin/packages/create">
-                <Button className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Buat Paket Pertama
-                </Button>
-              </Link>}
+              {!isFinanceReadOnly && (
+                <Link href="/admin/packages/create">
+                  <Button className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Buat Paket Pertama
+                  </Button>
+                </Link>
+              )}
             </div>
           ) : (
             <>
@@ -428,7 +447,7 @@ export default function PackagesPage() {
                                     <div className="w-10 h-12 rounded bg-gray-50 overflow-hidden border">
                                       <img
                                         src={getImageUrl(
-                                          pkg.images[0].imageUrl
+                                          pkg.images[0].imageUrl,
                                         )} // ✅ TAMBAHIN getImageUrl()
                                         alt={pkg.name}
                                         className="w-full h-full object-contain"
@@ -475,7 +494,7 @@ export default function PackagesPage() {
                               {format(
                                 new Date(pkg.departureDate),
                                 "dd MMM yyyy",
-                                { locale: localeId }
+                                { locale: localeId },
                               )}
                             </p>
                             <p className="text-gray-500">
@@ -529,9 +548,8 @@ export default function PackagesPage() {
                               <Plane className="h-3 w-3 text-gray-400" />
                               <span>{pkg.airline?.name || "-"}</span>
                             </div>
-                            {pkg.airline && (
-                              getStatusBadge(pkg.airlineStatus || "PLANNING")
-                            )}
+                            {pkg.airline &&
+                              getStatusBadge(pkg.airlineStatus || "PLANNING")}
                           </div>
                         </TableCell>
 
@@ -545,7 +563,7 @@ export default function PackagesPage() {
                                   {pkg.hotelMakkah.name}
                                 </span>
                                 {getStatusBadge(
-                                  pkg.hotelMakkahStatus || "PLANNING"
+                                  pkg.hotelMakkahStatus || "PLANNING",
                                 )}
                               </div>
                             )}
@@ -556,7 +574,7 @@ export default function PackagesPage() {
                                   {pkg.hotelMadinah.name}
                                 </span>
                                 {getStatusBadge(
-                                  pkg.hotelMadinahStatus || "PLANNING"
+                                  pkg.hotelMadinahStatus || "PLANNING",
                                 )}
                               </div>
                             )}
@@ -666,30 +684,33 @@ export default function PackagesPage() {
       </Card>
 
       {/* Delete Dialog */}
-      {!isFinanceReadOnly && <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Paket?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Paket akan dihapus permanen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Hapus"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>}
+      {!isFinanceReadOnly && (
+        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hapus Paket?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tindakan ini tidak dapat dibatalkan. Paket akan dihapus
+                permanen.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Hapus"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }
