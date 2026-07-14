@@ -12,7 +12,7 @@ const navigation = [
   { name: "Beranda", href: "/#beranda" },
   { name: "Tentang", href: "/#tentang" },
   { name: "Paket", href: "/#paket" },
-  { name: "Testimoni", href: "/#testimoni" },
+  { name: "FAQ", href: "/#faq" },
 ];
 
 export default function Navbar() {
