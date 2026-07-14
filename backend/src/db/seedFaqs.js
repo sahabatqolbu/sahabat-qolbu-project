@@ -162,6 +162,7 @@ const faqSeedItems = [
 const obsoleteQuestions = [
   "Dokumen apa saja yang harus disiapkan saat pendaftaran?",
   "Apa saja syarat jamaah untuk mendaftar paket umroh?",
+  "Biaya apa saja yang tidak termasuk dalam paket?",
   "Apa syarat dan alur pembuatan paspor untuk umroh?",
   "Berapa ketentuan nama paspor untuk visa umroh?",
   "Bagaimana aturan vaksin meningitis untuk jamaah umroh?",
