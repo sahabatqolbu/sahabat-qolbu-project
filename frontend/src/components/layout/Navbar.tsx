@@ -11,7 +11,7 @@ import { getDashboardBaseUrl, getDashboardUrl } from "@/lib/dashboard-url";
 const navigation = [
   { name: "Beranda", href: "/#beranda" },
   { name: "Tentang", href: "/#tentang" },
-  { name: "Paket", href: "/#paket" },
+  { name: "Paket Umroh", href: "/#paket" },
   { name: "FAQ", href: "/#faq" },
 ];
 
