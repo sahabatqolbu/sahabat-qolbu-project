@@ -811,7 +811,7 @@ export default function MarketingHomePage() {
                       +
                     </span>
                   </summary>
-                  <p className="mt-4 leading-relaxed text-gray-600">
+                  <p className="mt-4 whitespace-pre-line leading-relaxed text-gray-600">
                     {faq.answer}
                   </p>
                 </details>

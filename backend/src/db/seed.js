@@ -7,6 +7,7 @@ import { db } from "./index.js";
 import {
   users,
   masterDocuments,
+  faqs,
   masterHotels,
   masterAirlines,
   masterAirports,
@@ -143,6 +144,128 @@ async function seed() {
       console.log("✅ Master documents created");
     } else {
       console.log("ℹ️  Master documents already exist, skipping...");
+    }
+
+    // =====================================================
+    // 2B. CREATE PUBLIC FAQ CONTENT
+    // =====================================================
+    console.log("\n❓ Creating public FAQ content...");
+
+    const existingFaqs = await db.query.faqs.findMany({
+      columns: {
+        question: true,
+      },
+    });
+    const existingFaqQuestions = new Set(
+      existingFaqs.map((faq) =>
+        String(faq.question || "")
+          .trim()
+          .toLowerCase(),
+      ),
+    );
+
+    const faqSeedItems = [
+      {
+        category: "UMRAH",
+        question: "Dokumen apa saja yang harus disiapkan saat pendaftaran?",
+        answer:
+          "Dokumen pendaftaran yang harus disiapkan:\n" +
+          "- Fotocopy KTP\n" +
+          "- Fotocopy Kartu Keluarga\n" +
+          "- Paspor aktif\n" +
+          "- Pas foto 4x6",
+        sortOrder: 1,
+      },
+      {
+        category: "UMRAH",
+        question: "Apa saja syarat jamaah untuk mendaftar paket umroh?",
+        answer:
+          "Syarat jamaah:\n" +
+          "- Sehat jasmani dan rohani\n" +
+          "- Tidak memiliki kendala jalan kaki\n" +
+          "- Tidak ada batas usia\n" +
+          "- Jamaah usia 60 tahun ke atas atau memiliki riwayat komorbid disarankan didampingi keluarga",
+        sortOrder: 2,
+      },
+      {
+        category: "UMRAH",
+        question: "Biaya apa saja yang tidak termasuk dalam paket?",
+        answer:
+          "Biaya yang tidak termasuk dalam paket:\n" +
+          "- Pembuatan / perpanjangan paspor\n" +
+          "- Biaya pengiriman perlengkapan jamaah\n" +
+          "- Keperluan pribadi selama perjalanan\n" +
+          "- Vaksin meningitis dan polio apabila diwajibkan sesuai ketentuan\n" +
+          "- Perjalanan domestik dari / ke bandara keberangkatan\n" +
+          "- Tiket Kereta Gantung Thaif / Telefric",
+        sortOrder: 3,
+      },
+      {
+        category: "UMRAH",
+        question: "Apa syarat dan alur pembuatan paspor untuk umroh?",
+        answer:
+          "Dokumen pembuatan paspor yang dibutuhkan:\n" +
+          "- KTP asli dan fotocopy (diperbesar A4)\n" +
+          "- KK asli dan fotocopy\n" +
+          "- Akta Lahir / Ijazah asli dan fotocopy\n" +
+          "- Buku Nikah asli dan fotocopy (bagi pasangan suami istri)\n" +
+          "- Untuk perpanjangan: paspor lama asli dan fotocopy\n\n" +
+          "Proses pembuatan paspor mandiri oleh jamaah:\n" +
+          '1. Download aplikasi "Layanan Paspor Online" di Playstore\n' +
+          "2. Daftar akun dan pilih Kantor Imigrasi terdekat\n" +
+          "3. Datang sesuai jadwal dengan dokumen asli dan fotocopy (2 rangkap)\n" +
+          "4. Wawancara, foto, dan sidik jari\n" +
+          "5. Bayar setelah mendapat Bukti Pengantar Pembayaran\n" +
+          "6. Paspor jadi 5-7 hari setelah pembayaran",
+        sortOrder: 4,
+      },
+      {
+        category: "UMRAH",
+        question: "Berapa ketentuan nama paspor untuk visa umroh?",
+        answer:
+          "Untuk visa umroh, nama jamaah minimal 3 kata. Jika paspor hanya 1 kata, perlu proses penambahan nama di Kantor Imigrasi sebelum visa bisa diproses. Jika nama hanya 1 kata, bisa ditambahkan nama Ayah dan nama Kakek dari pihak Ayah sesuai KK, Akta, atau Buku Nikah.",
+        sortOrder: 5,
+      },
+      {
+        category: "UMRAH",
+        question: "Bagaimana aturan vaksin meningitis untuk jamaah umroh?",
+        answer:
+          "Vaksin meningitis (Buku Kuning ICV) bisa dilakukan di Kantor Kesehatan Pelabuhan (KKP) terdekat atau rumah sakit / klinik bersertifikat ICV.\n\n" +
+          "Dokumen yang dibawa ke KKP:\n" +
+          "- Tanda terima pendaftaran online\n" +
+          "- Fotocopy paspor\n" +
+          "- Fotocopy KTP\n" +
+          "- Foto 4x6 2 lembar dengan background putih\n\n" +
+          "Catatan penting:\n" +
+          "- Daftar online KKP: https://kespel.kemkes.go.id/vaksinasi_int/vaksinasi_int_public/add\n" +
+          "- Waktu terbaik vaksin paling lambat 2 minggu sebelum keberangkatan\n" +
+          "- Masa berlaku Buku Kuning 2 tahun\n" +
+          "- Jika sudah punya Buku Hijau Haji yang masih berlaku dan memuat data meningitis, bisa digunakan",
+        sortOrder: 6,
+      },
+    ];
+
+    const faqToInsert = faqSeedItems.filter(
+      (item) =>
+        !existingFaqQuestions.has(
+          String(item.question || "")
+            .trim()
+            .toLowerCase(),
+        ),
+    );
+
+    if (faqToInsert.length > 0) {
+      await db.insert(faqs).values(
+        faqToInsert.map((item) => ({
+          ...item,
+          isActive: true,
+        })),
+      );
+      console.log(`✅ FAQ seeded (${faqToInsert.length} new items)`);
+    } else {
+      console.log(
+        "ℹ️  Public FAQ already contains the seeded items, skipping...",
+      );
     }
 
     // =====================================================
@@ -386,6 +509,7 @@ async function seed() {
     console.log("   - Airports: 4");
     console.log("   - Hotels: 5");
     console.log("   - Packages: 2");
+    console.log("   - Public FAQ: seeded");
     console.log("\n🔐 Login Credentials:");
     console.log("   Email: admin@sahabatqolbu.com");
     console.log("   Password: Admin123!");
@@ -400,4 +524,3 @@ async function seed() {
 }
 
 seed();
-
