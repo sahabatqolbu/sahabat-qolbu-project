@@ -119,7 +119,7 @@ export default function FAQsPage() {
     queryFn: async () => {
       const params: Record<string, string> = {};
       if (categoryFilter !== "all") params.category = categoryFilter;
-      const res = await api.get("/faqs", { params });
+      const res = await api.get("/master/faqs", { params });
       return res.data;
     },
   });
@@ -128,7 +128,7 @@ export default function FAQsPage() {
 
   // ===== CREATE MUTATION =====
   const createMutation = useMutation({
-    mutationFn: (payload: FAQFormData) => api.post("/faqs", payload),
+    mutationFn: (payload: FAQFormData) => api.post("/master/faqs", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDialogOpen(false);
@@ -147,7 +147,7 @@ export default function FAQsPage() {
   // ===== UPDATE MUTATION =====
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FAQFormData }) =>
-      api.put(`/faqs/${id}`, data),
+      api.put(`/master/faqs/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDialogOpen(false);
@@ -165,7 +165,7 @@ export default function FAQsPage() {
 
   // ===== DELETE MUTATION =====
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/faqs/${id}`),
+    mutationFn: (id: number) => api.delete(`/master/faqs/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDeleteDialogOpen(false);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import PackageCard from "@/components/marketing/PackageCard";
@@ -25,6 +25,8 @@ export default function MarketingHomePage() {
     null,
   );
   const [loading, setLoading] = useState(true);
+  const [activeFaqGroup, setActiveFaqGroup] = useState("semua");
+  const [openFaqId, setOpenFaqId] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -38,6 +40,7 @@ export default function MarketingHomePage() {
         if (active) {
           setPackages(packageData);
           setFaqs(faqData);
+          setOpenFaqId(faqData[0]?.id ?? null);
           setGalleryImages(galleryData);
           setCompanyProfile(profileData);
           setLoading(false);
@@ -56,6 +59,73 @@ export default function MarketingHomePage() {
   }, []);
 
   const featuredPackages = packages.slice(0, 6);
+  const getFaqGroup = (faq: PublicFaq) => {
+    const text = `${faq.question} ${faq.answer}`.toLowerCase();
+
+    if (text.includes("paspor")) return "paspor";
+    if (
+      text.includes("vaksin") ||
+      text.includes("meningitis") ||
+      text.includes("buku kuning")
+    ) {
+      return "vaksin";
+    }
+    if (
+      text.includes("rekening") ||
+      text.includes("pembayaran") ||
+      text.includes("dp") ||
+      text.includes("biaya")
+    ) {
+      return "pembayaran";
+    }
+    if (
+      text.includes("kontak") ||
+      text.includes("whatsapp") ||
+      text.includes("grup")
+    ) {
+      return "kontak";
+    }
+
+    return "pendaftaran";
+  };
+  const faqGroups = useMemo(
+    () => [
+      { id: "semua", label: "Semua", count: faqs.length },
+      {
+        id: "pendaftaran",
+        label: "Pendaftaran",
+        count: faqs.filter((faq) => getFaqGroup(faq) === "pendaftaran").length,
+      },
+      {
+        id: "paspor",
+        label: "Paspor",
+        count: faqs.filter((faq) => getFaqGroup(faq) === "paspor").length,
+      },
+      {
+        id: "vaksin",
+        label: "Vaksin",
+        count: faqs.filter((faq) => getFaqGroup(faq) === "vaksin").length,
+      },
+      {
+        id: "pembayaran",
+        label: "Pembayaran",
+        count: faqs.filter((faq) => getFaqGroup(faq) === "pembayaran").length,
+      },
+      {
+        id: "kontak",
+        label: "Kontak",
+        count: faqs.filter((faq) => getFaqGroup(faq) === "kontak").length,
+      },
+    ],
+    [faqs],
+  );
+  const visibleFaqs = useMemo(
+    () =>
+      activeFaqGroup === "semua"
+        ? faqs
+        : faqs.filter((faq) => getFaqGroup(faq) === activeFaqGroup),
+    [activeFaqGroup, faqs],
+  );
   const philosophyItems = companyProfile?.philosophy || [];
   const targetMarketItems = companyProfile?.targetMarket || [];
   const hasBrandContent = Boolean(
@@ -798,24 +868,70 @@ export default function MarketingHomePage() {
               </p>
             </div>
 
+            <div className="mb-8 flex flex-wrap justify-center gap-2">
+              {faqGroups
+                .filter((group) => group.count > 0)
+                .map((group) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => {
+                      const nextFaqs =
+                        group.id === "semua"
+                          ? faqs
+                          : faqs.filter((faq) => getFaqGroup(faq) === group.id);
+                      setActiveFaqGroup(group.id);
+                      setOpenFaqId(nextFaqs[0]?.id ?? null);
+                    }}
+                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      activeFaqGroup === group.id
+                        ? "border-primary bg-primary text-white"
+                        : "border-gray-200 bg-white text-primary hover:border-gold hover:text-gold"
+                    }`}
+                  >
+                    {group.label}
+                  </button>
+                ))}
+            </div>
+
             <div className="space-y-3">
-              {faqs.map((faq, index) => (
-                <details
-                  key={faq.id}
-                  className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm open:border-gold/40 open:bg-gold/5"
-                  open={index === 0}
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left font-semibold text-primary">
-                    <span>{faq.question}</span>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary transition group-open:rotate-45">
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-4 whitespace-pre-line leading-relaxed text-gray-600">
-                    {faq.answer}
-                  </p>
-                </details>
-              ))}
+              {visibleFaqs.map((faq) => {
+                const isOpen = openFaqId === faq.id;
+
+                return (
+                  <article
+                    key={faq.id}
+                    className={`rounded-xl border bg-white shadow-sm transition ${
+                      isOpen
+                        ? "border-gold/50 bg-gold/5"
+                        : "border-gray-100 hover:border-gold/30"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
+                      className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left font-semibold text-primary"
+                      aria-expanded={isOpen}
+                    >
+                      <span>{faq.question}</span>
+                      <span
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary transition ${
+                          isOpen ? "rotate-45 bg-primary text-white" : ""
+                        }`}
+                      >
+                        +
+                      </span>
+                    </button>
+                    {isOpen ? (
+                      <div className="border-t border-gold/20 px-5 pb-5 pt-4">
+                        <p className="whitespace-pre-line leading-relaxed text-gray-600">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
