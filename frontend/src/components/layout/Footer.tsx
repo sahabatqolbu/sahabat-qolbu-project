@@ -227,10 +227,16 @@ export default function Footer() {
         </div>
 
         {/* Bottom Footer */}
-        <div className="py-6 border-t border-white/10 text-center">
-          <p className="text-gray-400 text-sm">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 py-6 text-center md:flex-row md:text-left">
+          <p className="text-sm text-gray-400">
             © {currentYear} {branding.companyName}. All rights reserved.
           </p>
+          <Link
+            href="/kebijakan-privasi"
+            className="text-sm text-gray-400 transition-colors hover:text-gold"
+          >
+            Kebijakan Privasi
+          </Link>
         </div>
       </div>
 
