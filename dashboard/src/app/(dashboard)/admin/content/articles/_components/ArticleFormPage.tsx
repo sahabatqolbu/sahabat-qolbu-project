@@ -134,6 +134,17 @@ const getErrorMessage = (error: unknown) => {
 const normalizeTags = (tags?: string[]) =>
   Array.isArray(tags) ? tags.join(", ") : "";
 
+const normalizeEnumValue = <T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T,
+) => {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase();
+  return allowed.includes(normalized as T) ? (normalized as T) : fallback;
+};
+
 const extractContentImages = (content: string) =>
   Array.from(content.matchAll(/!?\[([^\]]*)\]\(([^)]+)\)/g)).map((match) => ({
     alt: match[1] || "Gambar artikel",
@@ -192,10 +203,22 @@ export default function ArticleFormPage({
       slug: article.slug || "",
       excerpt: article.excerpt || "",
       content: article.content || "",
-      category: article.category || "LAINNYA",
+      category: normalizeEnumValue(
+        article.category,
+        CATEGORIES.map((item) => item.value),
+        "LAINNYA",
+      ),
       tags: normalizeTags(article.tags),
-      status: article.status || "DRAFT",
-      relatedType: article.relatedType || "NONE",
+      status: normalizeEnumValue(
+        article.status,
+        ["DRAFT", "PUBLISHED"],
+        "DRAFT",
+      ),
+      relatedType: normalizeEnumValue(
+        article.relatedType,
+        RELATED_TYPES.map((item) => item.value),
+        "NONE",
+      ),
       relatedId: article.relatedId ? String(article.relatedId) : "",
       seoTitle: article.seoTitle || "",
       seoDescription: article.seoDescription || "",

@@ -2,8 +2,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { ArrowLeft, CalendarDays } from "lucide-react";
-import { getPublicArticleBySlug, resolveAssetUrl } from "@/lib/public-api";
+import {
+  ArrowLeft,
+  BookOpen,
+  CalendarDays,
+  ChevronRight,
+  FileText,
+  Quote,
+  Sparkles,
+} from "lucide-react";
+import {
+  getPublicArticleBySlug,
+  getPublicArticles,
+  resolveAssetUrl,
+} from "@/lib/public-api";
+import ArticleEngagement from "@/components/marketing/ArticleEngagement";
 
 type Params = Promise<{ slug: string }>;
 
@@ -19,6 +32,57 @@ const formatDate = (value?: string | null) => {
 };
 
 const markdownImagePattern = /!?\[([^\]]*)\]\(([^)]+)\)/g;
+
+const estimateReadingTime = (content: string) => {
+  const words = content.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 180));
+};
+
+const looksLikeHeading = (block: string) => {
+  const text = block.trim();
+  if (!text || text.includes("\n")) return false;
+  if (text.length > 90) return false;
+  return !/[.!?]$/.test(text);
+};
+
+const renderTextBlock = (block: string, key: string) => {
+  const lines = block
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const isList =
+    lines.length > 1 && lines.every((line) => /^[-•]\s+/.test(line));
+
+  if (isList) {
+    return (
+      <ul key={key} className="space-y-3">
+        {lines.map((line) => (
+          <li
+            key={line}
+            className="flex gap-3 rounded-sm bg-primary/5 px-4 py-3 leading-7 text-neutral-700"
+          >
+            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gold" />
+            <span>{line.replace(/^[-•]\s+/, "")}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (looksLikeHeading(block)) {
+    return (
+      <h2 key={key} className="pt-4 text-2xl font-extrabold text-primary">
+        {block.trim()}
+      </h2>
+    );
+  }
+
+  return (
+    <p key={key} className="whitespace-pre-line leading-8 text-neutral-700">
+      {block}
+    </p>
+  );
+};
 
 const renderArticleImage = (alt: string, src: string, key: string) => (
   <figure
@@ -45,28 +109,14 @@ const renderContentBlock = (block: string, index: number) => {
   const matches = Array.from(block.matchAll(markdownImagePattern));
 
   if (!matches.length) {
-    return (
-      <p
-        key={`${block}-${index}`}
-        className="whitespace-pre-line leading-8 text-neutral-700"
-      >
-        {block}
-      </p>
-    );
+    return renderTextBlock(block, `${block}-${index}`);
   }
 
   matches.forEach((match, matchIndex) => {
     const start = match.index ?? 0;
     const text = block.slice(lastIndex, start).trim();
     if (text) {
-      parts.push(
-        <p
-          key={`text-${index}-${matchIndex}`}
-          className="whitespace-pre-line leading-8 text-neutral-700"
-        >
-          {text}
-        </p>,
-      );
+      parts.push(renderTextBlock(text, `text-${index}-${matchIndex}`));
     }
 
     parts.push(
@@ -81,14 +131,7 @@ const renderContentBlock = (block: string, index: number) => {
 
   const tail = block.slice(lastIndex).trim();
   if (tail) {
-    parts.push(
-      <p
-        key={`tail-${index}`}
-        className="whitespace-pre-line leading-8 text-neutral-700"
-      >
-        {tail}
-      </p>,
-    );
+    parts.push(renderTextBlock(tail, `tail-${index}`));
   }
 
   return (
@@ -131,30 +174,41 @@ export default async function ArticleDetailPage({
   const { slug } = await params;
   const article = await getPublicArticleBySlug(slug);
   if (!article) notFound();
+  const relatedArticles = (await getPublicArticles("limit=6"))
+    .filter((item) => item.slug !== article.slug)
+    .slice(0, 4);
+  const readingTime = estimateReadingTime(article.content || "");
 
   return (
-    <main className="min-h-screen bg-white pt-24 text-neutral-800">
+    <main className="min-h-screen bg-[#f8faf8] pt-24 text-neutral-800">
       <article>
-        <header className="border-b border-neutral-200 bg-neutral-50 py-10 md:py-14">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <header className="relative overflow-hidden border-b border-primary/10 bg-primary py-10 text-white md:py-16">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.28),transparent_34%)]" />
+          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <Link
               href="/artikel"
-              className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-primary transition hover:text-gold"
+              className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-gold transition hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" /> Semua Artikel
             </Link>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-              {article.category || "Artikel"}
-            </p>
-            <h1 className="mt-3 text-3xl font-extrabold leading-tight text-primary md:text-5xl">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
+                {article.category || "Artikel"}
+              </span>
+              <span className="inline-flex items-center gap-2 text-sm font-bold text-white/75">
+                <BookOpen className="h-4 w-4 text-gold" />
+                {readingTime} menit baca
+              </span>
+            </div>
+            <h1 className="mt-5 max-w-4xl text-3xl font-extrabold leading-tight md:text-5xl">
               {article.title}
             </h1>
             {article.excerpt ? (
-              <p className="mt-5 text-lg leading-8 text-neutral-600">
+              <p className="mt-5 max-w-3xl text-lg leading-8 text-white/80">
                 {article.excerpt}
               </p>
             ) : null}
-            <p className="mt-5 flex items-center gap-2 text-sm font-bold text-neutral-500">
+            <p className="mt-5 flex items-center gap-2 text-sm font-bold text-white/70">
               <CalendarDays className="h-4 w-4" />
               {formatDate(article.publishedAt || article.createdAt)}
             </p>
@@ -169,8 +223,86 @@ export default async function ArticleDetailPage({
             />
           </div>
         ) : null}
-        <section className="mx-auto max-w-3xl space-y-6 px-4 py-12 text-base sm:px-6 lg:px-8">
-          {renderContent(article.content)}
+        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
+          <div className="space-y-8">
+            {article.excerpt ? (
+              <blockquote className="rounded-sm border-l-4 border-gold bg-white p-6 shadow-sm">
+                <Quote className="mb-3 h-7 w-7 text-gold" />
+                <p className="text-xl font-bold leading-8 text-primary">
+                  {article.excerpt}
+                </p>
+              </blockquote>
+            ) : null}
+
+            <div className="rounded-sm border border-gold/30 bg-gold/10 p-5">
+              <div className="flex items-start gap-3">
+                <Sparkles className="mt-1 h-5 w-5 shrink-0 text-gold" />
+                <p className="font-semibold leading-7 text-primary">
+                  Ringkasnya, artikel ini membantu calon jamaah memahami poin
+                  penting sebelum memilih fasilitas perjalanan umroh.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="space-y-6 text-base">
+                {renderContent(article.content)}
+              </div>
+            </div>
+
+            <ArticleEngagement slug={article.slug} title={article.title} />
+          </div>
+
+          <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
+            <div className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm">
+              <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
+                <FileText className="h-5 w-5 text-gold" />
+                Artikel Lainnya
+              </h2>
+              <div className="mt-4 space-y-3">
+                {relatedArticles.length ? (
+                  relatedArticles.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/artikel/${item.slug}`}
+                      className="group block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
+                    >
+                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-gold">
+                        {item.category || "Artikel"}
+                      </p>
+                      <h3 className="mt-2 line-clamp-2 font-extrabold leading-6 text-primary group-hover:text-gold">
+                        {item.title}
+                      </h3>
+                      <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary">
+                        Baca artikel
+                        <ChevronRight className="h-4 w-4" />
+                      </span>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-sm text-neutral-500">
+                    Belum ada artikel lain.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-sm bg-primary p-5 text-white shadow-sm">
+              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-gold">
+                Butuh rekomendasi?
+              </p>
+              <h2 className="mt-2 text-xl font-extrabold">
+                Konsultasikan pilihan paket dengan tim Sahabat Qolbu.
+              </h2>
+              <Link
+                href="/#paket"
+                className="mt-5 inline-flex items-center gap-2 rounded-sm bg-gold px-4 py-3 font-extrabold text-primary transition hover:bg-white"
+              >
+                Lihat Paket Umroh
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </aside>
         </section>
       </article>
     </main>
