@@ -117,6 +117,26 @@ const looksLikeHeading = (block: string) => {
 };
 
 const renderTextBlock = (block: string, key: string) => {
+  const markdownHeading = block.trim().match(/^(#{2,4})\s+(.+)$/);
+  if (markdownHeading && !markdownHeading[2].includes("\n")) {
+    const level = markdownHeading[1].length;
+    const text = markdownHeading[2].trim();
+
+    if (level === 2) {
+      return (
+        <h2 key={key} className="pt-4 text-2xl font-extrabold text-primary">
+          {text}
+        </h2>
+      );
+    }
+
+    return (
+      <h3 key={key} className="pt-2 text-xl font-extrabold text-primary">
+        {text}
+      </h3>
+    );
+  }
+
   const lines = block
     .split(/\r?\n/)
     .map((line) => line.trim())
