@@ -12,9 +12,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import {
+  getMarketingPackageById,
   getPublicArticleBySlug,
   getPublicArticles,
+  getPublicAirlineDetail,
+  getPublicHotelDetail,
   resolveAssetUrl,
+  slugifyPackageName,
 } from "@/lib/public-api";
 import ArticleEngagement from "@/components/marketing/ArticleEngagement";
 
@@ -36,6 +40,73 @@ const markdownImagePattern = /!?\[([^\]]*)\]\(([^)]+)\)/g;
 const estimateReadingTime = (content: string) => {
   const words = content.trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 180));
+};
+
+type RelatedPackageSummary = {
+  id: number;
+  name: string;
+  departureDate?: string | null;
+  price?: string | number | null;
+};
+
+const formatPrice = (value?: string | number | null) => {
+  const amount = Number(value || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const getRelatedPackageTitle = (relatedType?: string | null) => {
+  if (relatedType === "HOTEL") return "Paket yang Menggunakan Hotel Ini";
+  if (relatedType === "AIRLINE") return "Paket yang Menggunakan Maskapai Ini";
+  if (relatedType === "PACKAGE") return "Paket Terkait Artikel Ini";
+  return "Paket yang Menggunakan Layanan Ini";
+};
+
+const getRelatedPackages = async (
+  relatedType?: string | null,
+  relatedId?: number | null,
+): Promise<RelatedPackageSummary[]> => {
+  if (!relatedType || !relatedId) return [];
+
+  if (relatedType === "HOTEL") {
+    const detail = await getPublicHotelDetail(relatedId);
+    return (detail?.packages || []).map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name || `Paket ${pkg.id}`,
+      departureDate: pkg.departureDate,
+      price: pkg.discountPrice || pkg.price,
+    }));
+  }
+
+  if (relatedType === "AIRLINE") {
+    const detail = await getPublicAirlineDetail(relatedId);
+    return (detail?.packages || []).map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name || `Paket ${pkg.id}`,
+      departureDate: pkg.departureDate,
+      price: pkg.discountPrice || pkg.price,
+    }));
+  }
+
+  if (relatedType === "PACKAGE") {
+    const pkg = await getMarketingPackageById(relatedId);
+    return pkg
+      ? [
+          {
+            id: pkg.id,
+            name: pkg.name,
+            departureDate: pkg.departureDate,
+            price: pkg.discountedPrice || pkg.priceQuad,
+          },
+        ]
+      : [];
+  }
+
+  return [];
 };
 
 const looksLikeHeading = (block: string) => {
@@ -177,6 +248,10 @@ export default async function ArticleDetailPage({
   const relatedArticles = (await getPublicArticles("limit=6"))
     .filter((item) => item.slug !== article.slug)
     .slice(0, 4);
+  const relatedPackages = await getRelatedPackages(
+    article.relatedType,
+    article.relatedId,
+  );
   const readingTime = estimateReadingTime(article.content || "");
 
   return (
@@ -254,6 +329,37 @@ export default async function ArticleDetailPage({
           </div>
 
           <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
+            {relatedPackages.length ? (
+              <div className="rounded-sm border border-gold/30 bg-white p-5 shadow-sm">
+                <h2 className="text-lg font-extrabold text-primary">
+                  {getRelatedPackageTitle(article.relatedType)}
+                </h2>
+                <div className="mt-4 space-y-3">
+                  {relatedPackages.slice(0, 4).map((pkg) => (
+                    <Link
+                      key={pkg.id}
+                      href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
+                      className="block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
+                    >
+                      <h3 className="font-extrabold leading-6 text-primary">
+                        {pkg.name}
+                      </h3>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-neutral-500">
+                        {pkg.departureDate ? (
+                          <span>{formatDate(pkg.departureDate)}</span>
+                        ) : null}
+                        {formatPrice(pkg.price) ? (
+                          <span className="text-gold">
+                            {formatPrice(pkg.price)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm">
               <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
                 <FileText className="h-5 w-5 text-gold" />

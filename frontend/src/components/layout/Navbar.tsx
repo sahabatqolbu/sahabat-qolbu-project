@@ -12,6 +12,7 @@ const navigation = [
   { name: "Beranda", href: "/#beranda" },
   { name: "Tentang", href: "/#tentang" },
   { name: "Paket Umroh", href: "/#paket" },
+  { name: "Artikel", href: "/#artikel" },
   { name: "FAQ", href: "/#faq" },
 ];
 

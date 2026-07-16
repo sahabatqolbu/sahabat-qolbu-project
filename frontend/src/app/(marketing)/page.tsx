@@ -8,10 +8,12 @@ import { getCalonJamaahRegisterUrl } from "@/lib/dashboard-url";
 import {
   getMarketingPackages,
   getPublicCompanyProfile,
+  getPublicArticles,
   getPublicFaqs,
   getPublicGallery,
   type CompanyProfile,
   type MarketingPackage,
+  type PublicArticle,
   type PublicFaq,
   type PublicGalleryImage,
 } from "@/lib/public-api";
@@ -19,6 +21,7 @@ import {
 export default function MarketingHomePage() {
   const branding = useBranding();
   const [packages, setPackages] = useState<MarketingPackage[]>([]);
+  const [articles, setArticles] = useState<PublicArticle[]>([]);
   const [faqs, setFaqs] = useState<PublicFaq[]>([]);
   const [galleryImages, setGalleryImages] = useState<PublicGalleryImage[]>([]);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
@@ -32,13 +35,15 @@ export default function MarketingHomePage() {
     let active = true;
     Promise.all([
       getMarketingPackages(),
+      getPublicArticles("limit=3"),
       getPublicFaqs(),
       getPublicGallery(),
       getPublicCompanyProfile(),
     ])
-      .then(([packageData, faqData, galleryData, profileData]) => {
+      .then(([packageData, articleData, faqData, galleryData, profileData]) => {
         if (active) {
           setPackages(packageData);
+          setArticles(articleData);
           setFaqs(faqData);
           setOpenFaqId(faqData[0]?.id ?? null);
           setGalleryImages(galleryData);
@@ -799,6 +804,85 @@ export default function MarketingHomePage() {
                     </figcaption>
                   ) : null}
                 </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {articles.length > 0 ? (
+        <section id="artikel" className="border-y border-gray-100 bg-white py-16 md:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <span className="text-gold font-semibold text-sm uppercase tracking-wider">
+                  Artikel
+                </span>
+                <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
+                  Panduan Sebelum Berangkat Umroh
+                </h2>
+                <p className="text-gray-600 leading-7">
+                  Baca penjelasan singkat tentang hotel, maskapai, fasilitas,
+                  dan persiapan perjalanan agar calon jamaah bisa memilih paket
+                  dengan lebih yakin.
+                </p>
+              </div>
+              <Link
+                href="/artikel"
+                className="inline-flex items-center justify-center rounded-md border border-primary px-5 py-3 font-bold text-primary transition hover:bg-primary hover:text-white"
+              >
+                Lihat Semua Artikel
+              </Link>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-3">
+              {articles.slice(0, 3).map((article) => (
+                <Link
+                  key={article.id}
+                  href={`/artikel/${article.slug}`}
+                  className="group overflow-hidden rounded-md border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:border-gold hover:shadow-xl hover:shadow-primary/10"
+                >
+                  {article.coverImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={article.coverImage}
+                      alt={article.title}
+                      className="aspect-[4/3] w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex aspect-[4/3] items-center justify-center bg-primary/5 text-primary">
+                      <svg
+                        className="h-10 w-10"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h9l5 5v9a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-gold">
+                      {article.category || "Artikel"}
+                    </p>
+                    <h3 className="mt-2 line-clamp-2 text-xl font-extrabold text-primary group-hover:text-gold">
+                      {article.title}
+                    </h3>
+                    {article.excerpt ? (
+                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-600">
+                        {article.excerpt}
+                      </p>
+                    ) : null}
+                    <span className="mt-5 inline-flex font-bold text-primary group-hover:text-gold">
+                      Baca selengkapnya →
+                    </span>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
