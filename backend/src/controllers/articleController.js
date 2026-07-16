@@ -7,6 +7,7 @@ import {
 } from "../db/schema.js";
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
+import { deleteFile } from "../utils/upload.js";
 
 const ARTICLE_CATEGORIES = new Set([
   "UMRAH",
@@ -81,6 +82,9 @@ const parseTags = (value) => {
     .map((item) => item.trim())
     .filter(Boolean);
 };
+
+const parseBoolean = (value) =>
+  ["true", "1", "yes", "on"].includes(String(value || "").toLowerCase());
 
 const mapArticle = (article) => ({
   ...article,
@@ -173,6 +177,9 @@ const buildArticlePayload = async (
 
   if (tags !== undefined) payload.tags = tags;
   if (uploadedPath) payload.coverImage = uploadedPath;
+  if (!uploadedPath && existing && parseBoolean(body.removeCoverImage)) {
+    payload.coverImage = null;
+  }
   if (!existing && userId) payload.authorId = userId;
 
   return { payload };
@@ -268,7 +275,14 @@ export const updateArticle = async (req, res, next) => {
     );
     if (built.error) return errorResponse(res, built.error, 400);
 
+    const shouldDeleteOldCover =
+      existing.coverImage &&
+      (req.uploadedFile?.path || built.payload.coverImage === null);
+
     await db.update(articles).set(built.payload).where(eq(articles.id, id));
+    if (shouldDeleteOldCover) {
+      await deleteFile(existing.coverImage);
+    }
     return successResponse(res, null, "Artikel berhasil diupdate");
   } catch (error) {
     next(error);

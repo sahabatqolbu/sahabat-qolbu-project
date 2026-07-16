@@ -31,6 +31,7 @@ import {
   ImagePlus,
   Loader2,
   Save,
+  Trash2,
   Upload,
 } from "lucide-react";
 
@@ -145,11 +146,33 @@ const normalizeEnumValue = <T extends string>(
   return allowed.includes(normalized as T) ? (normalized as T) : fallback;
 };
 
+const resolveArticlePayload = (payload: unknown): ArticleItem | null => {
+  if (!payload || typeof payload !== "object") return null;
+  const data = payload as {
+    data?: unknown;
+    article?: unknown;
+  };
+  if (data.article && typeof data.article === "object") {
+    return data.article as ArticleItem;
+  }
+  if (data.data && typeof data.data === "object") {
+    const nested = data.data as { article?: unknown };
+    if (nested.article && typeof nested.article === "object") {
+      return nested.article as ArticleItem;
+    }
+    return data.data as ArticleItem;
+  }
+  return payload as ArticleItem;
+};
+
 const extractContentImages = (content: string) =>
   Array.from(content.matchAll(/!?\[([^\]]*)\]\(([^)]+)\)/g)).map((match) => ({
     alt: match[1] || "Gambar artikel",
     src: match[2],
   }));
+
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export default function ArticleFormPage({
   basePath,
@@ -161,6 +184,7 @@ export default function ArticleFormPage({
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<ArticleFormData>(emptyForm);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [removeCoverImage, setRemoveCoverImage] = useState(false);
 
   const articleId = params?.id;
   const isEdit = mode === "edit";
@@ -185,7 +209,7 @@ export default function ArticleFormPage({
       (await api.get("/admin/packages", { params: { limit: 100 } })).data,
   });
 
-  const article: ArticleItem | null = articleData?.data || null;
+  const article: ArticleItem | null = resolveArticlePayload(articleData);
   const hotels: OptionItem[] = Array.isArray(hotelsData?.data)
     ? hotelsData.data
     : [];
@@ -223,6 +247,8 @@ export default function ArticleFormPage({
       seoTitle: article.seoTitle || "",
       seoDescription: article.seoDescription || "",
     });
+    setCoverFile(null);
+    setRemoveCoverImage(false);
   }, [article]);
 
   const relationOptions = useMemo(() => {
@@ -244,6 +270,7 @@ export default function ArticleFormPage({
       body.set("relatedId", "");
     }
     if (coverFile) body.append("coverImage", coverFile);
+    if (removeCoverImage && !coverFile) body.append("removeCoverImage", "true");
     return body;
   };
 
@@ -302,6 +329,7 @@ export default function ArticleFormPage({
       return;
     }
     setCoverFile(file);
+    setRemoveCoverImage(false);
   };
 
   const handleContentImage = (file?: File) => {
@@ -311,6 +339,17 @@ export default function ArticleFormPage({
       return;
     }
     imageUploadMutation.mutate(file);
+  };
+
+  const handleRemoveContentImage = (src: string) => {
+    const pattern = new RegExp(
+      `\\n{0,2}!?\\[[^\\]]*\\]\\(${escapeRegExp(src)}\\)\\n{0,2}`,
+      "g",
+    );
+    setFormData((prev) => ({
+      ...prev,
+      content: prev.content.replace(pattern, "\n\n").trim(),
+    }));
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -394,7 +433,7 @@ export default function ArticleFormPage({
               <div className="space-y-2">
                 <Label>Kategori</Label>
                 <Select
-                  value={formData.category}
+                  value={formData.category || "LAINNYA"}
                   onValueChange={(value) =>
                     setFormData((p) => ({
                       ...p,
@@ -417,7 +456,7 @@ export default function ArticleFormPage({
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select
-                  value={formData.status}
+                  value={formData.status || "DRAFT"}
                   onValueChange={(value) =>
                     setFormData((p) => ({
                       ...p,
@@ -450,7 +489,7 @@ export default function ArticleFormPage({
               <div className="space-y-2">
                 <Label>Hubungkan ke</Label>
                 <Select
-                  value={formData.relatedType}
+                  value={formData.relatedType || "NONE"}
                   onValueChange={(value) =>
                     setFormData((p) => ({
                       ...p,
@@ -507,12 +546,29 @@ export default function ArticleFormPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {article?.coverImage && !coverFile ? (
-              <img
-                src={getImageUrl(article.coverImage)}
-                alt="Cover"
-                className="h-56 w-full rounded-md border object-cover"
-              />
+            {article?.coverImage && !coverFile && !removeCoverImage ? (
+              <div className="space-y-3">
+                <img
+                  src={getImageUrl(article.coverImage)}
+                  alt="Cover"
+                  className="h-56 w-full rounded-md border object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                  onClick={() => setRemoveCoverImage(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Hapus cover
+                </Button>
+              </div>
+            ) : null}
+            {removeCoverImage && !coverFile ? (
+              <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                Cover akan dihapus setelah artikel disimpan.
+              </div>
             ) : null}
             <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-5 text-sm text-gray-600 hover:bg-gray-50">
               <Upload className="h-4 w-4" />
@@ -579,8 +635,18 @@ export default function ArticleFormPage({
                         alt={image.alt}
                         className="h-auto w-full object-contain"
                       />
-                      <figcaption className="px-3 py-2 text-xs text-gray-500">
-                        {image.alt}
+                      <figcaption className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-gray-500">
+                        <span className="truncate">{image.alt}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 shrink-0 px-2 text-red-600 hover:text-red-700"
+                          onClick={() => handleRemoveContentImage(image.src)}
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" />
+                          Hapus
+                        </Button>
                       </figcaption>
                     </figure>
                   ))}
