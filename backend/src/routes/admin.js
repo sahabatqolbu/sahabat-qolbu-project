@@ -136,8 +136,8 @@ router.post("/packages/:id/itinerary-pdf", authenticate, authorize(["ADMIN"]), u
 router.delete("/packages/:id/itinerary-pdf", authenticate, authorize(["ADMIN"]), deleteItineraryPdf);
 
 // Image routes
-router.post("/packages/:id/images", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("packages"), uploadPackageImage);
-router.post("/packages/:id/images/bulk", authenticate, authorize(["ADMIN"]), upload.array("images", 10), optimizeMultipleImages("packages"), bulkUploadPackageImages);
+router.post("/packages/:id/images", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("packages", { outputFormat: "webp" }), uploadPackageImage);
+router.post("/packages/:id/images/bulk", authenticate, authorize(["ADMIN"]), upload.array("images", 10), optimizeMultipleImages("packages", { outputFormat: "webp" }), bulkUploadPackageImages);
 router.delete("/packages/images/:imageId", authenticate, authorize(["ADMIN"]), deletePackageImage);
 
 // Generic CRUD (must be last to avoid matching static routes)
@@ -154,3 +154,4 @@ router.post("/finance/pos/assign-package", authenticate, authorize(["ADMIN", "FI
 router.post("/finance/pos/send-reminder", authenticate, authorize(["ADMIN", "FINANCE"]), sendJamaahNotification);
 
 export default router;
+

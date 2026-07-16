@@ -134,6 +134,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
           icon: MessageSquare,
         },
         {
+          label: "Artikel",
+          href: "/admin/content/articles",
+          icon: FileText,
+        },
+        {
           label: "FAQ",
           href: "/admin/content/faqs",
           icon: HelpCircle,
@@ -374,6 +379,16 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
           icon: MessageSquare,
         },
         {
+          label: "Artikel",
+          href: "/admin/content/articles",
+          icon: FileText,
+        },
+        {
+          label: "Artikel",
+          href: "/staff/content/articles",
+          icon: FileText,
+        },
+        {
           label: "FAQ",
           href: "/staff/content/faqs",
           icon: HelpCircle,
@@ -390,7 +405,6 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       href: "/staff/profile",
       icon: User,
     },
-
   ],
 };
 

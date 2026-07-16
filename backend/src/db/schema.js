@@ -63,7 +63,7 @@ export const users = mysqlTable(
     emailIdx: index("email_idx").on(table.email),
     roleIdx: index("role_idx").on(table.role),
     createdByIdx: index("created_by_idx").on(table.createdBy),
-  })
+  }),
 );
 
 // =====================================================
@@ -92,7 +92,7 @@ export const masterHotels = mysqlTable(
   },
   (table) => ({
     cityIdx: index("city_idx").on(table.city),
-  })
+  }),
 );
 
 // Master Maskapai
@@ -160,7 +160,7 @@ export const masterBanks = mysqlTable("master_banks", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(
-    sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+    sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
   ),
 });
 
@@ -192,7 +192,7 @@ export const companyProfile = mysqlTable("company_profile", {
   targetMarket: json("target_market"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(
-    sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+    sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
   ),
 });
 
@@ -227,10 +227,18 @@ export const packages = mysqlTable(
     // ===== PRICING =====
     price: decimal("price", { precision: 15, scale: 2 }).notNull(),
     discountPrice: decimal("discount_price", { precision: 15, scale: 2 }),
-    priceDouble: decimal("price_double", { precision: 15, scale: 2 }).default("0.00"),
-    priceTriple: decimal("price_triple", { precision: 15, scale: 2 }).default("0.00"),
-    priceQuad: decimal("price_quad", { precision: 15, scale: 2 }).default("0.00"),
-    priceQuint: decimal("price_quint", { precision: 15, scale: 2 }).default("0.00"),
+    priceDouble: decimal("price_double", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
+    priceTriple: decimal("price_triple", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
+    priceQuad: decimal("price_quad", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
+    priceQuint: decimal("price_quint", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
 
     // ===== SEAT MANAGEMENT =====
     totalSeats: int("total_seats").notNull().default(45),
@@ -314,7 +322,7 @@ export const packages = mysqlTable(
     typeIdx: index("type_idx").on(table.type),
     departureIdx: index("departure_idx").on(table.departureDate),
     codeIdx: index("code_idx").on(table.code),
-  })
+  }),
 );
 
 // =====================================================
@@ -335,7 +343,7 @@ export const packageImages = mysqlTable(
   },
   (table) => ({
     packageIdx: index("package_idx").on(table.packageId),
-  })
+  }),
 );
 
 // =====================================================
@@ -360,7 +368,7 @@ export const packageItinerary = mysqlTable(
   (table) => ({
     packageIdx: index("package_idx").on(table.packageId),
     dayIdx: index("day_idx").on(table.dayNumber),
-  })
+  }),
 );
 
 // =====================================================
@@ -401,7 +409,7 @@ export const prospectJamaah = mysqlTable(
     userIdx: index("user_idx").on(table.userId),
     statusIdx: index("status_idx").on(table.followUpStatus),
     sourceIdx: index("source_idx").on(table.sourceType, table.sourceSlug),
-  })
+  }),
 );
 
 export const prospectPackageInterests = mysqlTable(
@@ -426,7 +434,7 @@ export const prospectPackageInterests = mysqlTable(
     prospectIdx: index("prospect_idx").on(table.prospectId),
     packageIdx: index("package_idx").on(table.packageId),
     actionIdx: index("action_idx").on(table.actionType),
-  })
+  }),
 );
 
 export const prospectFollowUps = mysqlTable(
@@ -453,7 +461,7 @@ export const prospectFollowUps = mysqlTable(
     prospectIdx: index("prospect_idx").on(table.prospectId),
     actorIdx: index("actor_idx").on(table.actorUserId),
     statusIdx: index("status_idx").on(table.status),
-  })
+  }),
 );
 
 // =====================================================
@@ -524,7 +532,7 @@ export const transactions = mysqlTable(
     jamaahIdx: index("jamaah_idx").on(table.jamaahId),
     statusIdx: index("status_idx").on(table.status),
     invoiceIdx: index("invoice_idx").on(table.invoiceNumber),
-  })
+  }),
 );
 
 // =====================================================
@@ -541,7 +549,7 @@ export const paymentInstallments = mysqlTable(
     dueDate: date("due_date").notNull(),
 
     paidAmount: decimal("paid_amount", { precision: 15, scale: 2 }).default(
-      "0.00"
+      "0.00",
     ),
     paidAt: timestamp("paid_at"),
 
@@ -561,7 +569,7 @@ export const paymentInstallments = mysqlTable(
   },
   (table) => ({
     transactionIdx: index("transaction_idx").on(table.transactionId),
-  })
+  }),
 );
 
 // =====================================================
@@ -625,7 +633,7 @@ export const itikafParticipants = mysqlTable(
   (table) => ({
     programIdx: index("program_idx").on(table.programId),
     userIdx: index("user_idx").on(table.userId),
-  })
+  }),
 );
 
 // =====================================================
@@ -650,9 +658,8 @@ export const auditLogs = mysqlTable(
   (table) => ({
     userIdx: index("user_idx").on(table.userId),
     actionIdx: index("action_idx").on(table.action),
-  })
+  }),
 );
-
 
 // =====================================================
 // TESTIMONIALS
@@ -674,13 +681,20 @@ export const testimonials = mysqlTable("testimonials", {
 // =====================================================
 export const faqs = mysqlTable("faqs", {
   id: int("id").primaryKey().autoincrement(),
-  category: mysqlEnum("category", ["UMRAH", "HAJI", "PAYMENT", "GENERAL"]).default("GENERAL"),
+  category: mysqlEnum("category", [
+    "UMRAH",
+    "HAJI",
+    "PAYMENT",
+    "GENERAL",
+  ]).default("GENERAL"),
   question: varchar("question", { length: 500 }).notNull(),
   answer: text("answer").notNull(),
   isActive: boolean("is_active").default(true),
   sortOrder: int("sort_order").default(0),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(
+    sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+  ),
 });
 
 // =====================================================
@@ -691,14 +705,68 @@ export const gallery = mysqlTable("gallery", {
   title: varchar("title", { length: 255 }),
   description: text("description"),
   imageUrl: varchar("image_url", { length: 500 }).notNull(),
-  category: mysqlEnum("category", ["KEBERANGKATAN", "HOTEL", "MASJID", "KEGIATAN", "LAINNYA"]).default("LAINNYA"),
+  category: mysqlEnum("category", [
+    "KEBERANGKATAN",
+    "HOTEL",
+    "MASJID",
+    "KEGIATAN",
+    "LAINNYA",
+  ]).default("LAINNYA"),
   isActive: boolean("is_active").default(true),
   sortOrder: int("sort_order").default(0),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
-
-
+// =====================================================
+// ARTICLES / EDUCATIONAL CONTENT
+// =====================================================
+export const articles = mysqlTable(
+  "articles",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    title: varchar("title", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }).notNull().unique(),
+    excerpt: text("excerpt"),
+    content: text("content").notNull(),
+    coverImage: varchar("cover_image", { length: 500 }),
+    category: mysqlEnum("category", [
+      "UMRAH",
+      "HOTEL",
+      "MASKAPAI",
+      "PANDUAN",
+      "LAYANAN",
+      "LAINNYA",
+    ]).default("LAINNYA"),
+    tags: json("tags"),
+    status: mysqlEnum("status", ["DRAFT", "PUBLISHED"])
+      .notNull()
+      .default("DRAFT"),
+    relatedType: mysqlEnum("related_type", [
+      "NONE",
+      "HOTEL",
+      "AIRLINE",
+      "PACKAGE",
+      "SERVICE",
+    ])
+      .notNull()
+      .default("NONE"),
+    relatedId: int("related_id"),
+    seoTitle: varchar("seo_title", { length: 255 }),
+    seoDescription: text("seo_description"),
+    authorId: int("author_id").references(() => users.id),
+    publishedAt: datetime("published_at"),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    slugIdx: index("slug_idx").on(table.slug),
+    statusIdx: index("status_idx").on(table.status),
+    categoryIdx: index("category_idx").on(table.category),
+    relatedIdx: index("related_idx").on(table.relatedType, table.relatedId),
+  }),
+);
 // ===== TABEL 1: jamaah_data (BIODATA) =====
 export const jamaahData = mysqlTable(
   "jamaah_data",
@@ -864,7 +932,9 @@ export const jamaahPayments = mysqlTable(
   "jamaah_payments",
   {
     id: int("id").primaryKey().autoincrement(),
-    jamaahId: int("jamaah_id").references(() => jamaahData.id).notNull(),
+    jamaahId: int("jamaah_id")
+      .references(() => jamaahData.id)
+      .notNull(),
 
     paymentNumber: int("payment_number").default(1),
     bankId: int("bank_id").references(() => masterBanks.id),
@@ -896,12 +966,10 @@ export const jamaahPayments = mysqlTable(
     proofStatusIdx: index("jp_proof_status_idx").on(table.proofStatus),
     jamaahPaymentNumberUnique: uniqueIndex("jp_jamaah_payment_number_uq").on(
       table.jamaahId,
-      table.paymentNumber
+      table.paymentNumber,
     ),
-  })
+  }),
 );
-
-
 
 // =====================================================
 // AGEN PROFILES TABLE
@@ -977,7 +1045,7 @@ export const agenProfiles = mysqlTable(
     // === STATS ===
     totalJamaah: int("total_jamaah").default(0),
     totalKomisi: decimal("total_komisi", { precision: 15, scale: 2 }).default(
-      "0"
+      "0",
     ),
 
     // === META ===
@@ -993,7 +1061,7 @@ export const agenProfiles = mysqlTable(
     statusIdx: index("status_idx").on(table.status),
     levelIdx: index("level_idx").on(table.level),
     recruitedByIdx: index("recruited_by_idx").on(table.recruitedById),
-  })
+  }),
 );
 
 // =====================================================
@@ -1009,10 +1077,10 @@ export const agenTransactions = mysqlTable(
 
     // === TYPE ===
     type: mysqlEnum("type", [
-      "REGISTRATION_FEE",   // Biaya pendaftaran (Silver/Basic)
-      "KOMISI_JAMAAH",      // Komisi dari jamaah
-      "BONUS_REFERRAL",     // Bonus dari rekrut agen
-      "WITHDRAWAL",         // Pencairan
+      "REGISTRATION_FEE", // Biaya pendaftaran (Silver/Basic)
+      "KOMISI_JAMAAH", // Komisi dari jamaah
+      "BONUS_REFERRAL", // Bonus dari rekrut agen
+      "WITHDRAWAL", // Pencairan
     ]).notNull(),
 
     // === REFERENCE ===
@@ -1024,7 +1092,9 @@ export const agenTransactions = mysqlTable(
     description: varchar("description", { length: 500 }),
 
     // === DATE & PROOF ===
-    transactionDate: datetime("transaction_date").default(sql`CURRENT_TIMESTAMP`),
+    transactionDate: datetime("transaction_date").default(
+      sql`CURRENT_TIMESTAMP`,
+    ),
     proofUrl: varchar("proof_url", { length: 500 }),
 
     // === STATUS ===
@@ -1041,16 +1111,16 @@ export const agenTransactions = mysqlTable(
     notes: text("notes"),
 
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
   },
   (table) => ({
     agenIdx: index("agen_idx").on(table.agenId),
     typeIdx: index("type_idx").on(table.type),
     statusIdx: index("status_idx").on(table.status),
-  })
+  }),
 );
-
-
 
 // =====================================================
 // AGENT MASTER DATA - PHASE 1
@@ -1082,12 +1152,14 @@ export const agentLevels = mysqlTable(
     order: int("order").notNull().default(0),
 
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
   },
   (table) => ({
     slugIdx: index("slug_idx").on(table.slug),
     starIdx: index("star_idx").on(table.star),
-  })
+  }),
 );
 
 // ===== AGENT BENEFITS (Per Level) =====
@@ -1104,11 +1176,13 @@ export const agentBenefits = mysqlTable(
     order: int("order").notNull().default(0),
 
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
   },
   (table) => ({
     levelIdx: index("level_idx").on(table.agentLevelId),
-  })
+  }),
 );
 
 // ===== AGENT REQUIREMENTS (Persyaratan Wajib) =====
@@ -1119,7 +1193,9 @@ export const agentRequirements = mysqlTable("agent_requirements", {
   isActive: boolean("is_active").notNull().default(true),
 
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+  updatedAt: timestamp("updated_at")
+    .default(sql`CURRENT_TIMESTAMP`)
+    .onUpdateNow(),
 });
 
 // ===== AGENT PURPOSES (Tujuan Bergabung) =====
@@ -1133,11 +1209,13 @@ export const agentPurposes = mysqlTable(
     isActive: boolean("is_active").notNull().default(true),
 
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
   },
   (table) => ({
     slugIdx: index("slug_idx").on(table.slug),
-  })
+  }),
 );
 
 // ===== PERIODS (Periode Closing) =====
@@ -1152,11 +1230,13 @@ export const periods = mysqlTable(
     isActive: boolean("is_active").notNull().default(true),
 
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
   },
   (table) => ({
     dateIdx: index("date_idx").on(table.startDate, table.endDate),
-  })
+  }),
 );
 
 // ===== AGENT DATA (Extended dari agenProfiles - Data Lengkap Agen) =====
@@ -1256,7 +1336,7 @@ export const agentData = mysqlTable(
     nikIdx: index("nik_idx").on(table.nik),
     statusIdx: index("status_idx").on(table.status),
     starIdx: index("star_idx").on(table.currentStar),
-  })
+  }),
 );
 
 // ===== AGENT TRANSACTIONS (Pembayaran Biaya Agen) =====
@@ -1275,11 +1355,13 @@ export const agentPaymentTransactions = mysqlTable(
     notes: text("notes"),
 
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
   },
   (table) => ({
     agentIdx: index("agent_idx").on(table.agentDataId),
-  })
+  }),
 );
 
 // ===== AGENT CLOSING HISTORY (Track Closing Jamaah per Periode) =====
@@ -1298,7 +1380,9 @@ export const agentClosingHistory = mysqlTable(
       .notNull()
       .references(() => periods.id),
 
-    closingDate: datetime("closing_date").notNull().default(sql`CURRENT_TIMESTAMP`),
+    closingDate: datetime("closing_date")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     amount: decimal("amount", { precision: 15, scale: 2 }),
     notes: text("notes"),
 
@@ -1308,7 +1392,7 @@ export const agentClosingHistory = mysqlTable(
     agentIdx: index("agent_idx").on(table.agentDataId),
     periodIdx: index("period_idx").on(table.periodId),
     jamaahIdx: index("jamaah_idx").on(table.jamaahDataId),
-  })
+  }),
 );
 
 // ===== AGENT STAR HISTORY (Track Perubahan Bintang) =====
@@ -1329,10 +1413,8 @@ export const agentStarHistory = mysqlTable(
   },
   (table) => ({
     agentIdx: index("agent_idx").on(table.agentDataId),
-  })
+  }),
 );
-
-
 
 // =====================================================
 // NOTIFICATIONS TABLE
@@ -1390,11 +1472,8 @@ export const notifications = mysqlTable(
     typeIdx: index("type_idx").on(table.type),
     isReadIdx: index("is_read_idx").on(table.isRead),
     createdAtIdx: index("created_at_idx").on(table.createdAt),
-  })
+  }),
 );
-
-
-
 
 // =====================================================
 // CALENDAR EVENTS TABLE
@@ -1411,25 +1490,27 @@ export const calendarEvents = mysqlTable(
 
     // Type
     type: mysqlEnum("type", [
-      "PACKAGE",          // Auto: range paket (departure-return)
-      "ITINERARY",        // Manual: jadwal detail dalam paket (per hari)
-      "DEADLINE",         // Manual: deadline pengumpulan/pelunasan
-      "MANASIK",          // Manual: acara manasik
-      "MEETING",          // Manual: meeting internal
-      "EVENT",            // Manual: event umum
-      "ANNOUNCEMENT",     // Manual: pengumuman
-      "OTHER",            // Manual: lainnya
-    ]).notNull().default("EVENT"),
+      "PACKAGE", // Auto: range paket (departure-return)
+      "ITINERARY", // Manual: jadwal detail dalam paket (per hari)
+      "DEADLINE", // Manual: deadline pengumpulan/pelunasan
+      "MANASIK", // Manual: acara manasik
+      "MEETING", // Manual: meeting internal
+      "EVENT", // Manual: event umum
+      "ANNOUNCEMENT", // Manual: pengumuman
+      "OTHER", // Manual: lainnya
+    ])
+      .notNull()
+      .default("EVENT"),
 
     // Date & Time
     startDate: date("start_date").notNull(),
-    endDate: date("end_date"),  // null = single day, untuk PACKAGE = return date
-    startTime: varchar("start_time", { length: 10 }),  // "09:00"
-    endTime: varchar("end_time", { length: 10 }),      // "17:00"
+    endDate: date("end_date"), // null = single day, untuk PACKAGE = return date
+    startTime: varchar("start_time", { length: 10 }), // "09:00"
+    endTime: varchar("end_time", { length: 10 }), // "17:00"
     isAllDay: boolean("is_all_day").default(true),
 
     // Day number dalam paket (untuk ITINERARY)
-    dayNumber: int("day_number"),  // Day 1, Day 2, dst
+    dayNumber: int("day_number"), // Day 1, Day 2, dst
 
     // Lokasi detail (untuk ITINERARY)
     city: mysqlEnum("city", [
@@ -1441,17 +1522,19 @@ export const calendarEvents = mysqlTable(
     ]),
 
     // Relation to Package
-    packageId: int("package_id").references(() => packages.id, { onDelete: "cascade" }),
+    packageId: int("package_id").references(() => packages.id, {
+      onDelete: "cascade",
+    }),
 
     // Icon/Emoji untuk display
     icon: varchar("icon", { length: 10 }).default("📅"),
 
     // Visibility
     visibility: mysqlEnum("visibility", [
-      "ALL",              // Semua (Admin, Agen, Jamaah)
-      "ADMIN_AGEN",       // Admin & Agen saja
-      "ADMIN_ONLY",       // Admin saja
-      "PACKAGE_MEMBERS",  // Jamaah & Agen paket terkait saja
+      "ALL", // Semua (Admin, Agen, Jamaah)
+      "ADMIN_AGEN", // Admin & Agen saja
+      "ADMIN_ONLY", // Admin saja
+      "PACKAGE_MEMBERS", // Jamaah & Agen paket terkait saja
     ]).default("ALL"),
 
     // Styling
@@ -1468,7 +1551,9 @@ export const calendarEvents = mysqlTable(
     createdBy: int("created_by").references(() => users.id),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
   },
   (table) => ({
     startDateIdx: index("start_date_idx").on(table.startDate),
@@ -1476,5 +1561,5 @@ export const calendarEvents = mysqlTable(
     typeIdx: index("type_idx").on(table.type),
     packageIdx: index("package_idx").on(table.packageId),
     dayNumberIdx: index("day_number_idx").on(table.dayNumber),
-  })
+  }),
 );

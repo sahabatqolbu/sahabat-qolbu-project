@@ -14,7 +14,9 @@ const __dirname = path.dirname(__filename);
 
 const UPLOAD_BASE = path.join(__dirname, "../../public/uploads");
 
-logger.info("Upload directory initialized", { path: path.resolve(UPLOAD_BASE) });
+logger.info("Upload directory initialized", {
+  path: path.resolve(UPLOAD_BASE),
+});
 
 // =====================================================
 // SECURITY: Generate safe filename
@@ -44,7 +46,7 @@ const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|webp|gif|bmp/;
   const extname = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
+    path.extname(file.originalname).toLowerCase(),
   );
   const mimetype = allowedTypes.test(file.mimetype);
 
@@ -72,107 +74,115 @@ export const upload = multer({
 // =====================================================
 // OPTIMIZE IMAGE (SINGLE) - WITH JIMP
 // =====================================================
-export const optimizeImage = (folder, options = {}) => async (req, res, next) => {
-  if (!req.file || !req.file.buffer) {
-    logger.debug("No file to optimize, skipping...");
-    return next();
-  }
-
-  try {
-    // Validate folder name (prevent path traversal)
-    const validFolders = [
-      "company",
-      "hotels",
-      "airlines",
-      "packages",
-      "documents",
-      "profiles",
-      "payments",
-      "itinerary",
-      "jamaah",
-      "general",
-      "gallery",
-    ];
-
-    if (!validFolders.includes(folder)) {
-      logger.security("Invalid upload folder attempted", { folder, ip: req.ip });
-      return errorResponse(
-        res,
-        "Folder upload tidak valid",
-        400,
-        null,
-        "VALIDATION_FAILED"
-      );
+export const optimizeImage =
+  (folder, options = {}) =>
+  async (req, res, next) => {
+    if (!req.file || !req.file.buffer) {
+      logger.debug("No file to optimize, skipping...");
+      return next();
     }
 
-    const outputFormat = (options.outputFormat || "jpg").toLowerCase();
-    const allowedOutputFormats = ["jpg", "jpeg", "png", "webp"];
-    const normalizedFormat = allowedOutputFormats.includes(outputFormat)
-      ? outputFormat
-      : "jpg";
-    const extension = normalizedFormat === "jpeg" ? "jpg" : normalizedFormat;
-    const mimeTypeMap = {
-      jpg: "image/jpeg",
-      png: "image/png",
-      webp: "image/webp",
-    };
+    try {
+      // Validate folder name (prevent path traversal)
+      const validFolders = [
+        "company",
+        "hotels",
+        "airlines",
+        "packages",
+        "documents",
+        "profiles",
+        "payments",
+        "itinerary",
+        "jamaah",
+        "general",
+        "gallery",
+        "articles",
+      ];
 
-    const filename = generateSafeFilename(`.${extension}`);
-    const uploadDir = path.join(UPLOAD_BASE, folder);
-    const outputPath = path.join(uploadDir, filename);
-
-    logger.debug("Optimizing image", { folder, filename });
-
-    // Ensure directory exists
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    if (extension === "webp") {
-      await sharp(req.file.buffer)
-        .rotate()
-        .resize({
-          width: 1000,
-          height: 1000,
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .webp({ quality: 82 })
-        .toFile(outputPath);
-    } else {
-      const image = await Jimp.read(req.file.buffer);
-
-      if (image.width > 1000 || image.height > 1000) {
-        image.scaleToFit({ w: 1000, h: 1000 });
+      if (!validFolders.includes(folder)) {
+        logger.security("Invalid upload folder attempted", {
+          folder,
+          ip: req.ip,
+        });
+        return errorResponse(
+          res,
+          "Folder upload tidak valid",
+          400,
+          null,
+          "VALIDATION_FAILED",
+        );
       }
 
-      await image.write(outputPath);
+      const outputFormat = (options.outputFormat || "jpg").toLowerCase();
+      const allowedOutputFormats = ["jpg", "jpeg", "png", "webp"];
+      const normalizedFormat = allowedOutputFormats.includes(outputFormat)
+        ? outputFormat
+        : "jpg";
+      const extension = normalizedFormat === "jpeg" ? "jpg" : normalizedFormat;
+      const mimeTypeMap = {
+        jpg: "image/jpeg",
+        png: "image/png",
+        webp: "image/webp",
+      };
+
+      const filename = generateSafeFilename(`.${extension}`);
+      const uploadDir = path.join(UPLOAD_BASE, folder);
+      const outputPath = path.join(uploadDir, filename);
+
+      logger.debug("Optimizing image", { folder, filename });
+
+      // Ensure directory exists
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      if (extension === "webp") {
+        await sharp(req.file.buffer)
+          .rotate()
+          .resize({
+            width: 1000,
+            height: 1000,
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .webp({ quality: 82 })
+          .toFile(outputPath);
+      } else {
+        const image = await Jimp.read(req.file.buffer);
+
+        if (image.width > 1000 || image.height > 1000) {
+          image.scaleToFit({ w: 1000, h: 1000 });
+        }
+
+        await image.write(outputPath);
+      }
+
+      req.uploadedFile = {
+        filename: filename,
+        path: `/uploads/${folder}/${filename}`,
+        size: req.file.size,
+        mimeType: mimeTypeMap[extension] || "image/jpeg",
+        originalName: sanitizeFilename(req.file.originalname),
+      };
+
+      logger.info("Image optimized successfully", {
+        path: req.uploadedFile.path,
+      });
+      next();
+    } catch (error) {
+      logger.error("Image optimization error", error);
+      return errorResponse(
+        res,
+        "Gagal mengoptimasi gambar",
+        500,
+        null,
+        "UPLOAD_OPTIMIZATION_FAILED",
+      );
     }
-
-    req.uploadedFile = {
-      filename: filename,
-      path: `/uploads/${folder}/${filename}`,
-      size: req.file.size,
-      mimeType: mimeTypeMap[extension] || "image/jpeg",
-      originalName: sanitizeFilename(req.file.originalname),
-    };
-
-    logger.info("Image optimized successfully", { path: req.uploadedFile.path });
-    next();
-  } catch (error) {
-    logger.error("Image optimization error", error);
-    return errorResponse(
-      res,
-      "Gagal mengoptimasi gambar",
-      500,
-      null,
-      "UPLOAD_OPTIMIZATION_FAILED"
-    );
-  }
-};
+  };
 
 // =====================================================
 // OPTIMIZE MULTIPLE IMAGES - WITH JIMP
 // =====================================================
-export const optimizeMultipleImages = (folder = "general") => {
+export const optimizeMultipleImages = (folder = "general", options = {}) => {
   return async (req, res, next) => {
     if (!req.files || req.files.length === 0) return next();
 
@@ -189,6 +199,8 @@ export const optimizeMultipleImages = (folder = "general") => {
         "itinerary",
         "jamaah",
         "general",
+        "gallery",
+        "articles",
       ];
 
       if (!validFolders.includes(folder)) {
@@ -201,7 +213,7 @@ export const optimizeMultipleImages = (folder = "general") => {
           "Folder upload tidak valid",
           400,
           null,
-          "VALIDATION_FAILED"
+          "VALIDATION_FAILED",
         );
       }
 
@@ -210,22 +222,48 @@ export const optimizeMultipleImages = (folder = "general") => {
 
       const uploadedFiles = [];
 
+      const outputFormat = (options.outputFormat || "jpg").toLowerCase();
+      const allowedOutputFormats = ["jpg", "jpeg", "png", "webp"];
+      const normalizedFormat = allowedOutputFormats.includes(outputFormat)
+        ? outputFormat
+        : "jpg";
+      const extension = normalizedFormat === "jpeg" ? "jpg" : normalizedFormat;
+      const mimeTypeMap = {
+        jpg: "image/jpeg",
+        png: "image/png",
+        webp: "image/webp",
+      };
+
       for (const file of req.files) {
-        const filename = generateSafeFilename(".jpg");
+        const filename = generateSafeFilename(`.${extension}`);
         const filepath = path.join(uploadDir, filename);
 
-        const image = await Jimp.read(file.buffer);
+        if (extension === "webp") {
+          await sharp(file.buffer)
+            .rotate()
+            .resize({
+              width: 1000,
+              height: 1000,
+              fit: "inside",
+              withoutEnlargement: true,
+            })
+            .webp({ quality: 82 })
+            .toFile(filepath);
+        } else {
+          const image = await Jimp.read(file.buffer);
 
-        if (image.width > 1000 || image.height > 1000) {
-          image.scaleToFit({ w: 1000, h: 1000 });
+          if (image.width > 1000 || image.height > 1000) {
+            image.scaleToFit({ w: 1000, h: 1000 });
+          }
+
+          await image.write(filepath);
         }
-
-        await image.write(filepath);
 
         uploadedFiles.push({
           filename: filename,
           path: `/uploads/${folder}/${filename}`,
           size: file.size,
+          mimeType: mimeTypeMap[extension] || "image/jpeg",
           originalName: sanitizeFilename(file.originalname),
         });
       }
@@ -306,7 +344,7 @@ export const uploadDocument = multer({
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf|webp/;
     const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase()
+      path.extname(file.originalname).toLowerCase(),
     );
     const mimetype =
       /image/.test(file.mimetype) || file.mimetype === "application/pdf";
@@ -358,7 +396,7 @@ export const saveDocument = (folder = "documents") => {
           "Folder dokumen tidak valid",
           400,
           null,
-          "VALIDATION_FAILED"
+          "VALIDATION_FAILED",
         );
       }
 
@@ -417,5 +455,3 @@ export const deleteFile = async (filePath) => {
 };
 
 export { UPLOAD_BASE };
-
-

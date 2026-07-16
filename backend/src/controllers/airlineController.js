@@ -66,7 +66,7 @@ export const createAirline = async (req, res, next) => {
       code: code.toUpperCase(),
       name,
       country: country || null,
-      logo: req.file ? req.file.path.replace("public", "") : null,
+      logo: req.uploadedFile ? req.uploadedFile.path : null,
       isActive: isActive === true || isActive === "true",
     });
 
@@ -117,8 +117,8 @@ export const updateAirline = async (req, res, next) => {
     }
 
     // Upload logo baru (opsional)
-    if (req.file && req.file.path) {
-      updateData.logo = req.file.path.replace("public", "");
+    if (req.uploadedFile?.path) {
+      updateData.logo = req.uploadedFile.path;
       console.log("📸 New logo path:", updateData.logo);
     }
 
@@ -184,7 +184,7 @@ export const deleteAirline = async (req, res, next) => {
       return errorResponse(
         res,
         "Maskapai tidak bisa dihapus karena masih digunakan di paket",
-        400
+        400,
       );
     }
 

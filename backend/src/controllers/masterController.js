@@ -63,11 +63,11 @@ export const getAllHotels = async (req, res, next) => {
     let filtered = hotels;
     if (search)
       filtered = filtered.filter((h) =>
-        h.name.toLowerCase().includes(search.toLowerCase())
+        h.name.toLowerCase().includes(search.toLowerCase()),
       );
     if (city)
       filtered = filtered.filter(
-        (h) => h.city.toLowerCase() === city.toLowerCase()
+        (h) => h.city.toLowerCase() === city.toLowerCase(),
       );
 
     filtered = filtered.map((h) => ({
@@ -122,7 +122,7 @@ export const createHotel = async (req, res, next) => {
       starRating: starsToUse ? parseInt(starsToUse) : null,
       distanceToHaram: distanceToHaram ? parseInt(distanceToHaram) : null,
       facilities: stringToFacilities(facilities),
-      imageUrl: req.file ? req.file.path.replace("public", "") : null,
+      imageUrl: req.uploadedFile ? req.uploadedFile.path : null,
       isActive: isActive === true || isActive === "true",
     });
 
@@ -147,7 +147,16 @@ export const updateHotel = async (req, res, next) => {
     }
 
     // ✅ FIX: distanceToHaram (BUKAN distanceToHarem)
-    const { name, address, city, country, stars, distanceToHaram, facilities, isActive } = req.body;
+    const {
+      name,
+      address,
+      city,
+      country,
+      stars,
+      distanceToHaram,
+      facilities,
+      isActive,
+    } = req.body;
 
     logger.debug("Update hotel request", {
       id: parsedId,
@@ -161,27 +170,27 @@ export const updateHotel = async (req, res, next) => {
     if (address !== undefined) updateData.address = address || null;
     if (city) updateData.city = city;
     if (country !== undefined) updateData.country = country || null;
-    
+
     const starsValue = stars !== undefined ? stars : req.body.starRating;
     if (starsValue !== undefined) {
       updateData.starRating = parseOptionalInt(starsValue);
     }
-    
+
     // ✅ Sekarang distanceToHaram sudah defined
     if (distanceToHaram !== undefined) {
       updateData.distanceToHaram = parseOptionalInt(distanceToHaram);
     }
-    
+
     if (facilities !== undefined) {
       updateData.facilities = stringToFacilities(facilities);
     }
-    
+
     if (isActive !== undefined) {
       updateData.isActive = parseBoolean(isActive, false);
     }
-    
-    if (req.file && req.file.path) {
-      updateData.imageUrl = req.file.path.replace("public", "");
+
+    if (req.uploadedFile?.path) {
+      updateData.imageUrl = req.uploadedFile.path;
     }
 
     logger.debug("Update hotel payload prepared", {
@@ -236,7 +245,7 @@ export const deleteHotel = async (req, res, next) => {
       return errorResponse(
         res,
         "Hotel tidak bisa dihapus karena masih digunakan di paket",
-        400
+        400,
       );
     }
     next(error);
@@ -268,7 +277,7 @@ export const importHotels = async (req, res, next) => {
     return createdResponse(
       res,
       { imported: hotels.length },
-      `${hotels.length} hotel berhasil diimport`
+      `${hotels.length} hotel berhasil diimport`,
     );
   } catch (error) {
     next(error);

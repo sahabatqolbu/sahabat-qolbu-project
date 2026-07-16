@@ -19,7 +19,7 @@ interface PackageCardProps {
   duration: number;
   departureDate: string;
   returnDate: string;
-  airline: { name: string; logo?: string };
+  airline: { id?: number; name: string; logo?: string; code?: string };
   hotelMakkah: {
     name: string;
     starRating: number;

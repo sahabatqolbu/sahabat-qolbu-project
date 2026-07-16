@@ -36,6 +36,7 @@ type BackendPackageImage = {
 };
 
 type BackendHotel = {
+  id?: number | null;
   name?: string | null;
   starRating?: number | null;
   distanceToHaram?: number | null;
@@ -44,6 +45,8 @@ type BackendHotel = {
 };
 
 type BackendAirline = {
+  id?: number | null;
+  code?: string | null;
   name?: string | null;
   logo?: string | null;
 };
@@ -140,14 +143,16 @@ export interface MarketingPackage {
   duration: number;
   departureDate: string;
   returnDate: string;
-  airline: { name: string; logo?: string };
+  airline: { id?: number; name: string; logo?: string; code?: string };
   hotelMakkah: {
+    id?: number;
     name: string;
     starRating: number;
     distanceToHaram?: string;
     facilities?: string[];
   };
   hotelMadinah?: {
+    id?: number;
     name: string;
     starRating: number;
     distanceToMasjid?: string;
@@ -351,6 +356,7 @@ const mapHotel = (
   }
 
   const mapped = {
+    id: hotel.id || undefined,
     name: hotel.name,
     starRating: toNumber(hotel.starRating, 0),
     facilities: parseStringList(hotel.facilities),
@@ -407,6 +413,8 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     departureDate,
     returnDate,
     airline: {
+      id: pkg.airline?.id || undefined,
+      code: toNonEmptyString(pkg.airline?.code),
       name: toNonEmptyString(pkg.airline?.name, "Maskapai belum tersedia"),
       logo: resolveAssetUrl(pkg.airline?.logo),
     },
@@ -705,4 +713,109 @@ export const getPublicGallery = async (): Promise<PublicGalleryImage[]> => {
       imageUrl: resolveAssetUrl(item.imageUrl) || "",
     }))
     .filter((item): item is PublicGalleryImage => Boolean(item.imageUrl));
+};
+
+export interface PublicArticle {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  content: string;
+  coverImage?: string | null;
+  category?: string | null;
+  tags?: string[];
+  status?: string | null;
+  relatedType?: string | null;
+  relatedId?: number | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  publishedAt?: string | null;
+  createdAt?: string | null;
+}
+
+export interface PublicHotelDetail {
+  hotel: BackendHotel & {
+    id: number;
+    city?: string | null;
+    address?: string | null;
+    isActive?: boolean | null;
+  };
+  articles: PublicArticle[];
+  packages: BackendPackage[];
+}
+
+export interface PublicAirlineDetail {
+  airline: BackendAirline & {
+    id: number;
+    code?: string | null;
+    country?: string | null;
+    isActive?: boolean | null;
+  };
+  articles: PublicArticle[];
+  packages: BackendPackage[];
+}
+
+const mapPublicArticle = (article: PublicArticle): PublicArticle => ({
+  ...article,
+  coverImage: resolveAssetUrl(article.coverImage) || null,
+  tags: Array.isArray(article.tags) ? article.tags : [],
+});
+
+export const getPublicArticles = async (
+  params = "",
+): Promise<PublicArticle[]> => {
+  const query = params ? `?${params.replace(/^\?/, "")}` : "";
+  const payload = await fetchApi<{ articles?: PublicArticle[] }>(
+    `/public/articles${query}`,
+  );
+  return Array.isArray(payload?.articles)
+    ? payload.articles.map(mapPublicArticle)
+    : [];
+};
+
+export const getPublicArticleBySlug = async (slug: string) => {
+  const payload = await fetchApi<{ article?: PublicArticle }>(
+    `/public/articles/${encodeURIComponent(slug)}`,
+  );
+  return payload?.article ? mapPublicArticle(payload.article) : null;
+};
+
+export const getPublicHotelDetail = async (id: number | string) => {
+  const payload = await fetchApi<PublicHotelDetail>(`/public/hotels/${id}`);
+  if (!payload?.hotel) return null;
+  return {
+    ...payload,
+    hotel: {
+      ...payload.hotel,
+      imageUrl: resolveAssetUrl(payload.hotel.imageUrl) || null,
+    },
+    articles: Array.isArray(payload.articles)
+      ? payload.articles.map(mapPublicArticle)
+      : [],
+    packages: Array.isArray(payload.packages) ? payload.packages : [],
+  };
+};
+
+export const getPublicAirlineDetail = async (id: number | string) => {
+  const payload = await fetchApi<PublicAirlineDetail>(`/public/airlines/${id}`);
+  if (!payload?.airline) return null;
+  return {
+    ...payload,
+    airline: {
+      ...payload.airline,
+      logo: resolveAssetUrl(payload.airline.logo) || null,
+    },
+    articles: Array.isArray(payload.articles)
+      ? payload.articles.map(mapPublicArticle)
+      : [],
+    packages: Array.isArray(payload.packages) ? payload.packages : [],
+  };
+};
+
+export const entitySlug = (name: string, id?: number | null) =>
+  `${slugifyPackageName(name)}-${id || ""}`.replace(/-+$/, "");
+
+export const parseEntityIdFromSlug = (slug: string) => {
+  const match = String(slug || "").match(/-(\d+)$/);
+  return match ? Number.parseInt(match[1], 10) : null;
 };

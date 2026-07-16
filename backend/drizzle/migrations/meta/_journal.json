@@ -99,6 +99,13 @@
       "when": 1782711000000,
       "tag": "0013_company_profile_structured_content",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1784217600000,
+      "tag": "0014_add_articles",
+      "breakpoints": true
     }
   ]
 }

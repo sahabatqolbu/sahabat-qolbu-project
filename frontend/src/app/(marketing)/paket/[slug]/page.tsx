@@ -21,6 +21,7 @@ import {
 import RelatedPackages from "@/components/marketing/PackageDetail/RelatedPackages";
 import PackageDetailNav from "@/components/marketing/PackageDetail/PackageDetailNav";
 import {
+  entitySlug,
   getMarketingPackageBySlug,
   getPublicAgentLanding,
   type MarketingPackage,
@@ -213,9 +214,18 @@ function BookingPanel({
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
               Hotel Makkah
             </p>
-            <p className="mt-1 font-extrabold text-primary">
-              {pkg.hotelMakkah.name}
-            </p>
+            {pkg.hotelMakkah.id ? (
+              <Link
+                href={`/hotel/${entitySlug(pkg.hotelMakkah.name, pkg.hotelMakkah.id)}`}
+                className="mt-1 inline-flex font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
+              >
+                {pkg.hotelMakkah.name}
+              </Link>
+            ) : (
+              <p className="mt-1 font-extrabold text-primary">
+                {pkg.hotelMakkah.name}
+              </p>
+            )}
             {pkg.hotelMakkah.distanceToHaram ? (
               <p className="mt-1 text-sm font-semibold text-neutral-500">
                 {pkg.hotelMakkah.distanceToHaram}
@@ -227,9 +237,18 @@ function BookingPanel({
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
                 Hotel Madinah
               </p>
-              <p className="mt-1 font-extrabold text-primary">
-                {pkg.hotelMadinah.name}
-              </p>
+              {pkg.hotelMadinah.id ? (
+                <Link
+                  href={`/hotel/${entitySlug(pkg.hotelMadinah.name, pkg.hotelMadinah.id)}`}
+                  className="mt-1 inline-flex font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
+                >
+                  {pkg.hotelMadinah.name}
+                </Link>
+              ) : (
+                <p className="mt-1 font-extrabold text-primary">
+                  {pkg.hotelMadinah.name}
+                </p>
+              )}
               {pkg.hotelMadinah.distanceToMasjid ? (
                 <p className="mt-1 text-sm font-semibold text-neutral-500">
                   {pkg.hotelMadinah.distanceToMasjid}
@@ -240,7 +259,16 @@ function BookingPanel({
           <div className="space-y-3 py-4">
             <p className="flex items-center gap-2 font-extrabold text-primary">
               <Plane className="h-4 w-4 text-gold" />
-              By {pkg.airline.name}
+              {pkg.airline.id ? (
+                <Link
+                  href={`/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`}
+                  className="underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
+                >
+                  By {pkg.airline.name}
+                </Link>
+              ) : (
+                <>By {pkg.airline.name}</>
+              )}
             </p>
             <p className="flex items-center gap-2 font-extrabold text-primary">
               <Train className="h-4 w-4 text-gold" />
@@ -340,6 +368,7 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
         }
       : null,
   ].filter(Boolean) as {
+    id?: number;
     city: string;
     name: string;
     distance?: string;
@@ -361,9 +390,18 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">
                 Hotel {hotel.city}
               </p>
-              <h3 className="mt-1 text-xl font-extrabold text-primary">
-                {hotel.name}
-              </h3>
+              {hotel.id ? (
+                <Link
+                  href={`/hotel/${entitySlug(hotel.name, hotel.id)}`}
+                  className="mt-1 inline-flex text-xl font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
+                >
+                  {hotel.name}
+                </Link>
+              ) : (
+                <h3 className="mt-1 text-xl font-extrabold text-primary">
+                  {hotel.name}
+                </h3>
+              )}
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex">
                   {Array.from({
