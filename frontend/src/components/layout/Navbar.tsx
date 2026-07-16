@@ -19,7 +19,11 @@ export default function Navbar() {
   const branding = useBranding();
   const pathname = usePathname();
   const isSolidHeader =
-    pathname?.startsWith("/paket/") || pathname?.startsWith("/packages/");
+    pathname?.startsWith("/paket/") ||
+    pathname?.startsWith("/packages/") ||
+    pathname?.startsWith("/artikel/") ||
+    pathname?.startsWith("/hotel/") ||
+    pathname?.startsWith("/maskapai/");
   const [isScrolled, setIsScrolled] = useState(() =>
     typeof window !== "undefined" ? window.scrollY > 50 : false,
   );
