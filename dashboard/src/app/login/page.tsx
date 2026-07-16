@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "@/services/authService";
 import { useAuthStore, type User as AuthUser } from "@/stores/authStore";
@@ -46,7 +46,6 @@ const mapRegisterFieldError = (field?: string) => {
 };
 
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -101,7 +100,8 @@ function LoginContent() {
     setAuth(user);
     const safeNextPath =
       nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "";
-    router.push(safeNextPath || DEFAULT_ROUTES[user.role] || "/login");
+    const targetPath = safeNextPath || DEFAULT_ROUTES[user.role] || "/login";
+    window.location.assign(targetPath);
   };
 
   const startGoogleLogin = () => {
@@ -111,7 +111,15 @@ function LoginContent() {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      redirectAfterAuth(data.data.user);
+      const user = data?.data?.user;
+      if (!user) {
+        const message = "Login berhasil, tetapi data user tidak diterima. Silakan refresh lalu coba lagi.";
+        setErrors({ general: message });
+        toast({ variant: "destructive", title: "Login Gagal", description: message });
+        return;
+      }
+
+      redirectAfterAuth(user);
       toast({
         title: "Login Berhasil",
         description: "Anda berhasil masuk ke dashboard.",
@@ -137,7 +145,15 @@ function LoginContent() {
   const registerMutation = useMutation({
     mutationFn: authService.registerCalonJamaah,
     onSuccess: (data) => {
-      redirectAfterAuth(data.data.user);
+      const user = data?.data?.user;
+      if (!user) {
+        const message = "Registrasi berhasil, tetapi data user tidak diterima. Silakan refresh lalu coba login.";
+        setErrors({ general: message });
+        toast({ variant: "destructive", title: "Registrasi Gagal", description: message });
+        return;
+      }
+
+      redirectAfterAuth(user);
       toast({
         title: "Registrasi Berhasil",
         description: "Akun calon jamaah berhasil dibuat.",

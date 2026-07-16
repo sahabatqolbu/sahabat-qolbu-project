@@ -1,1 +1,5 @@
-export { default } from "../../admin/assets/page";
+import { redirect } from "next/navigation";
+
+export default function StaffAssetsRedirectPage() {
+  redirect("/assets");
+}

@@ -3,6 +3,7 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const APP_ROOTS = [
+  path.join(ROOT, "src", "app"),
   path.join(ROOT, "src", "app", "(dashboard)"),
   path.join(ROOT, "src", "app", "(mobile)"),
 ];

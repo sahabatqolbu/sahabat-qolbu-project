@@ -10,7 +10,17 @@ const productionApiUrl = "https://api.sahabatqolbu.com/api";
 const fallbackDevApiUrl = "http://localhost:5000/api";
 
 const resolvedApiUrl = (() => {
-  if (isProduction) return envApiUrl || productionApiUrl;
+  if (isProduction) {
+    if (!envApiUrl) return productionApiUrl;
+
+    try {
+      const parsed = new URL(envApiUrl);
+      const isDashboardOrigin = parsed.hostname === "dashboard.sahabatqolbu.com";
+      return isDashboardOrigin ? productionApiUrl : envApiUrl;
+    } catch {
+      return productionApiUrl;
+    }
+  }
   if (!envApiUrl) return fallbackDevApiUrl;
 
   try {

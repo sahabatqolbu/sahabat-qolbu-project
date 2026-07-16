@@ -80,7 +80,7 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
     },
     {
       label: "Manajemen Aset",
-      href: "/admin/assets",
+      href: "/assets",
       icon: Laptop,
     },
     {
@@ -331,7 +331,7 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
     },
     {
       label: "Manajemen Aset",
-      href: "/staff/assets",
+      href: "/assets",
       icon: Laptop,
     },
     {

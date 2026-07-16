@@ -134,11 +134,31 @@ const normalizeApiUser = (user: unknown): ValidatedSession | null => {
 };
 
 const getApiBaseUrl = () => {
+  const productionApiUrl = "https://api.sahabatqolbu.com/api";
+  const fallbackDevApiUrl = "http://localhost:5000/api";
   const envApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (envApiUrl) return envApiUrl.replace(/\/+$/, "");
-  return process.env.NODE_ENV === "production"
-    ? "https://api.sahabatqolbu.com/api"
-    : "http://localhost:5000/api";
+
+  if (process.env.NODE_ENV === "production") {
+    if (!envApiUrl) return productionApiUrl;
+
+    try {
+      const parsed = new URL(envApiUrl);
+      const isDashboardOrigin = parsed.hostname === "dashboard.sahabatqolbu.com";
+      return (isDashboardOrigin ? productionApiUrl : envApiUrl).replace(/\/+$/, "");
+    } catch {
+      return productionApiUrl;
+    }
+  }
+
+  if (!envApiUrl) return fallbackDevApiUrl;
+
+  try {
+    const parsed = new URL(envApiUrl);
+    const isLocal = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    return (isLocal ? envApiUrl : fallbackDevApiUrl).replace(/\/+$/, "");
+  } catch {
+    return fallbackDevApiUrl;
+  }
 };
 
 const validateSessionViaBackend = async (token: string) => {
