@@ -20,8 +20,8 @@ router.use(authorize(["ADMIN", "STAFF"]));
 
 router.get("/", getAssets);
 router.get("/holders", getAssetHolders);
-router.get("/:id", getAssetById);
 router.get("/:id/documents/:documentId/download", downloadAssetDocument);
+router.get("/:id", getAssetById);
 
 router.post("/", authorize(["ADMIN"]), createAsset);
 router.put("/:id", authorize(["ADMIN"]), updateAsset);

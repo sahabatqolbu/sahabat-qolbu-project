@@ -116,6 +116,16 @@ describe("asset management regressions", () => {
 
     assert.match(apiRoutes, /router\.use\("\/assets", assetRoutes\)/);
     assert.match(assetRoutes, /router\.use\(authorize\(\["ADMIN", "STAFF"\]\)\)/);
+    assert.ok(
+      assetRoutes.indexOf('router.get("/holders"') <
+        assetRoutes.indexOf('router.get("/:id"'),
+      "specific asset routes must be registered before /:id",
+    );
+    assert.ok(
+      assetRoutes.indexOf('router.get("/:id/documents/:documentId/download"') <
+        assetRoutes.indexOf('router.get("/:id"'),
+      "asset document download route must be registered before /:id",
+    );
     assert.match(assetRoutes, /router\.post\("\/", authorize\(\["ADMIN"\]\), createAsset\)/);
     assert.match(assetRoutes, /router\.put\("\/:id", authorize\(\["ADMIN"\]\), updateAsset\)/);
     assert.match(assetRoutes, /router\.delete\("\/:id", authorize\(\["ADMIN"\]\), deleteAsset\)/);
