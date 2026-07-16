@@ -22,6 +22,7 @@ export default function Navbar() {
   const isSolidHeader =
     pathname?.startsWith("/paket/") ||
     pathname?.startsWith("/packages/") ||
+    pathname === "/artikel" ||
     pathname?.startsWith("/artikel/") ||
     pathname?.startsWith("/hotel/") ||
     pathname?.startsWith("/maskapai/");
