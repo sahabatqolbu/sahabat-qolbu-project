@@ -109,6 +109,32 @@ describe("api contract regressions", () => {
   });
 });
 
+describe("asset management regressions", () => {
+  it("guards asset read routes to admin/staff and mutations to admin", () => {
+    const apiRoutes = read("src/routes/api.js");
+    const assetRoutes = read("src/routes/assets.js");
+
+    assert.match(apiRoutes, /router\.use\("\/assets", assetRoutes\)/);
+    assert.match(assetRoutes, /router\.use\(authorize\(\["ADMIN", "STAFF"\]\)\)/);
+    assert.match(assetRoutes, /router\.post\("\/", authorize\(\["ADMIN"\]\), createAsset\)/);
+    assert.match(assetRoutes, /router\.put\("\/:id", authorize\(\["ADMIN"\]\), updateAsset\)/);
+    assert.match(assetRoutes, /router\.delete\("\/:id", authorize\(\["ADMIN"\]\), deleteAsset\)/);
+    assert.match(assetRoutes, /router\.post\("\/:id\/assign", authorize\(\["ADMIN"\]\), assignAsset\)/);
+    assert.match(assetRoutes, /router\.post\("\/:id\/return", authorize\(\["ADMIN"\]\), returnAsset\)/);
+  });
+
+  it("blocks secret fields and prevents assigned asset deletion", () => {
+    const controller = read("src/controllers/assetController.js");
+
+    assert.match(controller, /BLOCKED_SECRET_KEYS/);
+    assert.match(controller, /password/);
+    assert.match(controller, /api_key/);
+    assert.match(controller, /token/);
+    assert.match(controller, /Aset yang sedang dipinjam tidak bisa dihapus/);
+    assert.match(controller, /Hanya aset AVAILABLE yang bisa diserahterimakan/);
+  });
+});
+
 describe("payment flow regressions", () => {
   it("guards duplicate jamaah payment verification", () => {
     const controller = read("src/controllers/jamaahController.js");

@@ -24,6 +24,7 @@ import {
   UserCog,
   Briefcase,
   Globe,
+  Laptop,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -76,6 +77,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Transaksi",
       href: "/admin/transactions",
       icon: Wallet,
+    },
+    {
+      label: "Manajemen Aset",
+      href: "/admin/assets",
+      icon: Laptop,
     },
     {
       label: "Data Master",
@@ -322,6 +328,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Kelola Agen",
       href: "/staff/agen",
       icon: UserCog,
+    },
+    {
+      label: "Manajemen Aset",
+      href: "/staff/assets",
+      icon: Laptop,
     },
     {
       label: "Data Master",

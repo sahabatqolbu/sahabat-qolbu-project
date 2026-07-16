@@ -1563,3 +1563,108 @@ export const calendarEvents = mysqlTable(
     dayNumberIdx: index("day_number_idx").on(table.dayNumber),
   }),
 );
+
+// =====================================================
+// INTERNAL ASSET MANAGEMENT
+// =====================================================
+export const assets = mysqlTable(
+  "assets",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    assetCode: varchar("asset_code", { length: 50 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    type: mysqlEnum("type", ["DEVICE", "ACCOUNT"]).notNull(),
+    category: varchar("category", { length: 100 }).notNull(),
+    status: mysqlEnum("status", [
+      "AVAILABLE",
+      "ASSIGNED",
+      "MAINTENANCE",
+      "RETIRED",
+      "LOST",
+    ])
+      .notNull()
+      .default("AVAILABLE"),
+    brand: varchar("brand", { length: 120 }),
+    model: varchar("model", { length: 120 }),
+    serialNumber: varchar("serial_number", { length: 160 }),
+    identifier: varchar("identifier", { length: 255 }),
+    location: varchar("location", { length: 160 }),
+    condition: varchar("condition", { length: 160 }),
+    notes: text("notes"),
+    platform: varchar("platform", { length: 160 }),
+    accountUsername: varchar("account_username", { length: 255 }),
+    recoveryContact: varchar("recovery_contact", { length: 255 }),
+    accountPic: varchar("account_pic", { length: 255 }),
+    accountNotes: text("account_notes"),
+    createdBy: int("created_by").references(() => users.id),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    assetCodeIdx: uniqueIndex("asset_code_idx").on(table.assetCode),
+    typeIdx: index("asset_type_idx").on(table.type),
+    statusIdx: index("asset_status_idx").on(table.status),
+  }),
+);
+
+export const assetAssignments = mysqlTable(
+  "asset_assignments",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    assetId: int("asset_id")
+      .notNull()
+      .references(() => assets.id, { onDelete: "cascade" }),
+    holderUserId: int("holder_user_id")
+      .notNull()
+      .references(() => users.id),
+    status: mysqlEnum("status", ["ACTIVE", "RETURNED"])
+      .notNull()
+      .default("ACTIVE"),
+    assignedAt: date("assigned_at").notNull(),
+    initialCondition: varchar("initial_condition", { length: 160 }).notNull(),
+    purpose: text("purpose").notNull(),
+    notes: text("notes"),
+    expectedReturnAt: date("expected_return_at"),
+    returnedAt: date("returned_at"),
+    returnCondition: varchar("return_condition", { length: 160 }),
+    returnNotes: text("return_notes"),
+    createdBy: int("created_by").references(() => users.id),
+    returnedBy: int("returned_by").references(() => users.id),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    assetIdx: index("asset_assignment_asset_idx").on(table.assetId),
+    holderIdx: index("asset_assignment_holder_idx").on(table.holderUserId),
+    statusIdx: index("asset_assignment_status_idx").on(table.status),
+  }),
+);
+
+export const assetDocuments = mysqlTable(
+  "asset_documents",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    assetId: int("asset_id")
+      .notNull()
+      .references(() => assets.id, { onDelete: "cascade" }),
+    assignmentId: int("assignment_id")
+      .notNull()
+      .references(() => assetAssignments.id, { onDelete: "cascade" }),
+    type: mysqlEnum("type", ["HANDOVER", "RETURN"]).notNull(),
+    documentNumber: varchar("document_number", { length: 80 }).notNull(),
+    fileName: varchar("file_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 100 }).notNull().default("application/pdf"),
+    content: text("content").notNull(),
+    createdBy: int("created_by").references(() => users.id),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    assetIdx: index("asset_document_asset_idx").on(table.assetId),
+    assignmentIdx: index("asset_document_assignment_idx").on(table.assignmentId),
+    documentNumberIdx: uniqueIndex("asset_document_number_idx").on(table.documentNumber),
+  }),
+);

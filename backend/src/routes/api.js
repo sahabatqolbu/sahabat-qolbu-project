@@ -10,6 +10,7 @@ import notificationRoutes from "./notifications.js";
 import calendarRoutes from "./calendar.js";
 import publicRoutes from "./public.js";
 import prospectRoutes from "./prospect.js";
+import assetRoutes from "./assets.js";
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ router.use("/agen", agenRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/calendar", calendarRoutes);
 router.use("/prospects", prospectRoutes);
+router.use("/assets", assetRoutes);
 router.use("/", publicRoutes);
 
 export default router;
