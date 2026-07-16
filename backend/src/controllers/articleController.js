@@ -134,10 +134,10 @@ const buildArticlePayload = async (
     existing?.relatedType || "NONE",
   );
   const relatedId =
-    relatedType === "NONE"
+    relatedType === "NONE" || relatedType === "SERVICE"
       ? null
       : parsePositiveInt(body.relatedId ?? existing?.relatedId);
-  if (relatedType !== "NONE" && !relatedId) {
+  if (relatedType !== "NONE" && relatedType !== "SERVICE" && !relatedId) {
     return { error: "Relasi artikel wajib dipilih" };
   }
 
