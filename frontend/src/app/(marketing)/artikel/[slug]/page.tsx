@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { ArrowLeft, CalendarDays } from "lucide-react";
 import { getPublicArticleBySlug, resolveAssetUrl } from "@/lib/public-api";
 
@@ -17,29 +18,33 @@ const formatDate = (value?: string | null) => {
   }).format(date);
 };
 
-const renderContent = (content: string) =>
-  content.split(/\n{2,}/).map((block, index) => {
-    const imageMatch = block.trim().match(/^!?\[(.*?)\]\((.*?)\)$/);
-    if (imageMatch) {
-      return (
-        <figure
-          key={`${block}-${index}`}
-          className="my-8 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-50"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={resolveAssetUrl(imageMatch[2]) || imageMatch[2]}
-            alt={imageMatch[1] || "Gambar artikel"}
-            className="h-auto w-full object-contain"
-          />
-          {imageMatch[1] ? (
-            <figcaption className="px-4 py-3 text-sm text-neutral-500">
-              {imageMatch[1]}
-            </figcaption>
-          ) : null}
-        </figure>
-      );
-    }
+const markdownImagePattern = /!?\[([^\]]*)\]\(([^)]+)\)/g;
+
+const renderArticleImage = (alt: string, src: string, key: string) => (
+  <figure
+    key={key}
+    className="my-8 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-50"
+  >
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img
+      src={resolveAssetUrl(src) || src}
+      alt={alt || "Gambar artikel"}
+      className="h-auto w-full object-contain"
+    />
+    {alt ? (
+      <figcaption className="px-4 py-3 text-sm text-neutral-500">
+        {alt}
+      </figcaption>
+    ) : null}
+  </figure>
+);
+
+const renderContentBlock = (block: string, index: number) => {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  const matches = Array.from(block.matchAll(markdownImagePattern));
+
+  if (!matches.length) {
     return (
       <p
         key={`${block}-${index}`}
@@ -48,7 +53,53 @@ const renderContent = (content: string) =>
         {block}
       </p>
     );
+  }
+
+  matches.forEach((match, matchIndex) => {
+    const start = match.index ?? 0;
+    const text = block.slice(lastIndex, start).trim();
+    if (text) {
+      parts.push(
+        <p
+          key={`text-${index}-${matchIndex}`}
+          className="whitespace-pre-line leading-8 text-neutral-700"
+        >
+          {text}
+        </p>,
+      );
+    }
+
+    parts.push(
+      renderArticleImage(
+        match[1],
+        match[2],
+        `image-${index}-${matchIndex}-${match[2]}`,
+      ),
+    );
+    lastIndex = start + match[0].length;
   });
+
+  const tail = block.slice(lastIndex).trim();
+  if (tail) {
+    parts.push(
+      <p
+        key={`tail-${index}`}
+        className="whitespace-pre-line leading-8 text-neutral-700"
+      >
+        {tail}
+      </p>,
+    );
+  }
+
+  return (
+    <div key={`${block}-${index}`} className="space-y-6">
+      {parts}
+    </div>
+  );
+};
+
+const renderContent = (content: string) =>
+  content.split(/\n{2,}/).map((block, index) => renderContentBlock(block, index));
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

@@ -134,6 +134,12 @@ const getErrorMessage = (error: unknown) => {
 const normalizeTags = (tags?: string[]) =>
   Array.isArray(tags) ? tags.join(", ") : "";
 
+const extractContentImages = (content: string) =>
+  Array.from(content.matchAll(/!?\[([^\]]*)\]\(([^)]+)\)/g)).map((match) => ({
+    alt: match[1] || "Gambar artikel",
+    src: match[2],
+  }));
+
 export default function ArticleFormPage({
   basePath,
   mode,
@@ -203,6 +209,11 @@ export default function ArticleFormPage({
     return [];
   }, [airlines, formData.relatedType, hotels, packages]);
 
+  const contentImages = useMemo(
+    () => extractContentImages(formData.content),
+    [formData.content],
+  );
+
   const buildPayload = () => {
     const body = new FormData();
     Object.entries(formData).forEach(([key, value]) => body.append(key, value));
@@ -248,7 +259,10 @@ export default function ArticleFormPage({
         ...prev,
         content: `${prev.content}${prev.content ? "\n\n" : ""}![Gambar artikel](${url})`,
       }));
-      toast({ title: "Gambar konten ditambahkan" });
+      toast({
+        title: "Gambar konten ditambahkan",
+        description: "Preview gambar tampil di bawah editor konten.",
+      });
     },
     onError: (error: unknown) =>
       toast({
@@ -496,8 +510,8 @@ export default function ArticleFormPage({
               <div>
                 <CardTitle>Konten Artikel *</CardTitle>
                 <CardDescription>
-                  Untuk gambar di tengah artikel, upload gambar konten lalu
-                  sistem akan menambahkan markdown otomatis.
+                  Upload gambar konten dari tombol ini. Preview gambar akan
+                  tampil di bawah editor setelah upload berhasil.
                 </CardDescription>
               </div>
               <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
@@ -525,6 +539,31 @@ export default function ArticleFormPage({
               className="min-h-[520px] font-mono text-sm leading-relaxed"
               placeholder="Tulis artikel panjang di sini..."
             />
+            {contentImages.length ? (
+              <div className="mt-5 rounded-md border border-dashed bg-gray-50 p-4">
+                <p className="mb-3 text-sm font-semibold text-gray-700">
+                  Preview gambar konten
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {contentImages.map((image, index) => (
+                    <figure
+                      key={`${image.src}-${index}`}
+                      className="overflow-hidden rounded-md border bg-white"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getImageUrl(image.src)}
+                        alt={image.alt}
+                        className="h-auto w-full object-contain"
+                      />
+                      <figcaption className="px-3 py-2 text-xs text-gray-500">
+                        {image.alt}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
