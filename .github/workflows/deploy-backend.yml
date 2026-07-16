@@ -80,9 +80,9 @@ jobs:
             host: ${{ secrets.SSH_HOST }}
             username: ${{ secrets.SSH_USERNAME }}
             key: ${{ secrets.SSH_PRIVATE_KEY }}
-            port: ${{ secrets.SSH_PORT || '22' }}
+            port: ${{ secrets.SSH_PORT || secrets.PORT || '22' }}
             source: "backend/*"
-            target: ${{ secrets.BACKEND_DEPLOY_TARGET }}
+            target: ${{ secrets.BACKEND_DEPLOY_TARGET || secrets.DEPLOY_BACKEND_CPANEL }}
 
       - name: Optional backend health check
         if: env.HAS_BACKEND_HEALTHCHECK_URL == 'true'
