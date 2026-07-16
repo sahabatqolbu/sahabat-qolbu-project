@@ -1,0 +1,21 @@
+{
+  "name": "Sahabat Qolbu",
+  "short_name": "Sahabat Qolbu",
+  "description": "Travel umroh Sahabat Qolbu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b4b78",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

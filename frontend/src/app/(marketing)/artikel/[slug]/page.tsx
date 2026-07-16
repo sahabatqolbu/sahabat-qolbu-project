@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft, CalendarDays } from "lucide-react";
-import { getPublicArticleBySlug } from "@/lib/public-api";
+import { getPublicArticleBySlug, resolveAssetUrl } from "@/lib/public-api";
 
 type Params = Promise<{ slug: string }>;
 
@@ -19,7 +19,7 @@ const formatDate = (value?: string | null) => {
 
 const renderContent = (content: string) =>
   content.split(/\n{2,}/).map((block, index) => {
-    const imageMatch = block.trim().match(/^!\[(.*?)\]\((.*?)\)$/);
+    const imageMatch = block.trim().match(/^!?\[(.*?)\]\((.*?)\)$/);
     if (imageMatch) {
       return (
         <figure
@@ -28,7 +28,7 @@ const renderContent = (content: string) =>
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={imageMatch[2]}
+            src={resolveAssetUrl(imageMatch[2]) || imageMatch[2]}
             alt={imageMatch[1] || "Gambar artikel"}
             className="h-auto w-full object-contain"
           />

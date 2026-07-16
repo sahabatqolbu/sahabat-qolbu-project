@@ -189,6 +189,7 @@ const publicUploadsOnly = (req, res, next) => {
     "itinerary",
     "general",
     "gallery",
+    "articles",
   ]);
 
   const protectedFolders = new Set([

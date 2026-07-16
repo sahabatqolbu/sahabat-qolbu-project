@@ -255,7 +255,7 @@ const calculateInclusiveDuration = (
   return diffDays >= 0 ? diffDays + 1 : 0;
 };
 
-const resolveAssetUrl = (value?: string | null) => {
+export const resolveAssetUrl = (value?: string | null) => {
   if (!value) return undefined;
   if (/^https?:\/\//i.test(value)) return value;
   if (value.startsWith("//")) return `https:${value}`;
