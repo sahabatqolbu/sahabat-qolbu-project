@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import PackageCard from "@/components/marketing/PackageCard";
@@ -28,7 +28,7 @@ export default function MarketingHomePage() {
     null,
   );
   const [loading, setLoading] = useState(true);
-  const [activeFaqGroup, setActiveFaqGroup] = useState("semua");
+  const [showAllFaqs, setShowAllFaqs] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -64,73 +64,7 @@ export default function MarketingHomePage() {
   }, []);
 
   const featuredPackages = packages.slice(0, 6);
-  const getFaqGroup = (faq: PublicFaq) => {
-    const text = `${faq.question} ${faq.answer}`.toLowerCase();
-
-    if (text.includes("paspor")) return "paspor";
-    if (
-      text.includes("vaksin") ||
-      text.includes("meningitis") ||
-      text.includes("buku kuning")
-    ) {
-      return "vaksin";
-    }
-    if (
-      text.includes("rekening") ||
-      text.includes("pembayaran") ||
-      text.includes("dp") ||
-      text.includes("biaya")
-    ) {
-      return "pembayaran";
-    }
-    if (
-      text.includes("kontak") ||
-      text.includes("whatsapp") ||
-      text.includes("grup")
-    ) {
-      return "kontak";
-    }
-
-    return "pendaftaran";
-  };
-  const faqGroups = useMemo(
-    () => [
-      { id: "semua", label: "Semua", count: faqs.length },
-      {
-        id: "pendaftaran",
-        label: "Pendaftaran",
-        count: faqs.filter((faq) => getFaqGroup(faq) === "pendaftaran").length,
-      },
-      {
-        id: "paspor",
-        label: "Paspor",
-        count: faqs.filter((faq) => getFaqGroup(faq) === "paspor").length,
-      },
-      {
-        id: "vaksin",
-        label: "Vaksin",
-        count: faqs.filter((faq) => getFaqGroup(faq) === "vaksin").length,
-      },
-      {
-        id: "pembayaran",
-        label: "Pembayaran",
-        count: faqs.filter((faq) => getFaqGroup(faq) === "pembayaran").length,
-      },
-      {
-        id: "kontak",
-        label: "Kontak",
-        count: faqs.filter((faq) => getFaqGroup(faq) === "kontak").length,
-      },
-    ],
-    [faqs],
-  );
-  const visibleFaqs = useMemo(
-    () =>
-      activeFaqGroup === "semua"
-        ? faqs
-        : faqs.filter((faq) => getFaqGroup(faq) === activeFaqGroup),
-    [activeFaqGroup, faqs],
-  );
+  const visibleFaqs = showAllFaqs ? faqs : faqs.slice(0, 8);
   const philosophyItems = companyProfile?.philosophy || [];
   const targetMarketItems = companyProfile?.targetMarket || [];
   const hasBrandContent = Boolean(
@@ -905,32 +839,6 @@ export default function MarketingHomePage() {
               </p>
             </div>
 
-            <div className="mb-8 flex flex-wrap justify-center gap-2">
-              {faqGroups
-                .filter((group) => group.count > 0)
-                .map((group) => (
-                  <button
-                    key={group.id}
-                    type="button"
-                    onClick={() => {
-                      const nextFaqs =
-                        group.id === "semua"
-                          ? faqs
-                          : faqs.filter((faq) => getFaqGroup(faq) === group.id);
-                      setActiveFaqGroup(group.id);
-                      setOpenFaqId(nextFaqs[0]?.id ?? null);
-                    }}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                      activeFaqGroup === group.id
-                        ? "border-primary bg-primary text-white"
-                        : "border-gray-200 bg-white text-primary hover:border-gold hover:text-gold"
-                    }`}
-                  >
-                    {group.label}
-                  </button>
-                ))}
-            </div>
-
             <div className="space-y-3">
               {visibleFaqs.map((faq) => {
                 const isOpen = openFaqId === faq.id;
@@ -970,6 +878,19 @@ export default function MarketingHomePage() {
                 );
               })}
             </div>
+            {faqs.length > 8 ? (
+              <div className="mt-8 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllFaqs((value) => !value)}
+                  className="rounded-sm border border-primary px-5 py-3 text-sm font-bold text-primary transition hover:bg-primary hover:text-white"
+                >
+                  {showAllFaqs
+                    ? "Tampilkan lebih sedikit"
+                    : `Lihat semua ${faqs.length} pertanyaan`}
+                </button>
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}
