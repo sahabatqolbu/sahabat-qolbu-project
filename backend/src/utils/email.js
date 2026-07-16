@@ -8,19 +8,18 @@ dotenv.config();
 const isTestEnv = process.env.NODE_ENV === "test";
 
 // =====================================================
-// NODEMAILER TRANSPORTER (MAILTRAP)
+// NODEMAILER TRANSPORTER (MAILTRAP / SMTP)
 // =====================================================
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT),
+  port: parseInt(process.env.SMTP_PORT, 10),
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
 
-const shouldVerifyTransportOnBoot =
-  process.env.EMAIL_VERIFY_ON_BOOT === "true";
+const shouldVerifyTransportOnBoot = process.env.EMAIL_VERIFY_ON_BOOT === "true";
 
 if (shouldVerifyTransportOnBoot) {
   transporter.verify((error) => {
@@ -35,11 +34,8 @@ if (shouldVerifyTransportOnBoot) {
 // =====================================================
 // SEND EMAIL FUNCTION
 // =====================================================
-
-// Check if email queue is enabled (default: true for async)
 const isQueueEnabled = !isTestEnv && process.env.EMAIL_QUEUE_ENABLED !== "false";
 
-// Lazy load to avoid circular dependency
 let emailQueueModule = null;
 const getEmailQueue = () => {
   if (!emailQueueModule) {
@@ -65,7 +61,6 @@ export const sendEmail = async ({ to, subject, text, html, queue = isQueueEnable
       return { success: true, queued: true, jobId };
     }
 
-    // Sync sending (legacy)
     const info = await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to,
@@ -76,7 +71,6 @@ export const sendEmail = async ({ to, subject, text, html, queue = isQueueEnable
 
     logger.info("Email sent", { messageId: info.messageId });
 
-    // Mailtrap preview URL (development only)
     if (process.env.NODE_ENV === "development") {
       logger.debug("Email preview URL", { preview: nodemailer.getTestMessageUrl(info) });
     }
@@ -88,7 +82,6 @@ export const sendEmail = async ({ to, subject, text, html, queue = isQueueEnable
   }
 };
 
-// Sync version for critical emails that need immediate delivery
 export const sendEmailSync = async ({ to, subject, text, html }) => {
   try {
     if (isTestEnv) {
@@ -125,474 +118,280 @@ export const getEmailStats = async () => {
 };
 
 // =====================================================
+// EMAIL BRANDING
+// =====================================================
+const websiteUrl = (process.env.WEBSITE_URL || process.env.PUBLIC_SITE_URL || "https://sahabatqolbu.com").replace(/\/$/, "");
+const dashboardUrl = (process.env.DASHBOARD_URL || "https://dashboard.sahabatqolbu.com").replace(/\/$/, "");
+const logoUrl = process.env.EMAIL_LOGO_URL || `${websiteUrl}/landing/images/icon.png`;
+
+const brand = {
+  name: "Sahabat Qolbu",
+  legalName: "PT. Sahabat Qolbu Cahaya Baitullah",
+  tagline: "Travel Umrah & Haji Terpercaya",
+  websiteLabel: "sahabatqolbu.com",
+  websiteUrl,
+  dashboardUrl,
+  logoUrl,
+  hotline: "0812 4000 0101",
+  paymentAdmin: "0896 5919 5000",
+  email: "admin@sahabatqolbu.com",
+  instagram: "@sahabatqolbu.official",
+  address: "Ruko Jl. Ebony, Metland Transyogi No.11, Cileungsi, Bogor 16820",
+};
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+const formatCurrency = (value) =>
+  `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+
+const renderEmailLayout = ({ preheader, title, subtitle, children, cta }) => `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(title)}</title>
+</head>
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#1f2937;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">${escapeHtml(preheader || subtitle || title)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb; padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px; background:#ffffff; border-radius:18px; overflow:hidden; box-shadow:0 18px 45px rgba(10,44,69,0.12);">
+          <tr>
+            <td style="background:#0A2C45; padding:32px 28px; color:#ffffff;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="width:74px; vertical-align:middle;">
+                    <img src="${escapeHtml(brand.logoUrl)}" alt="Logo ${escapeHtml(brand.name)}" width="58" height="58" style="display:block; width:58px; height:58px; object-fit:contain; border-radius:14px; background:#ffffff; padding:6px;" />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <div style="font-size:22px; font-weight:800; letter-spacing:.2px;">${escapeHtml(brand.name)}</div>
+                    <div style="font-size:13px; line-height:1.5; color:#dbeafe; margin-top:3px;">${escapeHtml(brand.tagline)}</div>
+                  </td>
+                </tr>
+              </table>
+              <div style="height:24px;"></div>
+              <div style="font-size:30px; line-height:1.18; font-weight:800; letter-spacing:-.3px;">${escapeHtml(title)}</div>
+              ${subtitle ? `<div style="font-size:15px; line-height:1.7; color:#dbeafe; margin-top:10px; max-width:520px;">${escapeHtml(subtitle)}</div>` : ""}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:34px 30px 28px;">
+              ${children}
+              ${cta ? `
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 4px;">
+                  <tr>
+                    <td style="background:#D6A84F; border-radius:10px;">
+                      <a href="${escapeHtml(cta.href)}" style="display:inline-block; padding:14px 24px; color:#0A2C45; font-size:15px; font-weight:800; text-decoration:none;">${escapeHtml(cta.label)}</a>
+                    </td>
+                  </tr>
+                </table>
+              ` : ""}
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f8fafc; padding:26px 30px; border-top:1px solid #e5e7eb;">
+              <div style="font-size:15px; font-weight:800; color:#0A2C45; margin-bottom:12px;">Kontak Resmi ${escapeHtml(brand.name)}</div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px; line-height:1.8; color:#475569;">
+                <tr>
+                  <td style="padding:2px 0;"><strong>WhatsApp Hotline:</strong> ${escapeHtml(brand.hotline)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:2px 0;"><strong>Admin Pembayaran:</strong> ${escapeHtml(brand.paymentAdmin)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:2px 0;"><strong>Email:</strong> <a href="mailto:${escapeHtml(brand.email)}" style="color:#0A2C45; text-decoration:none;">${escapeHtml(brand.email)}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding:2px 0;"><strong>Website:</strong> <a href="${escapeHtml(brand.websiteUrl)}" style="color:#0A2C45; text-decoration:none;">${escapeHtml(brand.websiteLabel)}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding:2px 0;"><strong>Instagram:</strong> ${escapeHtml(brand.instagram)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:2px 0;"><strong>Alamat:</strong> ${escapeHtml(brand.address)}</td>
+                </tr>
+              </table>
+              <div style="font-size:12px; line-height:1.7; color:#94a3b8; margin-top:18px; padding-top:16px; border-top:1px solid #e5e7eb;">
+                Email otomatis dari sistem ${escapeHtml(brand.legalName)}. Mohon jangan membalas email ini. Untuk bantuan, hubungi kontak resmi di atas.
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div style="font-size:12px; color:#94a3b8; margin-top:16px;">© ${new Date().getFullYear()} ${escapeHtml(brand.name)}. All rights reserved.</div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+const infoBox = (content, options = {}) => `
+  <div style="background:${options.background || "#f8fafc"}; border:1px solid ${options.border || "#e5e7eb"}; border-left:5px solid ${options.accent || "#D6A84F"}; border-radius:12px; padding:18px 20px; margin:22px 0;">
+    ${content}
+  </div>
+`;
+
+// =====================================================
 // EMAIL TEMPLATES
 // =====================================================
-
-// Welcome Email
 export const sendWelcomeEmail = async (user) => {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #0A2C45 0%, #1a4d7a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .logo { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; }
-        .button { display: inline-block; background: #FFC107; color: #0A2C45; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
-        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; border-radius: 0 0 10px 10px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">🕌 Sahabat Qolbu</div>
-          <p>Travel Umrah & Haji Terpercaya</p>
-        </div>
-        
-        <div class="content">
-          <h2>Assalamualaikum ${user.fullName},</h2>
-          
-          <p>Alhamdulillah, akun Anda telah berhasil dibuat! 🎉</p>
-          
-          <p>Selamat bergabung dengan <strong>Sahabat Qolbu</strong>, partner terpercaya Anda dalam perjalanan ibadah Umrah & Haji.</p>
-          
-          <div style="background: #f0f9ff; padding: 20px; border-left: 4px solid #3b82f6; margin: 20px 0;">
-            <strong>Detail Akun:</strong><br>
-            Email: ${user.email}<br>
-            Role: ${user.role}<br>
-            Status: ${user.isActive ? "Aktif ✅" : "Menunggu Aktivasi"}
-          </div>
-          
-          <p>Silakan login untuk melengkapi profil dan memulai perjalanan ibadah Anda.</p>
-          
-          <center>
-            <a href="${process.env.FRONTEND_URL
-    }/login" class="button">Login Sekarang</a>
-          </center>
-          
-          <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
-            Jika Anda tidak merasa mendaftar, abaikan email ini atau hubungi customer service kami.
-          </p>
-        </div>
-        
-        <div class="footer">
-          <p><strong>Sahabat Qolbu</strong><br>
-          Travel Umrah & Haji<br>
-          📞 WhatsApp: 0812-3456-7890<br>
-          🌐 www.sahabatqolbu.com</p>
-          
-          <p style="margin-top: 15px; font-size: 12px;">
-            © ${new Date().getFullYear()} Sahabat Qolbu. All rights reserved.
-          </p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  const fullName = escapeHtml(user.fullName || "Bapak/Ibu");
+  const role = escapeHtml(user.role || "-");
+  const status = user.isActive ? "Aktif" : "Menunggu aktivasi";
+  const loginUrl = `${brand.dashboardUrl}/login`;
+
+  const html = renderEmailLayout({
+    title: "Selamat Datang",
+    subtitle: "Akun Sahabat Qolbu Anda sudah dibuat dan siap digunakan.",
+    preheader: "Akun Sahabat Qolbu Anda telah berhasil dibuat.",
+    cta: { href: loginUrl, label: "Masuk ke Dashboard" },
+    children: `
+      <div style="font-size:18px; font-weight:800; color:#0A2C45; margin-bottom:10px;">Assalamu'alaikum ${fullName},</div>
+      <p style="font-size:15px; line-height:1.8; margin:0 0 16px;">Alhamdulillah, akun Anda telah berhasil dibuat di sistem ${escapeHtml(brand.name)}. Silakan masuk ke dashboard untuk melengkapi data dan mengikuti informasi perjalanan ibadah Anda.</p>
+      ${infoBox(`
+        <div style="font-size:13px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;">Detail Akun</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; line-height:1.8; color:#334155;">
+          <tr><td style="width:120px; color:#64748b;">Email</td><td><strong>${escapeHtml(user.email)}</strong></td></tr>
+          <tr><td style="color:#64748b;">Role</td><td><strong>${role}</strong></td></tr>
+          <tr><td style="color:#64748b;">Status</td><td><strong>${status}</strong></td></tr>
+        </table>
+      `)}
+      <p style="font-size:14px; line-height:1.8; color:#64748b; margin:20px 0 0;">Jika Anda tidak merasa mendaftar, abaikan email ini atau hubungi kontak resmi kami.</p>
+    `,
+  });
 
   return await sendEmail({
     to: user.email,
-    subject: "🕌 Selamat Datang di Sahabat Qolbu",
-    text: `Assalamualaikum ${user.fullName}, selamat bergabung dengan Sahabat Qolbu!`,
+    subject: "Selamat Datang di Sahabat Qolbu",
+    text: `Assalamu'alaikum ${user.fullName}, akun Sahabat Qolbu Anda telah berhasil dibuat. Login: ${loginUrl}`,
     html,
   });
 };
 
-// OTP Email
 export const sendOTPEmail = async (user, otp) => {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #0A2C45 0%, #1a4d7a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; }
-        .otp-box { background: #FFC107; color: #0A2C45; font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
-        .warning { background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; color: #dc2626; }
-        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; border-radius: 0 0 10px 10px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">🕌 Sahabat Qolbu</div>
-          <p>Kode Verifikasi OTP</p>
-        </div>
-        
-        <div class="content">
-          <h2>Assalamualaikum ${user.fullName},</h2>
-          
-          <p>Kami menerima permintaan verifikasi untuk akun Anda. Gunakan kode OTP berikut:</p>
-          
-          <div class="otp-box">${otp}</div>
-          
-          <div class="warning">
-            ⚠️ <strong>Penting:</strong><br>
-            • Kode ini berlaku selama <strong>${process.env.OTP_EXPIRY_MINUTES
-    } menit</strong><br>
-            • Jangan bagikan kode ini kepada siapapun<br>
-            • Jika bukan Anda yang meminta, segera hubungi customer service
-          </div>
-          
-          <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 20px;">
-            Kode akan kedaluwarsa pada:<br>
-            <strong>${new Date(
-      Date.now() + parseInt(process.env.OTP_EXPIRY_MINUTES) * 60000
-    ).toLocaleString("id-ID")}</strong>
-          </p>
-        </div>
-        
-        <div class="footer">
-          <p><strong>Sahabat Qolbu</strong><br>
-          📞 WhatsApp: 0812-3456-7890<br>
-          🌐 www.sahabatqolbu.com</p>
-          
-          <p style="margin-top: 15px; font-size: 12px;">
-            © ${new Date().getFullYear()} Sahabat Qolbu. All rights reserved.
-          </p>
-        </div>
+  const fullName = escapeHtml(user.fullName || "Bapak/Ibu");
+  const expiryMinutes = Number.parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
+  const expiresAt = new Date(Date.now() + expiryMinutes * 60000).toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const html = renderEmailLayout({
+    title: "Kode Verifikasi",
+    subtitle: "Gunakan kode ini untuk menyelesaikan proses verifikasi akun Anda.",
+    preheader: `Kode OTP Anda: ${otp}`,
+    children: `
+      <div style="font-size:18px; font-weight:800; color:#0A2C45; margin-bottom:10px;">Assalamu'alaikum ${fullName},</div>
+      <p style="font-size:15px; line-height:1.8; margin:0 0 18px;">Kami menerima permintaan verifikasi untuk akun Anda. Masukkan kode berikut pada halaman dashboard:</p>
+      <div style="background:#0A2C45; color:#ffffff; border-radius:14px; padding:22px 18px; text-align:center; margin:22px 0;">
+        <div style="font-size:12px; color:#bfdbfe; text-transform:uppercase; letter-spacing:1.8px; font-weight:700; margin-bottom:8px;">Kode OTP</div>
+        <div style="font-size:38px; letter-spacing:8px; font-weight:900; font-family:'Courier New', monospace;">${escapeHtml(otp)}</div>
       </div>
-    </body>
-    </html>
-  `;
+      ${infoBox(`
+        <div style="font-weight:800; color:#92400e; margin-bottom:8px;">Catatan keamanan</div>
+        <ul style="margin:0; padding-left:18px; color:#78350f; font-size:14px; line-height:1.8;">
+          <li>Kode berlaku selama <strong>${expiryMinutes} menit</strong>, sampai ${escapeHtml(expiresAt)}.</li>
+          <li>Jangan bagikan kode ini kepada siapa pun, termasuk pihak yang mengaku sebagai admin.</li>
+          <li>Jika bukan Anda yang meminta kode ini, segera hubungi kontak resmi ${escapeHtml(brand.name)}.</li>
+        </ul>
+      `, { background: "#fffbeb", border: "#fde68a", accent: "#f59e0b" })}
+    `,
+  });
 
   return await sendEmail({
     to: user.email,
-    subject: `🔐 Kode OTP Anda: ${otp}`,
-    text: `Kode OTP Anda adalah: ${otp}. Berlaku selama ${process.env.OTP_EXPIRY_MINUTES} menit.`,
+    subject: `Kode OTP Sahabat Qolbu: ${otp}`,
+    text: `Kode OTP Anda adalah: ${otp}. Berlaku selama ${expiryMinutes} menit. Jangan bagikan kode ini kepada siapa pun.`,
     html,
   });
 };
 
-// Payment Confirmation Email
 export const sendPaymentConfirmationEmail = async (transaction, jamaah) => {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #0A2C45 0%, #1a4d7a 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; }
-        .success-badge { background: #10b981; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 10px 0; }
-        .invoice-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .invoice-table th { background: #f3f4f6; padding: 12px; text-align: left; }
-        .invoice-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
-        .total-row { background: #fef3c7; font-weight: bold; font-size: 18px; }
-        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; border-radius: 0 0 10px 10px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">🕌 Sahabat Qolbu</div>
-          <p>Konfirmasi Pembayaran</p>
-        </div>
-        
-        <div class="content">
-          <h2>Assalamualaikum ${jamaah.fullName},</h2>
-          
-          <center>
-            <div class="success-badge">✓ Pembayaran Terverifikasi</div>
-          </center>
-          
-          <p>Alhamdulillah, pembayaran Anda telah kami terima dan verifikasi.</p>
-          
-          <table class="invoice-table">
-            <tr>
-              <th colspan="2">Detail Transaksi</th>
-            </tr>
-            <tr>
-              <td><strong>No. Invoice</strong></td>
-              <td>${transaction.invoiceNumber}</td>
-            </tr>
-            <tr>
-              <td><strong>Tanggal Bayar</strong></td>
-              <td>${new Date().toLocaleDateString("id-ID")}</td>
-            </tr>
-            <tr>
-              <td><strong>Metode Pembayaran</strong></td>
-              <td>${transaction.paymentMethod}</td>
-            </tr>
-            <tr>
-              <td><strong>Jumlah Bayar</strong></td>
-              <td>Rp ${parseFloat(transaction.paidAmount).toLocaleString(
-    "id-ID"
-  )}</td>
-            </tr>
-            <tr class="total-row">
-              <td><strong>Sisa Pembayaran</strong></td>
-              <td>Rp ${parseFloat(transaction.remainingAmount).toLocaleString(
-    "id-ID"
-  )}</td>
-            </tr>
-          </table>
-          
-          <p>Detail lengkap dapat Anda lihat di dashboard akun Anda.</p>
-          
-          <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
-            Jika ada pertanyaan, silakan hubungi customer service kami.
-          </p>
-        </div>
-        
-        <div class="footer">
-          <p><strong>Sahabat Qolbu</strong><br>
-          📞 WhatsApp: 0812-3456-7890<br>
-          🌐 www.sahabatqolbu.com</p>
-          
-          <p style="margin-top: 15px; font-size: 12px;">
-            © ${new Date().getFullYear()} Sahabat Qolbu. All rights reserved.
-          </p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  const fullName = escapeHtml(jamaah.fullName || "Bapak/Ibu");
+  const invoiceNumber = escapeHtml(transaction.invoiceNumber || "-");
+  const paymentMethod = escapeHtml(transaction.paymentMethod || "-");
+
+  const html = renderEmailLayout({
+    title: "Pembayaran Terverifikasi",
+    subtitle: "Pembayaran Anda telah kami terima dan tercatat di sistem Sahabat Qolbu.",
+    preheader: `Pembayaran ${invoiceNumber} telah terverifikasi.`,
+    cta: { href: `${brand.dashboardUrl}/login`, label: "Lihat Dashboard" },
+    children: `
+      <div style="font-size:18px; font-weight:800; color:#0A2C45; margin-bottom:10px;">Assalamu'alaikum ${fullName},</div>
+      <p style="font-size:15px; line-height:1.8; margin:0 0 16px;">Alhamdulillah, pembayaran Anda telah diverifikasi oleh tim kami. Detail transaksi dapat dilihat di bawah ini.</p>
+      ${infoBox(`
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; line-height:1.9; color:#334155;">
+          <tr><td style="width:150px; color:#64748b;">No. Invoice</td><td><strong>${invoiceNumber}</strong></td></tr>
+          <tr><td style="color:#64748b;">Tanggal Verifikasi</td><td><strong>${new Date().toLocaleDateString("id-ID")}</strong></td></tr>
+          <tr><td style="color:#64748b;">Metode Pembayaran</td><td><strong>${paymentMethod}</strong></td></tr>
+          <tr><td style="color:#64748b;">Jumlah Bayar</td><td><strong>${formatCurrency(transaction.paidAmount)}</strong></td></tr>
+          <tr><td style="color:#64748b;">Sisa Pembayaran</td><td><strong>${formatCurrency(transaction.remainingAmount)}</strong></td></tr>
+        </table>
+      `, { background: "#f0fdf4", border: "#bbf7d0", accent: "#16a34a" })}
+      <p style="font-size:14px; line-height:1.8; color:#64748b; margin:20px 0 0;">Untuk pertanyaan seputar pembayaran, hubungi admin pembayaran resmi di ${escapeHtml(brand.paymentAdmin)}.</p>
+    `,
+  });
 
   return await sendEmail({
     to: jamaah.email,
-    subject: `✅ Pembayaran Terverifikasi - ${transaction.invoiceNumber}`,
-    text: `Pembayaran Anda sebesar Rp ${parseFloat(
-      transaction.paidAmount
-    ).toLocaleString("id-ID")} telah terverifikasi.`,
+    subject: `Pembayaran Terverifikasi - ${transaction.invoiceNumber}`,
+    text: `Pembayaran Anda sebesar ${formatCurrency(transaction.paidAmount)} telah terverifikasi. Sisa pembayaran: ${formatCurrency(transaction.remainingAmount)}.`,
     html,
   });
 };
 
-// =====================================================
-// NEW USER CREDENTIALS EMAIL
-// =====================================================
 export const sendCredentialsEmail = async (email, fullName, password) => {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #0A2C45 0%, #1a4d7a 100%); color: white; padding: 40px 30px; text-align: center; }
-        .header h1 { margin: 0; font-size: 32px; font-weight: bold; }
-        .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
-        .content { padding: 40px 30px; }
-        .greeting { font-size: 24px; color: #0A2C45; margin-bottom: 10px; font-weight: 600; }
-        .credentials-box { 
-          background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%); 
-          padding: 25px; 
-          border-left: 5px solid #FFC107; 
-          margin: 25px 0; 
-          border-radius: 8px;
-        }
-        .credentials-box h3 { 
-          margin: 0 0 15px 0; 
-          color: #0A2C45; 
-          font-size: 18px;
-        }
-        .credential-item { 
-          margin: 15px 0; 
-          padding: 12px 15px; 
-          background: white; 
-          border-radius: 6px;
-          border: 1px solid #FFD54F;
-        }
-        .credential-label { 
-          font-size: 13px; 
-          color: #666; 
-          margin-bottom: 5px; 
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .credential-value { 
-          font-family: 'Courier New', monospace; 
-          font-size: 18px; 
-          color: #0A2C45; 
-          font-weight: bold;
-          word-break: break-all;
-        }
-        .warning-box { 
-          background: #FFF3E0; 
-          border-left: 5px solid #FF9800; 
-          padding: 20px; 
-          margin: 25px 0; 
-          border-radius: 8px;
-        }
-        .warning-box h4 { 
-          margin: 0 0 12px 0; 
-          color: #E65100; 
-          font-size: 16px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .warning-box ul { 
-          margin: 10px 0 0 0; 
-          padding-left: 20px; 
-        }
-        .warning-box li { 
-          margin: 8px 0; 
-          color: #5D4037;
-        }
-        .steps-box {
-          background: #E3F2FD;
-          padding: 20px;
-          border-radius: 8px;
-          margin: 25px 0;
-        }
-        .steps-box h4 {
-          margin: 0 0 15px 0;
-          color: #0D47A1;
-        }
-        .steps-box ol {
-          margin: 0;
-          padding-left: 20px;
-        }
-        .steps-box li {
-          margin: 10px 0;
-          color: #1565C0;
-        }
-        .button { 
-          display: inline-block; 
-          background: linear-gradient(135deg, #FFC107 0%, #FFB300 100%);
-          color: #0A2C45; 
-          padding: 16px 40px; 
-          text-decoration: none; 
-          border-radius: 8px; 
-          font-weight: bold; 
-          font-size: 16px;
-          margin: 25px 0; 
-          box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
-          transition: all 0.3s;
-        }
-        .button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
-        }
-        .footer { 
-          background: #F5F5F5; 
-          padding: 30px; 
-          text-align: center; 
-          color: #666; 
-          font-size: 14px; 
-          border-top: 3px solid #FFC107;
-        }
-        .footer-brand {
-          font-weight: bold;
-          color: #0A2C45;
-          font-size: 16px;
-          margin-bottom: 10px;
-        }
-        .footer-contact {
-          margin: 15px 0;
-          line-height: 1.8;
-        }
-        .footer-copyright {
-          margin-top: 20px;
-          padding-top: 20px;
-          border-top: 1px solid #DDD;
-          font-size: 12px;
-          color: #999;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>🕌 Sahabat Qolbu</h1>
-          <p>Travel Umrah & Haji Terpercaya</p>
+  const safeFullName = escapeHtml(fullName || "Bapak/Ibu");
+  const safeEmail = escapeHtml(email);
+  const safePassword = escapeHtml(password);
+  const loginUrl = `${brand.dashboardUrl}/login`;
+
+  const html = renderEmailLayout({
+    title: "Akun Dashboard Anda",
+    subtitle: "Berikut kredensial login sementara untuk masuk ke dashboard Sahabat Qolbu.",
+    preheader: "Akun dashboard Sahabat Qolbu Anda telah dibuat.",
+    cta: { href: loginUrl, label: "Login Sekarang" },
+    children: `
+      <div style="font-size:18px; font-weight:800; color:#0A2C45; margin-bottom:10px;">Assalamu'alaikum ${safeFullName},</div>
+      <p style="font-size:15px; line-height:1.8; margin:0 0 16px;">Akun Anda telah dibuat oleh admin ${escapeHtml(brand.name)}. Gunakan email dan password sementara berikut untuk login pertama kali.</p>
+      ${infoBox(`
+        <div style="font-size:13px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:12px;">Kredensial Login</div>
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:12px;">
+          <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:5px;">Email</div>
+          <div style="font-size:16px; color:#0A2C45; font-weight:800; word-break:break-all;">${safeEmail}</div>
         </div>
-        
-        <div class="content">
-          <div class="greeting">Assalamu'alaikum Wr. Wb.</div>
-          <h2 style="color: #0A2C45; margin: 5px 0 20px 0;">${fullName}</h2>
-          
-          <p style="font-size: 16px; line-height: 1.8;">
-            Alhamdulillah, akun Anda telah berhasil dibuat oleh <strong>Admin Sahabat Qolbu</strong>. 
-            Selamat bergabung dalam perjalanan ibadah Umrah bersama kami! 🎉
-          </p>
-          
-          <div class="credentials-box">
-            <h3>🔐 Kredensial Login Anda</h3>
-            
-            <div class="credential-item">
-              <div class="credential-label">📧 Email Login</div>
-              <div class="credential-value">${email}</div>
-            </div>
-            
-            <div class="credential-item">
-              <div class="credential-label">🔑 Password</div>
-              <div class="credential-value">${password}</div>
-            </div>
-          </div>
-          
-          <div class="warning-box">
-            <h4>
-              <span style="font-size: 20px;">⚠️</span>
-              PENTING - Harap Dibaca!
-            </h4>
-            <ul>
-              <li><strong>Segera login dan GANTI PASSWORD</strong> Anda setelah login pertama kali</li>
-              <li><strong>JANGAN BAGIKAN</strong> password ini kepada siapapun, termasuk yang mengaku staff kami</li>
-              <li><strong>SIMPAN</strong> email ini di tempat yang aman atau catat password Anda</li>
-              <li>Jika lupa password, gunakan fitur "Lupa Password" di halaman login</li>
-            </ul>
-          </div>
-          
-          <div class="steps-box">
-            <h4>📋 Langkah Selanjutnya:</h4>
-            <ol>
-              <li>Klik tombol <strong>"Login Sekarang"</strong> di bawah ini</li>
-              <li>Masukkan email dan password yang tertera di atas</li>
-              <li>Lengkapi data pribadi Anda (KTP, Paspor, dll)</li>
-              <li>Upload dokumen yang diperlukan</li>
-              <li>Tunggu verifikasi dari admin kami</li>
-            </ol>
-          </div>
-          
-          <center>
-            <a href="${process.env.DASHBOARD_URL || 'http://localhost:3001'}/login" class="button">
-              🔐 Login Sekarang
-            </a>
-          </center>
-          
-          <p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #EEE; color: #666; font-size: 14px; line-height: 1.8;">
-            <strong>Butuh Bantuan?</strong><br>
-            Jika Anda mengalami kesulitan atau ada pertanyaan, jangan ragu untuk menghubungi tim customer service kami. 
-            Kami siap membantu Anda! 😊
-          </p>
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:12px; color:#64748b; font-weight:700; margin-bottom:5px;">Password sementara</div>
+          <div style="font-size:18px; color:#0A2C45; font-weight:900; font-family:'Courier New', monospace; word-break:break-all;">${safePassword}</div>
         </div>
-        
-        <div class="footer">
-          <div class="footer-brand">Sahabat Qolbu Travel</div>
-          <div class="footer-contact">
-            📞 WhatsApp: <strong>0812-3456-7890</strong><br>
-            📧 Email: <strong>support@sahabatqolbu.com</strong><br>
-            🌐 Website: <strong>www.sahabatqolbu.com</strong>
-          </div>
-          <div class="footer-copyright">
-            © ${new Date().getFullYear()} Sahabat Qolbu. All rights reserved.<br>
-            Email otomatis dari sistem - Mohon jangan membalas email ini.
-          </div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+      `)}
+      ${infoBox(`
+        <div style="font-weight:800; color:#92400e; margin-bottom:8px;">Penting untuk keamanan akun</div>
+        <ul style="margin:0; padding-left:18px; color:#78350f; font-size:14px; line-height:1.8;">
+          <li>Segera ganti password setelah login pertama.</li>
+          <li>Jangan bagikan password kepada siapa pun.</li>
+          <li>Admin tidak pernah meminta password Anda melalui WhatsApp, telepon, atau email.</li>
+          <li>Jika mengalami kendala login, hubungi WhatsApp Hotline ${escapeHtml(brand.hotline)}.</li>
+        </ul>
+      `, { background: "#fffbeb", border: "#fde68a", accent: "#f59e0b" })}
+      <p style="font-size:14px; line-height:1.8; color:#64748b; margin:22px 0 0;">Setelah login, lengkapi data pribadi dan dokumen yang diminta agar proses administrasi perjalanan berjalan lancar.</p>
+    `,
+  });
 
   return await sendEmail({
     to: email,
-    subject: "🕌 Akun Umrah Anda di Sahabat Qolbu - Kredensial Login",
-    text: `Assalamu'alaikum ${fullName},\n\nAkun Anda telah dibuat!\n\nEmail: ${email}\nPassword: ${password}\n\nSilakan login di: ${process.env.DASHBOARD_URL}/login\n\nHarap ganti password setelah login pertama.\n\nTerima kasih,\nSahabat Qolbu Travel`,
+    subject: "Akun Dashboard Sahabat Qolbu Anda",
+    text: `Assalamu'alaikum ${fullName},\n\nAkun Anda telah dibuat.\n\nEmail: ${email}\nPassword sementara: ${password}\n\nLogin: ${loginUrl}\n\nHarap ganti password setelah login pertama.\n\nKontak resmi: ${brand.hotline} | ${brand.email} | ${brand.websiteLabel}`,
     html,
   });
 };
-
-
-
-
 
 export default transporter;
