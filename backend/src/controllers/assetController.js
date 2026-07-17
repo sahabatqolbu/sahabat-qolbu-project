@@ -1,3 +1,5 @@
+import path from "path";
+import { promises as fs } from "fs";
 import { db } from "../db/index.js";
 import { assets, assetAssignments, assetDocuments, users } from "../db/schema.js";
 import { and, asc, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
@@ -9,6 +11,7 @@ import {
   successResponse,
 } from "../utils/response.js";
 import { logger } from "../utils/logger.js";
+import { UPLOAD_BASE } from "../utils/upload.js";
 
 const ASSET_TYPES = ["DEVICE", "ACCOUNT"];
 const ASSET_STATUSES = ["AVAILABLE", "ASSIGNED", "MAINTENANCE", "RETIRED", "LOST"];
@@ -46,35 +49,87 @@ const escapePdfText = (value) =>
     .replace(/\)/g, "\\)");
 
 const makeSimplePdfBuffer = (title, lines) => {
-  const pageLines = [
-    "PT Sahabat Qolbu",
-    "Form Internal Manajemen Aset",
-    "",
-    title,
-    "",
-    ...lines,
-    "",
-    "Pernyataan:",
-    "Pemegang aset bertanggung jawab menjaga aset dan menggunakannya untuk kebutuhan kerja.",
-    "Tanda tangan dilakukan manual pada dokumen cetak ini.",
-    "",
-    "Atasan/Penanggung Jawab                         Pemegang Aset",
-    "",
-    "",
-    "(____________________)                         (____________________)",
-  ];
+  const pageWidth = 595;
+  const pageHeight = 842;
+  const commands = [];
 
-  const textCommands = pageLines
-    .slice(0, 42)
-    .map((line, index) => `BT /F1 10 Tf 50 ${790 - index * 17} Td (${escapePdfText(line)}) Tj ET`)
-    .join("\n");
+  const add = (command) => commands.push(command);
+  const rgb = (r, g, b) => `${r} ${g} ${b}`;
+  const text = (value, x, y, size = 10, font = "F1", color = "0.10 0.12 0.16") => {
+    add(`BT /${font} ${size} Tf ${color} rg ${x} ${y} Td (${escapePdfText(value)}) Tj ET`);
+  };
+  const rect = (x, y, w, h, stroke = "0.85 0.88 0.92", fill = null) => {
+    if (fill) add(`${fill} rg ${x} ${y} ${w} ${h} re f`);
+    add(`${stroke} RG ${x} ${y} ${w} ${h} re S`);
+  };
+  const line = (x1, y1, x2, y2, color = "0.85 0.88 0.92") => {
+    add(`${color} RG ${x1} ${y1} m ${x2} ${y2} l S`);
+  };
 
+  const primary = rgb("0.03", "0.22", "0.18");
+  const gold = rgb("0.73", "0.55", "0.20");
+  const muted = rgb("0.36", "0.42", "0.50");
+
+  rect(32, 30, pageWidth - 64, pageHeight - 60, "0.82 0.86 0.90");
+  add(`${primary} rg 32 782 531 30 re f`);
+  add(`${gold} rg 32 778 531 4 re f`);
+
+  add(`${primary} rg 50 710 58 58 re f`);
+  add(`${gold} rg 50 710 58 9 re f`);
+  text("SQ", 64, 731, 20, "F2", "1 1 1");
+  text("PT. SAHABAT QOLBU CAHAYA BAITULLAH", 122, 752, 16, "F2", primary);
+  text("Manajemen Aset Internal", 122, 735, 10, "F2", gold);
+  text("Ruko Jl. Ebony, Metland Transyogi No.11, Cileungsi, Bogor 16820", 122, 720, 9, "F1", muted);
+  text("Website: sahabatqolbu.com | Email: admin@sahabatqolbu.com | Hotline: 0812 4000 0101", 122, 707, 8.5, "F1", muted);
+  line(50, 696, 545, 696, gold);
+
+  rect(50, 648, 495, 34, "0.88 0.82 0.64", "0.98 0.96 0.89");
+  text(title, 62, 668, 13, "F2", primary);
+  text("Dokumen ini menjadi dasar administrasi sebelum dokumen bertanda tangan diupload sebagai bukti final.", 62, 654, 8.5, "F1", muted);
+
+  let y = 620;
+  text("Detail Dokumen", 50, y, 11, "F2", primary);
+  y -= 14;
+
+  lines.slice(0, 18).forEach((entry, index) => {
+    const parts = String(entry).split(":");
+    const label = parts.shift()?.trim() || "Informasi";
+    const value = parts.join(":").trim() || "-";
+    const fill = index % 2 === 0 ? "0.98 0.99 1" : "1 1 1";
+    rect(50, y - 14, 495, 22, "0.90 0.92 0.95", fill);
+    text(label, 62, y - 6, 8.5, "F2", muted);
+    text(value.slice(0, 82), 190, y - 6, 8.5, "F1", "0.10 0.12 0.16");
+    y -= 22;
+  });
+
+  y -= 8;
+  rect(50, y - 76, 495, 70, "0.88 0.82 0.64", "0.99 0.97 0.91");
+  text("Pernyataan Tanggung Jawab", 62, y - 24, 10, "F2", primary);
+  text("Pemegang aset menyatakan telah menerima aset dalam kondisi yang tercatat dan bertanggung jawab", 62, y - 41, 8.5, "F1", "0.18 0.23 0.30");
+  text("untuk menjaga, menggunakan, serta mengembalikan aset sesuai kebutuhan operasional perusahaan.", 62, y - 55, 8.5, "F1", "0.18 0.23 0.30");
+  y -= 104;
+
+  text("Tanda Tangan", 50, y, 11, "F2", primary);
+  y -= 126;
+  rect(60, y, 190, 96, "0.78 0.82 0.88");
+  rect(345, y, 190, 96, "0.78 0.82 0.88");
+  text("Atasan / Penanggung Jawab", 86, y + 75, 9, "F2", primary);
+  text("Pemegang Aset", 397, y + 75, 9, "F2", primary);
+  line(88, y + 25, 222, y + 25, "0.35 0.40 0.48");
+  line(373, y + 25, 507, y + 25, "0.35 0.40 0.48");
+  text("Nama & Tanda Tangan", 103, y + 11, 8, "F1", muted);
+  text("Nama & Tanda Tangan", 388, y + 11, 8, "F1", muted);
+
+  text("Catatan: setelah dokumen ini ditandatangani, upload scan/foto dokumen signed pada dashboard aset.", 50, 54, 8, "F1", muted);
+
+  const content = commands.join("\n");
   const objects = [
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n",
     "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n",
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj\n",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >> endobj\n",
     "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n",
-    `5 0 obj << /Length ${Buffer.byteLength(textCommands, "utf8")} >> stream\n${textCommands}\nendstream endobj\n`,
+    "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj\n",
+    `6 0 obj << /Length ${Buffer.byteLength(content, "utf8")} >> stream\n${content}\nendstream endobj\n`,
   ];
 
   let pdf = "%PDF-1.4\n";
@@ -228,6 +283,10 @@ const getDocumentsForAsset = async (assetId) =>
       documentNumber: assetDocuments.documentNumber,
       fileName: assetDocuments.fileName,
       mimeType: assetDocuments.mimeType,
+      signedFileUrl: assetDocuments.signedFileUrl,
+      signedFileName: assetDocuments.signedFileName,
+      signedMimeType: assetDocuments.signedMimeType,
+      signedUploadedAt: assetDocuments.signedUploadedAt,
       createdAt: assetDocuments.createdAt,
     })
     .from(assetDocuments)
@@ -730,6 +789,62 @@ export const getAssetHolders = async (req, res, next) => {
     return successResponse(res, holderRows);
   } catch (error) {
     logger.error("Get asset holders error", error);
+    next(error);
+  }
+};
+
+
+export const uploadAssetSignedDocument = async (req, res, next) => {
+  try {
+    const assetId = asInt(req.params.id);
+    const documentId = asInt(req.params.documentId);
+    const document = await db.query.assetDocuments.findFirst({
+      where: and(eq(assetDocuments.id, documentId), eq(assetDocuments.assetId, assetId)),
+    });
+    if (!document) return notFoundResponse(res, "Dokumen aset tidak ditemukan");
+    if (!req.uploadedFile?.path) return errorResponse(res, "File bukti tanda tangan wajib diupload", 400);
+
+    await db
+      .update(assetDocuments)
+      .set({
+        signedFileUrl: req.uploadedFile.path,
+        signedFileName: req.uploadedFile.originalName || req.uploadedFile.filename,
+        signedMimeType: req.uploadedFile.mimeType,
+        signedUploadedBy: req.user.userId,
+        signedUploadedAt: sql`CURRENT_TIMESTAMP`,
+      })
+      .where(and(eq(assetDocuments.id, documentId), eq(assetDocuments.assetId, assetId)));
+
+    const updated = await db.query.assetDocuments.findFirst({
+      where: and(eq(assetDocuments.id, documentId), eq(assetDocuments.assetId, assetId)),
+    });
+    return successResponse(res, updated, "Dokumen bertanda tangan berhasil diupload");
+  } catch (error) {
+    logger.error("Upload asset signed document error", error);
+    next(error);
+  }
+};
+
+export const downloadAssetSignedDocument = async (req, res, next) => {
+  try {
+    const assetId = asInt(req.params.id);
+    const documentId = asInt(req.params.documentId);
+    const document = await db.query.assetDocuments.findFirst({
+      where: and(eq(assetDocuments.id, documentId), eq(assetDocuments.assetId, assetId)),
+    });
+    if (!document?.signedFileUrl) return notFoundResponse(res, "Bukti dokumen bertanda tangan belum diupload");
+
+    const relativePath = document.signedFileUrl.replace(/^\/uploads\//, "");
+    const fullPath = path.resolve(UPLOAD_BASE, relativePath);
+    const uploadRoot = path.resolve(UPLOAD_BASE);
+    if (!fullPath.startsWith(uploadRoot)) return errorResponse(res, "Path dokumen tidak valid", 400);
+
+    const file = await fs.readFile(fullPath);
+    res.setHeader("Content-Type", document.signedMimeType || "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${document.signedFileName || path.basename(fullPath)}"`);
+    return res.status(200).send(file);
+  } catch (error) {
+    logger.error("Download asset signed document error", error);
     next(error);
   }
 };

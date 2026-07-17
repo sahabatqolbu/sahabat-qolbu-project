@@ -44,6 +44,10 @@ export interface AssetDocument {
   documentNumber: string;
   fileName: string;
   mimeType: string;
+  signedFileUrl?: string | null;
+  signedFileName?: string | null;
+  signedMimeType?: string | null;
+  signedUploadedAt?: string | null;
   createdAt: string;
   asset?: AssetSummary;
   holder?: Pick<AssetHolder, "id" | "fullName" | "role">;
@@ -191,9 +195,30 @@ export const assetService = {
     return response.data;
   },
 
+  uploadSignedDocument: async (assetId: number, documentId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post<{ success: boolean; data: AssetDocument; message: string }>(
+      `/assets/${assetId}/documents/${documentId}/signed`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
   downloadDocument: async (assetId: number, documentId: number, fileName: string) => {
     const response = await api.get(`/assets/${assetId}/documents/${documentId}/download`, { responseType: "blob" });
     const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
+  },
+
+  downloadSignedDocument: async (assetId: number, documentId: number, fileName: string) => {
+    const response = await api.get(`/assets/${assetId}/documents/${documentId}/signed/download`, { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = fileName;

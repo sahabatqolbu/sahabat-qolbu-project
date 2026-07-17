@@ -28,7 +28,7 @@ export default function MarketingHomePage() {
     null,
   );
   const [loading, setLoading] = useState(true);
-  const [showAllFaqs, setShowAllFaqs] = useState(false);
+  const [activeFaqCategory, setActiveFaqCategory] = useState<string>("");
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -45,7 +45,9 @@ export default function MarketingHomePage() {
           setPackages(packageData);
           setArticles(articleData);
           setFaqs(faqData);
-          setOpenFaqId(faqData[0]?.id ?? null);
+          const firstCategory = faqData.find((faq) => faq.category)?.category || faqData[0]?.category || "";
+          setActiveFaqCategory(firstCategory);
+          setOpenFaqId(faqData.find((faq) => faq.category === firstCategory)?.id ?? faqData[0]?.id ?? null);
           setGalleryImages(galleryData);
           setCompanyProfile(profileData);
           setLoading(false);
@@ -63,8 +65,27 @@ export default function MarketingHomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (faqs.length === 0) return;
+    const stillValid = activeFaqCategory && faqs.some((faq) => faq.category === activeFaqCategory);
+    if (stillValid) return;
+    const firstCategory = faqs.find((faq) => faq.category)?.category || faqs[0]?.category || "";
+    setActiveFaqCategory(firstCategory);
+    setOpenFaqId(faqs.find((faq) => faq.category === firstCategory)?.id ?? faqs[0]?.id ?? null);
+  }, [activeFaqCategory, faqs]);
+
   const featuredPackages = packages.slice(0, 6);
-  const visibleFaqs = showAllFaqs ? faqs : faqs.slice(0, 8);
+  const faqCategories = Array.from(
+    new Map(
+      faqs
+        .map((faq) => faq.category?.trim())
+        .filter((category): category is string => Boolean(category))
+        .map((category) => [category, category]),
+    ).values(),
+  );
+  const visibleFaqs = activeFaqCategory
+    ? faqs.filter((faq) => faq.category === activeFaqCategory)
+    : faqs.slice(0, 6);
   const philosophyItems = companyProfile?.philosophy || [];
   const targetMarketItems = companyProfile?.targetMarket || [];
   const hasBrandContent = Boolean(
@@ -839,6 +860,31 @@ export default function MarketingHomePage() {
               </p>
             </div>
 
+            {faqCategories.length > 0 ? (
+              <div className="mb-8 flex flex-wrap justify-center gap-2">
+                {faqCategories.map((category) => {
+                  const isActive = activeFaqCategory === category;
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => {
+                        setActiveFaqCategory(category);
+                        setOpenFaqId(faqs.find((faq) => faq.category === category)?.id ?? null);
+                      }}
+                      className={`rounded-sm border px-4 py-2 text-sm font-bold transition ${
+                        isActive
+                          ? "border-primary bg-primary text-white shadow-sm"
+                          : "border-gray-200 bg-white text-primary hover:border-gold hover:bg-gold/10"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
             <div className="space-y-3">
               {visibleFaqs.map((faq) => {
                 const isOpen = openFaqId === faq.id;
@@ -878,19 +924,6 @@ export default function MarketingHomePage() {
                 );
               })}
             </div>
-            {faqs.length > 8 ? (
-              <div className="mt-8 text-center">
-                <button
-                  type="button"
-                  onClick={() => setShowAllFaqs((value) => !value)}
-                  className="rounded-sm border border-primary px-5 py-3 text-sm font-bold text-primary transition hover:bg-primary hover:text-white"
-                >
-                  {showAllFaqs
-                    ? "Tampilkan lebih sedikit"
-                    : `Lihat semua ${faqs.length} pertanyaan`}
-                </button>
-              </div>
-            ) : null}
           </div>
         </section>
       ) : null}

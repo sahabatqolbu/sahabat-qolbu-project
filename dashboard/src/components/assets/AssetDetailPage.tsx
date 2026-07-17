@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Download, FileText, Loader2, Pencil, RotateCcw, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, FileText, Loader2, Pencil, RotateCcw, Send, Upload } from "lucide-react";
 import { assetService, type AssetStatus } from "@/services/assetService";
 import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
   const [returnOpen, setReturnOpen] = useState(false);
   const [assignForm, setAssignForm] = useState({ holderUserId: "", assignedAt: today(), initialCondition: "Baik", purpose: "Operasional kerja", notes: "", expectedReturnAt: "" });
   const [returnForm, setReturnForm] = useState({ returnedAt: today(), returnCondition: "Baik", returnNotes: "", nextStatus: "AVAILABLE" as Exclude<AssetStatus, "ASSIGNED"> });
+  const [signedFiles, setSignedFiles] = useState<Record<number, File | null>>({});
 
   const { data, isLoading } = useQuery({ queryKey: ["asset-detail", assetId], queryFn: () => assetService.getAsset(assetId) });
   const { data: holderData } = useQuery({ queryKey: ["asset-holders"], queryFn: () => assetService.getHolders(), enabled: !readOnly });
@@ -64,6 +65,16 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
     mutationFn: () => assetService.returnAsset(assetId, returnForm),
     onSuccess: () => { refresh(); setReturnOpen(false); toast({ title: "Berhasil", description: "Pengembalian aset diproses dan PDF digenerate" }); },
     onError: (error: any) => toast({ title: "Gagal", description: error.response?.data?.message || "Pengembalian gagal", variant: "destructive" }),
+  });
+
+  const uploadSignedMutation = useMutation({
+    mutationFn: ({ documentId, file }: { documentId: number; file: File }) => assetService.uploadSignedDocument(assetId, documentId, file),
+    onSuccess: () => {
+      refresh();
+      setSignedFiles({});
+      toast({ title: "Berhasil", description: "Bukti dokumen bertanda tangan berhasil diupload" });
+    },
+    onError: (error: any) => toast({ title: "Gagal", description: error.response?.data?.message || "Upload bukti tanda tangan gagal", variant: "destructive" }),
   });
 
   if (isLoading) return <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-500"><Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" />Memuat detail aset...</div>;
@@ -152,12 +163,55 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="text-lg font-black text-slate-950">Dokumen</h3>
           <div className="mt-4 space-y-3">
-            {(asset.documents || []).length === 0 ? <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">Belum ada dokumen untuk aset ini.</p> : (asset.documents || []).map((document) => (
-              <div key={document.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
-                <div><div className="flex items-center gap-2 font-semibold text-slate-900"><FileText className="h-4 w-4" />{document.documentNumber}</div><div className="text-xs text-slate-500">{document.type}</div></div>
-                <Button variant="outline" size="sm" onClick={() => assetService.downloadDocument(document.assetId, document.id, document.fileName)}><Download className="mr-2 h-4 w-4" />PDF</Button>
-              </div>
-            ))}
+            {(asset.documents || []).length === 0 ? <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">Belum ada dokumen untuk aset ini.</p> : (asset.documents || []).map((document) => {
+              const selectedSignedFile = signedFiles[document.id];
+              const isUploadingThis = uploadSignedMutation.isPending;
+
+              return (
+                <div key={document.id} className="rounded-lg border border-slate-200 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 font-semibold text-slate-900"><FileText className="h-4 w-4" />{document.documentNumber}</div>
+                      <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{document.type}</div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => assetService.downloadDocument(document.assetId, document.id, document.fileName)}><Download className="mr-2 h-4 w-4" />Template PDF</Button>
+                  </div>
+
+                  <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    {document.signedFileUrl ? (
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-2 text-sm text-slate-700">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                          <div>
+                            <div className="font-bold text-slate-900">Bukti signed sudah diupload</div>
+                            <div className="text-xs text-slate-500">{document.signedFileName || "Dokumen bertanda tangan"}</div>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => assetService.downloadSignedDocument(document.assetId, document.id, document.signedFileName || "dokumen-signed.pdf")}><Download className="mr-2 h-4 w-4" />Bukti Signed</Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="text-sm font-bold text-slate-900">Upload bukti dokumen yang sudah ditandatangani</div>
+                        <Input
+                          type="file"
+                          accept=".pdf,image/*"
+                          onChange={(event) => setSignedFiles({ ...signedFiles, [document.id]: event.target.files?.[0] || null })}
+                          className="bg-white"
+                        />
+                        <Button
+                          size="sm"
+                          disabled={!selectedSignedFile || isUploadingThis}
+                          onClick={() => selectedSignedFile && uploadSignedMutation.mutate({ documentId: document.id, file: selectedSignedFile })}
+                        >
+                          {isUploadingThis ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                          Upload Bukti Signed
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
