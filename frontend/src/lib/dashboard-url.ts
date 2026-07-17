@@ -11,9 +11,10 @@ const rolePaths: Record<DashboardRole, string> = {
 };
 
 export const getDashboardBaseUrl = () =>
-  (
-    process.env.NEXT_PUBLIC_DASHBOARD_URL ||
-    "https://dashboard.sahabatqolbu.com"
+  (process.env.NODE_ENV === "production"
+    ? "https://dashboard.sahabatqolbu.com"
+    : process.env.NEXT_PUBLIC_DASHBOARD_URL ||
+      "https://dashboard.sahabatqolbu.com"
   ).replace(/\/+$/, "");
 
 export const getDashboardUrl = (role?: string | null) => {
@@ -36,3 +37,4 @@ export const getCalonJamaahPackageRegisterUrl = (slug: string) => {
   const nextPath = `/calon-jamaah/packages/${slug}`;
   return getCalonJamaahRegisterUrl(nextPath);
 };
+
