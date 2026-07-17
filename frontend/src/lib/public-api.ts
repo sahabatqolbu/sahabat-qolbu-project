@@ -1,8 +1,20 @@
-const DEFAULT_API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.NODE_ENV === "production"
-    ? "https://api.sahabatqolbu.com/api"
-    : "http://localhost:5000/api");
+const PRODUCTION_API_BASE_URL = "https://api.sahabatqolbu.com/api";
+const DEVELOPMENT_API_BASE_URL = "http://localhost:5000/api";
+
+const isLocalApiUrl = (value?: string | null) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/api/i.test(value || "");
+
+const DEFAULT_API_BASE_URL = (() => {
+  const configured = process.env.NEXT_PUBLIC_API_URL;
+
+  if (process.env.NODE_ENV === "production") {
+    return !configured || isLocalApiUrl(configured)
+      ? PRODUCTION_API_BASE_URL
+      : configured;
+  }
+
+  return configured || DEVELOPMENT_API_BASE_URL;
+})();
 
 const normalizeApiBaseUrl = (value: string) => value.replace(/\/+$/, "");
 
@@ -819,3 +831,4 @@ export const parseEntityIdFromSlug = (slug: string) => {
   const match = String(slug || "").match(/-(\d+)$/);
   return match ? Number.parseInt(match[1], 10) : null;
 };
+
