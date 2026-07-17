@@ -398,6 +398,7 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     : undefined;
 
   const name = toNonEmptyString(pkg.name, "Paket Umroh");
+  const slug = slugifyPackageName(name || `paket-${pkg.id}`);
   const departureDate = toNonEmptyString(pkg.departureDate);
   const returnDate = toNonEmptyString(pkg.returnDate);
   const inclusiveDuration = calculateInclusiveDuration(
@@ -407,7 +408,7 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
 
   return {
     id: pkg.id,
-    slug: slugifyPackageName(name || `paket-${pkg.id}`),
+    slug,
     code: toNonEmptyString(pkg.code, `PKG-${pkg.id}`),
     name,
     type: mapPackageType(pkg.type, pkg.name),
@@ -449,7 +450,9 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     included: parseStringList(pkg.facilities),
     excluded: parseStringList(pkg.excludedFacilities),
     itinerary,
-    itineraryPdf: resolveAssetUrl(pkg.itineraryPdf),
+    itineraryPdf: pkg.itineraryPdf
+      ? `/itinerary/${encodeURIComponent(slug)}`
+      : undefined,
     documents: undefined,
     terms: parseStringList(pkg.notes),
     backendType: toNonEmptyString(pkg.type),
@@ -488,7 +491,7 @@ const fetchApi = async <T>(path: string) => {
   }
 };
 
-export const getMarketingPackages = async (): Promise<MarketingPackage[]> => {
+const getBackendMarketingPackages = async (): Promise<BackendPackage[]> => {
   const firstPage = await fetchApi<PublicPackagesPayload>(
     "/public/packages?page=1&limit=100",
   );
@@ -514,12 +517,15 @@ export const getMarketingPackages = async (): Promise<MarketingPackage[]> => {
     new Map(collectedPackages.map((pkg) => [pkg.id, pkg])).values(),
   );
 
-  return sortPackagesByDeparture(
-    uniquePackages
+  return uniquePackages;
+};
+
+export const getMarketingPackages = async (): Promise<MarketingPackage[]> =>
+  sortPackagesByDeparture(
+    (await getBackendMarketingPackages())
       .filter((pkg) => pkg.isPublished !== false)
       .map((pkg) => mapPackage(pkg)),
   );
-};
 
 export const getMarketingPackageSlugs = async (): Promise<string[]> => {
   const packages = await getMarketingPackages();
@@ -549,6 +555,25 @@ export const getMarketingPackageBySlug = async (slug: string) => {
 
   const packages = await getMarketingPackages();
   return packages.find((pkg) => pkg.slug === normalizedSlug) || null;
+};
+
+export const getMarketingPackageItinerarySourceBySlug = async (
+  slug: string,
+) => {
+  const normalizedSlug = slugifyPackageName(slug);
+  if (!normalizedSlug) {
+    return undefined;
+  }
+
+  const packages = await getBackendMarketingPackages();
+  const pkg = packages
+    .filter((item) => item.isPublished !== false)
+    .find((item) => {
+      const name = toNonEmptyString(item.name, "Paket Umroh");
+      return slugifyPackageName(name || `paket-${item.id}`) === normalizedSlug;
+    });
+
+  return resolveAssetUrl(pkg?.itineraryPdf);
 };
 
 export const getPublicAgentSlugs = async () => {

@@ -1,5 +1,8 @@
 import type { NextRequest } from "next/server";
-import { getMarketingPackageBySlug } from "@/lib/public-api";
+import {
+  getMarketingPackageBySlug,
+  getMarketingPackageItinerarySourceBySlug,
+} from "@/lib/public-api";
 
 type Params = Promise<{ slug: string }>;
 
@@ -20,9 +23,14 @@ export async function GET(
     return new Response("Itinerary tidak ditemukan.", { status: 404 });
   }
 
+  const itinerarySource = await getMarketingPackageItinerarySourceBySlug(slug);
+  if (!itinerarySource) {
+    return new Response("Itinerary tidak ditemukan.", { status: 404 });
+  }
+
   let sourceUrl: URL;
   try {
-    sourceUrl = new URL(pkg.itineraryPdf);
+    sourceUrl = new URL(itinerarySource);
   } catch {
     return new Response("URL itinerary tidak valid.", { status: 400 });
   }
