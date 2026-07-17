@@ -25,6 +25,10 @@ type Params = Promise<{ slug: string }>;
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const SITE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://sahabatqolbu.com"
+    : "http://localhost:3000";
 
 const toCurrency = (value?: string) => {
   const parsed = Number.parseInt(String(value || "0"), 10);
@@ -74,6 +78,8 @@ export default async function ItineraryPreviewPage({
   }
 
   const downloadUrl = getItineraryDownloadUrl(pkg.slug);
+  const publicDownloadUrl = `${SITE_URL}${downloadUrl}`;
+  const mobilePreviewUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(publicDownloadUrl)}`;
   const consultLink = getWhatsappLink(pkg);
 
   return (
@@ -149,11 +155,20 @@ export default async function ItineraryPreviewPage({
                 Download PDF
               </a>
             </div>
-            <iframe
-              src={`${downloadUrl}#toolbar=0&navpanes=0`}
-              title={`Itinerary ${pkg.name}`}
-              className="h-[72vh] min-h-[520px] w-full bg-neutral-100"
-            />
+            <div className="block md:hidden">
+              <iframe
+                src={mobilePreviewUrl}
+                title={`Preview itinerary ${pkg.name}`}
+                className="h-[70vh] min-h-[520px] w-full bg-neutral-100"
+              />
+            </div>
+            <div className="hidden md:block">
+              <iframe
+                src={`${downloadUrl}#toolbar=0&navpanes=0`}
+                title={`Itinerary ${pkg.name}`}
+                className="h-[72vh] min-h-[520px] w-full bg-neutral-100"
+              />
+            </div>
           </div>
 
           <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">

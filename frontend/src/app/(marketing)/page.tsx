@@ -110,7 +110,7 @@ export default function MarketingHomePage() {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-primary underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+            className="break-all font-semibold text-primary underline decoration-gold/60 underline-offset-4 transition hover:text-gold sm:break-words"
           >
             {href}
           </a>
@@ -906,9 +906,9 @@ export default function MarketingHomePage() {
                     </button>
                     {isOpen ? (
                       <div className="border-t border-gold/20 px-5 pb-5 pt-4">
-                        <p className="whitespace-pre-line leading-relaxed text-gray-600">
+                        <div className="whitespace-pre-line break-words leading-relaxed text-gray-600 [overflow-wrap:anywhere]">
                           {renderFaqAnswer(faq.answer)}
-                        </p>
+                        </div>
                       </div>
                     ) : null}
                   </article>

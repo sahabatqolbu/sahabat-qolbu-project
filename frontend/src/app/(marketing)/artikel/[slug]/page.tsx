@@ -318,7 +318,7 @@ export default async function ArticleDetailPage({
             />
           </div>
         ) : null}
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:py-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
           <div className="space-y-8">
             {article.excerpt ? (
               <blockquote className="rounded-sm border-l-4 border-gold bg-white p-6 shadow-sm">
@@ -339,7 +339,7 @@ export default async function ArticleDetailPage({
               </div>
             </div>
 
-            <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="px-0 py-1 md:rounded-sm md:border md:border-neutral-200 md:bg-white md:p-8 md:shadow-sm">
               <div className="space-y-6 text-base">
                 {renderContent(article.content)}
               </div>
