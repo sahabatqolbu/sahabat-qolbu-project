@@ -109,6 +109,19 @@ export default function AssetFormPage({ assetId }: { assetId?: number }) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
+      {saveMutation.isPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 text-center shadow-2xl">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-950 text-white">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+            <h3 className="mt-4 text-lg font-black text-slate-950">Menyimpan aset...</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              Sistem sedang membuat kode aset dan menyimpan data. Jangan tutup halaman ini dulu.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="rounded-lg border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
         <Button asChild variant="ghost" className="mb-3 -ml-3 text-slate-200 hover:bg-white/10 hover:text-white">
           <Link href={isEdit ? `/assets/${assetId}` : "/assets"}><ArrowLeft className="mr-2 h-4 w-4" /> Kembali</Link>
@@ -174,3 +187,4 @@ export default function AssetFormPage({ assetId }: { assetId?: number }) {
     </div>
   );
 }
+
