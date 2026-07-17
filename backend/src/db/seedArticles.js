@@ -124,6 +124,34 @@ Calon jamaah juga sebaiknya melakukan reconfirm reservasi sebelum tiba, terutama
 
 Maysan Al Mashaer Makkah adalah opsi yang menarik untuk jamaah yang memprioritaskan akses ke Masjidil Haram, jalur jalan kaki yang lebih nyaman, dan kenyamanan makan yang familiar. Hotel ini sederhana, tapi justru di situlah nilainya: efisien, strategis, dan cukup masuk akal untuk banyak paket umroh.`;
 
+const alSahaContent = `## Al Saha Hotel Madinah: Dekat Nabawi, Praktis untuk Jamaah
+
+Al Saha Hotel Madinah menarik karena satu alasan utama: lokasinya benar-benar membantu jamaah menghemat tenaga. Berada di kawasan Bada'ah dekat Central Area, hotel ini sering dipilih oleh jamaah yang ingin akses cepat ke pelataran Masjid Nabawi tanpa harus repot dengan perjalanan tambahan.
+
+Yang membuatnya unik adalah perbedaan cara hotel ini dipasarkan di berbagai platform. Di beberapa tempat, hotel ini muncul dengan nama Al Saha Hotel by Sedra International, Al Saha Hotel - By Al Rawda, atau Jiwar Al Saha Hotel. Buat jamaah, nama boleh berbeda, tetapi yang penting tetap sama: hotel ini memang diposisikan sebagai akomodasi yang fokus pada kedekatan dan fungsionalitas.
+
+## Kenapa Lokasinya Menonjol
+
+Nilai jual terbesar Al Saha adalah jaraknya yang sangat dekat ke area utama Masjid Nabawi. Dari hotel ke pelataran luar, jamaah bisa berjalan kaki dalam hitungan menit, dan ini sangat terasa manfaatnya terutama untuk jamaah lansia, keluarga, atau rombongan yang ingin lebih banyak menghabiskan waktu di masjid daripada di jalan.
+
+Lingkungan sekitarnya juga mendukung. Ada pusat belanja, minimarket, dan area logistik harian yang mudah dijangkau. Buat jamaah yang ingin beli kebutuhan kecil atau oleh-oleh tanpa jauh-jauh, posisi hotel ini cukup praktis.
+
+## Kamar dan Pengalaman Menginap
+
+Karakter kamar di Al Saha cenderung fungsional. Tipe kamar tersedia dari twin sampai family room, dengan konfigurasi ranjang yang menyesuaikan kebutuhan rombongan. Ada juga kamar tertentu yang lebih tenang, termasuk opsi tanpa jendela untuk tamu yang ingin istirahat lebih fokus.
+
+Hotel ini bukan pilihan yang dijual sebagai kemewahan, dan justru di situ letak strateginya. Jamaah yang memilih Al Saha biasanya mencari kamar yang cukup nyaman, akses yang dekat, dan harga yang masih masuk akal untuk area Madinah yang kompetitif.
+
+## Hal yang Perlu Diketahui Sebelum Booking
+
+Salah satu hal yang perlu dijelaskan secara jujur adalah adanya perbedaan ekspektasi antarplatform. Ada tamu yang datang dengan bayangan hotel berbintang tinggi, lalu kecewa karena properti ini lebih cocok dibaca sebagai hotel fungsional untuk ibadah. Di sisi lain, jamaah Asia Tenggara justru sering merasa puas karena apa yang mereka bayar sepadan dengan lokasi dan kemudahan aksesnya.
+
+Karena itu, Al Saha paling tepat dipresentasikan sebagai hotel praktis untuk jamaah yang memprioritaskan dekat ke Nabawi dan tidak terlalu mengejar kesan premium. Kalau ekspektasinya pas sejak awal, hotel ini bisa jadi pilihan yang sangat masuk akal.
+
+### Ringkasan
+
+Al Saha Hotel Madinah cocok untuk jamaah yang ingin mengutamakan jarak dekat ke Masjid Nabawi, akses harian yang sederhana, dan kenyamanan yang cukup untuk fokus ibadah. Hotel ini bukan untuk mencari pengalaman mewah, tetapi untuk mencari lokasi yang benar-benar membantu perjalanan umroh atau ziarah di Madinah.`;
+
 const articleSeeds = [
   {
     title: "SAJA by Warwick Makkah Hotel: Kamar Luas dan Shuttle Praktis ke Masjidil Haram",
@@ -207,6 +235,34 @@ const articleSeeds = [
     seoTitle: "Maysan Al Mashaer Makkah untuk Jamaah Umroh",
     seoDescription:
       "Review Maysan Al Mashaer Makkah: lokasi Ajyad, akses jalan kaki ke Masjidil Haram, kamar kompak, restoran Indonesia, dan catatan booking.",
+  },
+  {
+    title: "Al Saha Hotel Madinah: Pilihan Praktis Dekat Masjid Nabawi",
+    slug: "al-saha-hotel-madinah",
+    excerpt:
+      "Al Saha Hotel Madinah adalah opsi akomodasi praktis di area Bada'ah yang dekat dengan Masjid Nabawi dan cocok untuk jamaah yang mengutamakan akses.",
+    content: alSahaContent,
+    category: "HOTEL",
+    tags: ["hotel madinah", "al saha", "masjid nabawi", "umroh", "bada'ah"],
+    relatedType: "HOTEL",
+    hotel: {
+      name: "Al Saha Hotel",
+      city: "MADINAH",
+      address: "6993 Zaid Ibn Thabet, Bada'ah, Madinah, Arab Saudi",
+      starRating: 3,
+      distanceToHaram: 650,
+      facilities: [
+        "Dekat Masjid Nabawi",
+        "Restoran",
+        "Lift",
+        "AC",
+        "Family room",
+        "No window room",
+      ],
+    },
+    seoTitle: "Al Saha Hotel Madinah untuk Jamaah Umroh",
+    seoDescription:
+      "Review Al Saha Hotel Madinah: lokasi dekat Nabawi, kamar fungsional, akses belanja, dan catatan sebelum booking.",
   },
 ];
 
