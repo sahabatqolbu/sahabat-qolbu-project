@@ -1,10 +1,12 @@
 // src/components/marketing/PackageDetail/PackageTabs.tsx
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { CheckCircle2, FileText, Hotel, Info, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MarketingPackage } from "@/lib/public-api";
+import { getItineraryPreviewUrl } from "@/lib/itinerary-url";
 
 interface Props {
   pkg: MarketingPackage;
@@ -94,15 +96,13 @@ export default function PackageTabs({ pkg }: Props) {
                 <p className="mb-3 font-semibold text-primary">
                   Itinerary lengkap tersedia dalam dokumen PDF.
                 </p>
-                <a
-                  href={pkg.itineraryPdf}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  href={getItineraryPreviewUrl(pkg.slug)}
                   className="inline-flex items-center gap-2 font-bold text-secondary hover:text-secondary-600"
                 >
                   <FileText className="h-5 w-5" />
-                  <span>Buka itinerary PDF</span>
-                </a>
+                  <span>Lihat preview itinerary</span>
+                </Link>
               </div>
             ) : (
               <p className="text-neutral-600">

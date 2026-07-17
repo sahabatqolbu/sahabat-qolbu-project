@@ -27,6 +27,7 @@ import {
   type MarketingPackage,
 } from "@/lib/public-api";
 import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
+import { getItineraryPreviewUrl } from "@/lib/itinerary-url";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Params = Promise<{ slug: string }>;
@@ -335,15 +336,13 @@ function BookingPanel({
           </a>
 
           {pkg.itineraryPdf ? (
-            <a
-              href={pkg.itineraryPdf}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={getItineraryPreviewUrl(pkg.slug)}
               className="flex w-full items-center justify-center gap-2 text-sm font-extrabold text-neutral-600 hover:text-primary"
             >
               <Download className="h-4 w-4" />
-              Download Itinerary PDF
-            </a>
+              Lihat Itinerary
+            </Link>
           ) : null}
         </div>
       </div>
@@ -702,15 +701,13 @@ export default async function LandingPackageDetailPage({
                       Tanya Admin
                     </a>
                     {pkg.itineraryPdf ? (
-                      <a
-                        href={pkg.itineraryPdf}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        href={getItineraryPreviewUrl(pkg.slug)}
                         className="inline-flex items-center justify-center gap-2 rounded-sm border border-primary px-5 py-3 font-extrabold text-primary transition hover:bg-primary hover:text-white"
                       >
                         <Download className="h-5 w-5" />
-                        Download Itinerary
-                      </a>
+                        Lihat Itinerary
+                      </Link>
                     ) : null}
                   </div>
                 </div>
