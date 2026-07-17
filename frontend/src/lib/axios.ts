@@ -9,22 +9,11 @@ import axios, {
 const PRODUCTION_API_BASE_URL = "https://api.sahabatqolbu.com/api";
 const DEVELOPMENT_API_BASE_URL = "http://localhost:5000/api";
 
-const isLocalApiUrl = (value?: string | null) =>
-  /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/api/i.test(value || "");
-
-// Base URL dari backend. Guard production from stale localhost env in Vercel.
-const BASE_URL = (() => {
-  const configured = process.env.NEXT_PUBLIC_API_URL;
-
-  if (process.env.NODE_ENV === "production") {
-    return !configured || isLocalApiUrl(configured)
-      ? PRODUCTION_API_BASE_URL
-      : configured;
-  }
-
-  return configured || DEVELOPMENT_API_BASE_URL;
-})();
-
+// Base URL dari backend. Public production must always use the API subdomain.
+const BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? PRODUCTION_API_BASE_URL
+    : process.env.NEXT_PUBLIC_API_URL || DEVELOPMENT_API_BASE_URL;
 // Create Axios Instance
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -183,4 +172,5 @@ export const apiClient = {
     });
   },
 };
+
 
