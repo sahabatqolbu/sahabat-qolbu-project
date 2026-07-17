@@ -65,15 +65,6 @@ export default function MarketingHomePage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (faqs.length === 0) return;
-    const stillValid = activeFaqCategory && faqs.some((faq) => faq.category === activeFaqCategory);
-    if (stillValid) return;
-    const firstCategory = faqs.find((faq) => faq.category)?.category || faqs[0]?.category || "";
-    setActiveFaqCategory(firstCategory);
-    setOpenFaqId(faqs.find((faq) => faq.category === firstCategory)?.id ?? faqs[0]?.id ?? null);
-  }, [activeFaqCategory, faqs]);
-
   const featuredPackages = packages.slice(0, 6);
   const faqCategories = Array.from(
     new Map(
@@ -1001,3 +992,4 @@ export default function MarketingHomePage() {
     </div>
   );
 }
+
