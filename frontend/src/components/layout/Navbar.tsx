@@ -43,9 +43,10 @@ export default function Navbar() {
 
   useEffect(() => {
     let active = true;
-    const apiBase = (
-      process.env.NEXT_PUBLIC_API_URL || "https://api.sahabatqolbu.com/api"
-    ).replace(/\/+$/, "");
+    const apiBase =
+      process.env.NODE_ENV === "production"
+        ? "https://api.sahabatqolbu.com/api"
+        : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 
     fetch(`${apiBase}/auth/me`, {
       credentials: "include",
@@ -214,3 +215,4 @@ export default function Navbar() {
     </header>
   );
 }
+

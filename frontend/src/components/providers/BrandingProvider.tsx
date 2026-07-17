@@ -57,20 +57,14 @@ const BrandingContext = createContext<BrandingData>(defaultBranding);
 export const useBranding = () => useContext(BrandingContext);
 
 const getApiBaseUrl = () => {
-  const configured = (
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-  ).replace(/\/+$/, "");
-
-  if (
-    typeof window !== "undefined" &&
-    window.location.hostname !== "localhost" &&
-    window.location.hostname !== "127.0.0.1" &&
-    /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?\/api/i.test(configured)
-  ) {
+  if (process.env.NODE_ENV === "production") {
     return "https://api.sahabatqolbu.com/api";
   }
 
-  return configured;
+  return (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(
+    /\/+$/,
+    "",
+  );
 };
 
 const toAbsoluteUrl = (path?: string | null) => {
@@ -303,3 +297,4 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     </Suspense>
   );
 }
+
