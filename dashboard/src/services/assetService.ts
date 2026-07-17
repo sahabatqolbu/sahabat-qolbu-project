@@ -11,6 +11,14 @@ export interface AssetHolder {
   role: "ADMIN" | "STAFF" | "FINANCE";
 }
 
+export interface AssetSummary {
+  id: number;
+  assetCode: string;
+  name: string;
+  type: AssetType;
+  category?: string;
+}
+
 export interface AssetAssignment {
   id: number;
   assetId: number;
@@ -25,6 +33,7 @@ export interface AssetAssignment {
   returnCondition: string | null;
   returnNotes: string | null;
   holder?: AssetHolder;
+  asset?: AssetSummary;
 }
 
 export interface AssetDocument {
@@ -36,6 +45,8 @@ export interface AssetDocument {
   fileName: string;
   mimeType: string;
   createdAt: string;
+  asset?: AssetSummary;
+  holder?: Pick<AssetHolder, "id" | "fullName" | "role">;
 }
 
 export interface Asset {
@@ -62,12 +73,15 @@ export interface Asset {
   documents?: AssetDocument[];
 }
 
-export interface AssetListParams {
+export interface AssetRecordListParams {
   page?: number;
   limit?: number;
-  search?: string;
-  type?: string;
   status?: string;
+  type?: string;
+}
+
+export interface AssetListParams extends AssetRecordListParams {
+  search?: string;
 }
 
 export interface AssetPayload {
@@ -117,7 +131,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-const buildQuery = (params: AssetListParams) => {
+const buildQuery = (params: AssetRecordListParams | AssetListParams) => {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== "") query.append(key, String(value));
@@ -142,6 +156,16 @@ export const assetService = {
     return response.data;
   },
 
+  getAssignments: async (params: AssetRecordListParams = {}) => {
+    const response = await api.get<PaginatedResponse<AssetAssignment>>(`/assets/assignments${buildQuery(params)}`);
+    return response.data;
+  },
+
+  getDocuments: async (params: AssetRecordListParams = {}) => {
+    const response = await api.get<PaginatedResponse<AssetDocument>>(`/assets/documents${buildQuery(params)}`);
+    return response.data;
+  },
+
   createAsset: async (payload: AssetPayload) => {
     const response = await api.post<{ success: boolean; data: Asset; message: string }>("/assets", payload);
     return response.data;
@@ -158,25 +182,17 @@ export const assetService = {
   },
 
   assignAsset: async (id: number, payload: AssignAssetPayload) => {
-    const response = await api.post<{ success: boolean; data: unknown; message: string }>(
-      `/assets/${id}/assign`,
-      payload,
-    );
+    const response = await api.post<{ success: boolean; data: unknown; message: string }>(`/assets/${id}/assign`, payload);
     return response.data;
   },
 
   returnAsset: async (id: number, payload: ReturnAssetPayload) => {
-    const response = await api.post<{ success: boolean; data: unknown; message: string }>(
-      `/assets/${id}/return`,
-      payload,
-    );
+    const response = await api.post<{ success: boolean; data: unknown; message: string }>(`/assets/${id}/return`, payload);
     return response.data;
   },
 
   downloadDocument: async (assetId: number, documentId: number, fileName: string) => {
-    const response = await api.get(`/assets/${assetId}/documents/${documentId}/download`, {
-      responseType: "blob",
-    });
+    const response = await api.get(`/assets/${assetId}/documents/${documentId}/download`, { responseType: "blob" });
     const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
     const anchor = document.createElement("a");
     anchor.href = url;

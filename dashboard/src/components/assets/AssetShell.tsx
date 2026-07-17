@@ -10,9 +10,9 @@ import { DEFAULT_ROUTES } from "@/lib/routeAccess";
 const navItems = [
   { label: "Data Aset", href: "/assets", icon: Boxes },
   { label: "Tambah Aset", href: "/assets/create", icon: Plus },
-  { label: "Serah Terima", href: "/assets?status=AVAILABLE", icon: ClipboardCheck },
-  { label: "Pengembalian", href: "/assets?status=ASSIGNED", icon: RotateCcw },
-  { label: "Dokumen", href: "/assets?view=documents", icon: FileText },
+  { label: "Serah Terima", href: "/assets/handover", icon: ClipboardCheck },
+  { label: "Pengembalian", href: "/assets/returns", icon: RotateCcw },
+  { label: "Dokumen", href: "/assets/documents", icon: FileText },
 ];
 
 export default function AssetShell({ user, children }: { user: SessionAuthUser; children: React.ReactNode }) {
@@ -28,9 +28,8 @@ export default function AssetShell({ user, children }: { user: SessionAuthUser; 
     }
 
     if (href === "/assets") {
-      const hasListFilter = searchParams.has("status") || searchParams.has("view");
-      const isDetailPage = pathname.startsWith("/assets/") && pathname !== "/assets/create" && !pathname.endsWith("/edit");
-      return (pathname === "/assets" && !hasListFilter) || isDetailPage;
+      const isDetailPage = /^\/assets\/\d+/.test(pathname);
+      return pathname === "/assets" || isDetailPage;
     }
 
     return pathname === href;

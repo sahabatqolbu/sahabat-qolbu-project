@@ -6,7 +6,9 @@ import {
   createAsset,
   deleteAsset,
   downloadAssetDocument,
+  getAssetAssignments,
   getAssetById,
+  getAssetDocuments,
   getAssetHolders,
   getAssets,
   returnAsset,
@@ -20,6 +22,8 @@ router.use(authorize(["ADMIN", "STAFF"]));
 
 router.get("/", getAssets);
 router.get("/holders", getAssetHolders);
+router.get("/assignments", getAssetAssignments);
+router.get("/documents", getAssetDocuments);
 router.get("/:id/documents/:documentId/download", downloadAssetDocument);
 router.get("/:id", getAssetById);
 

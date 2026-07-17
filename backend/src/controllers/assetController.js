@@ -290,6 +290,136 @@ export const getAssets = async (req, res, next) => {
   }
 };
 
+
+export const getAssetAssignments = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, status = "" } = req.query;
+    const parsedPage = Math.max(1, asInt(page) || 1);
+    const parsedLimit = Math.min(100, Math.max(1, asInt(limit) || 20));
+    const offset = (parsedPage - 1) * parsedLimit;
+    const conditions = [];
+
+    if (status && ASSIGNMENT_STATUSES.includes(status)) {
+      conditions.push(eq(assetAssignments.status, status));
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const [{ total }] = await db.select({ total: count() }).from(assetAssignments).where(where);
+    const rows = await db
+      .select({
+        assignment: assetAssignments,
+        assetId: assets.id,
+        assetCode: assets.assetCode,
+        assetName: assets.name,
+        assetType: assets.type,
+        assetCategory: assets.category,
+        holderId: users.id,
+        holderName: users.fullName,
+        holderEmail: users.email,
+        holderRole: users.role,
+      })
+      .from(assetAssignments)
+      .innerJoin(assets, eq(assetAssignments.assetId, assets.id))
+      .innerJoin(users, eq(assetAssignments.holderUserId, users.id))
+      .where(where)
+      .orderBy(desc(assetAssignments.createdAt))
+      .limit(parsedLimit)
+      .offset(offset);
+
+    return paginatedResponse(
+      res,
+      rows.map((row) => ({
+        ...row.assignment,
+        asset: {
+          id: row.assetId,
+          assetCode: row.assetCode,
+          name: row.assetName,
+          type: row.assetType,
+          category: row.assetCategory,
+        },
+        holder: {
+          id: row.holderId,
+          fullName: row.holderName,
+          email: row.holderEmail,
+          role: row.holderRole,
+        },
+      })),
+      {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit),
+      },
+    );
+  } catch (error) {
+    logger.error("Get asset assignments error", error);
+    next(error);
+  }
+};
+
+export const getAssetDocuments = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, type = "" } = req.query;
+    const parsedPage = Math.max(1, asInt(page) || 1);
+    const parsedLimit = Math.min(100, Math.max(1, asInt(limit) || 20));
+    const offset = (parsedPage - 1) * parsedLimit;
+    const documentTypes = ["HANDOVER", "RETURN"];
+    const conditions = [];
+
+    if (type && documentTypes.includes(type)) {
+      conditions.push(eq(assetDocuments.type, type));
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const [{ total }] = await db.select({ total: count() }).from(assetDocuments).where(where);
+    const rows = await db
+      .select({
+        document: assetDocuments,
+        assetId: assets.id,
+        assetCode: assets.assetCode,
+        assetName: assets.name,
+        assetType: assets.type,
+        holderId: users.id,
+        holderName: users.fullName,
+        holderRole: users.role,
+      })
+      .from(assetDocuments)
+      .innerJoin(assets, eq(assetDocuments.assetId, assets.id))
+      .innerJoin(assetAssignments, eq(assetDocuments.assignmentId, assetAssignments.id))
+      .innerJoin(users, eq(assetAssignments.holderUserId, users.id))
+      .where(where)
+      .orderBy(desc(assetDocuments.createdAt))
+      .limit(parsedLimit)
+      .offset(offset);
+
+    return paginatedResponse(
+      res,
+      rows.map((row) => ({
+        ...row.document,
+        asset: {
+          id: row.assetId,
+          assetCode: row.assetCode,
+          name: row.assetName,
+          type: row.assetType,
+        },
+        holder: {
+          id: row.holderId,
+          fullName: row.holderName,
+          role: row.holderRole,
+        },
+      })),
+      {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit),
+      },
+    );
+  } catch (error) {
+    logger.error("Get asset documents error", error);
+    next(error);
+  }
+};
 export const getAssetById = async (req, res, next) => {
   try {
     const assetId = asInt(req.params.id);
