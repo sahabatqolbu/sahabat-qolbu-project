@@ -33,8 +33,8 @@ export const typeLabels: Record<AssetType, string> = {
 export const statusClass = (status: AssetStatus) => {
   const classes: Record<AssetStatus, string> = {
     AVAILABLE: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    ASSIGNED: "border-blue-200 bg-blue-50 text-blue-700",
-    MAINTENANCE: "border-amber-200 bg-amber-50 text-amber-700",
+    ASSIGNED: "border-slate-300 bg-slate-100 text-slate-700",
+    MAINTENANCE: "border-yellow-200 bg-yellow-50 text-yellow-700",
     RETIRED: "border-slate-200 bg-slate-100 text-slate-600",
     LOST: "border-red-200 bg-red-50 text-red-700",
   };
@@ -186,9 +186,9 @@ export default function AssetWorkspace() {
                 </TableRow>
               ) : (
                 assets.map((asset) => (
-                  <TableRow key={asset.id} className="odd:bg-white even:bg-slate-50/60 hover:bg-blue-50/50">
+                  <TableRow key={asset.id} className="odd:bg-white even:bg-slate-50/60 hover:bg-slate-100/70">
                     <TableCell>
-                      <Link href={`/assets/${asset.id}`} className="font-semibold text-slate-950 hover:text-blue-700">{asset.name}</Link>
+                      <Link href={`/assets/${asset.id}`} className="font-semibold text-slate-950 hover:text-slate-700">{asset.name}</Link>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                         <span className="font-mono font-semibold text-slate-700">{asset.assetCode}</span>
                         <span>{getSecondaryIdentity(asset) || "-"}</span>

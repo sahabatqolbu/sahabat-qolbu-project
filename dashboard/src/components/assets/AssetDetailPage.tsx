@@ -91,7 +91,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
       </section>
 
       {assignOpen && (
-        <section className="rounded-lg border border-blue-200 bg-blue-50/40 p-4 shadow-sm">
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="text-lg font-black text-slate-950">Form Serah Terima</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <FormRow label="Pemegang">
@@ -111,7 +111,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
       )}
 
       {returnOpen && (
-        <section className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="text-lg font-black text-slate-950">Form Pengembalian</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <FormRow label="Tanggal Kembali"><Input type="date" value={returnForm.returnedAt} onChange={(e) => setReturnForm({ ...returnForm, returnedAt: e.target.value })} className="bg-white" /></FormRow>

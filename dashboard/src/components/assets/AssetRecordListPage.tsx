@@ -15,7 +15,7 @@ const statusLabel: Record<AssignmentStatus, string> = {
 };
 
 const statusClass: Record<AssignmentStatus, string> = {
-  ACTIVE: "border-blue-200 bg-blue-50 text-blue-700",
+  ACTIVE: "border-slate-300 bg-slate-100 text-slate-700",
   RETURNED: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
@@ -56,9 +56,9 @@ export function AssetAssignmentListPage({ mode }: { mode: "handover" | "returns"
             ) : rows.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="h-40 text-center text-slate-500">Belum ada data.</TableCell></TableRow>
             ) : rows.map((row) => (
-              <TableRow key={row.id} className="odd:bg-white even:bg-slate-50/60 hover:bg-blue-50/50">
+              <TableRow key={row.id} className="odd:bg-white even:bg-slate-50/60 hover:bg-slate-100/70">
                 <TableCell>
-                  <Link href={`/assets/${row.assetId}`} className="font-semibold text-slate-950 hover:text-blue-700">{row.asset?.name || "-"}</Link>
+                  <Link href={`/assets/${row.assetId}`} className="font-semibold text-slate-950 hover:text-slate-700">{row.asset?.name || "-"}</Link>
                   <div className="mt-1 font-mono text-xs font-semibold text-slate-500">{row.asset?.assetCode || "-"}</div>
                 </TableCell>
                 <TableCell>
@@ -125,13 +125,13 @@ export function AssetDocumentListPage() {
             ) : rows.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="h-40 text-center text-slate-500">Belum ada dokumen.</TableCell></TableRow>
             ) : rows.map((document) => (
-              <TableRow key={document.id} className="odd:bg-white even:bg-slate-50/60 hover:bg-blue-50/50">
+              <TableRow key={document.id} className="odd:bg-white even:bg-slate-50/60 hover:bg-slate-100/70">
                 <TableCell>
                   <div className="flex items-center gap-2 font-semibold text-slate-950"><FileText className="h-4 w-4" />{document.documentNumber}</div>
                   <div className="mt-1 text-xs text-slate-500">{document.type === "HANDOVER" ? "Serah Terima" : "Pengembalian"}</div>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/assets/${document.assetId}`} className="font-semibold text-slate-900 hover:text-blue-700">{document.asset?.name || "-"}</Link>
+                  <Link href={`/assets/${document.assetId}`} className="font-semibold text-slate-900 hover:text-slate-700">{document.asset?.name || "-"}</Link>
                   <div className="mt-1 font-mono text-xs text-slate-500">{document.asset?.assetCode || "-"}</div>
                 </TableCell>
                 <TableCell>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Boxes, ClipboardCheck, FileText, LayoutDashboard, Plus, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SessionAuthUser } from "@/lib/validateSession";
@@ -17,16 +17,7 @@ const navItems = [
 
 export default function AssetShell({ user, children }: { user: SessionAuthUser; children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const isActiveHref = (href: string) => {
-    const [basePath, queryString] = href.split("?");
-
-    if (queryString) {
-      const expected = new URLSearchParams(queryString);
-      return pathname === basePath && Array.from(expected.entries()).every(([key, value]) => searchParams.get(key) === value);
-    }
-
     if (href === "/assets") {
       const isDetailPage = /^\/assets\/\d+/.test(pathname);
       return pathname === "/assets" || isDetailPage;
