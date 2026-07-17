@@ -10,17 +10,25 @@ export function cn(...inputs: ClassValue[]) {
 export function getImageUrl(path: string | null | undefined): string {
   if (!path) return "https://via.placeholder.com/400x300?text=No+Image";
 
-  const getFallbackServerUrl = () => {
+  const resolvedServerUrl = (() => {
+    const envServerUrl = process.env.NEXT_PUBLIC_SERVER_URL?.trim();
+    if (envServerUrl) {
+      return envServerUrl.replace(/\/+$/, "");
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      return "https://api.sahabatqolbu.com";
+    }
+
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
       if (hostname !== "localhost" && hostname !== "127.0.0.1") {
         return "https://api.sahabatqolbu.com";
       }
     }
-    return "http://localhost:5000";
-  };
 
-  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || getFallbackServerUrl();
+    return "http://localhost:5000";
+  })();
 
   const normalizeSensitivePath = (input: string): string => {
     try {
@@ -34,7 +42,7 @@ export function getImageUrl(path: string | null | undefined): string {
       if (!filename) return input;
 
       const query = parsed.search || "";
-      return `${SERVER_URL}/api/protected-uploads/${folder}/${filename}${query}`;
+      return `${resolvedServerUrl}/api/protected-uploads/${folder}/${filename}${query}`;
     } catch {
       const sensitiveMatch = input.match(/^\/uploads\/(profiles|jamaah|agents|documents|payments)\/(.+)$/i);
       if (!sensitiveMatch) return input;
@@ -43,7 +51,7 @@ export function getImageUrl(path: string | null | undefined): string {
       const filename = sensitiveMatch[2].split("/").pop() || "";
       if (!filename) return input;
 
-      return `${SERVER_URL}/api/protected-uploads/${folder}/${filename}`;
+      return `${resolvedServerUrl}/api/protected-uploads/${folder}/${filename}`;
     }
   };
 
@@ -56,7 +64,7 @@ export function getImageUrl(path: string | null | undefined): string {
       const isLegacyProductionApi = url.hostname === "api.sahabatqolbu.com";
 
       if (isLegacyProductionApi) {
-        return `${SERVER_URL}${url.pathname}${url.search}`;
+        return `${resolvedServerUrl}${url.pathname}${url.search}`;
       }
     } catch {
       return maybeSensitive;
@@ -77,7 +85,7 @@ export function getImageUrl(path: string | null | undefined): string {
     return normalizedPath;
   }
 
-  return `${SERVER_URL}${normalizedPath}`;
+  return `${resolvedServerUrl}${normalizedPath}`;
 }
 
 // ✅ MAPPING TIPE PAKET (sudah bener, ga usah diubah)
