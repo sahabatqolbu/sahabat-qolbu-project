@@ -90,6 +90,40 @@ ODST Al Madinah cocok untuk paket umroh yang ingin menawarkan akses dekat ke Mas
 
 ODST Al Madinah adalah pilihan yang masuk akal untuk jamaah yang ingin dekat dengan Masjid Nabawi tanpa harus masuk ke kategori hotel premium. Kekuatan utamanya ada pada lokasi, kapasitas, dan efisiensi harga. Dengan ekspektasi yang tepat, hotel ini bisa menjadi bagian akomodasi yang praktis dan nyaman dalam perjalanan umroh.`;
 
+const maysanContent = `## Maysan Al Mashaer Makkah: Pilihan Cerdas untuk Jamaah yang Fokus ke Haram
+
+Di Ajyad, jarak dekat saja tidak cukup. Yang benar-benar bernilai adalah akses yang mudah dilalui, terutama untuk jamaah lansia dan keluarga. Maysan Al Mashaer menonjol karena menawarkan jalan kaki yang relatif datar menuju Masjidil Haram, sehingga waktu dan tenaga bisa lebih banyak dipakai untuk ibadah.
+
+Hotel ini berada di bawah Maysan International Group dan dikenal sebagai properti kelas ekonomis yang tetap punya posisi strategis. Dengan kapasitas sekitar 195 sampai 214 kamar, Maysan Al Mashaer cocok untuk paket umroh yang ingin menjaga harga tetap rasional tanpa mengorbankan kedekatan ke pusat ibadah.
+
+## Kenapa Hotel Ini Menarik
+
+Nilai jual utamanya sederhana: dekat, praktis, dan tidak ribet. Dari hotel ke area Haram, waktu jalan kaki umumnya berada di kisaran 5 sampai 10 menit, tergantung ritme langkah dan titik masuk yang dipilih. Buat jamaah yang ingin mengurangi ketergantungan pada transportasi, ini adalah keuntungan yang sangat terasa.
+
+Selain itu, lingkungan Ajyad yang padat membuat hotel seperti ini jadi relevan untuk jamaah yang lebih memilih efisiensi daripada kemewahan berlebihan. Bagi banyak rombongan, keputusan memilih hotel bukan soal pamer fasilitas, tapi soal energi ibadah tetap terjaga sejak pagi sampai malam.
+
+## Fasilitas yang Relevan untuk Jamaah
+
+Kamar di Maysan Al Mashaer tergolong kompak, rata-rata sekitar 16 m². Tipe twin, triple, dan quadruple tersedia, jadi hotel ini paling cocok untuk rombongan yang sudah sepakat soal komposisi kamar sejak awal. Ruangnya tidak luas, tetapi fungsional untuk istirahat, menaruh koper, dan bersiap ke masjid.
+
+Fasilitas yang umumnya tersedia mencakup AC, TV layar datar, lemari pakaian, brankas, kulkas kecil, dan ketel listrik. Di beberapa deskripsi agen, hotel ini juga disebut punya kamar mandi dengan whirlpool bathtub dan aksesibilitas yang lebih ramah untuk tamu tertentu.
+
+## Kenyamanan Makan dan Suasana Menginap
+
+Salah satu alasan hotel ini sering dipilih jamaah Indonesia adalah restoran dengan menu Nusantara. Ini detail kecil yang efeknya besar: makan terasa lebih familiar, anak-anak lebih mudah cocok, dan jamaah tidak perlu terlalu bergantung pada makanan luar selama program berjalan.
+
+Sarapan buffet juga tersedia untuk tamu yang mengambil opsi terpisah. Ditambah staf yang dikenal cukup membantu, hotel ini terasa lebih ramah jamaah daripada kesan awalnya sebagai hotel bintang satu.
+
+## Yang Perlu Dipahami Sebelum Booking
+
+Maysan Al Mashaer bukan hotel untuk mencari kamar lega. Yang dicari di sini adalah lokasi yang masuk akal, akses yang praktis, dan harga yang tetap realistis untuk area dekat Haram. Karena itu, hotel ini paling cocok dijelaskan sebagai kompromi cerdas, bukan sebagai hotel premium.
+
+Calon jamaah juga sebaiknya melakukan reconfirm reservasi sebelum tiba, terutama jika booking lewat pihak ketiga. Kalau ekspektasinya sudah pas sejak awal, hotel ini bisa jadi pilihan yang solid untuk paket umroh yang ingin dekat ke Masjidil Haram tanpa membebani anggaran.
+
+### Ringkasan
+
+Maysan Al Mashaer Makkah adalah opsi yang menarik untuk jamaah yang memprioritaskan akses ke Masjidil Haram, jalur jalan kaki yang lebih nyaman, dan kenyamanan makan yang familiar. Hotel ini sederhana, tapi justru di situlah nilainya: efisien, strategis, dan cukup masuk akal untuk banyak paket umroh.`;
+
 const articleSeeds = [
   {
     title: "SAJA by Warwick Makkah Hotel: Kamar Luas dan Shuttle Praktis ke Masjidil Haram",
@@ -144,6 +178,35 @@ const articleSeeds = [
     seoTitle: "ODST Al Madinah Hotel Dekat Masjid Nabawi",
     seoDescription:
       "Mengenal ODST Al Madinah Hotel: lokasi dekat Masjid Nabawi, fasilitas, tipe kamar, kelebihan, dan catatan untuk jamaah umroh.",
+  },
+  {
+    title: "Hotel Maysan Al Mashaer Makkah: Akses Jalan Kaki Datar ke Masjidil Haram dengan Tarif Menengah",
+    slug: "hotel-maysan-al-mashaer-makkah",
+    excerpt:
+      "Mengenal Hotel Maysan Al Mashaer Makkah, akomodasi bintang satu di Ajyad dengan jalur jalan kaki datar ke Masjidil Haram, restoran Indonesia, dan fasilitas aksesibilitas untuk jamaah.",
+    content: maysanContent,
+    category: "HOTEL",
+    tags: ["hotel makkah", "maysan al mashaer", "masjidil haram", "umroh", "ajyad"],
+    relatedType: "HOTEL",
+    hotel: {
+      name: "Maysan Al Mashaer Hotel",
+      city: "MAKKAH",
+      address: "Ajyad Street, behind clock complex, Makkah 21955, Saudi Arabia",
+      starRating: 1,
+      distanceToHaram: 700,
+      facilities: [
+        "Restoran Indonesia",
+        "Sarapan buffet",
+        "Aksesibilitas kursi roda",
+        "AC",
+        "Brankas kamar",
+        "Kulkas mini",
+        "Ketel listrik",
+      ],
+    },
+    seoTitle: "Maysan Al Mashaer Makkah untuk Jamaah Umroh",
+    seoDescription:
+      "Review Maysan Al Mashaer Makkah: lokasi Ajyad, akses jalan kaki ke Masjidil Haram, kamar kompak, restoran Indonesia, dan catatan booking.",
   },
 ];
 
