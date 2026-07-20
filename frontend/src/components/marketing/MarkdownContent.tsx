@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { Quote } from "lucide-react";
 import type { ReactNode } from "react";
+import { resolveAssetUrl } from "@/lib/public-api";
 
 const IMAGE_EXTENSIONS = /\.(png|jpe?g|webp|gif|bmp|avif|svg)$/i;
 
 const isImageSource = (src: string) =>
-  IMAGE_EXTENSIONS.test(src) || src.startsWith("/uploads/") || src.includes("/uploads/");
+  IMAGE_EXTENSIONS.test(src) ||
+  src.startsWith("/uploads/") ||
+  src.includes("/uploads/");
+
+const resolveArticleImageUrl = (src: string) => resolveAssetUrl(src) || src;
 
 const renderInlineMarkdown = (text: string): ReactNode[] => {
   const nodes: ReactNode[] = [];
@@ -32,7 +37,7 @@ const renderInlineMarkdown = (text: string): ReactNode[] => {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={src}
+                src={resolveArticleImageUrl(src)}
                 alt={alt || "Gambar artikel"}
                 className="h-auto w-full object-contain"
               />
@@ -110,7 +115,7 @@ const renderImageBlock = (alt: string, src: string, key: string) => (
   >
     {/* eslint-disable-next-line @next/next/no-img-element */}
     <img
-      src={src}
+      src={resolveArticleImageUrl(src)}
       alt={alt || "Gambar artikel"}
       className="h-auto w-full object-contain"
     />
@@ -172,7 +177,10 @@ export const renderMarkdownContent = (content: string) => {
     if (blockquote) {
       flushParagraph();
       const quoteLines = [blockquote[1]];
-      while (index + 1 < lines.length && lines[index + 1].trim().startsWith(">")) {
+      while (
+        index + 1 < lines.length &&
+        lines[index + 1].trim().startsWith(">")
+      ) {
         index += 1;
         quoteLines.push(lines[index].trim().replace(/^>\s?/, ""));
       }
@@ -216,11 +224,18 @@ export const renderMarkdownContent = (content: string) => {
       const orderedList = Boolean(ordered);
       const ListTag = orderedList ? "ol" : "ul";
       blocks.push(
-        <ListTag key={`list-${index}`} className={orderedList ? "space-y-3 pl-5" : "space-y-3"}>
+        <ListTag
+          key={`list-${index}`}
+          className={orderedList ? "space-y-3 pl-5" : "space-y-3"}
+        >
           {items.map((item, itemIndex) => (
             <li
               key={`${index}-${itemIndex}-${item}`}
-              className={orderedList ? "list-decimal leading-7 text-neutral-700" : "leading-7 text-neutral-700"}
+              className={
+                orderedList
+                  ? "list-decimal leading-7 text-neutral-700"
+                  : "leading-7 text-neutral-700"
+              }
             >
               <div className="flex gap-3 rounded-sm bg-primary/5 px-4 py-3">
                 {!orderedList ? (
