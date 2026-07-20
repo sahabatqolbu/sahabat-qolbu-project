@@ -62,6 +62,8 @@ const legacySlugsToRemove = [
   "ziyad-hamzah-perlengkapan-dan-persiapan-keberangkatan-umroh",
   "umrah-sebagai-perjalanan-iman-yang-mengubah-hati",
   "perlengkapan-dan-persiapan-keberangkatan-umroh",
+  "umrah-sebagai-perjalanan-iman-yang-mengubah-hati-jamaah-2",
+  "umrah-sebagai-perjalanan-iman-yang-mengubah-hati-2",
 ];
 
 const materialArticleSeeds = [
