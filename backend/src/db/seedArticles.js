@@ -193,7 +193,88 @@ Untuk paket premium, Garuda bisa dipadukan dengan hotel ring satu atau hotel bin
 ### Ringkasan
 
 Garuda Indonesia adalah pilihan maskapai yang menarik untuk perjalanan umroh karena menawarkan layanan full service, kenyamanan kabin jarak jauh, makanan yang familiar, dan jaringan rute yang kuat menuju Arab Saudi. Untuk jamaah yang ingin perjalanan lebih tertata sejak dari Indonesia, Garuda menjadi opsi yang layak dipertimbangkan dalam paket umroh Sahabat Qolbu.`;
+
+const qatarContent = `## Qatar Airways untuk Umroh: Transit Premium via Doha
+
+Qatar Airways menjadi pilihan menarik untuk jamaah yang ingin perjalanan umroh terasa lebih premium, fleksibel, dan tidak terburu-buru. Berbeda dari penerbangan langsung, Qatar Airways membawa jamaah transit melalui Bandara Internasional Hamad di Doha sebelum melanjutkan perjalanan ke Jeddah atau Madinah.
+
+Bagi sebagian jamaah, transit sering dianggap merepotkan. Namun untuk rute Qatar Airways, transit Doha justru bisa menjadi jeda yang nyaman: jamaah bisa istirahat, salat, berwudu, mengganti pakaian ihram, dan menyiapkan fisik sebelum masuk ke rangkaian ibadah utama.
+
+## Kenapa Qatar Airways Menarik untuk Jamaah Umroh
+
+Kekuatan Qatar Airways ada pada kualitas layanan dan jaringan rutenya. Dari Indonesia, penerbangan umumnya berangkat dari Jakarta atau Bali menuju Doha, lalu tersambung ke beberapa kota utama di Arab Saudi seperti Jeddah dan Madinah. Fleksibilitas ini membantu travel menyusun alur perjalanan yang lebih variatif, baik memulai ziarah dari Madinah maupun langsung menuju akses Makkah melalui Jeddah.
+
+Transit di Doha juga memberi nilai tambah untuk jamaah yang ingin perjalanan lebih santai. Dengan waktu transit yang cukup, perjalanan panjang bisa terasa lebih ringan dibanding terus berada di pesawat tanpa jeda.
+
+## Armada Modern dan Kabin yang Nyaman
+
+Qatar Airways dikenal menggunakan armada berbadan lebar modern seperti Airbus A350, Boeing 777, dan Boeing 787 Dreamliner pada banyak rute jarak jauh. Kabin yang lebih nyaman, sistem hiburan lengkap, serta layanan makanan halal membantu jamaah menjalani perjalanan panjang dengan lebih tenang.
+
+Untuk jamaah lansia atau keluarga, kenyamanan kabin seperti ini bukan sekadar bonus. Perjalanan umroh membutuhkan stamina, sehingga pengalaman penerbangan yang lebih stabil dan tertata bisa membantu jamaah tiba dalam kondisi yang lebih siap.
+
+## Miqat dan Ihram Saat Transit Doha
+
+Untuk jamaah yang rutenya Doha ke Jeddah dan langsung melaksanakan umroh, persiapan ihram perlu diperhatikan. Karena rute menuju Jeddah akan melewati garis miqat sebelum mendarat, jamaah sebaiknya sudah memakai pakaian ihram saat masih berada di area transit Doha.
+
+Praktiknya sederhana: jamaah bisa bersih-bersih, berwudu, dan mengenakan ihram di ruang salat Bandara Hamad. Niat umroh dilafalkan nanti ketika kru atau pilot mengumumkan posisi miqat di udara. Cara ini lebih aman daripada baru mengganti ihram di toilet pesawat yang ruangnya terbatas dan sering antre.
+
+## Bagasi, Zamzam, dan Hal yang Wajib Diingat
+
+Qatar Airways memakai aturan bagasi berdasarkan kelas tiket. Untuk kelas ekonomi, kuota bisa berbeda sesuai sub-kelas tarif, sehingga jamaah tetap perlu mengikuti arahan travel dan membaca ketentuan tiket terbaru sebelum berangkat.
+
+Untuk air zamzam, ketentuannya jelas: jangan memasukkan zamzam ke dalam koper pribadi. Qatar Airways mengizinkan jatah resmi air zamzam 5 liter per jamaah dari kemasan resmi, tetapi harus diproses sesuai prosedur check-in di bandara Arab Saudi. Ini penting agar koper tidak dibongkar, ditahan, atau tertinggal karena pelanggaran aturan cairan.
+
+## Bonus Menarik: Stopover Doha
+
+Salah satu keunggulan Qatar Airways adalah opsi stopover di Doha. Pada paket tertentu, jamaah bisa menambah pengalaman singkat menikmati Qatar, mulai dari city tour, Souq Waqif, kawasan modern Doha, sampai menginap di hotel berbintang dengan harga promosi.
+
+Fitur ini cocok untuk jamaah yang ingin perjalanan umroh terasa lebih berkesan tanpa kehilangan fokus ibadah. Namun untuk jamaah lansia atau yang ingin perjalanan sesingkat mungkin, transit tetap perlu dipertimbangkan secara realistis.
+
+## Cocok untuk Jamaah Seperti Apa?
+
+Qatar Airways cocok untuk jamaah yang mencari kenyamanan kabin, layanan internasional, dan fleksibilitas rute. Maskapai ini juga menarik untuk jamaah muda, keluarga, atau rombongan yang ingin menggabungkan ibadah dengan pengalaman transit singkat di Doha.
+
+Untuk paket umroh Sahabat Qolbu, Qatar Airways paling pas dipadukan dengan hotel yang nyaman dan ramah jamaah Indonesia, seperti hotel Makkah dan Madinah yang akses ibadahnya jelas serta pilihan makanannya cocok di lidah jamaah Nusantara.
+
+## Tips Sebelum Berangkat dengan Qatar Airways
+
+- Siapkan fisik karena perjalanan memakai pola transit.
+- Gunakan waktu transit Doha untuk salat, wudu, dan persiapan ihram.
+- Ikuti pengumuman miqat dari kru atau pilot, bukan hanya layar kursi.
+- Jangan masukkan zamzam ke koper pribadi.
+- Pastikan aturan bagasi sesuai kelas tiket yang dipakai.
+
+### Ringkasan
+
+Qatar Airways adalah pilihan maskapai yang menarik untuk jamaah umroh yang menginginkan perjalanan premium via Doha. Kelebihannya ada pada armada modern, layanan internasional, ruang transit yang nyaman, dan fleksibilitas rute menuju Arab Saudi. Dengan persiapan miqat dan bagasi yang benar, perjalanan umroh bersama Qatar Airways bisa terasa tertata, nyaman, dan berkesan.`;
 const articleSeeds = [
+  {
+    title:
+      "Qatar Airways untuk Umroh: Transit Premium via Doha Menuju Tanah Suci",
+    slug: "qatar-airways-untuk-umroh",
+    excerpt:
+      "Mengenal keunggulan Qatar Airways untuk perjalanan umroh: transit nyaman di Doha, armada modern, persiapan miqat, aturan bagasi, zamzam, dan opsi stopover Qatar.",
+    content: qatarContent,
+    category: "MASKAPAI",
+    tags: [
+      "qatar airways",
+      "maskapai umroh",
+      "transit doha",
+      "penerbangan umroh",
+      "jeddah",
+      "madinah",
+    ],
+    relatedType: "AIRLINE",
+    airline: {
+      code: "QR",
+      name: "Qatar Airways",
+      country: "Qatar",
+      logo: "https://www.qatarairways.com/logo.png",
+    },
+    seoTitle: "Qatar Airways untuk Perjalanan Umroh via Doha",
+    seoDescription:
+      "Review Qatar Airways untuk umroh: transit Doha, armada, miqat, bagasi, air zamzam, stopover Qatar, dan kecocokan untuk jamaah Indonesia.",
+  },
   {
     title: "Garuda Indonesia untuk Umroh: Penerbangan Nyaman Menuju Tanah Suci",
     slug: "garuda-indonesia-untuk-umroh",
