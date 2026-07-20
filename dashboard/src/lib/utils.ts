@@ -6,89 +6,108 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// ✅ FIX FINAL (SIMPLE & WORKS 100%)
+const PRODUCTION_SERVER_URL = "https://api.sahabatqolbu.com";
+const DEVELOPMENT_SERVER_URL = "http://localhost:5000";
+const SENSITIVE_UPLOAD_FOLDERS = "profiles|jamaah|agents|documents|payments";
+
+const getServerOrigin = () => {
+  const envServerUrl = process.env.NEXT_PUBLIC_SERVER_URL?.trim();
+
+  if (envServerUrl) {
+    try {
+      const parsed = new URL(envServerUrl);
+      const pointsToDashboard =
+        parsed.hostname === "dashboard.sahabatqolbu.com";
+      const pointsToApiPath = parsed.pathname
+        .replace(/\/+$/, "")
+        .endsWith("/api");
+
+      if (!pointsToDashboard && !pointsToApiPath) {
+        return envServerUrl.replace(/\/+$/, "");
+      }
+    } catch {
+      // Fall through to a known-good origin.
+    }
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return PRODUCTION_SERVER_URL;
+  }
+
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return PRODUCTION_SERVER_URL;
+    }
+  }
+
+  return DEVELOPMENT_SERVER_URL;
+};
+
+const normalizeSensitiveUploadUrl = (input: string, serverOrigin: string) => {
+  const sensitiveUploadPattern = new RegExp(
+    `^/?uploads/(${SENSITIVE_UPLOAD_FOLDERS})/(.+)$`,
+    "i",
+  );
+
+  const match = input.match(sensitiveUploadPattern);
+  if (!match) return input;
+
+  const folder = match[1].toLowerCase();
+  const filename = match[2].split("/").pop() || "";
+  if (!filename) return input;
+
+  return `${serverOrigin}/api/protected-uploads/${folder}/${filename}`;
+};
+
 export function getImageUrl(path: string | null | undefined): string {
   if (!path) return "https://via.placeholder.com/400x300?text=No+Image";
 
-  const resolvedServerUrl = (() => {
-    const envServerUrl = process.env.NEXT_PUBLIC_SERVER_URL?.trim();
-    if (envServerUrl) {
-      return envServerUrl.replace(/\/+$/, "");
-    }
+  const serverOrigin = getServerOrigin();
+  const trimmedPath = path.trim();
 
-    if (process.env.NODE_ENV === "production") {
-      return "https://api.sahabatqolbu.com";
-    }
-
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-        return "https://api.sahabatqolbu.com";
-      }
-    }
-
-    return "http://localhost:5000";
-  })();
-
-  const normalizeSensitivePath = (input: string): string => {
-    try {
-      const parsed = new URL(input);
-      const pathname = parsed.pathname || "";
-      const sensitiveMatch = pathname.match(/^\/uploads\/(profiles|jamaah|agents|documents|payments)\/(.+)$/i);
-      if (!sensitiveMatch) return input;
-
-      const folder = sensitiveMatch[1].toLowerCase();
-      const filename = sensitiveMatch[2].split("/").pop() || "";
-      if (!filename) return input;
-
-      const query = parsed.search || "";
-      return `${resolvedServerUrl}/api/protected-uploads/${folder}/${filename}${query}`;
-    } catch {
-      const sensitiveMatch = input.match(/^\/uploads\/(profiles|jamaah|agents|documents|payments)\/(.+)$/i);
-      if (!sensitiveMatch) return input;
-
-      const folder = sensitiveMatch[1].toLowerCase();
-      const filename = sensitiveMatch[2].split("/").pop() || "";
-      if (!filename) return input;
-
-      return `${resolvedServerUrl}/api/protected-uploads/${folder}/${filename}`;
-    }
-  };
-
-  // Jika sudah full URL (http/https), return langsung
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    const maybeSensitive = normalizeSensitivePath(path);
-
-    try {
-      const url = new URL(maybeSensitive);
-      const isLegacyProductionApi = url.hostname === "api.sahabatqolbu.com";
-
-      if (isLegacyProductionApi) {
-        return `${resolvedServerUrl}${url.pathname}${url.search}`;
-      }
-    } catch {
-      return maybeSensitive;
-    }
-
-    return maybeSensitive;
+  if (trimmedPath.startsWith("//")) {
+    return `https:${trimmedPath}`;
   }
 
-  // ✅ SOLUTION: Langsung ke server root (BYPASS /api)
-  // Backend serve static files di: http://localhost:5000/uploads
-  // Karena baseURL axios = http://localhost:5000/api
-  // Kita harus remove /api untuk static files
+  if (/^https?:\/\//i.test(trimmedPath)) {
+    try {
+      const parsed = new URL(trimmedPath);
+      const pathname = parsed.pathname.replace(/^\/api(?=\/uploads\/)/, "");
+      const sensitivePath = normalizeSensitiveUploadUrl(pathname, serverOrigin);
 
-  // Path dari DB: /uploads/hotels/xxx.webp
-  // Result: http://localhost:5000/uploads/hotels/xxx.webp
-  const normalizedPath = normalizeSensitivePath(path);
-  if (normalizedPath.startsWith("http://") || normalizedPath.startsWith("https://")) {
-    return normalizedPath;
+      if (/^https?:\/\//i.test(sensitivePath)) {
+        return `${sensitivePath}${parsed.search}`;
+      }
+
+      if (
+        parsed.hostname === "api.sahabatqolbu.com" ||
+        parsed.hostname === "dashboard.sahabatqolbu.com"
+      ) {
+        return `${serverOrigin}${pathname}${parsed.search}`;
+      }
+
+      return trimmedPath;
+    } catch {
+      return trimmedPath;
+    }
   }
 
-  return `${resolvedServerUrl}${normalizedPath}`;
+  const normalizedPath = trimmedPath
+    .replace(/^\/+/, "")
+    .replace(/^api\/uploads\//i, "uploads/");
+  const sensitivePath = normalizeSensitiveUploadUrl(
+    normalizedPath,
+    serverOrigin,
+  );
+
+  if (/^https?:\/\//i.test(sensitivePath)) {
+    return sensitivePath;
+  }
+
+  return `${serverOrigin}/${normalizedPath}`;
 }
 
-// ✅ MAPPING TIPE PAKET (sudah bener, ga usah diubah)
 export const PACKAGE_TYPE_LABELS: Record<string, string> = {
   FULL_SERVICE: "Full Service",
   EXTREME: "Extreme",
@@ -98,7 +117,6 @@ export const PACKAGE_TYPE_LABELS: Record<string, string> = {
   LA: "Land Arrangement",
 };
 
-// ✅ HELPER UNTUK BADGE COLOR (sudah bener, ga usah diubah)
 export function getTypeBadge(type: string): string {
   const badges: Record<string, string> = {
     FULL_SERVICE: "bg-blue-100 text-blue-800",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,12 +37,7 @@ import {
 
 type ArticleStatus = "DRAFT" | "PUBLISHED";
 type ArticleCategory =
-  | "UMRAH"
-  | "HOTEL"
-  | "MASKAPAI"
-  | "PANDUAN"
-  | "LAYANAN"
-  | "LAINNYA";
+  "UMRAH" | "HOTEL" | "MASKAPAI" | "PANDUAN" | "LAYANAN" | "LAINNYA";
 type RelatedType = "NONE" | "HOTEL" | "AIRLINE" | "PACKAGE" | "SERVICE";
 
 interface ArticleItem {
@@ -139,10 +134,13 @@ const normalizeEnumValue = <T extends string>(
   value: unknown,
   allowed: readonly T[],
   fallback: T,
+  aliases: Partial<Record<string, T>> = {},
 ) => {
   const normalized = String(value || "")
     .trim()
     .toUpperCase();
+  const aliased = aliases[normalized];
+  if (aliased) return aliased;
   return allowed.includes(normalized as T) ? (normalized as T) : fallback;
 };
 
@@ -185,6 +183,7 @@ export default function ArticleFormPage({
   const [formData, setFormData] = useState<ArticleFormData>(emptyForm);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [removeCoverImage, setRemoveCoverImage] = useState(false);
+  const hydratedArticleIdRef = useRef<string | null>(null);
 
   const articleId = params?.id;
   const isEdit = mode === "edit";
@@ -192,7 +191,8 @@ export default function ArticleFormPage({
   const { data: articleData, isLoading: articleLoading } = useQuery({
     queryKey: ["article", articleId],
     enabled: isEdit && Boolean(articleId),
-    queryFn: async () => (await api.get(`${ARTICLE_ENDPOINT}/${articleId}`)).data,
+    queryFn: async () =>
+      (await api.get(`${ARTICLE_ENDPOINT}/${articleId}`)).data,
   });
 
   const { data: hotelsData } = useQuery({
@@ -222,6 +222,13 @@ export default function ArticleFormPage({
 
   useEffect(() => {
     if (!article) return;
+
+    const nextArticleId = String(article.id || articleId || "");
+    if (nextArticleId && hydratedArticleIdRef.current === nextArticleId) {
+      return;
+    }
+    hydratedArticleIdRef.current = nextArticleId;
+
     setFormData({
       title: article.title || "",
       slug: article.slug || "",
@@ -242,6 +249,7 @@ export default function ArticleFormPage({
         article.relatedType,
         RELATED_TYPES.map((item) => item.value),
         "NONE",
+        { MASKAPAI: "AIRLINE", AIRLINES: "AIRLINE", PAKET: "PACKAGE" },
       ),
       relatedId: article.relatedId ? String(article.relatedId) : "",
       seoTitle: article.seoTitle || "",
@@ -691,7 +699,11 @@ export default function ArticleFormPage({
         <div className="sticky bottom-0 z-10 -mx-4 border-t bg-white/95 px-4 py-4 backdrop-blur md:mx-0 md:rounded-t-md md:border">
           <div className="flex flex-col-reverse gap-3 md:flex-row md:justify-end">
             <Link href={basePath}>
-              <Button type="button" variant="outline" className="w-full md:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full md:w-auto"
+              >
                 Batal
               </Button>
             </Link>

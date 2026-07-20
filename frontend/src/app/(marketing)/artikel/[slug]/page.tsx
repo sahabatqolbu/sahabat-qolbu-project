@@ -21,6 +21,7 @@ import {
   slugifyPackageName,
 } from "@/lib/public-api";
 import ArticleEngagement from "@/components/marketing/ArticleEngagement";
+import { renderMarkdownContent } from "@/components/marketing/MarkdownContent";
 
 type Params = Promise<{ slug: string }>;
 
@@ -232,8 +233,7 @@ const renderContentBlock = (block: string, index: number) => {
   );
 };
 
-const renderContent = (content: string) =>
-  content.split(/\n{2,}/).map((block, index) => renderContentBlock(block, index));
+const renderContent = (content: string) => renderMarkdownContent(content);
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -434,3 +434,5 @@ export default async function ArticleDetailPage({
     </main>
   );
 }
+
+
