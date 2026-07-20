@@ -43,6 +43,7 @@ const legacySlugsToRemove = [
   "mitos-mitos-soal-umrah-sebagai-bekal-umroh",
   "panduan-lengkap-umrah-untuk-pemula",
   "panduan-perjalanan-umrah",
+  "panduan-perjalanan-umroh",
   "panduan-perjalanan-umroh-untuk-calon-jamaah",
   "pengalaman-umrah-pertama-kali-panduan",
   "perlengkapan-dan-persiapan-keberangkatan-umroh",
