@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -61,6 +61,13 @@ interface OptionItem {
   name: string;
   code?: string;
 }
+
+type ApiListPayload = {
+  data?: unknown;
+  hotels?: unknown;
+  airlines?: unknown;
+  packages?: unknown;
+};
 
 interface ArticleFormData {
   title: string;
@@ -130,6 +137,69 @@ const getErrorMessage = (error: unknown) => {
 const normalizeTags = (tags?: string[]) =>
   Array.isArray(tags) ? tags.join(", ") : "";
 
+const articleCategoryValues = CATEGORIES.map((item) => item.value);
+const relatedTypeValues = RELATED_TYPES.map((item) => item.value);
+
+const normalizeArticleCategory = (value: unknown) =>
+  normalizeEnumValue(value, articleCategoryValues, "LAINNYA", {
+    AIRLINE: "MASKAPAI",
+    AIRLINES: "MASKAPAI",
+    MASKAPAI: "MASKAPAI",
+  });
+
+const normalizeArticleStatus = (value: unknown) =>
+  normalizeEnumValue(value, ["DRAFT", "PUBLISHED"], "DRAFT", {
+    ACTIVE: "PUBLISHED",
+    PUBLISH: "PUBLISHED",
+    TERBIT: "PUBLISHED",
+  });
+
+const inferRelatedType = (
+  relatedType: unknown,
+  category: ArticleCategory,
+  relatedId?: number | null,
+) => {
+  const normalized = normalizeEnumValue(
+    relatedType,
+    relatedTypeValues,
+    "NONE",
+    {
+      MASKAPAI: "AIRLINE",
+      AIRLINES: "AIRLINE",
+      PAKET: "PACKAGE",
+    },
+  );
+
+  if (normalized !== "NONE") return normalized;
+  if (!relatedId) return "NONE";
+  if (category === "HOTEL") return "HOTEL";
+  if (category === "MASKAPAI") return "AIRLINE";
+  if (category === "UMRAH") return "PACKAGE";
+  if (category === "LAYANAN") return "SERVICE";
+  return "NONE";
+};
+
+const mapArticleToFormData = (article: ArticleItem): ArticleFormData => {
+  const category = normalizeArticleCategory(article.category);
+  return {
+    title: article.title || "",
+    slug: article.slug || "",
+    excerpt: article.excerpt || "",
+    content: article.content || "",
+    category,
+    tags: normalizeTags(article.tags),
+    status: normalizeArticleStatus(article.status),
+    relatedType: inferRelatedType(
+      article.relatedType,
+      category,
+      article.relatedId,
+    ),
+    relatedId: article.relatedId ? String(article.relatedId) : "",
+    seoTitle: article.seoTitle || "",
+    seoDescription: article.seoDescription || "",
+  };
+};
+
 const normalizeEnumValue = <T extends string>(
   value: unknown,
   allowed: readonly T[],
@@ -142,6 +212,26 @@ const normalizeEnumValue = <T extends string>(
   const aliased = aliases[normalized];
   if (aliased) return aliased;
   return allowed.includes(normalized as T) ? (normalized as T) : fallback;
+};
+
+const resolveOptionList = (
+  payload: unknown,
+  key?: "hotels" | "airlines" | "packages",
+) => {
+  if (Array.isArray(payload)) return payload as OptionItem[];
+  if (!payload || typeof payload !== "object") return [];
+
+  const data = payload as ApiListPayload;
+  if (key && Array.isArray(data[key])) return data[key] as OptionItem[];
+  if (Array.isArray(data.data)) return data.data as OptionItem[];
+
+  if (data.data && typeof data.data === "object") {
+    const nested = data.data as ApiListPayload;
+    if (key && Array.isArray(nested[key])) return nested[key] as OptionItem[];
+    if (Array.isArray(nested.data)) return nested.data as OptionItem[];
+  }
+
+  return [];
 };
 
 const resolveArticlePayload = (payload: unknown): ArticleItem | null => {
@@ -183,7 +273,8 @@ export default function ArticleFormPage({
   const [formData, setFormData] = useState<ArticleFormData>(emptyForm);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [removeCoverImage, setRemoveCoverImage] = useState(false);
-  const hydratedArticleIdRef = useRef<string | null>(null);
+  const hydratedArticleSignatureRef = useRef<string | null>(null);
+  const isDirtyRef = useRef(false);
 
   const articleId = params?.id;
   const isEdit = mode === "edit";
@@ -210,54 +301,36 @@ export default function ArticleFormPage({
   });
 
   const article: ArticleItem | null = resolveArticlePayload(articleData);
-  const hotels: OptionItem[] = Array.isArray(hotelsData?.data)
-    ? hotelsData.data
-    : [];
-  const airlines: OptionItem[] = Array.isArray(airlinesData?.data)
-    ? airlinesData.data
-    : [];
-  const packages: OptionItem[] = Array.isArray(packagesData?.data?.packages)
-    ? packagesData.data.packages
-    : [];
+  const hotels = resolveOptionList(hotelsData, "hotels");
+  const airlines = resolveOptionList(airlinesData, "airlines");
+  const packages = resolveOptionList(packagesData, "packages");
 
   useEffect(() => {
     if (!article) return;
 
-    const nextArticleId = String(article.id || articleId || "");
-    if (nextArticleId && hydratedArticleIdRef.current === nextArticleId) {
-      return;
-    }
-    hydratedArticleIdRef.current = nextArticleId;
-
-    setFormData({
+    const nextSignature = JSON.stringify({
+      id: article.id || articleId || "",
       title: article.title || "",
       slug: article.slug || "",
       excerpt: article.excerpt || "",
       content: article.content || "",
-      category: normalizeEnumValue(
-        article.category,
-        CATEGORIES.map((item) => item.value),
-        "LAINNYA",
-      ),
-      tags: normalizeTags(article.tags),
-      status: normalizeEnumValue(
-        article.status,
-        ["DRAFT", "PUBLISHED"],
-        "DRAFT",
-      ),
-      relatedType: normalizeEnumValue(
-        article.relatedType,
-        RELATED_TYPES.map((item) => item.value),
-        "NONE",
-        { MASKAPAI: "AIRLINE", AIRLINES: "AIRLINE", PAKET: "PACKAGE" },
-      ),
-      relatedId: article.relatedId ? String(article.relatedId) : "",
+      category: article.category || "",
+      status: article.status || "",
+      relatedType: article.relatedType || "",
+      relatedId: article.relatedId || null,
+      tags: article.tags || [],
       seoTitle: article.seoTitle || "",
       seoDescription: article.seoDescription || "",
     });
+
+    if (hydratedArticleSignatureRef.current === nextSignature) return;
+    if (hydratedArticleSignatureRef.current && isDirtyRef.current) return;
+
+    hydratedArticleSignatureRef.current = nextSignature;
+    setFormData(mapArticleToFormData(article));
     setCoverFile(null);
     setRemoveCoverImage(false);
-  }, [article]);
+  }, [article, articleId]);
 
   const relationOptions = useMemo(() => {
     if (formData.relatedType === "HOTEL") return hotels;
@@ -269,6 +342,14 @@ export default function ArticleFormPage({
   const contentImages = useMemo(
     () => extractContentImages(formData.content),
     [formData.content],
+  );
+
+  const updateFormData = useCallback(
+    (updater: (prev: ArticleFormData) => ArticleFormData) => {
+      isDirtyRef.current = true;
+      setFormData(updater);
+    },
+    [],
   );
 
   const buildPayload = () => {
@@ -288,6 +369,7 @@ export default function ArticleFormPage({
         ? api.put(`${ARTICLE_ENDPOINT}/${articleId}`, buildPayload())
         : api.post(ARTICLE_ENDPOINT, buildPayload()),
     onSuccess: () => {
+      isDirtyRef.current = false;
       queryClient.invalidateQueries({ queryKey: ["articles"] });
       toast({
         title: isEdit
@@ -313,7 +395,7 @@ export default function ArticleFormPage({
     onSuccess: (response) => {
       const url = response.data?.data?.url;
       if (!url) return;
-      setFormData((prev) => ({
+      updateFormData((prev) => ({
         ...prev,
         content: `${prev.content}${prev.content ? "\n\n" : ""}![Gambar artikel](${url})`,
       }));
@@ -354,7 +436,7 @@ export default function ArticleFormPage({
       `\\n{0,2}!?\\[[^\\]]*\\]\\(${escapeRegExp(src)}\\)\\n{0,2}`,
       "g",
     );
-    setFormData((prev) => ({
+    updateFormData((prev) => ({
       ...prev,
       content: prev.content.replace(pattern, "\n\n").trim(),
     }));
@@ -408,7 +490,7 @@ export default function ArticleFormPage({
                 <Input
                   value={formData.title}
                   onChange={(e) =>
-                    setFormData((p) => ({ ...p, title: e.target.value }))
+                    updateFormData((p) => ({ ...p, title: e.target.value }))
                   }
                   required
                 />
@@ -418,7 +500,7 @@ export default function ArticleFormPage({
                 <Input
                   value={formData.slug}
                   onChange={(e) =>
-                    setFormData((p) => ({ ...p, slug: e.target.value }))
+                    updateFormData((p) => ({ ...p, slug: e.target.value }))
                   }
                   placeholder="otomatis dari judul jika kosong"
                 />
@@ -431,7 +513,7 @@ export default function ArticleFormPage({
                 rows={4}
                 value={formData.excerpt}
                 onChange={(e) =>
-                  setFormData((p) => ({ ...p, excerpt: e.target.value }))
+                  updateFormData((p) => ({ ...p, excerpt: e.target.value }))
                 }
                 placeholder="Ringkasan singkat yang tampil di kartu/list artikel"
               />
@@ -443,7 +525,7 @@ export default function ArticleFormPage({
                 <Select
                   value={formData.category || "LAINNYA"}
                   onValueChange={(value) =>
-                    setFormData((p) => ({
+                    updateFormData((p) => ({
                       ...p,
                       category: value as ArticleCategory,
                     }))
@@ -466,7 +548,7 @@ export default function ArticleFormPage({
                 <Select
                   value={formData.status || "DRAFT"}
                   onValueChange={(value) =>
-                    setFormData((p) => ({
+                    updateFormData((p) => ({
                       ...p,
                       status: value as ArticleStatus,
                     }))
@@ -486,7 +568,7 @@ export default function ArticleFormPage({
                 <Input
                   value={formData.tags}
                   onChange={(e) =>
-                    setFormData((p) => ({ ...p, tags: e.target.value }))
+                    updateFormData((p) => ({ ...p, tags: e.target.value }))
                   }
                   placeholder="umroh, hotel, tips"
                 />
@@ -499,7 +581,7 @@ export default function ArticleFormPage({
                 <Select
                   value={formData.relatedType || "NONE"}
                   onValueChange={(value) =>
-                    setFormData((p) => ({
+                    updateFormData((p) => ({
                       ...p,
                       relatedType: value as RelatedType,
                       relatedId: "",
@@ -524,7 +606,7 @@ export default function ArticleFormPage({
                   <Select
                     value={formData.relatedId}
                     onValueChange={(value) =>
-                      setFormData((p) => ({ ...p, relatedId: value }))
+                      updateFormData((p) => ({ ...p, relatedId: value }))
                     }
                   >
                     <SelectTrigger>
@@ -620,7 +702,7 @@ export default function ArticleFormPage({
               rows={24}
               value={formData.content}
               onChange={(e) =>
-                setFormData((p) => ({ ...p, content: e.target.value }))
+                updateFormData((p) => ({ ...p, content: e.target.value }))
               }
               required
               className="min-h-[520px] font-mono text-sm leading-relaxed"
@@ -677,7 +759,7 @@ export default function ArticleFormPage({
               <Input
                 value={formData.seoTitle}
                 onChange={(e) =>
-                  setFormData((p) => ({ ...p, seoTitle: e.target.value }))
+                  updateFormData((p) => ({ ...p, seoTitle: e.target.value }))
                 }
               />
             </div>
@@ -686,7 +768,7 @@ export default function ArticleFormPage({
               <Input
                 value={formData.seoDescription}
                 onChange={(e) =>
-                  setFormData((p) => ({
+                  updateFormData((p) => ({
                     ...p,
                     seoDescription: e.target.value,
                   }))
