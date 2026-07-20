@@ -3,7 +3,7 @@ dotenv.config();
 
 import { eq, like, or } from "drizzle-orm";
 import { db } from "./index.js";
-import { articles, masterHotels } from "./schema.js";
+import { articles, masterAirlines, masterHotels } from "./schema.js";
 
 const now = () => new Date();
 
@@ -152,9 +152,76 @@ Karena itu, Al Saha paling tepat dipresentasikan sebagai hotel praktis untuk jam
 
 Al Saha Hotel Madinah cocok untuk jamaah yang ingin mengutamakan jarak dekat ke Masjid Nabawi, akses harian yang sederhana, dan kenyamanan yang cukup untuk fokus ibadah. Hotel ini bukan untuk mencari pengalaman mewah, tetapi untuk mencari lokasi yang benar-benar membantu perjalanan umroh atau ziarah di Madinah.`;
 
+const garudaContent = `## Garuda Indonesia untuk Umroh: Nyaman, Langsung, dan Familiar untuk Jamaah
+
+Garuda Indonesia menjadi salah satu pilihan maskapai yang kuat untuk perjalanan umroh karena menggabungkan penerbangan jarak jauh yang nyaman, layanan full service, dan pengalaman yang terasa familiar bagi jamaah Indonesia. Untuk perjalanan ibadah yang melelahkan secara fisik, detail seperti bahasa awak kabin, makanan Nusantara, pengaturan bagasi, dan rute yang rapi bisa memberi dampak besar pada kenyamanan jamaah.
+
+Bagi calon jamaah, memilih maskapai bukan hanya soal tiba di Jeddah atau Madinah. Yang lebih penting adalah bagaimana perjalanan panjang menuju Tanah Suci terasa lebih tertata, aman, dan tidak membuat energi habis sebelum rangkaian ibadah dimulai.
+
+## Kenapa Garuda Menarik untuk Paket Umroh
+
+Nilai utama Garuda Indonesia ada pada kombinasi layanan nasional dan jaringan rute menuju Arab Saudi. Dari Jakarta, penerbangan ke Jeddah dan Madinah menjadi jalur utama yang banyak dipakai untuk paket umroh. Di beberapa musim, Garuda juga melayani atau mendukung rute langsung dari kota-kota besar lain seperti Surabaya, Makassar, Kertajati, Yogyakarta, dan Banda Aceh.
+
+Strategi rute seperti ini membantu jamaah dari daerah mengurangi transit yang tidak perlu. Untuk jamaah lansia atau keluarga, perjalanan yang lebih sederhana berarti tubuh lebih siap ketika sampai di Madinah atau Makkah.
+
+## Armada dan Kenyamanan di Udara
+
+Untuk rute jarak jauh ke Timur Tengah, Garuda Indonesia menggunakan armada berbadan lebar seperti Boeing 777-300ER dan Airbus A330. Kabin yang lebih stabil, kapasitas besar, serta konfigurasi penerbangan jarak jauh membuat perjalanan sekitar sembilan jam terasa lebih nyaman dibanding penerbangan yang terlalu banyak transit.
+
+Selama penerbangan, jamaah biasanya mendapatkan layanan makanan hangat dan minuman. Menu bercita rasa Indonesia menjadi nilai tambah yang sederhana tapi penting, terutama untuk jamaah yang lebih nyaman dengan makanan familiar. Sistem hiburan di pesawat juga dapat membantu jamaah mengisi waktu dengan konten yang lebih tenang, termasuk panduan perjalanan atau konten islami sesuai ketersediaan armada.
+
+## Bagasi dan Air Zamzam: Hal yang Wajib Dipahami
+
+Salah satu hal paling penting sebelum berangkat adalah memahami aturan bagasi. Pada rute internasional, kebijakan bagasi dapat berbeda tergantung jenis tiket, rute, dan apakah perjalanan memakai connecting flight dalam satu itinerary. Karena itu, jamaah sebaiknya selalu mengikuti arahan travel dan membaca ketentuan tiket terbaru sebelum packing.
+
+Untuk air zamzam, aturannya jauh lebih ketat. Jamaah tidak boleh memasukkan air zamzam sendiri ke koper bagasi karena alasan keselamatan penerbangan. Sebagai gantinya, jamaah umroh biasanya mendapatkan jatah resmi air zamzam 5 liter sesuai ketentuan maskapai dan otoritas bandara. Ini lebih aman, rapi, dan mengurangi risiko koper dibongkar atau tertahan.
+
+## Cocok untuk Jamaah Seperti Apa?
+
+Garuda Indonesia cocok untuk jamaah yang mengutamakan kenyamanan perjalanan, komunikasi yang mudah, dan pengalaman penerbangan yang lebih familiar. Maskapai ini juga relevan untuk paket umroh reguler sampai premium, terutama ketika travel ingin menjaga kualitas perjalanan sejak dari bandara keberangkatan.
+
+Untuk paket premium, Garuda bisa dipadukan dengan hotel ring satu atau hotel bintang 5 dekat Masjidil Haram dan Masjid Nabawi. Untuk paket menengah, Garuda tetap bisa menjadi pilihan menarik ketika dipadukan dengan hotel yang praktis, dekat akses ibadah, dan memiliki pengaturan rombongan yang baik.
+
+## Tips Sebelum Berangkat dengan Garuda
+
+- Pastikan nama di tiket sama dengan paspor.
+- Ikuti batas bagasi sesuai tiket dan jangan menumpuk berat dalam satu koper.
+- Simpan powerbank dan perangkat elektronik penting di tas kabin.
+- Jangan memasukkan air zamzam ke koper pribadi.
+- Datang lebih awal ke bandara karena perjalanan umroh biasanya bergerak dalam rombongan besar.
+
+### Ringkasan
+
+Garuda Indonesia adalah pilihan maskapai yang menarik untuk perjalanan umroh karena menawarkan layanan full service, kenyamanan kabin jarak jauh, makanan yang familiar, dan jaringan rute yang kuat menuju Arab Saudi. Untuk jamaah yang ingin perjalanan lebih tertata sejak dari Indonesia, Garuda menjadi opsi yang layak dipertimbangkan dalam paket umroh Sahabat Qolbu.`;
 const articleSeeds = [
   {
-    title: "SAJA by Warwick Makkah Hotel: Kamar Luas dan Shuttle Praktis ke Masjidil Haram",
+    title: "Garuda Indonesia untuk Umroh: Penerbangan Nyaman Menuju Tanah Suci",
+    slug: "garuda-indonesia-untuk-umroh",
+    excerpt:
+      "Mengenal keunggulan Garuda Indonesia untuk perjalanan umroh: rute ke Arab Saudi, kenyamanan kabin, layanan Nusantara, aturan bagasi, dan tips sebelum berangkat.",
+    content: garudaContent,
+    category: "MASKAPAI",
+    tags: [
+      "garuda indonesia",
+      "maskapai umroh",
+      "penerbangan umroh",
+      "jeddah",
+      "madinah",
+    ],
+    relatedType: "AIRLINE",
+    airline: {
+      code: "GA",
+      name: "Garuda Indonesia",
+      country: "Indonesia",
+      logo: "https://www.garuda-indonesia.com/logo.png",
+    },
+    seoTitle: "Garuda Indonesia untuk Perjalanan Umroh",
+    seoDescription:
+      "Review Garuda Indonesia untuk umroh: rute, armada, layanan, bagasi, air zamzam, dan kecocokan untuk paket umroh.",
+  },
+  {
+    title:
+      "SAJA by Warwick Makkah Hotel: Kamar Luas dan Shuttle Praktis ke Masjidil Haram",
     slug: "saja-by-warwick-makkah-hotel",
     excerpt:
       "Mengenal SAJA by Warwick Makkah, hotel area Kudai dengan kamar luas, fasilitas besar, dan shuttle menuju Masjidil Haram.",
@@ -181,7 +248,8 @@ const articleSeeds = [
       "Review singkat SAJA by Warwick Makkah Hotel: lokasi, kamar, shuttle, fasilitas, dan kecocokan untuk paket umroh.",
   },
   {
-    title: "ODST Al Madinah Hotel: Dekat Masjid Nabawi dan Efisien untuk Jamaah Umroh",
+    title:
+      "ODST Al Madinah Hotel: Dekat Masjid Nabawi dan Efisien untuk Jamaah Umroh",
     slug: "odst-al-madinah-hotel",
     excerpt:
       "ODST Al Madinah Hotel dikenal sebagai pilihan akomodasi Madinah yang dekat Masjid Nabawi, praktis untuk rombongan, dan efisien untuk paket umroh.",
@@ -208,13 +276,20 @@ const articleSeeds = [
       "Mengenal ODST Al Madinah Hotel: lokasi dekat Masjid Nabawi, fasilitas, tipe kamar, kelebihan, dan catatan untuk jamaah umroh.",
   },
   {
-    title: "Hotel Maysan Al Mashaer Makkah: Akses Jalan Kaki Datar ke Masjidil Haram dengan Tarif Menengah",
+    title:
+      "Hotel Maysan Al Mashaer Makkah: Akses Jalan Kaki Datar ke Masjidil Haram dengan Tarif Menengah",
     slug: "hotel-maysan-al-mashaer-makkah",
     excerpt:
       "Mengenal Hotel Maysan Al Mashaer Makkah, akomodasi bintang satu di Ajyad dengan jalur jalan kaki datar ke Masjidil Haram, restoran Indonesia, dan fasilitas aksesibilitas untuk jamaah.",
     content: maysanContent,
     category: "HOTEL",
-    tags: ["hotel makkah", "maysan al mashaer", "masjidil haram", "umroh", "ajyad"],
+    tags: [
+      "hotel makkah",
+      "maysan al mashaer",
+      "masjidil haram",
+      "umroh",
+      "ajyad",
+    ],
     relatedType: "HOTEL",
     hotel: {
       name: "Maysan Al Mashaer Hotel",
@@ -266,6 +341,30 @@ const articleSeeds = [
   },
 ];
 
+const findOrCreateAirline = async (airline) => {
+  const existing = await db.query.masterAirlines.findFirst({
+    where: or(
+      eq(masterAirlines.code, airline.code),
+      eq(masterAirlines.name, airline.name),
+    ),
+  });
+
+  if (existing) return existing.id;
+
+  const [created] = await db
+    .insert(masterAirlines)
+    .values({
+      code: airline.code,
+      name: airline.name,
+      country: airline.country || null,
+      logo: airline.logo || null,
+      isActive: true,
+    })
+    .$returningId();
+
+  return created.id;
+};
+
 const findOrCreateHotel = async (hotel) => {
   const existing = await db.query.masterHotels.findFirst({
     where: or(
@@ -293,7 +392,10 @@ const findOrCreateHotel = async (hotel) => {
 };
 
 const upsertArticle = async (seed) => {
-  const relatedId = await findOrCreateHotel(seed.hotel);
+  const relatedId =
+    seed.relatedType === "AIRLINE"
+      ? await findOrCreateAirline(seed.airline)
+      : await findOrCreateHotel(seed.hotel);
   const existing = await db.query.articles.findFirst({
     where: eq(articles.slug, seed.slug),
   });
