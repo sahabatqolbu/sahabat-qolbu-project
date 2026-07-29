@@ -83,9 +83,9 @@ const getPackageAvailability = (pkg: MarketingPackage, seatsLeft: number) => {
   if (status === "CLOSED" || pkg.isBookable === false) {
     return {
       isBookable: false,
-      label: pkg.bookingStatusLabel || "Paket Tutup",
-      description: "Pendaftaran paket ini sudah ditutup.",
-      buttonLabel: "Paket Tutup",
+      label: pkg.bookingStatusLabel || "Paket Close",
+      description: "Pendaftaran paket ini sudah close.",
+      buttonLabel: "Paket Close",
     };
   }
 

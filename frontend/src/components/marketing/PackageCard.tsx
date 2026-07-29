@@ -189,10 +189,10 @@ function getPackageAvailability(pkg: PackageCardProps) {
       status: "CLOSED",
       label:
         pkg.bookingStatusLabel ||
-        (daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Tutup"),
+        (daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close"),
       badgeClass: "bg-slate-900 text-white ring-2 ring-white",
-      buttonLabel: "Paket Tutup",
-      overlayLabel: daysUntilDeparture < 0 ? "SUDAH BERANGKAT" : "PAKET TUTUP",
+      buttonLabel: "Paket Close",
+      overlayLabel: daysUntilDeparture < 0 ? "SUDAH BERANGKAT" : "PAKET CLOSE",
       cardClass: "border border-slate-300 bg-slate-50",
       imageClass: "grayscale opacity-60",
     };

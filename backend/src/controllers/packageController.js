@@ -352,7 +352,7 @@ const getPackageBookingState = ({
     return {
       bookingStatus: "CLOSED",
       bookingStatusLabel:
-        daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Tutup",
+        daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close",
       isBookable: false,
     };
   }

@@ -134,7 +134,7 @@ export default function PackageDetailPage({ params }: PageProps) {
     ) {
       return (
         <Badge className="bg-slate-100 text-slate-800">
-          {packageData.bookingStatusLabel || "Paket Tutup"}
+          {packageData.bookingStatusLabel || "Paket Close"}
         </Badge>
       );
     }

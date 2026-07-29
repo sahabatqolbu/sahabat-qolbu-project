@@ -234,7 +234,7 @@ export default function PackagesPage() {
     if (pkg.bookingStatus === "CLOSED" || pkg.isBookable === false) {
       return (
         <Badge className="bg-slate-100 text-slate-800">
-          {pkg.bookingStatusLabel || "Paket Tutup"}
+          {pkg.bookingStatusLabel || "Paket Close"}
         </Badge>
       );
     }
