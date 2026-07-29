@@ -95,6 +95,8 @@ type BackendPackage = {
   isBookable?: boolean | null;
   daysUntilDeparture?: number | null;
   remainingSeats?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 type PublicPackagesPayload = {
@@ -172,6 +174,8 @@ export interface MarketingPackage {
   bookingStatusLabel?: string;
   isBookable?: boolean;
   daysUntilDeparture?: number;
+  createdAt?: string;
+  updatedAt?: string;
   image?: string;
   gallery?: string[];
   featured?: boolean;
@@ -441,6 +445,8 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     bookingStatusLabel: toNonEmptyString(pkg.bookingStatusLabel, "Tersedia"),
     isBookable: pkg.isBookable !== false,
     daysUntilDeparture: toNumber(pkg.daysUntilDeparture, 9999),
+    createdAt: toNonEmptyString(pkg.createdAt),
+    updatedAt: toNonEmptyString(pkg.updatedAt),
     image: primaryImage,
     gallery,
     featured: false,
@@ -459,16 +465,31 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
   };
 };
 
-const sortPackagesByDeparture = (packages: MarketingPackage[]) =>
+const getPackageDisplayRank = (pkg: MarketingPackage) => {
+  const status = String(pkg.bookingStatus || "").toUpperCase();
+
+  if (status === "COMING_SOON") return 0;
+  if (pkg.isBookable !== false && status !== "CLOSED" && status !== "SOLD_OUT") {
+    return 1;
+  }
+  if (status === "CLOSED" || status === "SOLD_OUT") return 2;
+  return 3;
+};
+
+const getPackageSortTime = (pkg: MarketingPackage) => {
+  const createdTime = new Date(pkg.createdAt || "").getTime();
+  if (Number.isFinite(createdTime)) return createdTime;
+
+  const departureTime = new Date(pkg.departureDate || "").getTime();
+  return Number.isFinite(departureTime) ? departureTime : 0;
+};
+
+const sortPackagesForDisplay = (packages: MarketingPackage[]) =>
   [...packages].sort((left, right) => {
-    const leftTime = new Date(left.departureDate).getTime();
-    const rightTime = new Date(right.departureDate).getTime();
+    const rankDiff = getPackageDisplayRank(left) - getPackageDisplayRank(right);
+    if (rankDiff !== 0) return rankDiff;
 
-    if (!Number.isFinite(leftTime) && !Number.isFinite(rightTime)) return 0;
-    if (!Number.isFinite(leftTime)) return 1;
-    if (!Number.isFinite(rightTime)) return -1;
-
-    return leftTime - rightTime;
+    return getPackageSortTime(right) - getPackageSortTime(left);
   });
 
 const fetchApi = async <T>(path: string) => {
@@ -521,7 +542,7 @@ const getBackendMarketingPackages = async (): Promise<BackendPackage[]> => {
 };
 
 export const getMarketingPackages = async (): Promise<MarketingPackage[]> =>
-  sortPackagesByDeparture(
+  sortPackagesForDisplay(
     (await getBackendMarketingPackages())
       .filter((pkg) => pkg.isPublished !== false)
       .map((pkg) => mapPackage(pkg)),
