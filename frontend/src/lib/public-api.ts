@@ -469,19 +469,28 @@ const getPackageDisplayRank = (pkg: MarketingPackage) => {
   const status = String(pkg.bookingStatus || "").toUpperCase();
 
   if (status === "COMING_SOON") return 0;
-  if (pkg.isBookable !== false && status !== "CLOSED" && status !== "SOLD_OUT") {
+  if (
+    pkg.isBookable !== false &&
+    status !== "CLOSED" &&
+    status !== "SOLD_OUT"
+  ) {
     return 1;
   }
   if (status === "CLOSED" || status === "SOLD_OUT") return 2;
   return 3;
 };
 
-const getPackageSortTime = (pkg: MarketingPackage) => {
+const getDepartureTime = (pkg: MarketingPackage) => {
+  const time = new Date(pkg.departureDate || "").getTime();
+  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
+};
+
+const getFreshnessTime = (pkg: MarketingPackage) => {
   const createdTime = new Date(pkg.createdAt || "").getTime();
   if (Number.isFinite(createdTime)) return createdTime;
 
-  const departureTime = new Date(pkg.departureDate || "").getTime();
-  return Number.isFinite(departureTime) ? departureTime : 0;
+  const updatedTime = new Date(pkg.updatedAt || "").getTime();
+  return Number.isFinite(updatedTime) ? updatedTime : 0;
 };
 
 const sortPackagesForDisplay = (packages: MarketingPackage[]) =>
@@ -489,7 +498,18 @@ const sortPackagesForDisplay = (packages: MarketingPackage[]) =>
     const rankDiff = getPackageDisplayRank(left) - getPackageDisplayRank(right);
     if (rankDiff !== 0) return rankDiff;
 
-    return getPackageSortTime(right) - getPackageSortTime(left);
+    const leftRank = getPackageDisplayRank(left);
+    const rightRank = getPackageDisplayRank(right);
+
+    if (leftRank === 0 && rightRank === 0) {
+      const freshnessDiff = getFreshnessTime(right) - getFreshnessTime(left);
+      if (freshnessDiff !== 0) return freshnessDiff;
+    }
+
+    const departureDiff = getDepartureTime(left) - getDepartureTime(right);
+    if (departureDiff !== 0) return departureDiff;
+
+    return getFreshnessTime(right) - getFreshnessTime(left);
   });
 
 const fetchApi = async <T>(path: string) => {
@@ -867,5 +887,3 @@ export const parseEntityIdFromSlug = (slug: string) => {
   const match = String(slug || "").match(/-(\d+)$/);
   return match ? Number.parseInt(match[1], 10) : null;
 };
-
-

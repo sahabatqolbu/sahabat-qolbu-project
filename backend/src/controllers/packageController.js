@@ -363,6 +363,53 @@ const getPackageBookingState = ({
     isBookable: true,
   };
 };
+const getPackageDisplayRank = (pkg = {}) => {
+  if (pkg.isActive === false) return 4;
+
+  const status = String(pkg.bookingStatus || "").toUpperCase();
+  if (status === "COMING_SOON") return 0;
+  if (
+    pkg.isBookable !== false &&
+    status !== "CLOSED" &&
+    status !== "SOLD_OUT"
+  ) {
+    return 1;
+  }
+  if (status === "CLOSED" || status === "SOLD_OUT") return 2;
+  return 3;
+};
+
+const getPackageDepartureTime = (pkg = {}) => {
+  const time = new Date(pkg.departureDate || "").getTime();
+  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
+};
+
+const getPackageFreshnessTime = (pkg = {}) => {
+  const createdTime = new Date(pkg.createdAt || "").getTime();
+  if (Number.isFinite(createdTime)) return createdTime;
+
+  const updatedTime = new Date(pkg.updatedAt || "").getTime();
+  return Number.isFinite(updatedTime) ? updatedTime : 0;
+};
+
+const sortPackagesForDisplay = (packageList = []) =>
+  [...packageList].sort((left, right) => {
+    const leftRank = getPackageDisplayRank(left);
+    const rightRank = getPackageDisplayRank(right);
+    if (leftRank !== rightRank) return leftRank - rightRank;
+
+    if (leftRank === 0) {
+      const freshnessDiff =
+        getPackageFreshnessTime(right) - getPackageFreshnessTime(left);
+      if (freshnessDiff !== 0) return freshnessDiff;
+    }
+
+    const departureDiff =
+      getPackageDepartureTime(left) - getPackageDepartureTime(right);
+    if (departureDiff !== 0) return departureDiff;
+
+    return getPackageFreshnessTime(right) - getPackageFreshnessTime(left);
+  });
 
 // =====================================================
 // GET ALL PACKAGES (with Stats)
@@ -402,9 +449,7 @@ export const getAllPackages = async (req, res, next) => {
 
     const allPackages = await db.query.packages.findMany({
       where: conditions.length > 0 ? and(...conditions) : undefined,
-      orderBy: [desc(packages.departureDate)],
-      limit: parsedLimit,
-      offset,
+      orderBy: [desc(packages.createdAt)],
       with: {
         hotelMakkah: true,
         hotelMadinah: true,
@@ -468,12 +513,12 @@ export const getAllPackages = async (req, res, next) => {
       };
     });
 
-    const totalResult = await db
-      .select({ count: count() })
-      .from(packages)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-    const total = totalResult[0]?.count || 0;
+    const sortedPackages = sortPackagesForDisplay(packagesWithStats);
+    const total = sortedPackages.length;
+    const paginatedPackages = sortedPackages.slice(
+      offset,
+      offset + parsedLimit,
+    );
 
     const allPackagesForStats = await db.query.packages.findMany({
       where: eq(packages.isActive, true),
@@ -492,7 +537,7 @@ export const getAllPackages = async (req, res, next) => {
     }
 
     return successResponse(res, {
-      packages: packagesWithStats,
+      packages: paginatedPackages,
       pagination: {
         total,
         page: parsedPage,
