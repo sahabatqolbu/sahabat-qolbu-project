@@ -449,26 +449,21 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
   );
   const defaultOption =
     activeOptions.find((option) => option.isDefault) || activeOptions[0];
-  const optionPrices = activeOptions.flatMap((option) => [
-    option.priceQuad,
-    option.priceTriple,
-    option.priceDouble,
-    option.priceQuint,
-  ]);
   const currentPrice =
-    getLowestPositivePrice(optionPrices) ||
-    toNumber(pkg.discountPrice ?? pkg.price, 0);
+    getLowestPositivePrice([
+      defaultOption?.priceQuad,
+      defaultOption?.priceTriple,
+      defaultOption?.priceDouble,
+      defaultOption?.priceQuint,
+    ]) || toNumber(pkg.discountPrice ?? pkg.price, 0);
   const originalPrice = toNumber(pkg.price, currentPrice);
   const quadPrice =
-    getLowestPositivePrice(activeOptions.map((option) => option.priceQuad)) ||
     toNumber(defaultOption?.priceQuad ?? pkg.priceQuad, currentPrice) ||
     currentPrice;
   const triplePrice =
-    getLowestPositivePrice(activeOptions.map((option) => option.priceTriple)) ||
     toNumber(defaultOption?.priceTriple ?? pkg.priceTriple, quadPrice) ||
     quadPrice;
   const doublePrice =
-    getLowestPositivePrice(activeOptions.map((option) => option.priceDouble)) ||
     toNumber(defaultOption?.priceDouble ?? pkg.priceDouble, originalPrice) ||
     originalPrice;
   const optionGallery = getOptionGallery(defaultOption);

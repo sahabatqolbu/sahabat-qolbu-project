@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import RelatedPackages from "@/components/marketing/PackageDetail/RelatedPackages";
 import PackageDetailNav from "@/components/marketing/PackageDetail/PackageDetailNav";
+import PackageOptionSelect from "@/components/marketing/PackageDetail/PackageOptionSelect";
+import PackageFlyerGallery from "@/components/marketing/PackageDetail/PackageFlyerGallery";
 import {
   entitySlug,
   getMarketingPackageBySlug,
@@ -168,11 +170,13 @@ function BookingPanel({
   seatsLeft,
   bookingLink,
   consultLink,
+  selectedOptionId,
 }: {
   pkg: MarketingPackage;
   seatsLeft: number;
   bookingLink: string;
   consultLink: string;
+  selectedOptionId?: number;
 }) {
   const seatPercent = pkg.totalSeats
     ? Math.round((seatsLeft / pkg.totalSeats) * 100)
@@ -184,6 +188,12 @@ function BookingPanel({
   return (
     <aside className="lg:sticky lg:top-24">
       <div className="overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-xl shadow-primary/10">
+        {selectedOptionId && pkg.options && pkg.options.length > 1 ? (
+          <PackageOptionSelect
+            options={pkg.options}
+            selectedOptionId={selectedOptionId}
+          />
+        ) : null}
         <div className="border-b border-neutral-200 p-6">
           <h2 className="text-xl font-extrabold leading-tight text-primary">
             Pesan {pkg.name}
@@ -481,7 +491,7 @@ export default async function LandingPackageDetailPage({
   searchParams,
 }: {
   params: Params;
-  searchParams: Promise<{ agent?: string }>;
+  searchParams: Promise<{ agent?: string; option?: string }>;
 }) {
   const { slug } = await params;
   const sParams = await searchParams;
@@ -504,11 +514,49 @@ export default async function LandingPackageDetailPage({
     }
   }
 
-  const pkg = await getMarketingPackageBySlug(slug);
+  const basePackage = await getMarketingPackageBySlug(slug);
 
-  if (!pkg) {
+  if (!basePackage) {
     notFound();
   }
+
+  const activeOptions = (basePackage.options || []).filter(
+    (option) => option.isActive !== false,
+  );
+  const defaultOption =
+    activeOptions.find((option) => option.isDefault) || activeOptions[0];
+  const requestedOptionId = Number(sParams?.option || 0);
+  const selectedOption =
+    activeOptions.find((option) => option.id === requestedOptionId) ||
+    defaultOption;
+  const selectedGallery = selectedOption?.gallery?.length
+    ? selectedOption.gallery
+    : basePackage.gallery;
+  const optionPrice = (value: string | undefined, fallback: string) =>
+    getNumericPrice(value) > 0 ? String(value) : fallback;
+  const selectedQuadPrice = optionPrice(
+    selectedOption?.priceQuad,
+    basePackage.priceQuad,
+  );
+  const pkg: MarketingPackage = selectedOption
+    ? {
+        ...basePackage,
+        hotelMakkah: selectedOption.hotelMakkah || basePackage.hotelMakkah,
+        hotelMadinah: selectedOption.hotelMadinah || basePackage.hotelMadinah,
+        priceQuad: selectedQuadPrice,
+        priceTriple: optionPrice(
+          selectedOption.priceTriple,
+          basePackage.priceTriple || selectedQuadPrice,
+        ),
+        priceDouble: optionPrice(
+          selectedOption.priceDouble,
+          basePackage.priceDouble,
+        ),
+        discountedPrice: selectedQuadPrice,
+        image: selectedGallery?.[0] || basePackage.image,
+        gallery: selectedGallery,
+      }
+    : basePackage;
 
   const getWhatsappLink = (
     pkg: MarketingPackage,
@@ -516,7 +564,8 @@ export default async function LandingPackageDetailPage({
   ) => {
     const action =
       intent === "book" ? "ingin booking seat" : "tertarik konsultasi";
-    const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan ${action} paket ${pkg.name}`;
+    const optionText = selectedOption ? `, opsi ${selectedOption.name}` : "";
+    const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan ${action} paket ${pkg.name}${optionText}`;
     return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
   };
 
@@ -527,14 +576,16 @@ export default async function LandingPackageDetailPage({
       : [];
   const fallbackHeroImage =
     "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1920&q=80";
-  const heroImageSource = gallery[0];
-  const heroImage =
-    heroImageSource && !heroImageSource.includes("localhost:5000")
-      ? heroImageSource
-      : fallbackHeroImage;
+  const validGallery = gallery.filter(
+    (image) => image && !image.includes("localhost:5000"),
+  );
+  const heroImages = validGallery.length ? validGallery : [fallbackHeroImage];
   const seatsLeft = getSeatsLeft(pkg);
   const consultLink = getWhatsappLink(pkg, "consult");
-  const bookingLink = getCalonJamaahPackageRegisterUrl(pkg.slug);
+  const bookingLink = getCalonJamaahPackageRegisterUrl(
+    pkg.slug,
+    selectedOption?.id,
+  );
   const descriptionItems = getDescriptionItems(pkg.description);
   const typeLabel = getPackageTypeLabel(pkg);
   const heroDescription =
@@ -567,14 +618,11 @@ export default async function LandingPackageDetailPage({
 
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_390px]">
               <div>
-                <div className="overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-lg shadow-primary/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={heroImage}
-                    alt={pkg.name}
-                    className="block h-auto w-full bg-primary object-contain"
-                  />
-                </div>
+                <PackageFlyerGallery
+                  key={selectedOption?.id || "package"}
+                  images={heroImages}
+                  packageName={pkg.name}
+                />
 
                 <div className="mt-7 max-w-4xl">
                   <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-gold">
@@ -634,6 +682,7 @@ export default async function LandingPackageDetailPage({
                 seatsLeft={seatsLeft}
                 bookingLink={bookingLink}
                 consultLink={consultLink}
+                selectedOptionId={selectedOption?.id}
               />
             </div>
           </div>
@@ -712,89 +761,6 @@ export default async function LandingPackageDetailPage({
                   </div>
                 </div>
               </DetailSection>
-
-              {pkg.options && pkg.options.length > 0 ? (
-                <DetailSection
-                  id="pilihan-paket"
-                  title="Pilih Hotel dan Harga yang Paling Pas"
-                >
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {pkg.options.map((option) => {
-                      const optionImages = option.gallery?.length
-                        ? option.gallery
-                        : pkg.gallery || [];
-                      return (
-                        <div
-                          key={option.id}
-                          className="overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-sm"
-                        >
-                          {optionImages.length > 0 ? (
-                            <div className="flex snap-x gap-2 overflow-x-auto bg-neutral-100 p-2">
-                              {optionImages.map((image) => (
-                                <img
-                                  key={image}
-                                  src={image}
-                                  alt={`${option.name} flyer`}
-                                  className="h-56 w-40 shrink-0 snap-start rounded-sm object-cover"
-                                />
-                              ))}
-                            </div>
-                          ) : null}
-                          <div className="space-y-4 p-5">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-lg font-extrabold text-primary">
-                                  {option.name}
-                                </p>
-                                {option.isDefault ? (
-                                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-gold">
-                                    Rekomendasi utama
-                                  </p>
-                                ) : null}
-                              </div>
-                              <p className="text-right text-xl font-extrabold text-primary">
-                                {toCurrency(option.priceQuad || pkg.priceQuad)}
-                              </p>
-                            </div>
-                            <div className="grid gap-2 text-sm text-neutral-700">
-                              <div className="flex justify-between gap-4">
-                                <span>Hotel Makkah</span>
-                                <strong className="text-right text-primary">
-                                  {option.hotelMakkah?.name ||
-                                    pkg.hotelMakkah.name}
-                                </strong>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span>Hotel Madinah</span>
-                                <strong className="text-right text-primary">
-                                  {option.hotelMadinah?.name ||
-                                    pkg.hotelMadinah?.name ||
-                                    "-"}
-                                </strong>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span>Rute</span>
-                                <strong className="text-right text-primary">
-                                  {pkg.route?.code || "-"}
-                                </strong>
-                              </div>
-                            </div>
-                            <a
-                              href={getCalonJamaahPackageRegisterUrl(
-                                pkg.slug,
-                                option.id,
-                              )}
-                              className="inline-flex w-full items-center justify-center rounded-sm bg-primary px-4 py-3 font-extrabold text-white transition hover:bg-primary-700"
-                            >
-                              Pilih Opsi Ini
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </DetailSection>
-              ) : null}
             </article>
 
             <aside className="space-y-5 lg:sticky lg:top-40 lg:self-start">
