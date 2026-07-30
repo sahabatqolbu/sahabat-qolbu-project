@@ -10,8 +10,9 @@ import {
   masterBanks,
   packages,
   packageImages,
+  packageOptions,
+  packageOptionImages,
   jamaahData,
-
   jamaahPayments, // ✅ TAMBAH INI (yang lu bikin)
   transactions,
   paymentInstallments,
@@ -47,7 +48,19 @@ export const packagesRelations = relations(packages, ({ one, many }) => ({
   departureAirport: one(masterAirports, {
     fields: [packages.departureAirportId],
     references: [masterAirports.id],
+    relationName: "departureAirport",
   }),
+  arrivalAirport: one(masterAirports, {
+    fields: [packages.arrivalAirportId],
+    references: [masterAirports.id],
+    relationName: "arrivalAirport",
+  }),
+  returnAirport: one(masterAirports, {
+    fields: [packages.returnAirportId],
+    references: [masterAirports.id],
+    relationName: "returnAirport",
+  }),
+  options: many(packageOptions),
   images: many(packageImages),
   jamaahList: many(jamaahData),
 }));
@@ -63,6 +76,40 @@ export const packageImagesRelations = relations(packageImages, ({ one }) => ({
 }));
 
 // =====================================================
+// PACKAGE OPTIONS RELATIONS
+// =====================================================
+export const packageOptionsRelations = relations(
+  packageOptions,
+  ({ one, many }) => ({
+    package: one(packages, {
+      fields: [packageOptions.packageId],
+      references: [packages.id],
+    }),
+    hotelMakkah: one(masterHotels, {
+      fields: [packageOptions.hotelMakkahId],
+      references: [masterHotels.id],
+      relationName: "packageOptionHotelMakkah",
+    }),
+    hotelMadinah: one(masterHotels, {
+      fields: [packageOptions.hotelMadinahId],
+      references: [masterHotels.id],
+      relationName: "packageOptionHotelMadinah",
+    }),
+    images: many(packageOptionImages),
+  }),
+);
+
+export const packageOptionImagesRelations = relations(
+  packageOptionImages,
+  ({ one }) => ({
+    option: one(packageOptions, {
+      fields: [packageOptionImages.optionId],
+      references: [packageOptions.id],
+    }),
+  }),
+);
+
+// =====================================================
 // JAMAAH DATA RELATIONS
 // =====================================================
 export const jamaahDataRelations = relations(jamaahData, ({ one, many }) => ({
@@ -76,6 +123,10 @@ export const jamaahDataRelations = relations(jamaahData, ({ one, many }) => ({
   package: one(packages, {
     fields: [jamaahData.packageId],
     references: [packages.id],
+  }),
+  packageOption: one(packageOptions, {
+    fields: [jamaahData.packageOptionId],
+    references: [packageOptions.id],
   }),
 
   // Agen
@@ -149,7 +200,7 @@ export const transactionsRelations = relations(
       references: [packages.id],
     }),
     installments: many(paymentInstallments),
-  })
+  }),
 );
 
 // =====================================================
@@ -162,7 +213,7 @@ export const paymentInstallmentsRelations = relations(
       fields: [paymentInstallments.transactionId],
       references: [transactions.id],
     }),
-  })
+  }),
 );
 
 // =====================================================
@@ -172,7 +223,7 @@ export const itikafProgramsRelations = relations(
   itikafPrograms,
   ({ many }) => ({
     participants: many(itikafParticipants),
-  })
+  }),
 );
 
 // =====================================================
@@ -189,7 +240,7 @@ export const itikafParticipantsRelations = relations(
       fields: [itikafParticipants.userId],
       references: [users.id],
     }),
-  })
+  }),
 );
 
 // =====================================================
@@ -211,7 +262,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [agentData.userId],
   }),
-  
+
   jamaahData: many(jamaahData),
   auditLogs: many(auditLogs),
   itikafParticipants: many(itikafParticipants),
@@ -232,14 +283,16 @@ export const masterAirlinesRelations = relations(
   masterAirlines,
   ({ many }) => ({
     packages: many(packages),
-  })
+  }),
 );
 
 export const masterAirportsRelations = relations(
   masterAirports,
   ({ many }) => ({
-    packages: many(packages),
-  })
+    packages: many(packages, { relationName: "departureAirport" }),
+    arrivalPackages: many(packages, { relationName: "arrivalAirport" }),
+    returnPackages: many(packages, { relationName: "returnAirport" }),
+  }),
 );
 
 // ✅ UPDATE INI (ga pakai jamaahDocuments lagi)
@@ -248,16 +301,13 @@ export const masterDocumentsRelations = relations(
   ({ many }) => ({
     // ❌ HAPUS INI
     // jamaahDocuments: many(jamaahDocuments),
-  })
+  }),
 );
 
 // ✅ TAMBAH INI (untuk master_banks)
 export const masterBanksRelations = relations(masterBanks, ({ many }) => ({
   payments: many(jamaahPayments),
 }));
-
-
-
 
 // ===== AGENT DATA RELATIONS =====
 export const agentDataRelations = relations(agentData, ({ one, many }) => ({
@@ -295,7 +345,7 @@ export const agentPaymentTransactionsRelations = relations(
       fields: [agentPaymentTransactions.agentDataId],
       references: [agentData.id],
     }),
-  })
+  }),
 );
 
 // ===== AGENT CLOSING HISTORY RELATIONS =====
@@ -314,5 +364,5 @@ export const agentClosingHistoryRelations = relations(
       fields: [agentClosingHistory.periodId],
       references: [periods.id],
     }),
-  })
+  }),
 );

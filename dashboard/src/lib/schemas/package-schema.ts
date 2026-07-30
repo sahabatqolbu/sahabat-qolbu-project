@@ -3,14 +3,11 @@ import * as z from "zod";
 
 // Helper: converts NaN/empty string to undefined for optional number fields
 // This is needed because react-hook-form's valueAsNumber returns NaN for empty inputs
-const optionalNumber = z.preprocess(
-  (val) => {
-    if (val === "" || val === null || val === undefined) return undefined;
-    const n = Number(val);
-    return isNaN(n) ? undefined : n;
-  },
-  z.number().min(0).optional()
-);
+const optionalNumber = z.preprocess((val) => {
+  if (val === "" || val === null || val === undefined) return undefined;
+  const n = Number(val);
+  return isNaN(n) ? undefined : n;
+}, z.number().min(0).optional());
 
 // =====================================================
 // PACKAGE FORM SCHEMA
@@ -79,6 +76,9 @@ export const createPackageSchema = z.object({
 
   // ===== AIRPORT =====
   departureAirportId: z.number().optional().nullable(),
+  arrivalAirportId: z.number().optional().nullable(),
+  returnAirportId: z.number().optional().nullable(),
+  options: z.string().optional(),
 
   // ===== STATUS =====
   isActive: z.boolean().optional(),
@@ -163,6 +163,9 @@ export const updatePackageSchema = z.object({
 
   // ===== AIRPORT =====
   departureAirportId: z.number().optional().nullable(),
+  arrivalAirportId: z.number().optional().nullable(),
+  returnAirportId: z.number().optional().nullable(),
+  options: z.string().optional(),
 
   // ===== STATUS =====
   isActive: z.boolean().optional(),

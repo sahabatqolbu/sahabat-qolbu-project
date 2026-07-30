@@ -2,6 +2,21 @@ import api from "@/lib/axios";
 
 export type ProspectAction = "SAVED" | "WHATSAPP_CONSULT" | "CONVERT_REQUEST";
 
+export interface PublicPackageOption {
+  id: number;
+  name: string;
+  hotelMakkahId?: number | null;
+  hotelMadinahId?: number | null;
+  priceDouble?: string | number | null;
+  priceTriple?: string | number | null;
+  priceQuad?: string | number | null;
+  priceQuint?: string | number | null;
+  isDefault?: boolean;
+  isActive?: boolean;
+  hotelMakkah?: { name?: string; starRating?: number } | null;
+  hotelMadinah?: { name?: string; starRating?: number } | null;
+  images?: Array<{ id: number; imageUrl: string; isPrimary?: boolean }>;
+}
 export interface PublicPackage {
   id: number;
   code?: string;
@@ -25,7 +40,13 @@ export interface PublicPackage {
   notes?: string | null;
   isActive?: boolean;
   isPublished?: boolean;
-  images?: Array<{ id: number; imageUrl: string; isPrimary?: boolean; caption?: string | null }>;
+  images?: Array<{
+    id: number;
+    imageUrl: string;
+    isPrimary?: boolean;
+    caption?: string | null;
+  }>;
+  options?: PublicPackageOption[];
   hotelMakkah?: { name?: string; starRating?: number } | null;
   hotelMadinah?: { name?: string; starRating?: number } | null;
   airline?: { name?: string; logo?: string | null } | null;
@@ -88,9 +109,12 @@ const slugToPackageId = (slug: string) => {
 };
 
 const normalizePackages = (payload: any): PublicPackage[] => {
-  const packages = payload?.data?.packages || payload?.data || payload?.packages || [];
+  const packages =
+    payload?.data?.packages || payload?.data || payload?.packages || [];
   return Array.isArray(packages)
-    ? packages.filter((pkg) => pkg?.isActive !== false && pkg?.isPublished !== false)
+    ? packages.filter(
+        (pkg) => pkg?.isActive !== false && pkg?.isPublished !== false,
+      )
     : [];
 };
 
@@ -109,25 +133,36 @@ export const prospectService = {
     packageId: number,
     actionType: ProspectAction,
     sourcePath?: string,
+    packageOptionId?: number | null,
   ) => {
     const response = await api.post("/prospects/me/interests", {
       packageId,
       actionType,
       sourcePath,
+      packageOptionId: packageOptionId || null,
     });
     return response.data;
   },
 
-  convert: async (packageId: number, sourcePath?: string) => {
+  convert: async (
+    packageId: number,
+    sourcePath?: string,
+    packageOptionId?: number | null,
+  ) => {
     const response = await api.post("/prospects/me/convert", {
       packageId,
       actionType: "CONVERT_REQUEST",
       sourcePath,
+      packageOptionId: packageOptionId || null,
     });
     return response.data;
   },
 
-  getPublicPackages: async (params?: { search?: string; page?: number; limit?: number }) => {
+  getPublicPackages: async (params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
     const response = await api.get("/public/packages", {
       params: {
         page: params?.page || 1,
@@ -151,9 +186,14 @@ export const prospectService = {
       return response.data;
     }
 
-    const listResponse = await prospectService.getPublicPackages({ search: slug, limit: 100 });
+    const listResponse = await prospectService.getPublicPackages({
+      search: slug,
+      limit: 100,
+    });
     const packages: PublicPackage[] = listResponse.data.packages;
-    const match = packages.find((pkg) => packageSlug(pkg) === slug || pkg.code === slug);
+    const match = packages.find(
+      (pkg) => packageSlug(pkg) === slug || pkg.code === slug,
+    );
     return {
       success: Boolean(match),
       data: match || null,

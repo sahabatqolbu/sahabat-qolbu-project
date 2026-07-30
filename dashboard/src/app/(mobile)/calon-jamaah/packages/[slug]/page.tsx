@@ -1,9 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { use } from "react";
+import { use, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Building, Calendar, CheckCircle2, Clock, Heart, MessageCircle, Package, Plane, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Building,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Heart,
+  MessageCircle,
+  Package,
+  Plane,
+  Users,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,16 +23,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/mobile/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/lib/utils";
-import { prospectService, type PublicPackage } from "@/services/prospectService";
+import {
+  prospectService,
+  type PublicPackage,
+} from "@/services/prospectService";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-const money = (value: unknown) => `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+const money = (value: unknown) =>
+  `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
 const date = (value?: string | null) =>
   value
-    ? new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value))
+    ? new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(value))
     : "Tanggal menyusul";
 
 const textLines = (value?: string | null) => {
@@ -29,11 +49,20 @@ const textLines = (value?: string | null) => {
     const parsed = JSON.parse(value);
     if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
   } catch {}
-  return value.split(/\r?\n+/).map((line) => line.trim()).filter(Boolean);
+  return value
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 };
 
 export default function CalonJamaahPackageDetailPage({ params }: PageProps) {
   const { slug } = use(params);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedOptionId = Number(searchParams.get("packageOptionId") || 0);
+  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(
+    requestedOptionId || null,
+  );
   const { toast } = useToast();
 
   const { data, isLoading } = useQuery({
@@ -43,11 +72,31 @@ export default function CalonJamaahPackageDetailPage({ params }: PageProps) {
   });
 
   const pkg: PublicPackage | null = data?.data || null;
-  const sourcePath = `/calon-jamaah/packages/${slug}`;
+  const activeOptions = (pkg?.options || []).filter(
+    (option) => option.isActive !== false,
+  );
+  const selectedOption =
+    activeOptions.find((option) => option.id === selectedOptionId) ||
+    activeOptions.find((option) => option.isDefault) ||
+    activeOptions[0] ||
+    null;
+  const sourcePath = `/calon-jamaah/packages/${slug}${
+    selectedOption ? `?packageOptionId=${selectedOption.id}` : ""
+  }`;
 
   const saveMutation = useMutation({
-    mutationFn: () => prospectService.saveInterest(pkg!.id, "SAVED", sourcePath),
-    onSuccess: () => toast({ title: "Paket disimpan", description: "Paket masuk ke daftar minat Anda." }),
+    mutationFn: () =>
+      prospectService.saveInterest(
+        pkg!.id,
+        "SAVED",
+        sourcePath,
+        selectedOption?.id,
+      ),
+    onSuccess: () =>
+      toast({
+        title: "Paket disimpan",
+        description: "Paket masuk ke daftar minat Anda.",
+      }),
     onError: (error: any) =>
       toast({
         variant: "destructive",
@@ -57,22 +106,31 @@ export default function CalonJamaahPackageDetailPage({ params }: PageProps) {
   });
 
   const consultMutation = useMutation({
-    mutationFn: () => prospectService.saveInterest(pkg!.id, "WHATSAPP_CONSULT", sourcePath),
+    mutationFn: () =>
+      prospectService.saveInterest(
+        pkg!.id,
+        "WHATSAPP_CONSULT",
+        sourcePath,
+        selectedOption?.id,
+      ),
     onSuccess: () =>
       toast({
         title: "Permintaan konsultasi dicatat",
-        description: "Admin akan melihat paket yang Anda minati untuk follow up.",
+        description:
+          "Admin akan melihat paket yang Anda minati untuk follow up.",
       }),
   });
 
   const convertMutation = useMutation({
-    mutationFn: () => prospectService.convert(pkg!.id, sourcePath),
+    mutationFn: () =>
+      prospectService.convert(pkg!.id, sourcePath, selectedOption?.id),
     onSuccess: () => {
       toast({
         title: "Pendaftaran dimulai",
-        description: "Akun Anda menjadi jamaah. Silakan lengkapi data dan dokumen.",
+        description:
+          "Akun Anda menjadi jamaah. Silakan lengkapi data dan dokumen.",
       });
-      window.location.href = "/jamaah/onboarding";
+      router.push("/jamaah/onboarding");
     },
     onError: (error: any) =>
       toast({
@@ -96,13 +154,27 @@ export default function CalonJamaahPackageDetailPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-gray-50 pb-24">
         <Header title="Detail Paket" />
-        <div className="p-6 text-center text-gray-500">Paket tidak ditemukan.</div>
+        <div className="p-6 text-center text-gray-500">
+          Paket tidak ditemukan.
+        </div>
         <BottomNav role="CALON_JAMAAH" />
       </div>
     );
   }
 
-  const primaryImage = pkg.images?.find((img) => img.isPrimary) || pkg.images?.[0];
+  const selectedImages = selectedOption?.images || [];
+  const primaryImage =
+    selectedImages.find((img) => img.isPrimary) ||
+    selectedImages[0] ||
+    pkg.images?.find((img) => img.isPrimary) ||
+    pkg.images?.[0];
+  const selectedPrice =
+    selectedOption?.priceQuad ||
+    selectedOption?.priceTriple ||
+    selectedOption?.priceDouble ||
+    selectedOption?.priceQuint ||
+    pkg.discountPrice ||
+    pkg.price;
   const facilities = textLines(pkg.facilities);
   const description = textLines(pkg.description);
 
@@ -113,7 +185,11 @@ export default function CalonJamaahPackageDetailPage({ params }: PageProps) {
         <Card className="overflow-hidden rounded-2xl border-0 shadow-lg">
           <div className="bg-gray-50">
             {primaryImage?.imageUrl ? (
-              <img src={getImageUrl(primaryImage.imageUrl)} alt={pkg.name} className="block h-auto max-h-[78vh] w-full object-contain" />
+              <img
+                src={getImageUrl(primaryImage.imageUrl)}
+                alt={pkg.name}
+                className="block h-auto max-h-[78vh] w-full object-contain"
+              />
             ) : (
               <div className="flex h-56 items-center justify-center text-gray-300 md:h-80">
                 <Package className="h-16 w-16" />
@@ -125,46 +201,164 @@ export default function CalonJamaahPackageDetailPage({ params }: PageProps) {
               <Badge variant="secondary">{pkg.type || "UMROH"}</Badge>
               <span className="text-sm text-gray-500">{pkg.code || "-"}</span>
             </div>
-            <h1 className="mt-3 text-2xl font-bold text-gray-900">{pkg.name}</h1>
+            <h1 className="mt-3 text-2xl font-bold text-gray-900">
+              {pkg.name}
+            </h1>
             <div className="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-3">
-              <span className="flex items-center gap-2"><Calendar className="h-4 w-4" />{date(pkg.departureDate)}</span>
-              <span className="flex items-center gap-2"><Clock className="h-4 w-4" />{pkg.duration || "-"} hari</span>
-              <span className="flex items-center gap-2"><Users className="h-4 w-4" />{pkg.remainingSeats ?? pkg.totalSeats ?? "-"} kursi</span>
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {date(pkg.departureDate)}
+              </span>
+              <span className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                {pkg.duration || "-"} hari
+              </span>
+              <span className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {pkg.remainingSeats ?? pkg.totalSeats ?? "-"} kursi
+              </span>
             </div>
             <div className="mt-5 rounded-xl bg-[var(--color-primary)]/5 p-4">
               <p className="text-sm text-gray-500">Mulai dari</p>
-              <p className="text-2xl font-bold text-[var(--color-primary)]">{money(pkg.discountPrice || pkg.price)}</p>
+              <p className="text-2xl font-bold text-[var(--color-primary)]">
+                {money(selectedPrice)}
+              </p>
             </div>
           </CardContent>
         </Card>
 
+        {activeOptions.length > 0 ? (
+          <Card className="rounded-2xl border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="mb-4">
+                <h2 className="font-semibold text-gray-900">Pilih Paket</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Hotel dan harga menyesuaikan pilihan ini.
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {activeOptions.map((option) => {
+                  const isSelected = selectedOption?.id === option.id;
+                  const optionPrice =
+                    option.priceQuad ||
+                    option.priceTriple ||
+                    option.priceDouble ||
+                    option.priceQuint;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setSelectedOptionId(option.id)}
+                      className={`rounded-xl border p-4 text-left transition ${
+                        isSelected
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 ring-1 ring-[var(--color-primary)]"
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {option.name}
+                          </p>
+                          <p className="mt-1 text-sm text-gray-600">
+                            Makkah: {option.hotelMakkah?.name || "-"}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Madinah: {option.hotelMadinah?.name || "-"}
+                          </p>
+                        </div>
+                        {isSelected ? (
+                          <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--color-primary)]" />
+                        ) : null}
+                      </div>
+                      <p className="mt-3 font-bold text-[var(--color-primary)]">
+                        {money(optionPrice)}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
         <div className="grid gap-4 md:grid-cols-2">
-          <InfoCard icon={Plane} title="Penerbangan" lines={[pkg.airline?.name || "-", pkg.departureAirport?.name || "Bandara menyusul"]} />
-          <InfoCard icon={Building} title="Akomodasi" lines={[`Makkah: ${pkg.hotelMakkah?.name || "-"}`, `Madinah: ${pkg.hotelMadinah?.name || "-"}`]} />
+          <InfoCard
+            icon={Plane}
+            title="Penerbangan"
+            lines={[
+              pkg.airline?.name || "-",
+              pkg.departureAirport?.name || "Bandara menyusul",
+            ]}
+          />
+          <InfoCard
+            icon={Building}
+            title="Akomodasi"
+            lines={[
+              `Makkah: ${selectedOption?.hotelMakkah?.name || pkg.hotelMakkah?.name || "-"}`,
+              `Madinah: ${selectedOption?.hotelMadinah?.name || pkg.hotelMadinah?.name || "-"}`,
+            ]}
+          />
         </div>
 
-        <TextCard title="Deskripsi" lines={description} empty="Deskripsi paket belum tersedia." />
-        <TextCard title="Fasilitas" lines={facilities} empty="Fasilitas paket belum tersedia." />
+        <TextCard
+          title="Deskripsi"
+          lines={description}
+          empty="Deskripsi paket belum tersedia."
+        />
+        <TextCard
+          title="Fasilitas"
+          lines={facilities}
+          empty="Fasilitas paket belum tersedia."
+        />
       </main>
 
       <div className="fixed bottom-16 left-0 right-0 z-40 border-t bg-white p-3 md:hidden">
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="outline" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+          >
             <Heart className="mr-1 h-4 w-4" /> Simpan
           </Button>
-          <Button variant="outline" onClick={() => consultMutation.mutate()} disabled={consultMutation.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => consultMutation.mutate()}
+            disabled={consultMutation.isPending}
+          >
             <MessageCircle className="mr-1 h-4 w-4" /> Konsul
           </Button>
-          <Button onClick={() => convertMutation.mutate()} disabled={convertMutation.isPending}>
+          <Button
+            onClick={() => convertMutation.mutate()}
+            disabled={convertMutation.isPending}
+          >
             <CheckCircle2 className="mr-1 h-4 w-4" /> Daftar
           </Button>
         </div>
       </div>
 
       <div className="mx-auto hidden max-w-5xl grid-cols-3 gap-3 px-8 pb-8 md:grid">
-        <Button variant="outline" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>Simpan Paket</Button>
-        <Button variant="outline" onClick={() => consultMutation.mutate()} disabled={consultMutation.isPending}>Minta Konsultasi</Button>
-        <Button onClick={() => convertMutation.mutate()} disabled={convertMutation.isPending}>Daftar Jadi Jamaah</Button>
+        <Button
+          variant="outline"
+          onClick={() => saveMutation.mutate()}
+          disabled={saveMutation.isPending}
+        >
+          Simpan Paket
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => consultMutation.mutate()}
+          disabled={consultMutation.isPending}
+        >
+          Minta Konsultasi
+        </Button>
+        <Button
+          onClick={() => convertMutation.mutate()}
+          disabled={convertMutation.isPending}
+        >
+          Daftar Jadi Jamaah
+        </Button>
       </div>
 
       <BottomNav role="CALON_JAMAAH" />
@@ -187,7 +381,15 @@ function Header({ title }: { title: string }) {
   );
 }
 
-function InfoCard({ icon: Icon, title, lines }: { icon: any; title: string; lines: string[] }) {
+function InfoCard({
+  icon: Icon,
+  title,
+  lines,
+}: {
+  icon: any;
+  title: string;
+  lines: string[];
+}) {
   return (
     <Card className="rounded-2xl border-0 shadow-sm">
       <CardContent className="p-4">
@@ -196,21 +398,33 @@ function InfoCard({ icon: Icon, title, lines }: { icon: any; title: string; line
           {title}
         </div>
         <div className="space-y-1 text-sm text-gray-600">
-          {lines.map((line, index) => <p key={index}>{line}</p>)}
+          {lines.map((line, index) => (
+            <p key={index}>{line}</p>
+          ))}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function TextCard({ title, lines, empty }: { title: string; lines: string[]; empty: string }) {
+function TextCard({
+  title,
+  lines,
+  empty,
+}: {
+  title: string;
+  lines: string[];
+  empty: string;
+}) {
   return (
     <Card className="rounded-2xl border-0 shadow-sm">
       <CardContent className="p-4">
         <h2 className="font-semibold text-gray-900">{title}</h2>
         {lines.length ? (
           <div className="mt-3 space-y-2 text-sm leading-6 text-gray-600">
-            {lines.map((line, index) => <p key={index}>{line}</p>)}
+            {lines.map((line, index) => (
+              <p key={index}>{line}</p>
+            ))}
           </div>
         ) : (
           <p className="mt-3 text-sm text-gray-500">{empty}</p>

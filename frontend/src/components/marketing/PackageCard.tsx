@@ -20,6 +20,7 @@ interface PackageCardProps {
   departureDate: string;
   returnDate: string;
   airline: { id?: number; name: string; logo?: string; code?: string };
+  route?: { code?: string; arrivalCode?: string; returnCode?: string };
   hotelMakkah: {
     name: string;
     starRating: number;
@@ -498,6 +499,12 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
             <span className="text-gray-500">Maskapai</span>
             <span className="font-semibold text-primary line-clamp-1">
               {pkg.airline?.name || "-"}
+            </span>
+          </div>
+          <div className="grid grid-cols-[92px_1fr] gap-2">
+            <span className="text-gray-500">Rute</span>
+            <span className="font-semibold text-primary line-clamp-1">
+              {pkg.route?.code || "-"}
             </span>
           </div>
         </div>

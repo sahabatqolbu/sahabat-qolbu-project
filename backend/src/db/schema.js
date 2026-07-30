@@ -305,6 +305,8 @@ export const packages = mysqlTable(
 
     // ===== DEPARTURE AIRPORT =====
     departureAirportId: int("departure_airport_id"),
+    arrivalAirportId: int("arrival_airport_id"),
+    returnAirportId: int("return_airport_id"),
 
     // ===== STATUS =====
     isActive: boolean("is_active").notNull().default(true),
@@ -346,6 +348,69 @@ export const packageImages = mysqlTable(
   }),
 );
 
+// =====================================================
+// PACKAGE OPTIONS (Pilihan Hotel/Harga per Paket)
+// =====================================================
+export const packageOptions = mysqlTable(
+  "package_options",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    packageId: int("package_id")
+      .notNull()
+      .references(() => packages.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 150 }).notNull(),
+    hotelMakkahId: int("hotel_makkah_id").references(() => masterHotels.id),
+    hotelMadinahId: int("hotel_madinah_id").references(() => masterHotels.id),
+    priceDouble: decimal("price_double", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
+    priceTriple: decimal("price_triple", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
+    priceQuad: decimal("price_quad", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
+    priceQuint: decimal("price_quint", { precision: 15, scale: 2 }).default(
+      "0.00",
+    ),
+    isDefault: boolean("is_default").notNull().default(false),
+    isActive: boolean("is_active").notNull().default(true),
+    sortOrder: int("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    packageIdx: index("package_option_package_idx").on(table.packageId),
+    defaultIdx: index("package_option_default_idx").on(
+      table.packageId,
+      table.isDefault,
+    ),
+  }),
+);
+
+export const packageOptionImages = mysqlTable(
+  "package_option_images",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    optionId: int("option_id")
+      .notNull()
+      .references(() => packageOptions.id, { onDelete: "cascade" }),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    caption: varchar("caption", { length: 255 }),
+    sortOrder: int("sort_order").default(0),
+    isPrimary: boolean("is_primary").default(false),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    optionIdx: index("package_option_image_option_idx").on(table.optionId),
+  }),
+);
 // =====================================================
 // PACKAGE ITINERARY (Agenda Perjalanan - Terpisah)
 // =====================================================
@@ -422,6 +487,10 @@ export const prospectPackageInterests = mysqlTable(
     packageId: int("package_id")
       .notNull()
       .references(() => packages.id, { onDelete: "cascade" }),
+    packageOptionId: int("package_option_id").references(
+      () => packageOptions.id,
+      { onDelete: "set null" },
+    ),
     actionType: mysqlEnum("action_type", [
       "SAVED",
       "WHATSAPP_CONSULT",
@@ -433,6 +502,9 @@ export const prospectPackageInterests = mysqlTable(
   (table) => ({
     prospectIdx: index("prospect_idx").on(table.prospectId),
     packageIdx: index("package_idx").on(table.packageId),
+    packageOptionIdx: index("prospect_package_option_idx").on(
+      table.packageOptionId,
+    ),
     actionIdx: index("action_idx").on(table.actionType),
   }),
 );
@@ -778,6 +850,9 @@ export const jamaahData = mysqlTable(
       .notNull()
       .references(() => users.id),
     packageId: int("package_id").references(() => packages.id),
+    packageOptionId: int("package_option_id").references(
+      () => packageOptions.id,
+    ),
     agenId: int("agen_id").references(() => users.id),
     mahramId: int("mahram_id").references(() => jamaahData.id), // self-relation
 
@@ -1657,7 +1732,9 @@ export const assetDocuments = mysqlTable(
     type: mysqlEnum("type", ["HANDOVER", "RETURN"]).notNull(),
     documentNumber: varchar("document_number", { length: 80 }).notNull(),
     fileName: varchar("file_name", { length: 255 }).notNull(),
-    mimeType: varchar("mime_type", { length: 100 }).notNull().default("application/pdf"),
+    mimeType: varchar("mime_type", { length: 100 })
+      .notNull()
+      .default("application/pdf"),
     content: text("content").notNull(),
     signedFileUrl: varchar("signed_file_url", { length: 500 }),
     signedFileName: varchar("signed_file_name", { length: 255 }),
@@ -1669,7 +1746,11 @@ export const assetDocuments = mysqlTable(
   },
   (table) => ({
     assetIdx: index("asset_document_asset_idx").on(table.assetId),
-    assignmentIdx: index("asset_document_assignment_idx").on(table.assignmentId),
-    documentNumberIdx: uniqueIndex("asset_document_number_idx").on(table.documentNumber),
+    assignmentIdx: index("asset_document_assignment_idx").on(
+      table.assignmentId,
+    ),
+    documentNumberIdx: uniqueIndex("asset_document_number_idx").on(
+      table.documentNumber,
+    ),
   }),
 );

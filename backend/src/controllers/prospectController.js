@@ -3,6 +3,7 @@ import { db } from "../db/index.js";
 import {
   jamaahData,
   packages,
+  packageOptions,
   prospectFollowUps,
   prospectJamaah,
   prospectPackageInterests,
@@ -38,7 +39,36 @@ const getPublishedPackage = async (packageId) => {
       eq(packages.isActive, true),
       eq(packages.isPublished, true),
     ),
+    with: {
+      options: {
+        with: {
+          hotelMakkah: true,
+          hotelMadinah: true,
+          images: true,
+        },
+        orderBy: (options, { asc }) => [
+          asc(options.sortOrder),
+          asc(options.id),
+        ],
+      },
+    },
   });
+};
+
+const resolvePackageOption = (packageData, packageOptionId) => {
+  const activeOptions = (packageData.options || []).filter(
+    (option) => option.isActive !== false,
+  );
+  if (activeOptions.length === 0) return { option: null };
+
+  const requestedId = Number(packageOptionId || 0);
+  const option = requestedId
+    ? activeOptions.find((item) => item.id === requestedId)
+    : activeOptions.find((item) => item.isDefault) || activeOptions[0];
+
+  return option
+    ? { option }
+    : { error: "Pilihan paket tidak valid atau sudah tidak aktif" };
 };
 
 const PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE = 7;
@@ -61,10 +91,20 @@ const hasPositivePrice = (packageData = {}) =>
   [
     packageData.discountPrice,
     packageData.priceQuad,
+    packageData.priceQuint,
     packageData.priceTriple,
     packageData.priceDouble,
     packageData.price,
   ].some((value) => Number.parseFloat(value || 0) > 0);
+
+const hasReadyPackageOption = (packageData = {}) =>
+  (packageData.options || []).some(
+    (option) =>
+      option.isActive !== false &&
+      option.hotelMakkahId &&
+      option.hotelMadinahId &&
+      hasPositivePrice(option),
+  );
 
 const isPackageComingSoon = (packageData = {}) => {
   const departureDate = new Date(packageData.departureDate);
@@ -76,13 +116,16 @@ const isPackageComingSoon = (packageData = {}) => {
   const hasCoreInventory = Number(packageData.totalSeats || 0) > 0;
   const hasCoreVendors = Boolean(
     packageData.airlineId &&
-    packageData.hotelMakkahId &&
-    packageData.hotelMadinahId,
+    ((packageData.hotelMakkahId && packageData.hotelMadinahId) ||
+      hasReadyPackageOption(packageData)),
   );
   const hasConfirmedVendors =
     String(packageData.airlineStatus || "").toUpperCase() === "CONFIRMED" &&
-    String(packageData.hotelMakkahStatus || "").toUpperCase() === "CONFIRMED" &&
-    String(packageData.hotelMadinahStatus || "").toUpperCase() === "CONFIRMED";
+    (hasReadyPackageOption(packageData) ||
+      (String(packageData.hotelMakkahStatus || "").toUpperCase() ===
+        "CONFIRMED" &&
+        String(packageData.hotelMadinahStatus || "").toUpperCase() ===
+          "CONFIRMED"));
 
   return (
     !hasValidDates ||
@@ -137,6 +180,8 @@ const getProspectInterests = async (prospectId, limit = 20) => {
       sourcePath: prospectPackageInterests.sourcePath,
       createdAt: prospectPackageInterests.createdAt,
       packageId: packages.id,
+      packageOptionId: packageOptions.id,
+      packageOptionName: packageOptions.name,
       packageName: packages.name,
       packageCode: packages.code,
       packageType: packages.type,
@@ -147,6 +192,10 @@ const getProspectInterests = async (prospectId, limit = 20) => {
     })
     .from(prospectPackageInterests)
     .leftJoin(packages, eq(prospectPackageInterests.packageId, packages.id))
+    .leftJoin(
+      packageOptions,
+      eq(prospectPackageInterests.packageOptionId, packageOptions.id),
+    )
     .where(eq(prospectPackageInterests.prospectId, prospectId))
     .orderBy(
       desc(prospectPackageInterests.createdAt),
@@ -175,6 +224,7 @@ const getFollowUps = async (prospectId) => {
 const insertInterest = async ({
   prospectId,
   packageId,
+  packageOptionId,
   actionType,
   sourcePath,
 }) => {
@@ -183,6 +233,7 @@ const insertInterest = async ({
     .values({
       prospectId,
       packageId,
+      packageOptionId: packageOptionId || null,
       actionType,
       sourcePath: sourcePath || null,
     })
@@ -191,12 +242,26 @@ const insertInterest = async ({
   return inserted;
 };
 
-const buildInitialJamaahValues = ({ userId, packageData, bookingNumber }) => {
-  const price = String(packageData.discountPrice || packageData.price || "0");
+const buildInitialJamaahValues = ({
+  userId,
+  packageData,
+  packageOption,
+  bookingNumber,
+}) => {
+  const optionPrice = [
+    packageOption?.priceQuad,
+    packageOption?.priceTriple,
+    packageOption?.priceDouble,
+    packageOption?.priceQuint,
+  ].find((value) => Number.parseFloat(value || 0) > 0);
+  const price = String(
+    optionPrice || packageData.discountPrice || packageData.price || "0",
+  );
 
   return {
     userId,
     packageId: packageData.id,
+    packageOptionId: packageOption?.id || null,
     bookingNumber,
     dateOfBooking: new Date(),
     registrationStatus: "DRAFT",
@@ -216,6 +281,7 @@ const buildInitialJamaahValues = ({ userId, packageData, bookingNumber }) => {
 const convertProspect = async ({
   prospect,
   packageId,
+  packageOptionId,
   sourcePath,
   actorUserId,
 }) => {
@@ -227,6 +293,12 @@ const convertProspect = async ({
     };
   }
 
+  const optionResult = resolvePackageOption(packageData, packageOptionId);
+  if (optionResult.error) {
+    return { error: optionResult.error, statusCode: 400 };
+  }
+  const packageOption = optionResult.option;
+
   const closedReason = await getPackageClosedReason(packageData);
   if (closedReason) {
     return { error: closedReason, statusCode: 400 };
@@ -235,6 +307,7 @@ const convertProspect = async ({
   await insertInterest({
     prospectId: prospect.id,
     packageId,
+    packageOptionId: packageOption?.id || null,
     actionType: "CONVERT_REQUEST",
     sourcePath,
   });
@@ -265,7 +338,12 @@ const convertProspect = async ({
       note: `Prospect sudah memiliki data jamaah ${existingJamaah.bookingNumber}.`,
     });
 
-    return { jamaah: existingJamaah, packageData, created: false };
+    return {
+      jamaah: existingJamaah,
+      packageData,
+      packageOption,
+      created: false,
+    };
   }
 
   const { bookingNumber, newJamaah } = await createJamaahRecordWithRetry(
@@ -273,6 +351,7 @@ const convertProspect = async ({
       buildInitialJamaahValues({
         userId: prospect.userId,
         packageData,
+        packageOption,
         bookingNumber: generatedBookingNumber,
       }),
   );
@@ -301,7 +380,12 @@ const convertProspect = async ({
     where: eq(jamaahData.id, Number(newJamaah.id)),
   });
 
-  return { jamaah: convertedJamaah, packageData, created: true };
+  return {
+    jamaah: convertedJamaah,
+    packageData,
+    packageOption,
+    created: true,
+  };
 };
 
 export const getMyProspectSummary = async (req, res, next) => {
@@ -338,7 +422,8 @@ export const saveMyPackageInterest = async (req, res, next) => {
       return notFoundResponse(res, "Data calon jamaah tidak ditemukan");
     }
 
-    const { packageId, actionType, sourcePath } = req.validatedBody;
+    const { packageId, packageOptionId, actionType, sourcePath } =
+      req.validatedBody;
     const packageData = await getPublishedPackage(packageId);
     if (!packageData) {
       return notFoundResponse(
@@ -346,6 +431,12 @@ export const saveMyPackageInterest = async (req, res, next) => {
         "Paket tidak ditemukan atau belum dipublikasikan",
       );
     }
+
+    const optionResult = resolvePackageOption(packageData, packageOptionId);
+    if (optionResult.error) {
+      return errorResponse(res, optionResult.error, 400);
+    }
+    const packageOption = optionResult.option;
 
     if (actionType !== "WHATSAPP_CONSULT") {
       const closedReason = await getPackageClosedReason(packageData);
@@ -357,6 +448,7 @@ export const saveMyPackageInterest = async (req, res, next) => {
     const inserted = await insertInterest({
       prospectId: prospect.id,
       packageId,
+      packageOptionId: packageOption?.id || null,
       actionType,
       sourcePath,
     });
@@ -373,7 +465,7 @@ export const saveMyPackageInterest = async (req, res, next) => {
 
     return successResponse(
       res,
-      { id: inserted.id, package: packageData },
+      { id: inserted.id, package: packageData, packageOption },
       "Minat paket berhasil disimpan",
       201,
     );
@@ -406,10 +498,11 @@ export const convertMyProspectToJamaah = async (req, res, next) => {
       return notFoundResponse(res, "Data calon jamaah tidak ditemukan");
     }
 
-    const { packageId, sourcePath } = req.validatedBody;
+    const { packageId, packageOptionId, sourcePath } = req.validatedBody;
     const result = await convertProspect({
       prospect,
       packageId,
+      packageOptionId,
       sourcePath,
       actorUserId: req.user.userId,
     });
@@ -619,10 +712,11 @@ export const adminConvertProspectToJamaah = async (req, res, next) => {
       return notFoundResponse(res, "Calon jamaah tidak ditemukan");
     }
 
-    const { packageId, sourcePath } = req.validatedBody;
+    const { packageId, packageOptionId, sourcePath } = req.validatedBody;
     const result = await convertProspect({
       prospect,
       packageId,
+      packageOptionId,
       sourcePath,
       actorUserId: req.user.userId,
     });

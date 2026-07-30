@@ -33,8 +33,13 @@ export const getCalonJamaahRegisterUrl = (
 ) =>
   `${getDashboardBaseUrl()}/login?tab=register&next=${encodeURIComponent(nextPath)}`;
 
-export const getCalonJamaahPackageRegisterUrl = (slug: string) => {
-  const nextPath = `/calon-jamaah/packages/${slug}`;
+export const getCalonJamaahPackageRegisterUrl = (
+  slug: string,
+  packageOptionId?: number,
+) => {
+  const optionQuery = packageOptionId
+    ? `?packageOptionId=${packageOptionId}`
+    : "";
+  const nextPath = `/calon-jamaah/packages/${slug}${optionQuery}`;
   return getCalonJamaahRegisterUrl(nextPath);
 };
-

@@ -53,6 +53,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { MediaUpload } from "@/components/packages/MediaUpload";
+import PackageOptionsEditor, {
+  buildDefaultPackageOptions,
+  normalizePackageOptionsForSubmit,
+  type PackageOptionDraft,
+} from "@/components/packages/PackageOptionsEditor";
 
 export default function CreatePackagePage() {
   const router = useRouter();
@@ -62,6 +67,9 @@ export default function CreatePackagePage() {
   // ✅ State untuk Media
   const [uploadImages, setUploadImages] = useState<File[]>([]);
   const [uploadPdf, setUploadPdf] = useState<File | null>(null);
+  const [packageOptions, setPackageOptions] = useState<PackageOptionDraft[]>(
+    buildDefaultPackageOptions(),
+  );
 
   const {
     register,
@@ -110,7 +118,7 @@ export default function CreatePackagePage() {
       const start = new Date(watchDepartureDate);
       const end = new Date(watchReturnDate);
       const diff = Math.ceil(
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
       );
       return diff >= 0 ? diff + 1 : 0;
     }
@@ -136,6 +144,9 @@ export default function CreatePackagePage() {
   const hotels = hotelsData?.data || [];
   const airlines = airlinesData?.data || [];
   const airports = airportsData?.data || [];
+  const routeAirports = airports.filter((airport: any) =>
+    ["JED", "MED"].includes(String(airport.code || "").toUpperCase()),
+  );
 
   const hotelsMakkah = hotels.filter((h: any) => h.city === "MAKKAH");
   const hotelsMadinah = hotels.filter((h: any) => h.city === "MADINAH");
@@ -144,7 +155,12 @@ export default function CreatePackagePage() {
   const createMutation = useMutation({
     mutationFn: (data: CreatePackageFormData) => {
       return packageService.create({
-        packageData: data,
+        packageData: {
+          ...data,
+          options: JSON.stringify(
+            normalizePackageOptionsForSubmit(packageOptions),
+          ),
+        },
         itineraryPdf: uploadPdf || undefined,
         images: uploadImages.length > 0 ? uploadImages : undefined,
       });
@@ -184,11 +200,12 @@ export default function CreatePackagePage() {
       airline: ["airlineId"],
       hotels: ["hotelMakkahId", "hotelMadinahId"],
       payment: [],
+      options: [],
       media: [],
     };
 
     const hasError = tabFields[tab]?.some((field) =>
-      errorFields.includes(field)
+      errorFields.includes(field),
     );
     return hasError ? "error" : "default";
   };
@@ -234,7 +251,7 @@ export default function CreatePackagePage() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Info className="h-4 w-4" />
               <span className="hidden md:inline">Info Dasar</span>
@@ -250,7 +267,10 @@ export default function CreatePackagePage() {
               <Building2 className="h-4 w-4" />
               <span className="hidden md:inline">Hotel</span>
             </TabsTrigger>
-            {/* ✅ TAB BARU */}
+            <TabsTrigger value="options" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              <span className="hidden md:inline">Pilihan</span>
+            </TabsTrigger>
             <TabsTrigger value="media" className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
               <span className="hidden md:inline">Media</span>
@@ -347,11 +367,6 @@ export default function CreatePackagePage() {
                         {errors.type.message}
                       </p>
                     )}
-                    {errors.type && (
-                      <p className="text-sm text-red-500">
-                        {errors.type.message}
-                      </p>
-                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -376,6 +391,68 @@ export default function CreatePackagePage() {
                                 value={airport.id.toString()}
                               >
                                 {airport.name} ({airport.code}) - {airport.city}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border bg-blue-50/60 p-4">
+                  <div className="space-y-2">
+                    <Label>Datang Saudi</Label>
+                    <Controller
+                      name="arrivalAirportId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value?.toString() || ""}
+                          onValueChange={(val) =>
+                            field.onChange(val ? parseInt(val) : null)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Jeddah/Madinah" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {routeAirports.map((airport: any) => (
+                              <SelectItem
+                                key={airport.id}
+                                value={airport.id.toString()}
+                              >
+                                {airport.city} ({airport.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Pulang Saudi</Label>
+                    <Controller
+                      name="returnAirportId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value?.toString() || ""}
+                          onValueChange={(val) =>
+                            field.onChange(val ? parseInt(val) : null)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Jeddah/Madinah" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {routeAirports.map((airport: any) => (
+                              <SelectItem
+                                key={airport.id}
+                                value={airport.id.toString()}
+                              >
+                                {airport.city} ({airport.code})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -500,13 +577,16 @@ export default function CreatePackagePage() {
                     Harga berdasarkan Tipe Kamar
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Input harga paket per orang untuk masing-masing tipe kamar (isi 0 jika tidak tersedia)
+                    Input harga paket per orang untuk masing-masing tipe kamar
+                    (isi 0 jika tidak tersedia)
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="priceDouble">Double (2 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceDouble"
                           type="number"
@@ -519,7 +599,9 @@ export default function CreatePackagePage() {
                     <div className="space-y-2">
                       <Label htmlFor="priceTriple">Triple (3 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceTriple"
                           type="number"
@@ -532,7 +614,9 @@ export default function CreatePackagePage() {
                     <div className="space-y-2">
                       <Label htmlFor="priceQuad">Quad (4 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceQuad"
                           type="number"
@@ -545,7 +629,9 @@ export default function CreatePackagePage() {
                     <div className="space-y-2">
                       <Label htmlFor="priceQuint">Quint (5 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceQuint"
                           type="number"
@@ -835,8 +921,6 @@ export default function CreatePackagePage() {
                       />
                     </div>
                   </div>
-
-
                 </CardContent>
               </Card>
 
@@ -921,14 +1005,30 @@ export default function CreatePackagePage() {
                       />
                     </div>
                   </div>
-
-
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
-
-
+          {/* ===== TAB: PILIHAN PAKET ===== */}
+          <TabsContent value="options">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pilihan Hotel dan Harga</CardTitle>
+                <CardDescription>
+                  Tambahkan beberapa pilihan dalam satu paket. Flyer per pilihan
+                  dapat diunggah setelah paket disimpan.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PackageOptionsEditor
+                  options={packageOptions}
+                  hotelsMakkah={hotelsMakkah}
+                  hotelsMadinah={hotelsMadinah}
+                  onChange={setPackageOptions}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* ✅ TAB: MEDIA (BARU) */}
           <TabsContent value="media">

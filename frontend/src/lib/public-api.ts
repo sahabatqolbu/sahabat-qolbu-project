@@ -61,6 +61,28 @@ type BackendItineraryItem = {
   description?: string | null;
 };
 
+type BackendAirport = {
+  id?: number | null;
+  name?: string | null;
+  code?: string | null;
+  city?: string | null;
+};
+
+type BackendPackageOption = {
+  id: number;
+  name?: string | null;
+  hotelMakkah?: BackendHotel | null;
+  hotelMadinah?: BackendHotel | null;
+  priceDouble?: string | number | null;
+  priceTriple?: string | number | null;
+  priceQuad?: string | number | null;
+  priceQuint?: string | number | null;
+  isDefault?: boolean | null;
+  isActive?: boolean | null;
+  sortOrder?: number | null;
+  images?: BackendPackageImage[] | null;
+};
+
 type BackendPackage = {
   id: number;
   code?: string | null;
@@ -86,6 +108,10 @@ type BackendPackage = {
   hotelMakkah?: BackendHotel | null;
   hotelMadinah?: BackendHotel | null;
   airline?: BackendAirline | null;
+  departureAirport?: BackendAirport | null;
+  arrivalAirport?: BackendAirport | null;
+  returnAirport?: BackendAirport | null;
+  options?: BackendPackageOption[] | null;
   images?: BackendPackageImage[] | null;
   isPublished?: boolean | null;
   isActive?: boolean | null;
@@ -138,6 +164,20 @@ type BackendAgentLanding = {
 
 export type MarketingPackageType = "UMRAH" | "UMRAH_PLUS" | "UMRAH_RAMADHAN";
 
+export interface MarketingPackageOption {
+  id: number;
+  name: string;
+  hotelMakkah?: MarketingPackage["hotelMakkah"];
+  hotelMadinah?: MarketingPackage["hotelMadinah"];
+  priceDouble?: string;
+  priceTriple?: string;
+  priceQuad?: string;
+  priceQuint?: string;
+  isDefault?: boolean;
+  isActive?: boolean;
+  gallery?: string[];
+}
+
 export interface MarketingPackage {
   id: number;
   slug: string;
@@ -148,6 +188,13 @@ export interface MarketingPackage {
   departureDate: string;
   returnDate: string;
   airline: { id?: number; name: string; logo?: string; code?: string };
+  route?: {
+    arrivalCode?: string;
+    returnCode?: string;
+    code?: string;
+    arrivalCity?: string;
+    returnCity?: string;
+  };
   hotelMakkah: {
     id?: number;
     name: string;
@@ -178,6 +225,7 @@ export interface MarketingPackage {
   updatedAt?: string;
   image?: string;
   gallery?: string[];
+  options?: MarketingPackageOption[];
   featured?: boolean;
   description?: string;
   included?: string[];
@@ -381,15 +429,53 @@ const mapHotel = (
   };
 };
 
-const mapPackage = (pkg: BackendPackage): MarketingPackage => {
-  const currentPrice = toNumber(pkg.discountPrice ?? pkg.price, 0);
-  const originalPrice = toNumber(pkg.price, currentPrice);
-  const quadPrice = toNumber(pkg.priceQuad, currentPrice) || currentPrice;
-  const triplePrice = toNumber(pkg.priceTriple, quadPrice) || quadPrice;
-  const doublePrice = toNumber(pkg.priceDouble, originalPrice) || originalPrice;
-  const gallery = (pkg.images || [])
+const getLowestPositivePrice = (
+  values: Array<string | number | null | undefined>,
+) => {
+  const prices = values
+    .map((value) => toNumber(value, 0))
+    .filter((value) => value > 0);
+  return prices.length > 0 ? Math.min(...prices) : 0;
+};
+
+const getOptionGallery = (option?: BackendPackageOption | null) =>
+  (option?.images || [])
     .map((image) => resolveAssetUrl(image.imageUrl))
     .filter((value): value is string => Boolean(value));
+
+const mapPackage = (pkg: BackendPackage): MarketingPackage => {
+  const activeOptions = (pkg.options || []).filter(
+    (option) => option.isActive !== false,
+  );
+  const defaultOption =
+    activeOptions.find((option) => option.isDefault) || activeOptions[0];
+  const optionPrices = activeOptions.flatMap((option) => [
+    option.priceQuad,
+    option.priceTriple,
+    option.priceDouble,
+    option.priceQuint,
+  ]);
+  const currentPrice =
+    getLowestPositivePrice(optionPrices) ||
+    toNumber(pkg.discountPrice ?? pkg.price, 0);
+  const originalPrice = toNumber(pkg.price, currentPrice);
+  const quadPrice =
+    getLowestPositivePrice(activeOptions.map((option) => option.priceQuad)) ||
+    toNumber(defaultOption?.priceQuad ?? pkg.priceQuad, currentPrice) ||
+    currentPrice;
+  const triplePrice =
+    getLowestPositivePrice(activeOptions.map((option) => option.priceTriple)) ||
+    toNumber(defaultOption?.priceTriple ?? pkg.priceTriple, quadPrice) ||
+    quadPrice;
+  const doublePrice =
+    getLowestPositivePrice(activeOptions.map((option) => option.priceDouble)) ||
+    toNumber(defaultOption?.priceDouble ?? pkg.priceDouble, originalPrice) ||
+    originalPrice;
+  const optionGallery = getOptionGallery(defaultOption);
+  const packageGallery = (pkg.images || [])
+    .map((image) => resolveAssetUrl(image.imageUrl))
+    .filter((value): value is string => Boolean(value));
+  const gallery = optionGallery.length > 0 ? optionGallery : packageGallery;
   const primaryImage = gallery[0];
   const itinerary = Array.isArray(pkg.itinerary)
     ? pkg.itinerary
@@ -425,11 +511,33 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
       name: toNonEmptyString(pkg.airline?.name, "Maskapai belum tersedia"),
       logo: resolveAssetUrl(pkg.airline?.logo),
     },
-    hotelMakkah: mapHotel(pkg.hotelMakkah, "Masjidil Haram") || {
+    route: {
+      arrivalCode: toNonEmptyString(pkg.arrivalAirport?.code),
+      returnCode: toNonEmptyString(pkg.returnAirport?.code),
+      code: [
+        toNonEmptyString(pkg.arrivalAirport?.code),
+        toNonEmptyString(pkg.returnAirport?.code),
+      ]
+        .filter(Boolean)
+        .join("-"),
+      arrivalCity: toNonEmptyString(
+        pkg.arrivalAirport?.city || pkg.arrivalAirport?.name,
+      ),
+      returnCity: toNonEmptyString(
+        pkg.returnAirport?.city || pkg.returnAirport?.name,
+      ),
+    },
+    hotelMakkah: mapHotel(
+      defaultOption?.hotelMakkah || pkg.hotelMakkah,
+      "Masjidil Haram",
+    ) || {
       name: "Hotel Makkah belum tersedia",
       starRating: 0,
     },
-    hotelMadinah: mapHotel(pkg.hotelMadinah, "Masjid Nabawi"),
+    hotelMadinah: mapHotel(
+      defaultOption?.hotelMadinah || pkg.hotelMadinah,
+      "Masjid Nabawi",
+    ),
     priceQuad: String(quadPrice),
     priceTriple: String(triplePrice),
     priceDouble: String(doublePrice),
@@ -449,6 +557,19 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     updatedAt: toNonEmptyString(pkg.updatedAt),
     image: primaryImage,
     gallery,
+    options: activeOptions.map((option, index) => ({
+      id: option.id,
+      name: toNonEmptyString(option.name, `Pilihan ${index + 1}`),
+      hotelMakkah: mapHotel(option.hotelMakkah, "Masjidil Haram"),
+      hotelMadinah: mapHotel(option.hotelMadinah, "Masjid Nabawi"),
+      priceDouble: String(toNumber(option.priceDouble, 0)),
+      priceTriple: String(toNumber(option.priceTriple, 0)),
+      priceQuad: String(toNumber(option.priceQuad, 0)),
+      priceQuint: String(toNumber(option.priceQuint, 0)),
+      isDefault: option.isDefault === true,
+      isActive: option.isActive !== false,
+      gallery: getOptionGallery(option),
+    })),
     featured: false,
     description:
       toNonEmptyString(pkg.description) ||

@@ -120,6 +120,13 @@
       "when": 1784259600000,
       "tag": "0016_asset_signed_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1785408515814,
+      "tag": "0017_add_package_options_and_routes",
+      "breakpoints": true
     }
   ]
 }

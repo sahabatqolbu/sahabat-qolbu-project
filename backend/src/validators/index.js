@@ -405,6 +405,7 @@ export const paginationSchema = z.object({
 export const prospectSchemas = {
   interest: z.object({
     packageId: z.coerce.number().int().positive(),
+      packageOptionId: z.coerce.number().int().positive().optional().nullable(),
     actionType: z.enum(["SAVED", "WHATSAPP_CONSULT", "CONVERT_REQUEST"]),
     sourcePath: z.string().max(500).optional().nullable(),
   }),

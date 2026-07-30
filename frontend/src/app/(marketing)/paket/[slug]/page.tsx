@@ -712,6 +712,89 @@ export default async function LandingPackageDetailPage({
                   </div>
                 </div>
               </DetailSection>
+
+              {pkg.options && pkg.options.length > 0 ? (
+                <DetailSection
+                  id="pilihan-paket"
+                  title="Pilih Hotel dan Harga yang Paling Pas"
+                >
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {pkg.options.map((option) => {
+                      const optionImages = option.gallery?.length
+                        ? option.gallery
+                        : pkg.gallery || [];
+                      return (
+                        <div
+                          key={option.id}
+                          className="overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-sm"
+                        >
+                          {optionImages.length > 0 ? (
+                            <div className="flex snap-x gap-2 overflow-x-auto bg-neutral-100 p-2">
+                              {optionImages.map((image) => (
+                                <img
+                                  key={image}
+                                  src={image}
+                                  alt={`${option.name} flyer`}
+                                  className="h-56 w-40 shrink-0 snap-start rounded-sm object-cover"
+                                />
+                              ))}
+                            </div>
+                          ) : null}
+                          <div className="space-y-4 p-5">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-lg font-extrabold text-primary">
+                                  {option.name}
+                                </p>
+                                {option.isDefault ? (
+                                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-gold">
+                                    Rekomendasi utama
+                                  </p>
+                                ) : null}
+                              </div>
+                              <p className="text-right text-xl font-extrabold text-primary">
+                                {toCurrency(option.priceQuad || pkg.priceQuad)}
+                              </p>
+                            </div>
+                            <div className="grid gap-2 text-sm text-neutral-700">
+                              <div className="flex justify-between gap-4">
+                                <span>Hotel Makkah</span>
+                                <strong className="text-right text-primary">
+                                  {option.hotelMakkah?.name ||
+                                    pkg.hotelMakkah.name}
+                                </strong>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span>Hotel Madinah</span>
+                                <strong className="text-right text-primary">
+                                  {option.hotelMadinah?.name ||
+                                    pkg.hotelMadinah?.name ||
+                                    "-"}
+                                </strong>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span>Rute</span>
+                                <strong className="text-right text-primary">
+                                  {pkg.route?.code || "-"}
+                                </strong>
+                              </div>
+                            </div>
+                            <a
+                              href={getCalonJamaahPackageRegisterUrl(
+                                pkg.slug,
+                                option.id,
+                              )}
+                              className="inline-flex w-full items-center justify-center rounded-sm bg-primary px-4 py-3 font-extrabold text-white transition hover:bg-primary-700"
+                            >
+                              Pilih Opsi Ini
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </DetailSection>
+              ) : null}
             </article>
 
             <aside className="space-y-5 lg:sticky lg:top-40 lg:self-start">

@@ -66,6 +66,9 @@ import {
     uploadItineraryPdf,
     deleteItineraryPdf,
     bulkUploadPackageImages,
+    uploadPackageOptionImage,
+    bulkUploadPackageOptionImages,
+    deletePackageOptionImage,
 } from "../controllers/packageController.js";
 import {
     assignJamaahToPackage,
@@ -139,6 +142,9 @@ router.delete("/packages/:id/itinerary-pdf", authenticate, authorize(["ADMIN"]),
 router.post("/packages/:id/images", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("packages", { outputFormat: "webp" }), uploadPackageImage);
 router.post("/packages/:id/images/bulk", authenticate, authorize(["ADMIN"]), upload.array("images", 10), optimizeMultipleImages("packages", { outputFormat: "webp" }), bulkUploadPackageImages);
 router.delete("/packages/images/:imageId", authenticate, authorize(["ADMIN"]), deletePackageImage);
+router.post("/packages/:id/options/:optionId/images", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("packages", { outputFormat: "webp" }), uploadPackageOptionImage);
+router.post("/packages/:id/options/:optionId/images/bulk", authenticate, authorize(["ADMIN"]), upload.array("images", 10), optimizeMultipleImages("packages", { outputFormat: "webp" }), bulkUploadPackageOptionImages);
+router.delete("/packages/options/images/:imageId", authenticate, authorize(["ADMIN"]), deletePackageOptionImage);
 
 // Generic CRUD (must be last to avoid matching static routes)
 router.get("/packages", authenticate, authorize(["ADMIN", "STAFF", "FINANCE"]), getAllPackages);
@@ -154,4 +160,3 @@ router.post("/finance/pos/assign-package", authenticate, authorize(["ADMIN", "FI
 router.post("/finance/pos/send-reminder", authenticate, authorize(["ADMIN", "FINANCE"]), sendJamaahNotification);
 
 export default router;
-

@@ -57,6 +57,11 @@ import {
   Eye,
 } from "lucide-react";
 import Link from "next/link";
+import PackageOptionsEditor, {
+  buildDefaultPackageOptions,
+  normalizePackageOptionsForSubmit,
+  type PackageOptionDraft,
+} from "@/components/packages/PackageOptionsEditor";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -74,7 +79,9 @@ const PACKAGE_TYPES: PackageType[] = [
 ];
 
 const normalizePackageType = (value: unknown): PackageType => {
-  const normalized = String(value || "").trim().toUpperCase();
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase();
   return PACKAGE_TYPES.includes(normalized as PackageType)
     ? (normalized as PackageType)
     : "FULL_SERVICE";
@@ -89,6 +96,12 @@ export default function EditPackagePage({ params }: PageProps) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [hasPdfChanged, setHasPdfChanged] = useState(false);
+  const [packageOptions, setPackageOptions] = useState<PackageOptionDraft[]>(
+    [],
+  );
+  const [uploadingOptionId, setUploadingOptionId] = useState<number | null>(
+    null,
+  );
 
   const {
     register,
@@ -135,6 +148,9 @@ export default function EditPackagePage({ params }: PageProps) {
   const hotels = hotelsData?.data || [];
   const airlines = airlinesData?.data || [];
   const airports = airportsData?.data || [];
+  const routeAirports = airports.filter((airport: any) =>
+    ["JED", "MED"].includes(String(airport.code || "").toUpperCase()),
+  );
 
   const hotelsMakkah = hotels.filter((h: any) => h.city === "MAKKAH");
   const hotelsMadinah = hotels.filter((h: any) => h.city === "MADINAH");
@@ -191,11 +207,13 @@ export default function EditPackagePage({ params }: PageProps) {
         hotelMadinahQuint: pkg.hotelMadinahQuint,
 
         departureAirportId: pkg.departureAirportId,
+        arrivalAirportId: pkg.arrivalAirportId,
+        returnAirportId: pkg.returnAirportId,
 
         isActive: pkg.isActive,
         isPublished: pkg.isPublished,
       });
-
+      setPackageOptions(buildDefaultPackageOptions(pkg));
     }
   }, [pkg, airports, reset]);
 
@@ -208,7 +226,7 @@ export default function EditPackagePage({ params }: PageProps) {
       const start = new Date(watchDepartureDate);
       const end = new Date(watchReturnDate);
       const diff = Math.ceil(
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
       );
       return diff >= 0 ? diff + 1 : 0;
     }
@@ -218,7 +236,12 @@ export default function EditPackagePage({ params }: PageProps) {
   // Update Mutation
   const updateMutation = useMutation({
     mutationFn: (data: UpdatePackageFormData) =>
-      packageService.update(parseInt(packageId), data),
+      packageService.update(parseInt(packageId), {
+        ...data,
+        options: JSON.stringify(
+          normalizePackageOptionsForSubmit(packageOptions),
+        ),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
@@ -365,6 +388,52 @@ export default function EditPackagePage({ params }: PageProps) {
     },
   });
 
+  const uploadOptionImageMutation = useMutation({
+    mutationFn: ({ optionId, file }: { optionId: number; file: File }) =>
+      packageService.uploadOptionImage(parseInt(packageId), optionId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["package", packageId] });
+      toast({ title: "✅ Flyer opsi berhasil diupload" });
+      setUploadingOptionId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal upload flyer opsi",
+        description: error?.response?.data?.message || error.message,
+      });
+      setUploadingOptionId(null);
+    },
+  });
+
+  const deleteOptionImageMutation = useMutation({
+    mutationFn: packageService.deleteOptionImage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["package", packageId] });
+      toast({ title: "✅ Flyer opsi berhasil dihapus" });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal hapus flyer opsi",
+        description: error?.response?.data?.message || error.message,
+      });
+    },
+  });
+
+  const handleOptionImageUpload = (option: PackageOptionDraft, file: File) => {
+    if (!option.id) {
+      toast({
+        variant: "destructive",
+        title: "Simpan opsi dulu",
+        description: "Flyer opsi baru bisa diupload setelah paket disimpan.",
+      });
+      return;
+    }
+    setUploadingOptionId(option.id);
+    uploadOptionImageMutation.mutate({ optionId: option.id, file });
+  };
+
   const onSubmit = (data: UpdatePackageFormData) => {
     console.log("📤 FORM SUBMIT:", data);
     updateMutation.mutate(data);
@@ -422,7 +491,7 @@ export default function EditPackagePage({ params }: PageProps) {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Info className="h-4 w-4" />
               <span className="hidden md:inline">Info</span>
@@ -434,6 +503,10 @@ export default function EditPackagePage({ params }: PageProps) {
             <TabsTrigger value="hotels" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden md:inline">Hotel</span>
+            </TabsTrigger>
+            <TabsTrigger value="options" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              <span className="hidden md:inline">Pilihan</span>
             </TabsTrigger>
             <TabsTrigger value="images" className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
@@ -580,6 +653,67 @@ export default function EditPackagePage({ params }: PageProps) {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border bg-blue-50/60 p-4">
+                  <div className="space-y-2">
+                    <Label>Datang Saudi</Label>
+                    <Controller
+                      name="arrivalAirportId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value?.toString() || ""}
+                          onValueChange={(val) =>
+                            field.onChange(val ? parseInt(val) : undefined)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Jeddah/Madinah" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {routeAirports.map((airport: any) => (
+                              <SelectItem
+                                key={airport.id}
+                                value={airport.id.toString()}
+                              >
+                                {airport.city} ({airport.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Pulang Saudi</Label>
+                    <Controller
+                      name="returnAirportId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value?.toString() || ""}
+                          onValueChange={(val) =>
+                            field.onChange(val ? parseInt(val) : undefined)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Jeddah/Madinah" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {routeAirports.map((airport: any) => (
+                              <SelectItem
+                                key={airport.id}
+                                value={airport.id.toString()}
+                              >
+                                {airport.city} ({airport.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 {/* Tanggal */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
@@ -647,13 +781,16 @@ export default function EditPackagePage({ params }: PageProps) {
                     Harga berdasarkan Tipe Kamar
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Input harga paket per orang untuk masing-masing tipe kamar (isi 0 jika tidak tersedia)
+                    Input harga paket per orang untuk masing-masing tipe kamar
+                    (isi 0 jika tidak tersedia)
                   </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="priceDouble">Double (2 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceDouble"
                           type="number"
@@ -666,7 +803,9 @@ export default function EditPackagePage({ params }: PageProps) {
                     <div className="space-y-2">
                       <Label htmlFor="priceTriple">Triple (3 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceTriple"
                           type="number"
@@ -679,7 +818,9 @@ export default function EditPackagePage({ params }: PageProps) {
                     <div className="space-y-2">
                       <Label htmlFor="priceQuad">Quad (4 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceQuad"
                           type="number"
@@ -692,7 +833,9 @@ export default function EditPackagePage({ params }: PageProps) {
                     <div className="space-y-2">
                       <Label htmlFor="priceQuint">Quint (5 org)</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">Rp</span>
+                        <span className="absolute left-3 top-2.5 text-xs text-gray-500">
+                          Rp
+                        </span>
                         <Input
                           id="priceQuint"
                           type="number"
@@ -912,7 +1055,6 @@ export default function EditPackagePage({ params }: PageProps) {
                       />
                     </div>
                   </div>
-
                 </CardContent>
               </Card>
 
@@ -977,13 +1119,35 @@ export default function EditPackagePage({ params }: PageProps) {
                       />
                     </div>
                   </div>
-
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
-
-
+          {/* ===== TAB: PILIHAN PAKET ===== */}
+          <TabsContent value="options">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pilihan Hotel, Harga, dan Flyer</CardTitle>
+                <CardDescription>
+                  Atur beberapa pilihan paket. Pilihan default menjadi acuan
+                  utama yang ditampilkan pada card paket.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PackageOptionsEditor
+                  options={packageOptions}
+                  hotelsMakkah={hotelsMakkah}
+                  hotelsMadinah={hotelsMadinah}
+                  onChange={setPackageOptions}
+                  onUploadImage={handleOptionImageUpload}
+                  onDeleteImage={(imageId) =>
+                    deleteOptionImageMutation.mutate(imageId)
+                  }
+                  uploadingOptionId={uploadingOptionId}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* ===== TAB: IMAGES ===== */}
           <TabsContent value="images">
@@ -1010,7 +1174,7 @@ export default function EditPackagePage({ params }: PageProps) {
                           onError={(e) => {
                             console.error(
                               "❌ Image load error:",
-                              image.imageUrl
+                              image.imageUrl,
                             );
                             e.currentTarget.src =
                               "https://via.placeholder.com/150?text=No+Image";
@@ -1145,8 +1309,8 @@ export default function EditPackagePage({ params }: PageProps) {
                       {uploadingPdf
                         ? "Mengupload PDF..."
                         : pkg.itineraryPdf
-                        ? "Klik untuk ganti PDF"
-                        : "Klik untuk upload PDF"}
+                          ? "Klik untuk ganti PDF"
+                          : "Klik untuk upload PDF"}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">PDF (max 10MB)</p>
                   </label>

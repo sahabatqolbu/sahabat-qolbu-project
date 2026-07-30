@@ -4,6 +4,8 @@ import { db } from "../db/index.js";
 import {
   packages,
   packageImages,
+  packageOptions,
+  packageOptionImages,
   jamaahData,
   calendarEvents,
 } from "../db/schema.js";
@@ -82,6 +84,129 @@ const parseDecimalString = (value, fallback = "0.00") => {
   }
 
   return parsed.toFixed(2);
+};
+
+const packageOptionRelation = {
+  orderBy: (options, { asc }) => [asc(options.sortOrder), asc(options.id)],
+  with: {
+    hotelMakkah: true,
+    hotelMadinah: true,
+    images: {
+      orderBy: (images, { asc }) => [asc(images.sortOrder), asc(images.id)],
+    },
+  },
+};
+
+const parseJsonPayload = (value, fallback = undefined) => {
+  if (value === undefined) return fallback;
+  if (value === null || value === "") return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const normalizePackageOptions = (rawOptions = []) => {
+  const options = Array.isArray(rawOptions) ? rawOptions : [];
+  const activeOptions = options
+    .map((option, index) => ({
+      id: parseOptionalForeignKey(option.id, null),
+      name: String(option.name || `Pilihan ${index + 1}`).trim(),
+      hotelMakkahId: parseOptionalForeignKey(option.hotelMakkahId, null),
+      hotelMadinahId: parseOptionalForeignKey(option.hotelMadinahId, null),
+      priceDouble: parseDecimalString(option.priceDouble, "0.00"),
+      priceTriple: parseDecimalString(option.priceTriple, "0.00"),
+      priceQuad: parseDecimalString(option.priceQuad, "0.00"),
+      priceQuint: parseDecimalString(option.priceQuint, "0.00"),
+      isDefault: parseBoolean(option.isDefault, index === 0),
+      isActive: parseBoolean(option.isActive, true),
+      sortOrder: parsePositiveInt(option.sortOrder, index),
+    }))
+    .filter((option) => option.name.length > 0);
+
+  if (
+    activeOptions.length > 0 &&
+    !activeOptions.some((option) => option.isDefault)
+  ) {
+    activeOptions[0].isDefault = true;
+  }
+
+  return activeOptions.map((option, index) => ({
+    ...option,
+    isDefault:
+      option.isDefault &&
+      index === activeOptions.findIndex((item) => item.isDefault),
+    sortOrder: index,
+  }));
+};
+
+const getActivePackageOptions = (pkg = {}) =>
+  Array.isArray(pkg.options)
+    ? pkg.options.filter((option) => option.isActive !== false)
+    : [];
+
+const hasReadyPackageOption = (pkg = {}) =>
+  getActivePackageOptions(pkg).some(
+    (option) =>
+      option.hotelMakkahId && option.hotelMadinahId && hasPositivePrice(option),
+  );
+
+const syncPackageOptions = async (packageId, rawOptions) => {
+  const nextOptions = normalizePackageOptions(rawOptions);
+  const existingOptions = await db.query.packageOptions.findMany({
+    where: eq(packageOptions.packageId, packageId),
+    with: { images: true },
+  });
+  const existingById = new Map(
+    existingOptions.map((option) => [option.id, option]),
+  );
+  const keptIds = [];
+
+  for (const [index, option] of nextOptions.entries()) {
+    const values = {
+      packageId,
+      name: option.name,
+      hotelMakkahId: option.hotelMakkahId,
+      hotelMadinahId: option.hotelMadinahId,
+      priceDouble: option.priceDouble,
+      priceTriple: option.priceTriple,
+      priceQuad: option.priceQuad,
+      priceQuint: option.priceQuint,
+      isDefault: option.isDefault,
+      isActive: option.isActive,
+      sortOrder: index,
+      updatedAt: new Date(),
+    };
+
+    if (option.id && existingById.has(option.id)) {
+      await db
+        .update(packageOptions)
+        .set(values)
+        .where(eq(packageOptions.id, option.id));
+      keptIds.push(option.id);
+    } else {
+      const [created] = await db
+        .insert(packageOptions)
+        .values(values)
+        .$returningId();
+      keptIds.push(created.id);
+    }
+  }
+
+  for (const option of existingOptions) {
+    if (!keptIds.includes(option.id)) {
+      await db
+        .update(packageOptions)
+        .set({ isActive: false, isDefault: false, updatedAt: new Date() })
+        .where(eq(packageOptions.id, option.id));
+    }
+  }
 };
 
 const calculateInclusiveDuration = (departureDateValue, returnDateValue) => {
@@ -297,6 +422,7 @@ const hasPositivePrice = (pkg = {}) =>
   [
     pkg.discountPrice,
     pkg.priceQuad,
+    pkg.priceQuint,
     pkg.priceTriple,
     pkg.priceDouble,
     pkg.price,
@@ -310,8 +436,10 @@ const isPackageComingSoon = (pkg = {}) => {
     !Number.isNaN(returnDate.getTime()) &&
     returnDate >= departureDate;
   const hasCoreInventory = Number(pkg.totalSeats || 0) > 0;
+  const hasOptionPackage = hasReadyPackageOption(pkg);
   const hasCoreVendors = Boolean(
-    pkg.airlineId && pkg.hotelMakkahId && pkg.hotelMadinahId,
+    pkg.airlineId &&
+    ((pkg.hotelMakkahId && pkg.hotelMadinahId) || hasOptionPackage),
   );
   const hasConfirmedVendors =
     String(pkg.airlineStatus || "").toUpperCase() === "CONFIRMED" &&
@@ -320,10 +448,10 @@ const isPackageComingSoon = (pkg = {}) => {
 
   return (
     !hasValidDates ||
-    !hasPositivePrice(pkg) ||
+    !(hasPositivePrice(pkg) || hasOptionPackage) ||
     !hasCoreInventory ||
     !hasCoreVendors ||
-    !hasConfirmedVendors
+    !(hasConfirmedVendors || hasOptionPackage)
   );
 };
 
@@ -455,6 +583,9 @@ export const getAllPackages = async (req, res, next) => {
         hotelMadinah: true,
         airline: true,
         departureAirport: true,
+        arrivalAirport: true,
+        returnAirport: true,
+        options: packageOptionRelation,
         images: {
           orderBy: (images, { asc }) => [asc(images.sortOrder)],
         },
@@ -569,6 +700,9 @@ export const getPackageById = async (req, res, next) => {
         hotelMadinah: true,
         airline: true,
         departureAirport: true,
+        arrivalAirport: true,
+        returnAirport: true,
+        options: packageOptionRelation,
         images: {
           orderBy: (images, { asc }) => [asc(images.sortOrder)],
         },
@@ -668,6 +802,8 @@ export const createPackage = async (req, res, next) => {
         data.departureAirportId,
         null,
       ),
+      arrivalAirportId: parseOptionalForeignKey(data.arrivalAirportId, null),
+      returnAirportId: parseOptionalForeignKey(data.returnAirportId, null),
       isActive: parseBoolean(data.isActive, true),
       isPublished: parseBoolean(data.isPublished, false),
     };
@@ -688,6 +824,11 @@ export const createPackage = async (req, res, next) => {
 
     const packageId = newPackage.id;
 
+    const optionPayload = parseJsonPayload(data.options, []);
+    if (optionPayload.length > 0) {
+      await syncPackageOptions(packageId, optionPayload);
+    }
+
     if (data.images && data.images.length > 0) {
       const imageValues = data.images.map((img, index) => ({
         packageId,
@@ -707,6 +848,9 @@ export const createPackage = async (req, res, next) => {
         hotelMadinah: true,
         airline: true,
         departureAirport: true,
+        arrivalAirport: true,
+        returnAirport: true,
+        options: packageOptionRelation,
         images: true,
       },
     });
@@ -909,6 +1053,14 @@ export const updatePackage = async (req, res, next) => {
         data.departureAirportId,
         existingPackage.departureAirportId,
       ),
+      arrivalAirportId: parseOptionalForeignKey(
+        data.arrivalAirportId,
+        existingPackage.arrivalAirportId,
+      ),
+      returnAirportId: parseOptionalForeignKey(
+        data.returnAirportId,
+        existingPackage.returnAirportId,
+      ),
       isActive: parseBoolean(data.isActive, existingPackage.isActive),
       isPublished: parseBoolean(data.isPublished, existingPackage.isPublished),
       updatedAt: new Date(),
@@ -921,6 +1073,13 @@ export const updatePackage = async (req, res, next) => {
       .set(updateData)
       .where(eq(packages.id, parseInt(id)));
 
+    if (data.options !== undefined) {
+      await syncPackageOptions(
+        parseInt(id, 10),
+        parseJsonPayload(data.options, []),
+      );
+    }
+
     const updatedPackage = await db.query.packages.findFirst({
       where: eq(packages.id, parseInt(id)),
       with: {
@@ -928,6 +1087,9 @@ export const updatePackage = async (req, res, next) => {
         hotelMadinah: true,
         airline: true,
         departureAirport: true,
+        arrivalAirport: true,
+        returnAirport: true,
+        options: packageOptionRelation,
         images: true,
       },
     });
@@ -1049,6 +1211,7 @@ export const deletePackage = async (req, res, next) => {
       where: eq(packages.id, parseInt(id)),
       with: {
         images: true,
+        options: packageOptionRelation,
       },
     });
 
@@ -1073,6 +1236,12 @@ export const deletePackage = async (req, res, next) => {
       for (const img of pkg.images) {
         const imagePath = getUploadAbsolutePath(img.imageUrl);
         await removeFileIfExists(imagePath);
+      }
+    }
+
+    for (const option of pkg.options || []) {
+      for (const image of option.images || []) {
+        await removeFileIfExists(getUploadAbsolutePath(image.imageUrl));
       }
     }
 
@@ -1395,6 +1564,9 @@ export const getPublicPackageById = async (req, res, next) => {
         hotelMadinah: true,
         airline: true,
         departureAirport: true,
+        arrivalAirport: true,
+        returnAirport: true,
+        options: packageOptionRelation,
         images: {
           orderBy: (images, { asc }) => [asc(images.sortOrder)],
         },
@@ -1425,6 +1597,109 @@ export const getPublicPackageById = async (req, res, next) => {
       daysUntilDeparture,
       ...bookingState,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadPackageOptionImage = async (req, res, next) => {
+  try {
+    const packageId = Number.parseInt(req.params.id, 10);
+    const optionId = Number.parseInt(req.params.optionId, 10);
+    if (!req.uploadedFile)
+      return errorResponse(res, "Gambar harus diupload", 400);
+
+    const option = await db.query.packageOptions.findFirst({
+      where: and(
+        eq(packageOptions.id, optionId),
+        eq(packageOptions.packageId, packageId),
+      ),
+    });
+    if (!option)
+      return errorResponse(res, "Pilihan paket tidak ditemukan", 404);
+
+    const existingImages = await db.query.packageOptionImages.findMany({
+      where: eq(packageOptionImages.optionId, optionId),
+    });
+
+    const [created] = await db
+      .insert(packageOptionImages)
+      .values({
+        optionId,
+        imageUrl: req.uploadedFile.path,
+        caption: req.body.caption || null,
+        sortOrder: existingImages.length,
+        isPrimary: existingImages.length === 0,
+      })
+      .$returningId();
+
+    const image = await db.query.packageOptionImages.findFirst({
+      where: eq(packageOptionImages.id, created.id),
+    });
+    return createdResponse(
+      res,
+      image,
+      "Gambar pilihan paket berhasil diupload",
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUploadPackageOptionImages = async (req, res, next) => {
+  try {
+    const packageId = Number.parseInt(req.params.id, 10);
+    const optionId = Number.parseInt(req.params.optionId, 10);
+    const files = req.uploadedFiles || [];
+    if (files.length === 0)
+      return errorResponse(res, "Gambar harus diupload", 400);
+
+    const option = await db.query.packageOptions.findFirst({
+      where: and(
+        eq(packageOptions.id, optionId),
+        eq(packageOptions.packageId, packageId),
+      ),
+    });
+    if (!option)
+      return errorResponse(res, "Pilihan paket tidak ditemukan", 404);
+
+    const existingImages = await db.query.packageOptionImages.findMany({
+      where: eq(packageOptionImages.optionId, optionId),
+    });
+
+    const imageValues = files.map((file, index) => ({
+      optionId,
+      imageUrl: file.path,
+      caption: req.body.caption || null,
+      sortOrder: existingImages.length + index,
+      isPrimary: existingImages.length === 0 && index === 0,
+    }));
+
+    await db.insert(packageOptionImages).values(imageValues);
+    return createdResponse(
+      res,
+      imageValues,
+      "Gambar pilihan paket berhasil diupload",
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deletePackageOptionImage = async (req, res, next) => {
+  try {
+    const imageId = Number.parseInt(req.params.imageId, 10);
+    const image = await db.query.packageOptionImages.findFirst({
+      where: eq(packageOptionImages.id, imageId),
+    });
+    if (!image)
+      return errorResponse(res, "Gambar pilihan paket tidak ditemukan", 404);
+
+    await removeFileIfExists(getUploadAbsolutePath(image.imageUrl));
+    await db
+      .delete(packageOptionImages)
+      .where(eq(packageOptionImages.id, imageId));
+    return successResponse(res, null, "Gambar pilihan paket berhasil dihapus");
   } catch (error) {
     next(error);
   }

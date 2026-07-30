@@ -41,12 +41,36 @@ export interface Package {
   hotelMadinahStatus?: string;
 
   images?: { id: number; imageUrl: string }[];
+  departureAirportId?: number;
+  arrivalAirportId?: number;
+  returnAirportId?: number;
+  departureAirport?: { name: string; code: string; city: string };
+  arrivalAirport?: { name: string; code: string; city: string };
+  returnAirport?: { name: string; code: string; city: string };
+  options?: PackageOption[];
 
   // Computed
   daysUntilDeparture?: number;
   bookingStatus?: "OPEN" | "CLOSED" | "SOLD_OUT" | "COMING_SOON" | string;
   bookingStatusLabel?: string;
   isBookable?: boolean;
+}
+
+export interface PackageOption {
+  id: number;
+  name: string;
+  hotelMakkahId?: number | null;
+  hotelMadinahId?: number | null;
+  hotelMakkah?: { name: string; starRating?: number };
+  hotelMadinah?: { name: string; starRating?: number };
+  priceDouble?: number | string;
+  priceTriple?: number | string;
+  priceQuad?: number | string;
+  priceQuint?: number | string;
+  isDefault?: boolean;
+  isActive?: boolean;
+  sortOrder?: number;
+  images?: { id: number; imageUrl: string; caption?: string | null }[];
 }
 
 export const packageService = {
@@ -219,6 +243,30 @@ export const packageService = {
   // ===== DELETE IMAGE =====
   deleteImage: async (imageId: number) => {
     const response = await api.delete(`/admin/packages/images/${imageId}`); // ✅ api
+    return response.data;
+  },
+
+  uploadOptionImage: async (
+    packageId: number,
+    optionId: number,
+    file: File,
+  ) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await api.post(
+      `/admin/packages/${packageId}/options/${optionId}/images`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+
+    return response.data;
+  },
+
+  deleteOptionImage: async (imageId: number) => {
+    const response = await api.delete(
+      `/admin/packages/options/images/${imageId}`,
+    );
     return response.data;
   },
 
