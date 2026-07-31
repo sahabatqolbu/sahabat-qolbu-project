@@ -529,9 +529,18 @@ export default async function LandingPackageDetailPage({
   const selectedOption =
     activeOptions.find((option) => option.id === requestedOptionId) ||
     defaultOption;
+  const selectedOptionIndex = selectedOption
+    ? activeOptions.findIndex((option) => option.id === selectedOption.id)
+    : -1;
+  const legacyOptionFlyer =
+    selectedOptionIndex >= 0
+      ? basePackage.gallery?.[selectedOptionIndex]
+      : undefined;
   const selectedGallery = selectedOption?.gallery?.length
     ? selectedOption.gallery
-    : basePackage.gallery;
+    : legacyOptionFlyer
+      ? [legacyOptionFlyer]
+      : basePackage.gallery;
   const optionPrice = (value: string | undefined, fallback: string) =>
     getNumericPrice(value) > 0 ? String(value) : fallback;
   const selectedQuadPrice = optionPrice(
@@ -622,6 +631,7 @@ export default async function LandingPackageDetailPage({
                   key={selectedOption?.id || "package"}
                   images={heroImages}
                   packageName={pkg.name}
+                  optionName={selectedOption?.name}
                 />
 
                 <div className="mt-7 max-w-4xl">

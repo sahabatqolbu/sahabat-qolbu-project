@@ -6,11 +6,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 type PackageFlyerGalleryProps = {
   images: string[];
   packageName: string;
+  optionName?: string;
 };
 
 export default function PackageFlyerGallery({
   images,
   packageName,
+  optionName,
 }: PackageFlyerGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -29,9 +31,15 @@ export default function PackageFlyerGallery({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={images[activeIndex]}
-        alt={`${packageName} - flyer ${activeIndex + 1}`}
+        alt={`${packageName}${optionName ? ` - ${optionName}` : ""} - flyer ${activeIndex + 1}`}
         className="block h-auto w-full object-contain"
       />
+
+      {optionName ? (
+        <div className="absolute left-3 top-3 rounded-sm bg-primary/95 px-3 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-white shadow-lg">
+          Flyer: <span className="text-gold">{optionName}</span>
+        </div>
+      ) : null}
 
       {hasMultipleImages ? (
         <>
