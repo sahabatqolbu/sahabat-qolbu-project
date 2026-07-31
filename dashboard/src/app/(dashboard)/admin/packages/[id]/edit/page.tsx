@@ -99,6 +99,7 @@ export default function EditPackagePage({ params }: PageProps) {
   const [packageOptions, setPackageOptions] = useState<PackageOptionDraft[]>(
     [],
   );
+  const [hasOptionsChanged, setHasOptionsChanged] = useState(false);
   const [uploadingOptionId, setUploadingOptionId] = useState<number | null>(
     null,
   );
@@ -120,7 +121,8 @@ export default function EditPackagePage({ params }: PageProps) {
     },
   });
 
-  const isDirty = isDirtyFromForm || hasPdfChanged || uploadingPdf;
+  const isDirty =
+    isDirtyFromForm || hasPdfChanged || hasOptionsChanged || uploadingPdf;
 
   // Fetch Package
   const { data: packageData, isLoading: packageLoading } = useQuery({
@@ -230,9 +232,15 @@ export default function EditPackagePage({ params }: PageProps) {
         },
       );
       setPackageOptions(buildDefaultPackageOptions(pkg));
+      setHasOptionsChanged(false);
       hydratedPackageId.current = pkg.id;
     }
   }, [pkg, reset, hotelsLoading, airlinesLoading, airportsLoading]);
+
+  const handlePackageOptionsChange = (options: PackageOptionDraft[]) => {
+    setPackageOptions(options);
+    setHasOptionsChanged(true);
+  };
 
   // Watch values
   const watchDepartureDate = watch("departureDate");
@@ -268,6 +276,7 @@ export default function EditPackagePage({ params }: PageProps) {
         ),
       }),
     onSuccess: () => {
+      setHasOptionsChanged(false);
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       toast({
@@ -1154,7 +1163,7 @@ export default function EditPackagePage({ params }: PageProps) {
                   baseValues={baseOptionValues}
                   hotelsMakkah={hotelsMakkah}
                   hotelsMadinah={hotelsMadinah}
-                  onChange={setPackageOptions}
+                  onChange={handlePackageOptionsChange}
                   onUploadImage={handleOptionImageUpload}
                   onDeleteImage={(imageId) =>
                     deleteOptionImageMutation.mutate(imageId)
