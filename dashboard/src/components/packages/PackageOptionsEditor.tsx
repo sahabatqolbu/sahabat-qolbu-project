@@ -380,36 +380,50 @@ export default function PackageOptionsEditor({
               </>
             )}
 
-            {index > 0 && option.id && (
+            {index > 0 && (
               <div className="space-y-3 rounded-md bg-gray-50 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <Label>Flyer Opsi</Label>
                     <p className="text-xs text-gray-500">
-                      Gambar akan dikonversi otomatis ke WebP.
+                      {option.id
+                        ? "Gambar akan dikonversi otomatis ke WebP."
+                        : "Simpan paket terlebih dahulu untuk mengaktifkan upload."}
                     </p>
                   </div>
-                  <label
-                    className={cn(
-                      "inline-flex cursor-pointer items-center rounded-md border bg-white px-3 py-2 text-sm font-medium",
-                      uploadingOptionId === option.id &&
-                        "pointer-events-none opacity-60",
-                    )}
-                  >
-                    <Upload className="mr-2 h-4 w-4" /> Upload
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file && onUploadImage) onUploadImage(option, file);
-                        event.currentTarget.value = "";
-                      }}
-                    />
-                  </label>
+                  {option.id ? (
+                    <label
+                      className={cn(
+                        "inline-flex cursor-pointer items-center rounded-md border bg-white px-3 py-2 text-sm font-medium",
+                        uploadingOptionId === option.id &&
+                          "pointer-events-none opacity-60",
+                      )}
+                    >
+                      <Upload className="mr-2 h-4 w-4" /> Upload Flyer
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file && onUploadImage)
+                            onUploadImage(option, file);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  ) : (
+                    <Button type="button" variant="outline" disabled>
+                      <Upload className="mr-2 h-4 w-4" /> Upload Flyer
+                    </Button>
+                  )}
                 </div>
-                {(option.images || []).length > 0 ? (
+                {!option.id ? (
+                  <p className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800">
+                    Klik Simpan Perubahan di bawah. Setelah opsi tersimpan, buka
+                    kembali edit paket untuk mengunggah flyer khusus opsi ini.
+                  </p>
+                ) : (option.images || []).length > 0 ? (
                   <div className="flex gap-3 overflow-x-auto pb-1">
                     {(option.images || []).map((image) => (
                       <div
