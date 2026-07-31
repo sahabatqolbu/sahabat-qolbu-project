@@ -30,7 +30,7 @@ jobs:
           PAYMENT_GUARD_URL: ${{ secrets.PAYMENT_GUARD_URL }}
           PAYMENT_GUARD_EXPECTED_STATUS: ${{ secrets.PAYMENT_GUARD_EXPECTED_STATUS }}
           PAYMENT_GUARD_COOKIE: ${{ secrets.PAYMENT_GUARD_COOKIE }}
-          PUBLIC_HEALTH_GUARD_URL: ${{ secrets.PUBLIC_HEALTH_GUARD_URL }}
+          PUBLIC_HEALTH_GUARD_URL: ${{ secrets.PUBLIC_HEALTH_GUARD_URL || 'https://api.sahabatqolbu.com/health' }}
           PUBLIC_HEALTH_GUARD_EXPECTED_STATUS: ${{ secrets.PUBLIC_HEALTH_GUARD_EXPECTED_STATUS }}
         run: |
           node backend/src/scripts/criticalAlertProbe.js

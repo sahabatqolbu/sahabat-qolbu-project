@@ -23,11 +23,11 @@ jobs:
         id: probe
         continue-on-error: true
         env:
-          BACKEND_HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL }}
-          BACKEND_PUBLIC_HEALTHCHECK_URL: ${{ secrets.BACKEND_PUBLIC_HEALTHCHECK_URL }}
-          BACKEND_DOCS_BLOCK_URL: ${{ secrets.BACKEND_DOCS_BLOCK_URL }}
-          DASHBOARD_HEALTHCHECK_URL: ${{ secrets.DASHBOARD_HEALTHCHECK_URL }}
-          FRONTEND_HEALTHCHECK_URL: ${{ secrets.FRONTEND_HEALTHCHECK_URL }}
+          BACKEND_HEALTHCHECK_URL: ${{ secrets.BACKEND_HEALTHCHECK_URL || 'https://api.sahabatqolbu.com/health' }}
+          BACKEND_PUBLIC_HEALTHCHECK_URL: ${{ secrets.BACKEND_PUBLIC_HEALTHCHECK_URL || 'https://api.sahabatqolbu.com/api/public/health-check' }}
+          BACKEND_DOCS_BLOCK_URL: ${{ secrets.BACKEND_DOCS_BLOCK_URL || 'https://api.sahabatqolbu.com/api/v1/docs' }}
+          DASHBOARD_HEALTHCHECK_URL: ${{ secrets.DASHBOARD_HEALTHCHECK_URL || 'https://dashboard.sahabatqolbu.com/login' }}
+          FRONTEND_HEALTHCHECK_URL: ${{ secrets.FRONTEND_HEALTHCHECK_URL || 'https://sahabatqolbu.com/' }}
         run: |
           node backend/src/scripts/uptimeProbe.js
 
