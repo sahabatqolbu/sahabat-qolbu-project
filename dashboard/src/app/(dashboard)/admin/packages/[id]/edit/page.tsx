@@ -103,6 +103,9 @@ export default function EditPackagePage({ params }: PageProps) {
   const [uploadingOptionId, setUploadingOptionId] = useState<number | null>(
     null,
   );
+  const [deletingOptionImageId, setDeletingOptionImageId] = useState<
+    number | null
+  >(null);
   const hydratedPackageId = useRef<number | null>(null);
 
   const {
@@ -417,9 +420,25 @@ export default function EditPackagePage({ params }: PageProps) {
   const uploadOptionImageMutation = useMutation({
     mutationFn: ({ optionId, file }: { optionId: number; file: File }) =>
       packageService.uploadOptionImage(parseInt(packageId), optionId, file),
-    onSuccess: () => {
+    onSuccess: (response, { optionId }) => {
+      const uploadedImage = response?.data;
+      if (uploadedImage?.id) {
+        setPackageOptions((currentOptions) =>
+          currentOptions.map((option) =>
+            option.id === optionId
+              ? {
+                  ...option,
+                  images: [...(option.images || []), uploadedImage],
+                }
+              : option,
+          ),
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
-      toast({ title: "✅ Flyer opsi berhasil diupload" });
+      toast({
+        title: "✅ Flyer opsi tersimpan otomatis",
+        description: "Preview flyer sudah diperbarui.",
+      });
       setUploadingOptionId(null);
     },
     onError: (error: any) => {
@@ -434,7 +453,14 @@ export default function EditPackagePage({ params }: PageProps) {
 
   const deleteOptionImageMutation = useMutation({
     mutationFn: packageService.deleteOptionImage,
-    onSuccess: () => {
+    onMutate: (imageId) => setDeletingOptionImageId(imageId),
+    onSuccess: (_response, imageId) => {
+      setPackageOptions((currentOptions) =>
+        currentOptions.map((option) => ({
+          ...option,
+          images: (option.images || []).filter((image) => image.id !== imageId),
+        })),
+      );
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       toast({ title: "✅ Flyer opsi berhasil dihapus" });
     },
@@ -445,6 +471,7 @@ export default function EditPackagePage({ params }: PageProps) {
         description: error?.response?.data?.message || error.message,
       });
     },
+    onSettled: () => setDeletingOptionImageId(null),
   });
 
   const handleOptionImageUpload = (option: PackageOptionDraft, file: File) => {
@@ -453,6 +480,13 @@ export default function EditPackagePage({ params }: PageProps) {
         variant: "destructive",
         title: "Simpan opsi dulu",
         description: "Flyer opsi baru bisa diupload setelah paket disimpan.",
+      });
+      return;
+    }
+    if (uploadOptionImageMutation.isPending || uploadingOptionId !== null) {
+      toast({
+        title: "Upload sedang diproses",
+        description: "Tunggu sampai flyer sebelumnya selesai diupload.",
       });
       return;
     }
@@ -1169,6 +1203,7 @@ export default function EditPackagePage({ params }: PageProps) {
                     deleteOptionImageMutation.mutate(imageId)
                   }
                   uploadingOptionId={uploadingOptionId}
+                  deletingImageId={deletingOptionImageId}
                 />
               </CardContent>
             </Card>

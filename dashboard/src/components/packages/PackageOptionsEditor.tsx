@@ -14,7 +14,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { getImageUrl } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { BadgeCheck, Plus, Trash2, Upload } from "lucide-react";
+import { BadgeCheck, Loader2, Plus, Trash2, Upload } from "lucide-react";
 
 export interface PackageOptionDraft {
   id?: number;
@@ -49,6 +49,7 @@ interface Props {
   onUploadImage?: (option: PackageOptionDraft, file: File) => void;
   onDeleteImage?: (imageId: number) => void;
   uploadingOptionId?: number | null;
+  deletingImageId?: number | null;
 }
 
 const toNumber = (value: string) => {
@@ -134,6 +135,7 @@ export default function PackageOptionsEditor({
   onUploadImage,
   onDeleteImage,
   uploadingOptionId,
+  deletingImageId,
 }: Props) {
   const updateOption = (index: number, patch: Partial<PackageOptionDraft>) => {
     onChange(
@@ -387,7 +389,7 @@ export default function PackageOptionsEditor({
                     <Label>Flyer Opsi</Label>
                     <p className="text-xs text-gray-500">
                       {option.id
-                        ? "Gambar akan dikonversi otomatis ke WebP."
+                        ? "Upload langsung tersimpan otomatis dan dikonversi ke WebP."
                         : "Simpan paket terlebih dahulu untuk mengaktifkan upload."}
                     </p>
                   </div>
@@ -404,6 +406,7 @@ export default function PackageOptionsEditor({
                         type="file"
                         accept="image/*"
                         className="hidden"
+                        disabled={uploadingOptionId !== null}
                         onChange={(event) => {
                           const file = event.target.files?.[0];
                           if (file && onUploadImage)
@@ -439,9 +442,16 @@ export default function PackageOptionsEditor({
                           <button
                             type="button"
                             onClick={() => onDeleteImage(image.id)}
-                            className="absolute right-1 top-1 rounded bg-white/90 p-1 text-red-600 shadow"
+                            disabled={deletingImageId !== null}
+                            aria-label={`Hapus flyer ${option.name}`}
+                            title="Hapus flyer"
+                            className="absolute right-1 top-1 z-10 rounded bg-white/95 p-1.5 text-red-600 shadow disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            {deletingImageId === image.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
                           </button>
                         )}
                       </div>
