@@ -123,11 +123,11 @@ export const errorHandler = (err, req, res, next) => {
 /**
  * 404 Not Found Handler
  */
-export const notFoundHandler = (req, res) => {
+export const notFoundHandler = (_req, res) => {
   res.status(404).json({
     success: false,
     code: "RESOURCE_NOT_FOUND",
-    message: `Endpoint ${req.method} ${req.path} tidak ditemukan`,
+    message: "Endpoint tidak ditemukan",
   });
 };
 

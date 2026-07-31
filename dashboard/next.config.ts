@@ -1,6 +1,11 @@
 // dashboard/next.config.ts
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
+  productionBrowserSourceMaps: false,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
   images: {
     remotePatterns: [
       {
@@ -15,6 +20,44 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value:
+              "camera=(self), microphone=(), geolocation=(), payment=(), usb=()",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [
@@ -44,7 +87,10 @@ const nextConfig = {
     return [
       // STAFF alias -> read/write pages that are staff-allowed
       { source: "/staff/users/:path*", destination: "/admin/users/:path*" },
-      { source: "/staff/packages/:path*", destination: "/admin/packages/:path*" },
+      {
+        source: "/staff/packages/:path*",
+        destination: "/admin/packages/:path*",
+      },
       { source: "/staff/jamaah/:path*", destination: "/admin/jamaah/:path*" },
       { source: "/staff/agen/:path*", destination: "/admin/agen/:path*" },
       { source: "/staff/master/:path*", destination: "/admin/master/:path*" },
@@ -52,11 +98,20 @@ const nextConfig = {
 
       // FINANCE alias -> finance-visible admin pages
       { source: "/finance/users/:path*", destination: "/admin/users/:path*" },
-      { source: "/finance/packages/:path*", destination: "/admin/packages/:path*" },
+      {
+        source: "/finance/packages/:path*",
+        destination: "/admin/packages/:path*",
+      },
       { source: "/finance/jamaah/:path*", destination: "/admin/jamaah/:path*" },
       { source: "/finance/agen/:path*", destination: "/admin/agen/:path*" },
-      { source: "/finance/transactions/:path*", destination: "/admin/transactions/:path*" },
-      { source: "/finance/reports/:path*", destination: "/admin/reports/:path*" },
+      {
+        source: "/finance/transactions/:path*",
+        destination: "/admin/transactions/:path*",
+      },
+      {
+        source: "/finance/reports/:path*",
+        destination: "/admin/reports/:path*",
+      },
     ];
   },
 };

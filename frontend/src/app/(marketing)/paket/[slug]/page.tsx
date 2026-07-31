@@ -184,6 +184,9 @@ function BookingPanel({
   const topPrice = pkg.discountedPrice || pkg.priceQuad;
   const originalPrice = getOriginalPrice(pkg, topPrice);
   const availability = getPackageAvailability(pkg, seatsLeft);
+  const selectedOption = pkg.options?.find(
+    (option) => option.id === selectedOptionId,
+  );
 
   return (
     <aside className="lg:sticky lg:top-24">
@@ -192,6 +195,8 @@ function BookingPanel({
           <PackageOptionSelect
             options={pkg.options}
             selectedOptionId={selectedOptionId}
+            selectedOptionIsDefault={selectedOption?.isDefault === true}
+            selectedOptionHasFlyer={Boolean(selectedOption?.gallery?.length)}
           />
         ) : null}
         <div className="border-b border-neutral-200 p-6">
@@ -529,18 +534,14 @@ export default async function LandingPackageDetailPage({
   const selectedOption =
     activeOptions.find((option) => option.id === requestedOptionId) ||
     defaultOption;
-  const selectedOptionIndex = selectedOption
-    ? activeOptions.findIndex((option) => option.id === selectedOption.id)
-    : -1;
-  const legacyOptionFlyer =
-    selectedOptionIndex >= 0
-      ? basePackage.gallery?.[selectedOptionIndex]
-      : undefined;
-  const selectedGallery = selectedOption?.gallery?.length
-    ? selectedOption.gallery
-    : legacyOptionFlyer
-      ? [legacyOptionFlyer]
-      : basePackage.gallery;
+  const hasDedicatedOptionFlyer = Boolean(
+    selectedOption &&
+    !selectedOption.isDefault &&
+    selectedOption.gallery?.length,
+  );
+  const selectedGallery = hasDedicatedOptionFlyer
+    ? selectedOption?.gallery || basePackage.gallery
+    : basePackage.gallery;
   const optionPrice = (value: string | undefined, fallback: string) =>
     getNumericPrice(value) > 0 ? String(value) : fallback;
   const selectedQuadPrice = optionPrice(
@@ -631,7 +632,13 @@ export default async function LandingPackageDetailPage({
                   key={selectedOption?.id || "package"}
                   images={heroImages}
                   packageName={pkg.name}
-                  optionName={selectedOption?.name}
+                  optionName={
+                    selectedOption?.isDefault
+                      ? "Utama"
+                      : hasDedicatedOptionFlyer
+                        ? selectedOption?.name
+                        : "Utama"
+                  }
                 />
 
                 <div className="mt-7 max-w-4xl">

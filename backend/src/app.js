@@ -18,10 +18,7 @@ import {
   authenticatedApiLimiter,
   publicReadLimiter,
 } from "./middlewares/rateLimiter.js";
-import {
-  forbiddenResponse,
-  notFoundResponse,
-} from "./utils/response.js";
+import { forbiddenResponse, notFoundResponse } from "./utils/response.js";
 
 dotenv.config();
 
@@ -65,15 +62,21 @@ app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 app.use(cookieParser());
 
 // 5. Rate limiting
-const PUBLIC_API_PREFIXES = ["/public", "/packages", "/agents", "/health-check"];
+const PUBLIC_API_PREFIXES = [
+  "/public",
+  "/packages",
+  "/agents",
+  "/health-check",
+];
 
 const isPublicApiPath = (pathname) =>
   PUBLIC_API_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 
 const applyApiRateLimit = (req, res, next) => {
-  const normalizedPath = String(req.path || "/").replace(/^\/v1(?=\/|$)/, "") || "/";
+  const normalizedPath =
+    String(req.path || "/").replace(/^\/v1(?=\/|$)/, "") || "/";
 
   if (normalizedPath === "/auth" || normalizedPath.startsWith("/auth/")) {
     return next();
@@ -95,7 +98,9 @@ if (process.env.NODE_ENV === "development") {
 
 // 7. Static files
 const uploadsPath = path.join(__dirname, "../public/uploads");
-logger.info("Static files path configured", { path: path.resolve(uploadsPath) });
+logger.info("Static files path configured", {
+  path: path.resolve(uploadsPath),
+});
 
 const csrfProtectedMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -117,7 +122,7 @@ const csrfProtection = (req, res, next) => {
     return forbiddenResponse(
       res,
       "Permintaan ditolak karena sumber request tidak valid",
-      "SECURITY_INVALID_ORIGIN"
+      "SECURITY_INVALID_ORIGIN",
     );
   }
 
@@ -125,7 +130,7 @@ const csrfProtection = (req, res, next) => {
     return forbiddenResponse(
       res,
       "Permintaan ditolak karena origin/referer tidak tersedia",
-      "SECURITY_ORIGIN_REQUIRED"
+      "SECURITY_ORIGIN_REQUIRED",
     );
   }
 
@@ -136,7 +141,7 @@ const csrfProtection = (req, res, next) => {
   return forbiddenResponse(
     res,
     "Permintaan ditolak karena validasi keamanan origin gagal",
-    "SECURITY_INVALID_ORIGIN"
+    "SECURITY_INVALID_ORIGIN",
   );
 };
 
@@ -157,7 +162,7 @@ const blockApiDocsExposure = (req, res, next) => {
     return forbiddenResponse(
       res,
       "Dokumentasi API publik dinonaktifkan",
-      "SECURITY_DOCS_DISABLED"
+      "SECURITY_DOCS_DISABLED",
     );
   }
 
@@ -207,7 +212,7 @@ const publicUploadsOnly = (req, res, next) => {
   if (protectedFolders.has(effectiveFolder)) {
     return forbiddenResponse(
       res,
-      "Akses file sensitif wajib melalui endpoint terproteksi"
+      "Akses file sensitif wajib melalui endpoint terproteksi",
     );
   }
 
@@ -221,7 +226,7 @@ app.use(
   express.static(uploadsPath, {
     maxAge: "1d",
     etag: true,
-  })
+  }),
 );
 
 // ✅ JUGA serve untuk /api/uploads
@@ -231,7 +236,7 @@ app.use(
   express.static(uploadsPath, {
     maxAge: "1d",
     etag: true,
-  })
+  }),
 );
 
 // 8. Health check
@@ -260,12 +265,12 @@ app.use("/api/v1/protected-uploads", protectedUploadsRoutes);
 
 // ===== 10. 404 HANDLER =====
 app.use((req, res) => {
-  logger.info("404 - Endpoint not found", { 
-    method: req.method, 
+  logger.info("404 - Endpoint not found", {
+    method: req.method,
     path: req.path,
-    requestId: req.id 
+    requestId: req.id,
   });
-  return notFoundResponse(res, `Endpoint ${req.method} ${req.path} tidak ditemukan`);
+  return notFoundResponse(res, "Endpoint tidak ditemukan");
 });
 
 // ===== 11. ERROR HANDLER (MUST BE LAST) =====
@@ -275,4 +280,3 @@ app.use(errorHandler);
 logger.info("✅ Application middleware configured successfully");
 
 export default app;
-

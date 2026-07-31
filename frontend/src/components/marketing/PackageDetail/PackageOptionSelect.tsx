@@ -11,11 +11,15 @@ type PackageOptionSelectProps = {
     isDefault?: boolean;
   }>;
   selectedOptionId: number;
+  selectedOptionIsDefault: boolean;
+  selectedOptionHasFlyer: boolean;
 };
 
 export default function PackageOptionSelect({
   options,
   selectedOptionId,
+  selectedOptionIsDefault,
+  selectedOptionHasFlyer,
 }: PackageOptionSelectProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -69,7 +73,11 @@ export default function PackageOptionSelect({
         )}
       </div>
       <p className="mt-2 text-xs font-semibold leading-5 text-neutral-500">
-        Harga, hotel, dan flyer akan menyesuaikan pilihan ini.
+        {selectedOptionIsDefault
+          ? "Opsi utama memakai hotel, harga, dan gambar paket utama."
+          : selectedOptionHasFlyer
+            ? "Hotel, harga, dan flyer khusus sudah menyesuaikan opsi ini."
+            : "Hotel dan harga sudah berubah. Flyer khusus opsi belum tersedia, jadi gambar utama masih ditampilkan."}
       </p>
     </div>
   );

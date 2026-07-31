@@ -119,12 +119,22 @@ export const packageService = {
       },
     });
 
-    // ✅ Upload images separately (after package created)
+    let imageUploadFailed = false;
+
+    // Upload images after the package exists. A media failure must not make the
+    // admin retry package creation and accidentally create a duplicate.
     if (data.images && data.images.length > 0 && response.data.data?.id) {
-      await packageService.uploadImages(response.data.data.id, data.images);
+      try {
+        await packageService.uploadImages(response.data.data.id, data.images);
+      } catch {
+        imageUploadFailed = true;
+      }
     }
 
-    return response.data;
+    return {
+      ...response.data,
+      imageUploadFailed,
+    };
   },
 
   // ===== UPDATE PACKAGE =====
@@ -140,8 +150,6 @@ export const packageService = {
       airlineTermin1Amount: data.airlineTermin1Amount?.toString() || "0",
       airlineTermin2Amount: data.airlineTermin2Amount?.toString() || "0",
     };
-
-    console.log("📤 SENDING UPDATE:", { id, data: sanitizedData });
 
     // ✅ APPEND SEMUA FIELD KE FORMDATA
     Object.entries(sanitizedData).forEach(([key, value]) => {
@@ -169,13 +177,6 @@ export const packageService = {
   uploadItineraryPdf: async (packageId: number, file: File) => {
     const formData = new FormData();
     formData.append("itinerary_pdf", file);
-
-    console.log(
-      "📤 uploadItineraryPdf → packageId:",
-      packageId,
-      "file:",
-      file.name,
-    );
 
     const response = await api.post(
       `/admin/packages/${packageId}/itinerary-pdf`,
@@ -224,8 +225,6 @@ export const packageService = {
   uploadImage: async (packageId: number, file: File) => {
     const formData = new FormData();
     formData.append("image", file); // harus 'image' (match upload.single("image"))
-
-    console.log("📤 uploadImage → packageId:", packageId, "file:", file.name);
 
     const response = await api.post(
       `/admin/packages/${packageId}/images`,
@@ -324,8 +323,6 @@ export const create = async ({
     airlineTermin1Amount: packageData.airlineTermin1Amount?.toString() || "0",
     airlineTermin2Amount: packageData.airlineTermin2Amount?.toString() || "0",
   };
-
-  console.log("📤 SENDING DATA:", sanitizedData); // DEBUG
 
   formData.append("data", JSON.stringify(sanitizedData));
 

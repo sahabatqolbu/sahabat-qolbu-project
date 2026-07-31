@@ -449,28 +449,20 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
   );
   const defaultOption =
     activeOptions.find((option) => option.isDefault) || activeOptions[0];
-  const currentPrice =
-    getLowestPositivePrice([
-      defaultOption?.priceQuad,
-      defaultOption?.priceTriple,
-      defaultOption?.priceDouble,
-      defaultOption?.priceQuint,
-    ]) || toNumber(pkg.discountPrice ?? pkg.price, 0);
-  const originalPrice = toNumber(pkg.price, currentPrice);
   const quadPrice =
-    toNumber(defaultOption?.priceQuad ?? pkg.priceQuad, currentPrice) ||
-    currentPrice;
-  const triplePrice =
-    toNumber(defaultOption?.priceTriple ?? pkg.priceTriple, quadPrice) ||
-    quadPrice;
+    getLowestPositivePrice([pkg.priceQuad]) ||
+    toNumber(pkg.discountPrice ?? pkg.price, 0);
+  const triplePrice = getLowestPositivePrice([pkg.priceTriple]) || quadPrice;
   const doublePrice =
-    toNumber(defaultOption?.priceDouble ?? pkg.priceDouble, originalPrice) ||
-    originalPrice;
-  const optionGallery = getOptionGallery(defaultOption);
+    getLowestPositivePrice([pkg.priceDouble]) ||
+    toNumber(pkg.price, quadPrice) ||
+    quadPrice;
+  const currentPrice = quadPrice;
+  const originalPrice = toNumber(pkg.price, currentPrice);
   const packageGallery = (pkg.images || [])
     .map((image) => resolveAssetUrl(image.imageUrl))
     .filter((value): value is string => Boolean(value));
-  const gallery = optionGallery.length > 0 ? optionGallery : packageGallery;
+  const gallery = packageGallery;
   const primaryImage = gallery[0];
   const itinerary = Array.isArray(pkg.itinerary)
     ? pkg.itinerary
@@ -522,17 +514,11 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
         pkg.returnAirport?.city || pkg.returnAirport?.name,
       ),
     },
-    hotelMakkah: mapHotel(
-      defaultOption?.hotelMakkah || pkg.hotelMakkah,
-      "Masjidil Haram",
-    ) || {
+    hotelMakkah: mapHotel(pkg.hotelMakkah, "Masjidil Haram") || {
       name: "Hotel Makkah belum tersedia",
       starRating: 0,
     },
-    hotelMadinah: mapHotel(
-      defaultOption?.hotelMadinah || pkg.hotelMadinah,
-      "Masjid Nabawi",
-    ),
+    hotelMadinah: mapHotel(pkg.hotelMadinah, "Masjid Nabawi"),
     priceQuad: String(quadPrice),
     priceTriple: String(triplePrice),
     priceDouble: String(doublePrice),
@@ -552,19 +538,38 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
     updatedAt: toNonEmptyString(pkg.updatedAt),
     image: primaryImage,
     gallery,
-    options: activeOptions.map((option, index) => ({
-      id: option.id,
-      name: toNonEmptyString(option.name, `Pilihan ${index + 1}`),
-      hotelMakkah: mapHotel(option.hotelMakkah, "Masjidil Haram"),
-      hotelMadinah: mapHotel(option.hotelMadinah, "Masjid Nabawi"),
-      priceDouble: String(toNumber(option.priceDouble, 0)),
-      priceTriple: String(toNumber(option.priceTriple, 0)),
-      priceQuad: String(toNumber(option.priceQuad, 0)),
-      priceQuint: String(toNumber(option.priceQuint, 0)),
-      isDefault: option.isDefault === true,
-      isActive: option.isActive !== false,
-      gallery: getOptionGallery(option),
-    })),
+    options: activeOptions.map((option, index) => {
+      const isDefault = option.id === defaultOption?.id;
+      return {
+        id: option.id,
+        name: toNonEmptyString(option.name, `Pilihan ${index + 1}`),
+        hotelMakkah: mapHotel(
+          isDefault ? pkg.hotelMakkah : option.hotelMakkah,
+          "Masjidil Haram",
+        ),
+        hotelMadinah: mapHotel(
+          isDefault ? pkg.hotelMadinah : option.hotelMadinah,
+          "Masjid Nabawi",
+        ),
+        priceDouble: String(
+          isDefault ? doublePrice : toNumber(option.priceDouble, 0),
+        ),
+        priceTriple: String(
+          isDefault ? triplePrice : toNumber(option.priceTriple, 0),
+        ),
+        priceQuad: String(
+          isDefault ? quadPrice : toNumber(option.priceQuad, 0),
+        ),
+        priceQuint: String(
+          isDefault
+            ? toNumber(pkg.priceQuint, 0)
+            : toNumber(option.priceQuint, 0),
+        ),
+        isDefault,
+        isActive: option.isActive !== false,
+        gallery: isDefault ? packageGallery : getOptionGallery(option),
+      };
+    }),
     featured: false,
     description:
       toNonEmptyString(pkg.description) ||

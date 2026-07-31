@@ -1,7 +1,7 @@
 // dashboard/src/app/(dashboard)/admin/packages/[id]/edit/page.tsx
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
@@ -102,6 +102,7 @@ export default function EditPackagePage({ params }: PageProps) {
   const [uploadingOptionId, setUploadingOptionId] = useState<number | null>(
     null,
   );
+  const hydratedPackageId = useRef<number | null>(null);
 
   const {
     register,
@@ -131,18 +132,18 @@ export default function EditPackagePage({ params }: PageProps) {
 
   // Fetch Master Data
   const { data: hotelsData } = useQuery({
-    queryKey: ["hotels-active"],
-    queryFn: () => masterService.hotels.getAll({ isActive: true }),
+    queryKey: ["hotels-all-for-package-edit"],
+    queryFn: () => masterService.hotels.getAll(),
   });
 
   const { data: airlinesData } = useQuery({
-    queryKey: ["airlines-active"],
-    queryFn: () => masterService.airlines.getAll({ isActive: true }),
+    queryKey: ["airlines-all-for-package-edit"],
+    queryFn: () => masterService.airlines.getAll(),
   });
 
   const { data: airportsData } = useQuery({
-    queryKey: ["airports-active"],
-    queryFn: () => masterService.airports.getAll({ isActive: true }),
+    queryKey: ["airports-all-for-package-edit"],
+    queryFn: () => masterService.airports.getAll(),
   });
 
   const hotels = hotelsData?.data || [];
@@ -156,7 +157,7 @@ export default function EditPackagePage({ params }: PageProps) {
   const hotelsMadinah = hotels.filter((h: any) => h.city === "MADINAH");
 
   useEffect(() => {
-    if (pkg && airports.length > 0) {
+    if (pkg && hydratedPackageId.current !== pkg.id) {
       reset({
         name: pkg.name,
         description: pkg.description || "",
@@ -214,12 +215,21 @@ export default function EditPackagePage({ params }: PageProps) {
         isPublished: pkg.isPublished,
       });
       setPackageOptions(buildDefaultPackageOptions(pkg));
+      hydratedPackageId.current = pkg.id;
     }
-  }, [pkg, airports, reset]);
+  }, [pkg, reset]);
 
   // Watch values
   const watchDepartureDate = watch("departureDate");
   const watchReturnDate = watch("returnDate");
+  const baseOptionValues = {
+    hotelMakkahId: watch("hotelMakkahId"),
+    hotelMadinahId: watch("hotelMadinahId"),
+    priceDouble: watch("priceDouble"),
+    priceTriple: watch("priceTriple"),
+    priceQuad: watch("priceQuad"),
+    priceQuint: watch("priceQuint"),
+  };
 
   const calculateDuration = () => {
     if (watchDepartureDate && watchReturnDate) {
@@ -239,7 +249,7 @@ export default function EditPackagePage({ params }: PageProps) {
       packageService.update(parseInt(packageId), {
         ...data,
         options: JSON.stringify(
-          normalizePackageOptionsForSubmit(packageOptions),
+          normalizePackageOptionsForSubmit(packageOptions, data),
         ),
       }),
     onSuccess: () => {
@@ -281,17 +291,14 @@ export default function EditPackagePage({ params }: PageProps) {
 
   // ✅ TAMBAHKAN MUTATION UPLOAD PDF
   const uploadPdfMutation = useMutation({
-    mutationFn: (file: File) => {
-      console.log("📤 uploadPdfMutation → file:", file.name);
-      return packageService.uploadItineraryPdf(parseInt(packageId), file);
-    },
+    mutationFn: (file: File) =>
+      packageService.uploadItineraryPdf(parseInt(packageId), file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       toast({ title: "✅ PDF Itinerary berhasil diupload" });
       setUploadingPdf(false);
     },
     onError: (error: any) => {
-      console.error("❌ upload PDF error:", error);
       toast({
         variant: "destructive",
         title: "❌ Gagal upload PDF",
@@ -359,7 +366,6 @@ export default function EditPackagePage({ params }: PageProps) {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log("🟡 handleImageUpload fired, file:", file);
     if (file) {
       setUploadingImage(true);
       uploadImageMutation.mutate(file);
@@ -367,18 +373,14 @@ export default function EditPackagePage({ params }: PageProps) {
   };
 
   const uploadImageMutation = useMutation({
-    mutationFn: (file: File) => {
-      console.log("📤 uploadImageMutation → file:", file.name, file.size);
-      return packageService.uploadImage(parseInt(packageId), file);
-    },
-    onSuccess: (data) => {
-      console.log("✅ upload success:", data);
+    mutationFn: (file: File) =>
+      packageService.uploadImage(parseInt(packageId), file),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       toast({ title: "✅ Gambar berhasil diupload" });
       setUploadingImage(false);
     },
     onError: (error: any) => {
-      console.error("❌ upload error:", error);
       toast({
         variant: "destructive",
         title: "❌ Gagal upload gambar",
@@ -435,7 +437,6 @@ export default function EditPackagePage({ params }: PageProps) {
   };
 
   const onSubmit = (data: UpdatePackageFormData) => {
-    console.log("📤 FORM SUBMIT:", data);
     updateMutation.mutate(data);
   };
 
@@ -617,21 +618,13 @@ export default function EditPackagePage({ params }: PageProps) {
                       render={({ field }) => {
                         const currentValue = field.value?.toString() || "";
 
-                        console.log("🔍 AIRPORT SELECT RENDER:", {
-                          fieldValue: field.value,
-                          currentValue,
-                          pkgAirportId: pkg?.departureAirportId,
-                          airportsCount: airports.length,
-                        });
-
                         return (
                           <Select
-                            key={`airport-${field.value || "empty"}`} // ✅ TAMBAH KEY INI
+                            key={`airport-${field.value || "empty"}`}
                             value={currentValue}
-                            onValueChange={(val) => {
-                              console.log("✏️ Airport changed:", val);
-                              field.onChange(val ? parseInt(val) : undefined);
-                            }}
+                            onValueChange={(val) =>
+                              field.onChange(val ? parseInt(val) : undefined)
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Pilih Bandara" />
@@ -1136,6 +1129,7 @@ export default function EditPackagePage({ params }: PageProps) {
               <CardContent>
                 <PackageOptionsEditor
                   options={packageOptions}
+                  baseValues={baseOptionValues}
                   hotelsMakkah={hotelsMakkah}
                   hotelsMadinah={hotelsMadinah}
                   onChange={setPackageOptions}
@@ -1171,13 +1165,8 @@ export default function EditPackagePage({ params }: PageProps) {
                           src={getImageUrl(image.imageUrl)} // ✅ PAKAI getImageUrl()
                           alt={image.caption || "Package image"}
                           className="w-full h-48 object-contain rounded-lg border bg-gray-50"
-                          onError={(e) => {
-                            console.error(
-                              "❌ Image load error:",
-                              image.imageUrl,
-                            );
-                            e.currentTarget.src =
-                              "https://via.placeholder.com/150?text=No+Image";
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
                           }}
                         />
                         {image.isPrimary && (

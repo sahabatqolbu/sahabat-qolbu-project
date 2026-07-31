@@ -139,11 +139,67 @@ const normalizePackageOptions = (rawOptions = []) => {
 
   return activeOptions.map((option, index) => ({
     ...option,
-    isDefault:
-      option.isDefault &&
-      index === activeOptions.findIndex((item) => item.isDefault),
+    isDefault: index === 0,
+    isActive: index === 0 ? true : option.isActive,
     sortOrder: index,
   }));
+};
+
+const getPackageDefaultOptionValues = (packageData = {}) => {
+  const getPositiveValue = (...values) =>
+    values.find((value) => Number(value || 0) > 0) || "0.00";
+
+  return {
+    hotelMakkahId: parseOptionalForeignKey(packageData.hotelMakkahId, null),
+    hotelMadinahId: parseOptionalForeignKey(packageData.hotelMadinahId, null),
+    priceDouble: parseDecimalString(
+      getPositiveValue(packageData.priceDouble, packageData.price),
+      "0.00",
+    ),
+    priceTriple: parseDecimalString(
+      getPositiveValue(
+        packageData.priceTriple,
+        packageData.priceQuad,
+        packageData.discountPrice,
+        packageData.price,
+      ),
+      "0.00",
+    ),
+    priceQuad: parseDecimalString(
+      getPositiveValue(
+        packageData.priceQuad,
+        packageData.discountPrice,
+        packageData.price,
+      ),
+      "0.00",
+    ),
+    priceQuint: parseDecimalString(packageData.priceQuint, "0.00"),
+  };
+};
+
+export const normalizePackageOptionsWithDefaults = (
+  rawOptions,
+  packageData = {},
+  fallbackOptions = [],
+) => {
+  const requestedOptions =
+    Array.isArray(rawOptions) && rawOptions.length > 0
+      ? rawOptions
+      : fallbackOptions.length > 0
+        ? fallbackOptions
+        : [{ name: "Pilihan Utama", isDefault: true, isActive: true }];
+  const defaultValues = getPackageDefaultOptionValues(packageData);
+
+  return normalizePackageOptions(requestedOptions).map((option, index) =>
+    index === 0
+      ? {
+          ...option,
+          ...defaultValues,
+          isDefault: true,
+          isActive: true,
+        }
+      : option,
+  );
 };
 
 const getActivePackageOptions = (pkg = {}) =>
@@ -157,12 +213,16 @@ const hasReadyPackageOption = (pkg = {}) =>
       option.hotelMakkahId && option.hotelMadinahId && hasPositivePrice(option),
   );
 
-const syncPackageOptions = async (packageId, rawOptions) => {
-  const nextOptions = normalizePackageOptions(rawOptions);
+const syncPackageOptions = async (packageId, rawOptions, packageData = {}) => {
   const existingOptions = await db.query.packageOptions.findMany({
     where: eq(packageOptions.packageId, packageId),
     with: { images: true },
   });
+  const nextOptions = normalizePackageOptionsWithDefaults(
+    rawOptions,
+    packageData,
+    existingOptions,
+  );
   const existingById = new Map(
     existingOptions.map((option) => [option.id, option]),
   );
@@ -825,9 +885,7 @@ export const createPackage = async (req, res, next) => {
     const packageId = newPackage.id;
 
     const optionPayload = parseJsonPayload(data.options, []);
-    if (optionPayload.length > 0) {
-      await syncPackageOptions(packageId, optionPayload);
-    }
+    await syncPackageOptions(packageId, optionPayload, baseInsertData);
 
     if (data.images && data.images.length > 0) {
       const imageValues = data.images.map((img, index) => ({
@@ -1073,12 +1131,11 @@ export const updatePackage = async (req, res, next) => {
       .set(updateData)
       .where(eq(packages.id, parseInt(id)));
 
-    if (data.options !== undefined) {
-      await syncPackageOptions(
-        parseInt(id, 10),
-        parseJsonPayload(data.options, []),
-      );
-    }
+    await syncPackageOptions(
+      parseInt(id, 10),
+      parseJsonPayload(data.options, []),
+      updateData,
+    );
 
     const updatedPackage = await db.query.packages.findFirst({
       where: eq(packages.id, parseInt(id)),

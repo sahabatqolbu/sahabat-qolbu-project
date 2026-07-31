@@ -14,7 +14,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { getImageUrl } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Upload } from "lucide-react";
+import { BadgeCheck, Plus, Trash2, Upload } from "lucide-react";
 
 export interface PackageOptionDraft {
   id?: number;
@@ -31,8 +31,18 @@ export interface PackageOptionDraft {
   images?: { id: number; imageUrl: string; caption?: string | null }[];
 }
 
+export interface PackageOptionBaseValues {
+  hotelMakkahId?: number | null;
+  hotelMadinahId?: number | null;
+  priceDouble?: number | string;
+  priceTriple?: number | string;
+  priceQuad?: number | string;
+  priceQuint?: number | string;
+}
+
 interface Props {
   options: PackageOptionDraft[];
+  baseValues: PackageOptionBaseValues;
   hotelsMakkah: any[];
   hotelsMadinah: any[];
   onChange: (options: PackageOptionDraft[]) => void;
@@ -48,18 +58,33 @@ const toNumber = (value: string) => {
 
 export function normalizePackageOptionsForSubmit(
   options: PackageOptionDraft[],
+  baseValues: PackageOptionBaseValues,
 ) {
   return options.map((option, index) => ({
     id: option.id,
     name: option.name || `Pilihan ${index + 1}`,
-    hotelMakkahId: option.hotelMakkahId || null,
-    hotelMadinahId: option.hotelMadinahId || null,
-    priceDouble: Number(option.priceDouble || 0),
-    priceTriple: Number(option.priceTriple || 0),
-    priceQuad: Number(option.priceQuad || 0),
-    priceQuint: Number(option.priceQuint || 0),
-    isDefault: index === options.findIndex((item) => item.isDefault !== false),
-    isActive: option.isActive !== false,
+    hotelMakkahId:
+      index === 0
+        ? baseValues.hotelMakkahId || null
+        : option.hotelMakkahId || null,
+    hotelMadinahId:
+      index === 0
+        ? baseValues.hotelMadinahId || null
+        : option.hotelMadinahId || null,
+    priceDouble: Number(
+      index === 0 ? baseValues.priceDouble || 0 : option.priceDouble || 0,
+    ),
+    priceTriple: Number(
+      index === 0 ? baseValues.priceTriple || 0 : option.priceTriple || 0,
+    ),
+    priceQuad: Number(
+      index === 0 ? baseValues.priceQuad || 0 : option.priceQuad || 0,
+    ),
+    priceQuint: Number(
+      index === 0 ? baseValues.priceQuint || 0 : option.priceQuint || 0,
+    ),
+    isDefault: index === 0,
+    isActive: index === 0 ? true : option.isActive !== false,
     sortOrder: index,
   }));
 }
@@ -102,6 +127,7 @@ export function buildDefaultPackageOptions(pkg?: any): PackageOptionDraft[] {
 
 export default function PackageOptionsEditor({
   options,
+  baseValues,
   hotelsMakkah,
   hotelsMadinah,
   onChange,
@@ -117,15 +143,6 @@ export default function PackageOptionsEditor({
     );
   };
 
-  const setDefault = (index: number) => {
-    onChange(
-      options.map((option, itemIndex) => ({
-        ...option,
-        isDefault: itemIndex === index,
-      })),
-    );
-  };
-
   const addOption = () => {
     onChange([
       ...options,
@@ -137,7 +154,7 @@ export default function PackageOptionsEditor({
         priceTriple: 0,
         priceQuad: 0,
         priceQuint: 0,
-        isDefault: options.length === 0,
+        isDefault: false,
         isActive: true,
         sortOrder: options.length,
         images: [],
@@ -146,11 +163,21 @@ export default function PackageOptionsEditor({
   };
 
   const removeOption = (index: number) => {
+    if (index === 0) return;
     const next = options.filter((_, itemIndex) => itemIndex !== index);
-    if (next.length > 0 && !next.some((option) => option.isDefault))
-      next[0].isDefault = true;
+    if (next.length > 0) next[0].isDefault = true;
     onChange(next);
   };
+
+  const getHotelName = (
+    hotelId: number | string | null | undefined,
+    hotels: any[],
+  ) =>
+    hotels.find((hotel) => Number(hotel.id) === Number(hotelId))?.name ||
+    "Belum dipilih";
+
+  const formatPrice = (value: number | string | null | undefined) =>
+    Number(value || 0).toLocaleString("id-ID");
 
   return (
     <div className="space-y-4">
@@ -160,8 +187,9 @@ export default function PackageOptionsEditor({
             Pilihan Paket
           </h3>
           <p className="text-sm text-gray-500">
-            Isi hotel dan harga, simpan paket, lalu upload flyer khusus pada
-            setiap opsi. Gambar paket umum bukan pengganti flyer opsi.
+            Opsi utama otomatis mengikuti hotel, harga, dan gambar paket.
+            Tambahkan opsi lain hanya jika ada pilihan hotel, harga, atau flyer
+            yang berbeda.
           </p>
         </div>
         <Button type="button" variant="outline" onClick={addOption}>
@@ -172,17 +200,17 @@ export default function PackageOptionsEditor({
       {options.map((option, index) => (
         <Card key={option.id || index} className="border-gray-200 shadow-sm">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
-            <CardTitle className="text-base">Opsi {index + 1}</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              {index === 0 ? "Opsi Utama" : `Opsi ${index + 1}`}
+              {index === 0 && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                  <BadgeCheck className="h-3.5 w-3.5" />
+                  Otomatis
+                </span>
+              )}
+            </CardTitle>
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant={option.isDefault ? "default" : "outline"}
-                size="sm"
-                onClick={() => setDefault(index)}
-              >
-                Default
-              </Button>
-              {options.length > 1 && (
+              {index > 0 && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -210,11 +238,14 @@ export default function PackageOptionsEditor({
                 <div>
                   <Label>Aktif</Label>
                   <p className="text-xs text-gray-500">
-                    Nonaktifkan kalau opsi belum dijual.
+                    {index === 0
+                      ? "Mengikuti status paket utama."
+                      : "Nonaktifkan kalau opsi belum dijual."}
                   </p>
                 </div>
                 <Switch
-                  checked={option.isActive !== false}
+                  checked={index === 0 ? true : option.isActive !== false}
+                  disabled={index === 0}
                   onCheckedChange={(checked) =>
                     updateOption(index, { isActive: checked })
                   }
@@ -222,77 +253,134 @@ export default function PackageOptionsEditor({
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Hotel Makkah</Label>
-                <Select
-                  value={option.hotelMakkahId?.toString() || ""}
-                  onValueChange={(value) =>
-                    updateOption(index, {
-                      hotelMakkahId: value ? Number(value) : null,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih hotel Makkah" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {hotelsMakkah.map((hotel) => (
-                      <SelectItem key={hotel.id} value={hotel.id.toString()}>
-                        {hotel.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Hotel Madinah</Label>
-                <Select
-                  value={option.hotelMadinahId?.toString() || ""}
-                  onValueChange={(value) =>
-                    updateOption(index, {
-                      hotelMadinahId: value ? Number(value) : null,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih hotel Madinah" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {hotelsMadinah.map((hotel) => (
-                      <SelectItem key={hotel.id} value={hotel.id.toString()}>
-                        {hotel.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-4">
-              {[
-                ["Double", "priceDouble"],
-                ["Triple", "priceTriple"],
-                ["Quad", "priceQuad"],
-                ["Quint", "priceQuint"],
-              ].map(([label, key]) => (
-                <div key={key} className="space-y-2">
-                  <Label>{label}</Label>
-                  <Input
-                    inputMode="numeric"
-                    value={(option as any)[key] || ""}
-                    onChange={(event) =>
-                      updateOption(index, {
-                        [key]: toNumber(event.target.value),
-                      } as any)
-                    }
-                    placeholder="0"
-                  />
+            {index === 0 ? (
+              <div className="space-y-4 rounded-md border border-emerald-200 bg-emerald-50/60 p-4">
+                <div>
+                  <p className="font-semibold text-emerald-900">
+                    Tidak perlu mengisi ulang data opsi utama
+                  </p>
+                  <p className="mt-1 text-sm text-emerald-800">
+                    Nilai berikut otomatis mengikuti tab Hotel dan Info Dasar.
+                  </p>
                 </div>
-              ))}
-            </div>
+                <div className="grid gap-3 text-sm md:grid-cols-2">
+                  <div className="rounded-md bg-white p-3">
+                    <p className="text-gray-500">Hotel Makkah</p>
+                    <p className="mt-1 font-semibold text-gray-900">
+                      {getHotelName(baseValues.hotelMakkahId, hotelsMakkah)}
+                    </p>
+                  </div>
+                  <div className="rounded-md bg-white p-3">
+                    <p className="text-gray-500">Hotel Madinah</p>
+                    <p className="mt-1 font-semibold text-gray-900">
+                      {getHotelName(baseValues.hotelMadinahId, hotelsMadinah)}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-3 text-sm sm:grid-cols-2 md:grid-cols-4">
+                  {[
+                    ["Double", baseValues.priceDouble],
+                    ["Triple", baseValues.priceTriple],
+                    ["Quad", baseValues.priceQuad],
+                    ["Quint", baseValues.priceQuint],
+                  ].map(([label, value]) => (
+                    <div
+                      key={String(label)}
+                      className="rounded-md bg-white p-3"
+                    >
+                      <p className="text-gray-500">{label}</p>
+                      <p className="mt-1 font-semibold text-gray-900">
+                        Rp{formatPrice(value)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <p className="rounded-md bg-white px-3 py-2 text-xs font-medium text-emerald-800">
+                  Flyer opsi utama menggunakan Gambar / Brosur Paket pada tab
+                  Media.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Hotel Makkah</Label>
+                    <Select
+                      value={option.hotelMakkahId?.toString() || ""}
+                      onValueChange={(value) =>
+                        updateOption(index, {
+                          hotelMakkahId: value ? Number(value) : null,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih hotel Makkah" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hotelsMakkah.map((hotel) => (
+                          <SelectItem
+                            key={hotel.id}
+                            value={hotel.id.toString()}
+                          >
+                            {hotel.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hotel Madinah</Label>
+                    <Select
+                      value={option.hotelMadinahId?.toString() || ""}
+                      onValueChange={(value) =>
+                        updateOption(index, {
+                          hotelMadinahId: value ? Number(value) : null,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih hotel Madinah" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hotelsMadinah.map((hotel) => (
+                          <SelectItem
+                            key={hotel.id}
+                            value={hotel.id.toString()}
+                          >
+                            {hotel.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-            {option.id && (
+                <div className="grid gap-4 md:grid-cols-4">
+                  {[
+                    ["Double", "priceDouble"],
+                    ["Triple", "priceTriple"],
+                    ["Quad", "priceQuad"],
+                    ["Quint", "priceQuint"],
+                  ].map(([label, key]) => (
+                    <div key={key} className="space-y-2">
+                      <Label>{label}</Label>
+                      <Input
+                        inputMode="numeric"
+                        value={(option as any)[key] || ""}
+                        onChange={(event) =>
+                          updateOption(index, {
+                            [key]: toNumber(event.target.value),
+                          } as any)
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {index > 0 && option.id && (
               <div className="space-y-3 rounded-md bg-gray-50 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>

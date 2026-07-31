@@ -1,7 +1,7 @@
 // dashboard/src/app/%28dashboard%29/admin/packages/create/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,6 +59,8 @@ import PackageOptionsEditor, {
   type PackageOptionDraft,
 } from "@/components/packages/PackageOptionsEditor";
 
+const PACKAGE_DRAFT_KEY = "sq-admin-package-create-draft-v1";
+
 export default function CreatePackagePage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -77,6 +79,7 @@ export default function CreatePackagePage() {
     control,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<CreatePackageFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -111,6 +114,53 @@ export default function CreatePackagePage() {
   // Watch values for computed fields
   const watchDepartureDate = watch("departureDate");
   const watchReturnDate = watch("returnDate");
+  const baseOptionValues = {
+    hotelMakkahId: watch("hotelMakkahId"),
+    hotelMadinahId: watch("hotelMadinahId"),
+    priceDouble: watch("priceDouble"),
+    priceTriple: watch("priceTriple"),
+    priceQuad: watch("priceQuad"),
+    priceQuint: watch("priceQuint"),
+  };
+
+  const draftHydrated = useRef(false);
+
+  useEffect(() => {
+    try {
+      const storedDraft = sessionStorage.getItem(PACKAGE_DRAFT_KEY);
+      if (storedDraft) {
+        const parsed = JSON.parse(storedDraft);
+        if (parsed?.form && typeof parsed.form === "object") {
+          reset(parsed.form);
+        }
+        if (Array.isArray(parsed?.options) && parsed.options.length > 0) {
+          setPackageOptions(parsed.options);
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(PACKAGE_DRAFT_KEY);
+    } finally {
+      draftHydrated.current = true;
+    }
+  }, [reset]);
+
+  useEffect(() => {
+    if (!draftHydrated.current) return;
+
+    const saveDraft = (formValues: unknown = watch()) => {
+      sessionStorage.setItem(
+        PACKAGE_DRAFT_KEY,
+        JSON.stringify({
+          form: formValues,
+          options: packageOptions,
+        }),
+      );
+    };
+
+    saveDraft();
+    const subscription = watch((formValues) => saveDraft(formValues));
+    return () => subscription.unsubscribe();
+  }, [packageOptions, watch]);
 
   // Calculate duration
   const calculateDuration = () => {
@@ -158,7 +208,7 @@ export default function CreatePackagePage() {
         packageData: {
           ...data,
           options: JSON.stringify(
-            normalizePackageOptionsForSubmit(packageOptions),
+            normalizePackageOptionsForSubmit(packageOptions, data),
           ),
         },
         itineraryPdf: uploadPdf || undefined,
@@ -166,11 +216,22 @@ export default function CreatePackagePage() {
       });
     },
     onSuccess: (data) => {
+      sessionStorage.removeItem(PACKAGE_DRAFT_KEY);
+      const packageId = data.data.id;
       toast({
-        title: "✅ Paket Berhasil Dibuat",
-        description: `Paket ${data.data.name} telah ditambahkan`,
+        variant: data.imageUploadFailed ? "destructive" : "default",
+        title: data.imageUploadFailed
+          ? "Paket tersimpan, gambar perlu diupload ulang"
+          : "Paket Berhasil Dibuat",
+        description: data.imageUploadFailed
+          ? "Data paket aman. Silakan upload gambar dari halaman edit paket."
+          : `Paket ${data.data.name} telah ditambahkan`,
       });
-      router.push("/admin/packages");
+      router.push(
+        data.imageUploadFailed
+          ? `/admin/packages/${packageId}/edit`
+          : "/admin/packages",
+      );
     },
     onError: (error: any) => {
       toast({
@@ -212,7 +273,6 @@ export default function CreatePackagePage() {
 
   // Tambahkan fungsi ini
   const onInvalid = (errors: any) => {
-    console.log("❌ Form Errors:", errors); // Cek console browser (F12)
     toast({
       variant: "destructive",
       title: "Data Belum Lengkap",
@@ -1022,6 +1082,7 @@ export default function CreatePackagePage() {
               <CardContent>
                 <PackageOptionsEditor
                   options={packageOptions}
+                  baseValues={baseOptionValues}
                   hotelsMakkah={hotelsMakkah}
                   hotelsMadinah={hotelsMadinah}
                   onChange={setPackageOptions}
@@ -1033,6 +1094,8 @@ export default function CreatePackagePage() {
           {/* ✅ TAB: MEDIA (BARU) */}
           <TabsContent value="media">
             <MediaUpload
+              selectedImages={uploadImages}
+              selectedPdf={uploadPdf}
               onImagesChange={setUploadImages}
               onPdfChange={setUploadPdf}
             />

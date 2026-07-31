@@ -1,9 +1,9 @@
 // dashboard/src/components/packages/MediaUpload.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
-import { X, Upload, FileText, Image as ImageIcon } from "lucide-react";
+import { X, Upload, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,8 @@ import { getImageUrl } from "@/lib/utils";
 interface MediaUploadProps {
   onImagesChange: (files: File[]) => void;
   onPdfChange: (file: File | null) => void;
+  selectedImages?: File[];
+  selectedPdf?: File | null;
   existingImages?: { id: number; imageUrl: string; caption?: string }[];
   existingPdf?: string;
   onDeleteImage?: (imageId: number) => void;
@@ -21,34 +23,34 @@ interface MediaUploadProps {
 export function MediaUpload({
   onImagesChange,
   onPdfChange,
+  selectedImages = [],
+  selectedPdf = null,
   existingImages = [],
   existingPdf,
   onDeleteImage,
 }: MediaUploadProps) {
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [pdf, setPdf] = useState<File | null>(null);
+  const imagePreviews = useMemo(
+    () => selectedImages.map((file) => URL.createObjectURL(file)),
+    [selectedImages],
+  );
+
+  useEffect(
+    () => () => {
+      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
+    },
+    [imagePreviews],
+  );
 
   // ===== IMAGE DROPZONE =====
   const onDropImages = useCallback(
     (acceptedFiles: File[]) => {
       const imageFiles = acceptedFiles.filter((file) =>
-        file.type.startsWith("image/")
+        file.type.startsWith("image/"),
       );
 
-      setImages((prev) => [...prev, ...imageFiles]);
-      onImagesChange([...images, ...imageFiles]);
-
-      // Create previews
-      imageFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setImagePreviews((prev) => [...prev, e.target?.result as string]);
-        };
-        reader.readAsDataURL(file);
-      });
+      onImagesChange([...selectedImages, ...imageFiles]);
     },
-    [images, onImagesChange]
+    [onImagesChange, selectedImages],
   );
 
   const {
@@ -68,7 +70,6 @@ export function MediaUpload({
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
-      setPdf(file);
       onPdfChange(file);
     } else {
       alert("Hanya file PDF yang diperbolehkan");
@@ -77,16 +78,12 @@ export function MediaUpload({
 
   // ===== REMOVE NEW IMAGE =====
   const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    setImages(newImages);
-    setImagePreviews(newPreviews);
+    const newImages = selectedImages.filter((_, i) => i !== index);
     onImagesChange(newImages);
   };
 
   // ===== REMOVE PDF =====
   const removePdf = () => {
-    setPdf(null);
     onPdfChange(null);
   };
 
@@ -187,7 +184,7 @@ export function MediaUpload({
                       <X className="h-4 w-4" />
                     </Button>
                     <div className="mt-1 text-xs text-gray-500 truncate">
-                      {images[index].name}
+                      {selectedImages[index].name}
                     </div>
                   </div>
                 ))}
@@ -205,7 +202,7 @@ export function MediaUpload({
           </Label>
 
           {/* Existing PDF */}
-          {existingPdf && !pdf && (
+          {existingPdf && !selectedPdf && (
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <FileText className="h-8 w-8 text-blue-600" />
@@ -235,11 +232,11 @@ export function MediaUpload({
               <FileText className="h-8 w-8 text-gray-400" />
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">
-                  {pdf
-                    ? pdf.name
+                  {selectedPdf
+                    ? selectedPdf.name
                     : existingPdf
-                    ? "Upload PDF baru untuk replace"
-                    : "Klik untuk upload PDF itinerary"}
+                      ? "Upload PDF baru untuk replace"
+                      : "Klik untuk upload PDF itinerary"}
                 </p>
                 <p className="text-xs text-gray-500">Max 10MB</p>
               </div>
@@ -254,14 +251,16 @@ export function MediaUpload({
           </div>
 
           {/* PDF Preview */}
-          {pdf && (
+          {selectedPdf && (
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <FileText className="h-8 w-8 text-green-600" />
                 <div>
-                  <p className="font-medium text-green-900">{pdf.name}</p>
+                  <p className="font-medium text-green-900">
+                    {selectedPdf.name}
+                  </p>
                   <p className="text-sm text-green-700">
-                    {(pdf.size / 1024 / 1024).toFixed(2)} MB
+                    {(selectedPdf.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
               </div>
