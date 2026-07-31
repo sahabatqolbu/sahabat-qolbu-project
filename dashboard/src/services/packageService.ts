@@ -88,7 +88,10 @@ export const packageService = {
 
   // ===== GET SINGLE PACKAGE =====
   getById: async (id: number) => {
-    const response = await api.get(`/admin/packages/${id}`); // ✅ api
+    const response = await api.get(`/admin/packages/${id}`, {
+      params: { _: Date.now() },
+      headers: { "Cache-Control": "no-cache" },
+    });
     return response.data;
   },
 

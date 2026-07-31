@@ -38,6 +38,10 @@ describe("api integration lite", () => {
 
     assert.equal(v1HealthRes.status, 200);
     assert.equal(v1HealthBody.status, "API router is alive");
+    assert.match(
+      v1HealthRes.headers.get("cache-control") || "",
+      /no-store/,
+    );
   });
 
   it("exposes detailed health with email queue stats", async () => {

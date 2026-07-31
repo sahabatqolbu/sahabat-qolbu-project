@@ -20,16 +20,12 @@ import {
   getItineraryPreviewUrl,
 } from "@/lib/itinerary-url";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import PdfItineraryPreview from "@/components/marketing/PdfItineraryPreview";
 
 type Params = Promise<{ slug: string }>;
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const SITE_URL =
-  process.env.NODE_ENV === "production"
-    ? "https://sahabatqolbu.com"
-    : "http://localhost:3000";
-
 const toCurrency = (value?: string) => {
   const parsed = Number.parseInt(String(value || "0"), 10);
   return formatCurrency(Number.isFinite(parsed) ? parsed : 0);
@@ -78,8 +74,6 @@ export default async function ItineraryPreviewPage({
   }
 
   const downloadUrl = getItineraryDownloadUrl(pkg.slug);
-  const publicDownloadUrl = `${SITE_URL}${downloadUrl}`;
-  const mobilePreviewUrl = `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(publicDownloadUrl)}`;
   const consultLink = getWhatsappLink(pkg);
 
   return (
@@ -105,9 +99,9 @@ export default async function ItineraryPreviewPage({
                 Itinerary {pkg.name}
               </h1>
               <p className="mt-4 max-w-3xl text-base font-medium leading-8 text-white/78">
-                Lihat jadwal perjalanan umum dalam tampilan resmi Sahabat
-                Qolbu. Detail final tetap mengikuti konfirmasi admin, maskapai,
-                hotel, dan kondisi operasional keberangkatan.
+                Lihat jadwal perjalanan umum dalam tampilan resmi Sahabat Qolbu.
+                Detail final tetap mengikuti konfirmasi admin, maskapai, hotel,
+                dan kondisi operasional keberangkatan.
               </p>
             </div>
 
@@ -119,7 +113,9 @@ export default async function ItineraryPreviewPage({
               <div className="mt-4 grid gap-3 text-sm font-bold text-white/80">
                 <span className="inline-flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-gold" />
-                  {pkg.departureDate ? formatDate(pkg.departureDate) : "Jadwal menyusul"}
+                  {pkg.departureDate
+                    ? formatDate(pkg.departureDate)
+                    : "Jadwal menyusul"}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <Plane className="h-4 w-4 text-gold" />
@@ -155,20 +151,10 @@ export default async function ItineraryPreviewPage({
                 Download PDF
               </a>
             </div>
-            <div className="block md:hidden">
-              <iframe
-                src={mobilePreviewUrl}
-                title={`Preview itinerary ${pkg.name}`}
-                className="h-[70vh] min-h-[520px] w-full bg-neutral-100"
-              />
-            </div>
-            <div className="hidden md:block">
-              <iframe
-                src={`${downloadUrl}#toolbar=0&navpanes=0`}
-                title={`Itinerary ${pkg.name}`}
-                className="h-[72vh] min-h-[520px] w-full bg-neutral-100"
-              />
-            </div>
+            <PdfItineraryPreview
+              fileUrl={downloadUrl}
+              title={`Preview itinerary ${pkg.name}`}
+            />
           </div>
 
           <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">

@@ -124,24 +124,26 @@ export default function EditPackagePage({ params }: PageProps) {
 
   // Fetch Package
   const { data: packageData, isLoading: packageLoading } = useQuery({
-    queryKey: ["package", packageId],
+    queryKey: ["package", packageId, "edit"],
     queryFn: () => packageService.getById(parseInt(packageId)),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const pkg = packageData?.data;
 
   // Fetch Master Data
-  const { data: hotelsData } = useQuery({
+  const { data: hotelsData, isLoading: hotelsLoading } = useQuery({
     queryKey: ["hotels-all-for-package-edit"],
     queryFn: () => masterService.hotels.getAll(),
   });
 
-  const { data: airlinesData } = useQuery({
+  const { data: airlinesData, isLoading: airlinesLoading } = useQuery({
     queryKey: ["airlines-all-for-package-edit"],
     queryFn: () => masterService.airlines.getAll(),
   });
 
-  const { data: airportsData } = useQuery({
+  const { data: airportsData, isLoading: airportsLoading } = useQuery({
     queryKey: ["airports-all-for-package-edit"],
     queryFn: () => masterService.airports.getAll(),
   });
@@ -157,67 +159,80 @@ export default function EditPackagePage({ params }: PageProps) {
   const hotelsMadinah = hotels.filter((h: any) => h.city === "MADINAH");
 
   useEffect(() => {
-    if (pkg && hydratedPackageId.current !== pkg.id) {
-      reset({
-        name: pkg.name,
-        description: pkg.description || "",
-        type: normalizePackageType(pkg.type),
+    if (
+      pkg &&
+      !hotelsLoading &&
+      !airlinesLoading &&
+      !airportsLoading &&
+      hydratedPackageId.current !== pkg.id
+    ) {
+      reset(
+        {
+          name: pkg.name,
+          description: pkg.description || "",
+          type: normalizePackageType(pkg.type),
 
-        departureDate: pkg.departureDate?.split("T")[0] || "",
-        returnDate: pkg.returnDate?.split("T")[0] || "",
+          departureDate: pkg.departureDate?.split("T")[0] || "",
+          returnDate: pkg.returnDate?.split("T")[0] || "",
 
-        price: parseFloat(pkg.price),
-        discountPrice:
-          pkg.discountPrice && parseFloat(pkg.discountPrice) > 0
-            ? parseFloat(pkg.discountPrice)
-            : undefined,
-        priceDouble: pkg.priceDouble ? parseFloat(pkg.priceDouble) : 0,
-        priceTriple: pkg.priceTriple ? parseFloat(pkg.priceTriple) : 0,
-        priceQuad: pkg.priceQuad ? parseFloat(pkg.priceQuad) : 0,
-        priceQuint: pkg.priceQuint ? parseFloat(pkg.priceQuint) : 0,
-        totalSeats: pkg.totalSeats,
+          price: parseFloat(pkg.price),
+          discountPrice:
+            pkg.discountPrice && parseFloat(pkg.discountPrice) > 0
+              ? parseFloat(pkg.discountPrice)
+              : undefined,
+          priceDouble: pkg.priceDouble ? parseFloat(pkg.priceDouble) : 0,
+          priceTriple: pkg.priceTriple ? parseFloat(pkg.priceTriple) : 0,
+          priceQuad: pkg.priceQuad ? parseFloat(pkg.priceQuad) : 0,
+          priceQuint: pkg.priceQuint ? parseFloat(pkg.priceQuint) : 0,
+          totalSeats: pkg.totalSeats,
 
-        facilities: pkg.facilities || "",
-        excludedFacilities: pkg.excludedFacilities || "",
-        notes: pkg.notes || "",
+          facilities: pkg.facilities || "",
+          excludedFacilities: pkg.excludedFacilities || "",
+          notes: pkg.notes || "",
 
-        airlineId: pkg.airlineId,
-        airlineStatus: pkg.airlineStatus,
-        airlineIssuedDate: pkg.airlineIssuedDate?.split("T")[0] || "",
+          airlineId: pkg.airlineId,
+          airlineStatus: pkg.airlineStatus,
+          airlineIssuedDate: pkg.airlineIssuedDate?.split("T")[0] || "",
 
-        airlineTermin1Amount: parseFloat(pkg.airlineTermin1Amount),
-        airlineTermin1Date: pkg.airlineTermin1Date?.split("T")[0] || "",
-        airlineTermin1Status: pkg.airlineTermin1Status,
+          airlineTermin1Amount: parseFloat(pkg.airlineTermin1Amount),
+          airlineTermin1Date: pkg.airlineTermin1Date?.split("T")[0] || "",
+          airlineTermin1Status: pkg.airlineTermin1Status,
 
-        airlineTermin2Amount: parseFloat(pkg.airlineTermin2Amount),
-        airlineTermin2Date: pkg.airlineTermin2Date?.split("T")[0] || "",
-        airlineTermin2Status: pkg.airlineTermin2Status,
+          airlineTermin2Amount: parseFloat(pkg.airlineTermin2Amount),
+          airlineTermin2Date: pkg.airlineTermin2Date?.split("T")[0] || "",
+          airlineTermin2Status: pkg.airlineTermin2Status,
 
-        hotelMakkahId: pkg.hotelMakkahId,
-        hotelMakkahStatus: pkg.hotelMakkahStatus,
-        hotelMakkahDouble: pkg.hotelMakkahDouble,
-        hotelMakkahTriple: pkg.hotelMakkahTriple,
-        hotelMakkahQuad: pkg.hotelMakkahQuad,
-        hotelMakkahQuint: pkg.hotelMakkahQuint,
+          hotelMakkahId: pkg.hotelMakkahId,
+          hotelMakkahStatus: pkg.hotelMakkahStatus,
+          hotelMakkahDouble: pkg.hotelMakkahDouble,
+          hotelMakkahTriple: pkg.hotelMakkahTriple,
+          hotelMakkahQuad: pkg.hotelMakkahQuad,
+          hotelMakkahQuint: pkg.hotelMakkahQuint,
 
-        hotelMadinahId: pkg.hotelMadinahId,
-        hotelMadinahStatus: pkg.hotelMadinahStatus,
-        hotelMadinahDouble: pkg.hotelMadinahDouble,
-        hotelMadinahTriple: pkg.hotelMadinahTriple,
-        hotelMadinahQuad: pkg.hotelMadinahQuad,
-        hotelMadinahQuint: pkg.hotelMadinahQuint,
+          hotelMadinahId: pkg.hotelMadinahId,
+          hotelMadinahStatus: pkg.hotelMadinahStatus,
+          hotelMadinahDouble: pkg.hotelMadinahDouble,
+          hotelMadinahTriple: pkg.hotelMadinahTriple,
+          hotelMadinahQuad: pkg.hotelMadinahQuad,
+          hotelMadinahQuint: pkg.hotelMadinahQuint,
 
-        departureAirportId: pkg.departureAirportId,
-        arrivalAirportId: pkg.arrivalAirportId,
-        returnAirportId: pkg.returnAirportId,
+          departureAirportId: pkg.departureAirportId,
+          arrivalAirportId: pkg.arrivalAirportId,
+          returnAirportId: pkg.returnAirportId,
 
-        isActive: pkg.isActive,
-        isPublished: pkg.isPublished,
-      });
+          isActive: pkg.isActive,
+          isPublished: pkg.isPublished,
+        },
+        {
+          keepDefaultValues: false,
+          keepDirty: false,
+          keepDirtyValues: false,
+        },
+      );
       setPackageOptions(buildDefaultPackageOptions(pkg));
       hydratedPackageId.current = pkg.id;
     }
-  }, [pkg, reset]);
+  }, [pkg, reset, hotelsLoading, airlinesLoading, airportsLoading]);
 
   // Watch values
   const watchDepartureDate = watch("departureDate");
@@ -440,7 +455,14 @@ export default function EditPackagePage({ params }: PageProps) {
     updateMutation.mutate(data);
   };
 
-  if (packageLoading) {
+  if (
+    packageLoading ||
+    hotelsLoading ||
+    airlinesLoading ||
+    airportsLoading ||
+    !pkg ||
+    hydratedPackageId.current !== pkg.id
+  ) {
     return (
       <div className="max-w-5xl mx-auto space-y-6">
         <Skeleton className="h-10 w-64" />

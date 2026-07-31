@@ -61,6 +61,15 @@ app.use(express.json({ limit: "256kb" }));
 app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 app.use(cookieParser());
 
+// API responses can contain mutable or authenticated data. Prevent browsers and
+// intermediary caches from reusing stale admin forms or sensitive responses.
+app.use("/api", (_req, res, next) => {
+  res.set("Cache-Control", "no-store, max-age=0");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+});
+
 // 5. Rate limiting
 const PUBLIC_API_PREFIXES = [
   "/public",
