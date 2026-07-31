@@ -90,7 +90,6 @@ export const packageService = {
   getById: async (id: number) => {
     const response = await api.get(`/admin/packages/${id}`, {
       params: { _: Date.now() },
-      headers: { "Cache-Control": "no-cache" },
     });
     return response.data;
   },
