@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import { COMPANY_GOOGLE_MAPS_URL } from "@/lib/company-location";
 
 export default function Footer() {
   const branding = useBranding();
@@ -170,15 +171,16 @@ export default function Footer() {
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-                <span className="text-gray-300 text-sm">
-                  {branding.address || (
-                    <p>
-                      Ruko Jl. Ebony, Metland Transyogi No.11,{" "}
-                      <strong>Kec. Cileungsi, Kab. Bogor</strong>, Jawa Barat
-                      16820
-                    </p>
-                  )}
-                </span>
+                <a
+                  href={COMPANY_GOOGLE_MAPS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm leading-6 text-gray-300 transition-colors hover:text-gold hover:underline hover:underline-offset-4"
+                  aria-label="Buka lokasi kantor Sahabat Qolbu di Google Maps"
+                >
+                  {branding.address ||
+                    "Ruko Jl. Ebony, Metland Transyogi No.11, Kec. Cileungsi, Kab. Bogor, Jawa Barat 16820"}
+                </a>
               </li>
               <li className="flex items-center gap-3">
                 <svg

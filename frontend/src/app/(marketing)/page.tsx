@@ -6,6 +6,11 @@ import { useBranding } from "@/components/providers/BrandingProvider";
 import PackageCard from "@/components/marketing/PackageCard";
 import { getCalonJamaahRegisterUrl } from "@/lib/dashboard-url";
 import {
+  COMPANY_GOOGLE_MAPS_URL,
+  COMPANY_MAP_EMBED_URL,
+} from "@/lib/company-location";
+import { ExternalLink, MapPin, Navigation } from "lucide-react";
+import {
   getMarketingPackages,
   getPublicCompanyProfile,
   getPublicArticles,
@@ -45,9 +50,16 @@ export default function MarketingHomePage() {
           setPackages(packageData);
           setArticles(articleData);
           setFaqs(faqData);
-          const firstCategory = faqData.find((faq) => faq.category)?.category || faqData[0]?.category || "";
+          const firstCategory =
+            faqData.find((faq) => faq.category)?.category ||
+            faqData[0]?.category ||
+            "";
           setActiveFaqCategory(firstCategory);
-          setOpenFaqId(faqData.find((faq) => faq.category === firstCategory)?.id ?? faqData[0]?.id ?? null);
+          setOpenFaqId(
+            faqData.find((faq) => faq.category === firstCategory)?.id ??
+              faqData[0]?.id ??
+              null,
+          );
           setGalleryImages(galleryData);
           setCompanyProfile(profileData);
           setLoading(false);
@@ -757,7 +769,10 @@ export default function MarketingHomePage() {
       ) : null}
 
       {articles.length > 0 ? (
-        <section id="artikel" className="border-y border-gray-100 bg-white py-16 md:py-24">
+        <section
+          id="artikel"
+          className="border-y border-gray-100 bg-white py-16 md:py-24"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="max-w-2xl">
@@ -861,7 +876,10 @@ export default function MarketingHomePage() {
                       type="button"
                       onClick={() => {
                         setActiveFaqCategory(category);
-                        setOpenFaqId(faqs.find((faq) => faq.category === category)?.id ?? null);
+                        setOpenFaqId(
+                          faqs.find((faq) => faq.category === category)?.id ??
+                            null,
+                        );
                       }}
                       className={`rounded-sm border px-4 py-2 text-sm font-bold transition ${
                         isActive
@@ -918,6 +936,70 @@ export default function MarketingHomePage() {
           </div>
         </section>
       ) : null}
+
+      {/* LOKASI KANTOR */}
+      <section
+        id="lokasi"
+        className="border-t border-gray-100 bg-gray-50 py-16 md:py-24"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl shadow-primary/5 lg:grid-cols-[0.78fr_1.22fr]">
+            <div className="flex flex-col justify-center p-7 md:p-10 lg:p-12">
+              <span className="text-sm font-semibold uppercase tracking-wider text-gold">
+                Lokasi Kantor
+              </span>
+              <h2 className="mt-3 text-3xl font-bold text-primary md:text-4xl">
+                Kunjungi Sahabat Qolbu
+              </h2>
+              <p className="mt-4 leading-7 text-gray-600">
+                Konsultasikan pilihan paket dan kebutuhan perjalanan umroh
+                langsung bersama tim kami di kantor Sahabat Qolbu Cahaya
+                Baitullah.
+              </p>
+
+              <div className="mt-7 flex items-start gap-3 border-l-2 border-gold pl-4">
+                <MapPin className="mt-1 h-5 w-5 shrink-0 text-primary" />
+                <p className="text-sm font-semibold leading-6 text-gray-700">
+                  {branding.address ||
+                    "Ruko Jl. Ebony, Metland Transyogi No.11, Kec. Cileungsi, Kab. Bogor, Jawa Barat 16820"}
+                </p>
+              </div>
+
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <a
+                  href={COMPANY_GOOGLE_MAPS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 font-bold text-white transition hover:bg-secondary"
+                >
+                  <Navigation className="h-4 w-4" />
+                  Petunjuk Arah
+                </a>
+                <a
+                  href={COMPANY_GOOGLE_MAPS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-primary px-5 py-3 font-bold text-primary transition hover:bg-primary hover:text-white"
+                >
+                  Buka Google Maps
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+
+            <div className="min-h-[360px] border-t border-gray-200 bg-gray-100 lg:min-h-[480px] lg:border-l lg:border-t-0">
+              <iframe
+                src={COMPANY_MAP_EMBED_URL}
+                title="Peta lokasi kantor Sahabat Qolbu Cahaya Baitullah"
+                className="h-full min-h-[360px] w-full lg:min-h-[480px]"
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA SECTION */}
       <section className="relative overflow-hidden bg-primary py-16 md:py-24">
@@ -992,4 +1074,3 @@ export default function MarketingHomePage() {
     </div>
   );
 }
-
