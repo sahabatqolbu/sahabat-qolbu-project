@@ -11,13 +11,29 @@ on:
 
 jobs:
   db-integration:
-    if: ${{ secrets.DB_TEST_HOST != '' && secrets.DB_TEST_USER != '' && secrets.DB_TEST_NAME != '' }}
     runs-on: ubuntu-latest
+    env:
+      DB_TEST_HOST: ${{ secrets.DB_TEST_HOST }}
+      DB_TEST_USER: ${{ secrets.DB_TEST_USER }}
+      DB_TEST_NAME: ${{ secrets.DB_TEST_NAME }}
 
     steps:
+      - name: Check DB integration configuration
+        id: config
+        shell: bash
+        run: |
+          if [[ -n "$DB_TEST_HOST" && -n "$DB_TEST_USER" && -n "$DB_TEST_NAME" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "DB integration secrets are not configured; skipping."
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.config.outputs.enabled == 'true'
 
       - name: Setup Node
+        if: steps.config.outputs.enabled == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -25,11 +41,13 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
+        if: steps.config.outputs.enabled == 'true'
         run: |
           cd backend
           npm ci
 
       - name: Run DB integration tests
+        if: steps.config.outputs.enabled == 'true'
         run: |
           cd backend
           npm run test:db-integration

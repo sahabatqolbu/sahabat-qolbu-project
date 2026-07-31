@@ -8,6 +8,9 @@ on:
 jobs:
   critical-guard:
     runs-on: ubuntu-latest
+    env:
+      OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
+      SEV1_PAGER_WEBHOOK_URL: ${{ secrets.SEV1_PAGER_WEBHOOK_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -33,18 +36,14 @@ jobs:
           node backend/src/scripts/criticalAlertProbe.js
 
       - name: Notify ops channel (optional)
-        if: steps.critical_probe.outcome == 'failure' && secrets.OPS_ALERT_WEBHOOK_URL != ''
-        env:
-          OPS_ALERT_WEBHOOK_URL: ${{ secrets.OPS_ALERT_WEBHOOK_URL }}
+        if: steps.critical_probe.outcome == 'failure' && env.OPS_ALERT_WEBHOOK_URL != ''
         run: |
           curl -X POST "$OPS_ALERT_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d '{"text":"[Sahabat Qolbu] Critical alert probe failed. Potential auth/payment anomaly detected. Check workflow logs immediately."}'
 
       - name: Notify SEV-1 pager (optional)
-        if: steps.critical_probe.outcome == 'failure' && secrets.SEV1_PAGER_WEBHOOK_URL != ''
-        env:
-          SEV1_PAGER_WEBHOOK_URL: ${{ secrets.SEV1_PAGER_WEBHOOK_URL }}
+        if: steps.critical_probe.outcome == 'failure' && env.SEV1_PAGER_WEBHOOK_URL != ''
         run: |
           curl -X POST "$SEV1_PAGER_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
