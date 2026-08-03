@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import PackageCard from "@/components/marketing/PackageCard";
@@ -943,7 +944,7 @@ export default function MarketingHomePage() {
         className="border-t border-gray-100 bg-gray-50 py-16 md:py-24"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl shadow-primary/5 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="grid overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl shadow-primary/5 lg:grid-cols-[0.85fr_0.62fr_1.15fr]">
             <div className="flex flex-col justify-center p-7 md:p-10 lg:p-12">
               <span className="text-sm font-semibold uppercase tracking-wider text-gold">
                 Lokasi Kantor
@@ -984,6 +985,19 @@ export default function MarketingHomePage() {
                   Buka Google Maps
                   <ExternalLink className="h-4 w-4" />
                 </a>
+              </div>
+            </div>
+
+            <div className="relative aspect-[3/4] min-h-[360px] overflow-hidden border-t border-gray-200 bg-gray-100 lg:aspect-auto lg:min-h-[480px] lg:border-l lg:border-t-0">
+              <Image
+                src="/images/office-location.webp"
+                alt="Kantor Sahabat Qolbu Cahaya Baitullah di Metland Transyogi"
+                fill
+                sizes="(max-width: 1023px) 100vw, 24vw"
+                className="object-cover object-center"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-primary/90 px-5 py-4 text-sm font-semibold text-white backdrop-blur-sm">
+                Kantor Sahabat Qolbu Cahaya Baitullah
               </div>
             </div>
 
