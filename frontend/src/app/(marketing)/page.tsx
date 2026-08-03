@@ -10,7 +10,7 @@ import {
   COMPANY_GOOGLE_MAPS_URL,
   COMPANY_MAP_EMBED_URL,
 } from "@/lib/company-location";
-import { ExternalLink, MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation } from "lucide-react";
 import {
   getMarketingPackages,
   getPublicCompanyProfile,
@@ -966,7 +966,7 @@ export default function MarketingHomePage() {
                 </p>
               </div>
 
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-7">
                 <a
                   href={COMPANY_GOOGLE_MAPS_URL}
                   target="_blank"
@@ -975,15 +975,6 @@ export default function MarketingHomePage() {
                 >
                   <Navigation className="h-4 w-4" />
                   Petunjuk Arah
-                </a>
-                <a
-                  href={COMPANY_GOOGLE_MAPS_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-primary px-5 py-3 font-bold text-primary transition hover:bg-primary hover:text-white"
-                >
-                  Buka Google Maps
-                  <ExternalLink className="h-4 w-4" />
                 </a>
               </div>
             </div>
