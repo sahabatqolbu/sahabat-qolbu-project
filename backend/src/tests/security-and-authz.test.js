@@ -64,6 +64,19 @@ describe("security regressions", () => {
     assert.match(resetSection, /AUTH_INVALID_OTP/);
     assert.doesNotMatch(resetSection, /User tidak ditemukan/);
   });
+  it("uses host-only auth cookies and clears the legacy parent-domain cookie", () => {
+    const controller = read("src/controllers/authController.js");
+    const envExample = read(".env.example");
+
+    assert.match(controller, /COOKIE_LEGACY_DOMAIN/);
+    assert.match(controller, /clearLegacyAuthCookie/);
+    assert.match(controller, /setAuthCookie\(req, res, token\)/);
+    assert.match(envExample, /^COOKIE_DOMAIN=$/m);
+    assert.match(
+      envExample,
+      /^COOKIE_LEGACY_DOMAIN=\.sahabatqolbu\.com$/m,
+    );
+  });
 });
 
 describe("jamaah self-service data integrity", () => {
