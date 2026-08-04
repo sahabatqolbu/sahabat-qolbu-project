@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
@@ -227,6 +228,7 @@ function getPackageAvailability(pkg: PackageCardProps) {
 export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   const branding = useBranding();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const images =
     pkg.gallery && pkg.gallery.length > 0
@@ -293,6 +295,22 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
     e.preventDefault();
     e.stopPropagation();
     setCurrentSlide(index);
+  };
+
+  const startDetailNavigation = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    setIsNavigating(true);
   };
 
   return (
@@ -512,9 +530,18 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
         <div className="grid grid-cols-2 gap-2 mt-auto">
           <Link
             href={detailLink}
+            onClick={startDetailNavigation}
+            aria-busy={isNavigating}
             className="js-package-detail-link flex items-center justify-center w-full border border-primary bg-white text-primary hover:bg-primary hover:text-white font-semibold py-3 rounded-md transition-colors text-center text-sm"
           >
-            Detail
+            {isNavigating ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Memuat...
+              </span>
+            ) : (
+              "Detail"
+            )}
           </Link>
           {availability.isBookable ? (
             <a
@@ -538,6 +565,28 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
           Tanya via WhatsApp
         </a>
       </div>
+
+      {isNavigating ? (
+        <div
+          className="fixed inset-0 z-[100] flex min-h-screen items-center justify-center bg-primary/95 px-4 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary shadow-2xl shadow-secondary/30">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+            <div>
+              <p className="font-display text-lg font-black text-secondary">
+                Memuat Detail Paket
+              </p>
+              <p className="mt-1 text-sm font-medium text-white/70">
+                Mohon tunggu sebentar...
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
