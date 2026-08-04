@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { CalendarClock, Loader2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
@@ -276,6 +276,34 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   const displayPrice = formatPrice(
     pkg.priceQuad || pkg.priceTriple || pkg.priceDouble,
   );
+  const rawDaysUntilDeparture = Number(
+    pkg.daysUntilDeparture ?? getDaysUntilDeparture(pkg.departureDate),
+  );
+  const daysUntilDeparture = Number.isFinite(rawDaysUntilDeparture)
+    ? rawDaysUntilDeparture
+    : 9999;
+  const countdownLabel =
+    !pkg.departureDate || daysUntilDeparture === 9999
+      ? "Jadwal menyusul"
+      : daysUntilDeparture < 0
+        ? "Sudah berangkat"
+        : daysUntilDeparture === 0
+          ? "Berangkat hari ini"
+          : `${daysUntilDeparture} hari lagi`;
+  const hasSeatData =
+    Number(pkg.totalSeats) > 0 ||
+    Number(pkg.bookedSeats) > 0 ||
+    pkg.remainingSeats != null;
+  const rawRemainingSeats = Number(
+    pkg.remainingSeats ??
+      Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0),
+  );
+  const remainingSeats = Number.isFinite(rawRemainingSeats)
+    ? Math.max(rawRemainingSeats, 0)
+    : 0;
+  const seatLabel = hasSeatData
+    ? `Sisa ${remainingSeats} seat`
+    : "Kuota menyusul";
   const waMessage = `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${pkg.name}*`;
   const waLink = `https://wa.me/${branding.whatsappNumber || "6281255871984"}?text=${encodeURIComponent(waMessage)}`;
 
@@ -322,9 +350,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
       )}
       data-tipe={rawType.toLowerCase()}
     >
-      <div
-        className={cn("relative overflow-hidden", hasMultiple ? "mb-3" : "")}
-      >
+      <div className="relative overflow-hidden">
         {/* Slider */}
         <div className="swiper aspect-square border-b border-gray-100">
           <div
@@ -388,15 +414,15 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
                 </svg>
               </button>
 
-              <div className="dots absolute -bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              <div className="dots absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                 {images.map((_, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={setSlide(i)}
                     className={cn(
-                      "dot w-2 h-2 rounded-full transition-all cursor-pointer",
-                      i === currentSlide ? "bg-primary w-5" : "bg-gray-300",
+                      "dot h-2 w-2 cursor-pointer rounded-full shadow-sm transition-all",
+                      i === currentSlide ? "w-5 bg-gold" : "bg-white/80",
                     )}
                   />
                 ))}
@@ -462,6 +488,31 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
             </div>
           </>
         )}
+      </div>
+
+      <div className="grid grid-cols-2 divide-x divide-white/20 bg-primary text-white">
+        <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
+          <CalendarClock className="h-4 w-4 shrink-0 text-gold" />
+          <div className="min-w-0">
+            <span className="block text-[9px] font-semibold uppercase tracking-wider text-white/60">
+              Keberangkatan
+            </span>
+            <span className="block truncate text-xs font-bold">
+              {countdownLabel}
+            </span>
+          </div>
+        </div>
+        <div className="flex min-w-0 items-center gap-2.5 px-3 py-3">
+          <Users className="h-4 w-4 shrink-0 text-gold" />
+          <div className="min-w-0">
+            <span className="block text-[9px] font-semibold uppercase tracking-wider text-white/60">
+              Ketersediaan
+            </span>
+            <span className="block truncate text-xs font-bold">
+              {seatLabel}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="p-4 pt-3 flex flex-col flex-1">
