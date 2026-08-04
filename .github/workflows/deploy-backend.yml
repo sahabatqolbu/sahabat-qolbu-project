@@ -1,4 +1,4 @@
-name: Deploy Backend to cPanel
+name: Backend Validation and Manual Deployment
 
 on:
   workflow_dispatch:
@@ -75,6 +75,7 @@ jobs:
           NODE_ENV: test
 
       - name: Upload backend via SFTP
+        if: github.event_name == 'workflow_dispatch'
         uses: appleboy/scp-action@v0.1.7
         with:
             host: ${{ secrets.SSH_HOST }}
@@ -85,12 +86,12 @@ jobs:
             target: ${{ secrets.BACKEND_DEPLOY_TARGET || secrets.DEPLOY_BACKEND_CPANEL }}
 
       - name: Optional backend health check
-        if: env.HAS_BACKEND_HEALTHCHECK_URL == 'true'
+        if: github.event_name == 'workflow_dispatch' && env.HAS_BACKEND_HEALTHCHECK_URL == 'true'
         run: |
           curl --fail --show-error --silent "${{ secrets.BACKEND_HEALTHCHECK_URL }}"
 
       - name: Optional backend smoke check
-        if: env.HAS_BACKEND_SMOKE_BASE_URL == 'true'
+        if: github.event_name == 'workflow_dispatch' && env.HAS_BACKEND_SMOKE_BASE_URL == 'true'
         run: |
           cd backend
           SMOKE_BASE_URL="${{ secrets.BACKEND_SMOKE_BASE_URL }}" SMOKE_AUTH_COOKIE="${{ secrets.BACKEND_SMOKE_AUTH_COOKIE }}" npm run smoke
