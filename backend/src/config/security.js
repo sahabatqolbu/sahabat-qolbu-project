@@ -65,7 +65,10 @@ export const corsOptions = {
     }
 
     logger.security("CORS blocked request", { origin });
-    callback(new Error("CORS not allowed"));
+    const error = new Error("Origin request tidak diizinkan");
+    error.status = 403;
+    error.code = "SECURITY_CORS_ORIGIN_DENIED";
+    callback(error);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

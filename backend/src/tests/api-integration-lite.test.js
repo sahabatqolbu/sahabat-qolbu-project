@@ -102,6 +102,23 @@ describe("api integration lite", () => {
     assert.equal(v1Body.message, "Public route works");
   });
 
+  it("rejects untrusted CORS preflight with a structured 403", async () => {
+    const response = await fetch(baseUrl + "/api/auth/login", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://evil.example",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+      },
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.equal(payload.success, false);
+    assert.equal(payload.code, "SECURITY_CORS_ORIGIN_DENIED");
+    assert.equal(response.headers.get("access-control-allow-origin"), null);
+  });
+
   it("blocks cookie-authenticated mutating requests without origin/referer", async () => {
     const response = await fetch(`${baseUrl}/api/auth/request-otp`, {
       method: "POST",

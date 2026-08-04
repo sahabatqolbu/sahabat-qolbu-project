@@ -47,6 +47,23 @@ describe("security regressions", () => {
     assert.match(appJs, /\/api\/swagger/);
     assert.match(appJs, /blockApiDocsExposure/);
   });
+  it("keeps forgot-password responses uniform against account enumeration", () => {
+    const controller = read("src/controllers/authController.js");
+    const requestStart = controller.indexOf(
+      "export const requestForgotPasswordOTP",
+    );
+    const resetStart = controller.indexOf("export const resetPasswordWithOTP");
+    const requestSection = controller.slice(requestStart, resetStart);
+    const resetSection = controller.slice(resetStart);
+
+    assert.match(requestSection, /sendGenericResponse/);
+    assert.match(requestSection, /Jika email terdaftar/);
+    assert.match(requestSection, /202/);
+    assert.doesNotMatch(requestSection, /Email tidak ditemukan/);
+    assert.doesNotMatch(requestSection, /maskedEmail/);
+    assert.match(resetSection, /AUTH_INVALID_OTP/);
+    assert.doesNotMatch(resetSection, /User tidak ditemukan/);
+  });
 });
 
 describe("jamaah self-service data integrity", () => {

@@ -41,9 +41,7 @@ const getAuthCookieOptions = (req) => {
   const sameSiteOverride = process.env.COOKIE_SAMESITE?.trim().toLowerCase();
   const sameSite = ["lax", "strict", "none"].includes(sameSiteOverride)
     ? sameSiteOverride
-    : isSecureCookie
-      ? "none"
-      : "lax";
+    : "lax";
 
   return {
     httpOnly: true,
@@ -1017,36 +1015,56 @@ export const logout = async (req, res) => {
 // =====================================================
 export const requestForgotPasswordOTP = async (req, res, next) => {
   try {
+    const requestStartedAt = Date.now();
     const { email } = req.validatedBody || req.body;
     const normalizedEmail = normalizeEmail(email);
 
+    const sendGenericResponse = async () => {
+      const minimumResponseMs = 300;
+      const remainingDelay =
+        minimumResponseMs - (Date.now() - requestStartedAt);
+      if (remainingDelay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remainingDelay));
+      }
+
+      return successResponse(
+        res,
+        { expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit` },
+        "Jika email terdaftar, kode OTP akan dikirim ke email tersebut.",
+        202,
+      );
+    };
+
     logger.info("Forgot password OTP request", { email: normalizedEmail });
 
-    // Find user by email
     const user = await findUserByEmail(normalizedEmail);
 
     if (!user) {
-      return errorResponse(res, "Email tidak ditemukan", 404);
+      logger.security("Forgot password request ignored - user not found", {
+        email: normalizedEmail,
+      });
+      return sendGenericResponse();
     }
 
-    // Check if user is active
     if (!user.isActive) {
-      return errorResponse(
-        res,
-        "Akun Anda telah dinonaktifkan. Hubungi admin.",
-        403,
-      );
+      logger.security("Forgot password request ignored - inactive account", {
+        userId: user.id,
+      });
+      return sendGenericResponse();
     }
 
-    if (rejectIfOtpCooldownActive(res, user)) {
-      return;
+    const cooldownRemaining = getOtpCooldownRemainingSeconds(user);
+    if (cooldownRemaining > 0) {
+      logger.security("Forgot password request ignored - OTP cooldown active", {
+        userId: user.id,
+        cooldownRemaining,
+      });
+      return sendGenericResponse();
     }
 
-    // Generate OTP
     const otp = generateOTP();
     const otpExpiry = getOTPExpiry();
 
-    // Save OTP to database
     await db
       .update(users)
       .set({
@@ -1056,7 +1074,6 @@ export const requestForgotPasswordOTP = async (req, res, next) => {
       })
       .where(eq(users.id, user.id));
 
-    // Send OTP via email (async via queue)
     const emailResult = await sendOTPEmail(user, otp);
 
     if (!emailResult.success) {
@@ -1065,7 +1082,7 @@ export const requestForgotPasswordOTP = async (req, res, next) => {
         emailResult.error,
         { userId: user.id },
       );
-      return errorResponse(res, "Gagal mengirim OTP. Silakan coba lagi.", 500);
+      return sendGenericResponse();
     }
 
     const emailStatus = emailResult.queued ? "queued" : "sent";
@@ -1074,19 +1091,7 @@ export const requestForgotPasswordOTP = async (req, res, next) => {
       jobId: emailResult.jobId,
     });
 
-    // Mask email for response
-    const [local, domain] = user.email.split("@");
-    const maskedEmail =
-      local.slice(0, 2) + "***" + local.slice(-1) + "@" + domain;
-
-    return successResponse(
-      res,
-      {
-        email: maskedEmail,
-        expiresIn: `${process.env.OTP_EXPIRY_MINUTES || 5} menit`,
-      },
-      "Kode OTP telah dikirim ke email Anda",
-    );
+    return sendGenericResponse();
   } catch (error) {
     logger.error("Request forgot password OTP error", error);
     next(error);
@@ -1103,35 +1108,34 @@ export const resetPasswordWithOTP = async (req, res, next) => {
 
     logger.info("Forgot password reset attempt", { email: normalizedEmail });
 
-    // Find user by email
     const user = await findUserByEmail(normalizedEmail);
 
-    if (!user) {
-      return errorResponse(res, "User tidak ditemukan", 404);
-    }
-
-    // Check if user is active
-    if (!user.isActive) {
+    if (!user || !user.isActive) {
       return errorResponse(
         res,
-        "Akun Anda telah dinonaktifkan. Hubungi admin.",
-        403,
+        "Kode OTP tidak valid atau telah kedaluwarsa.",
+        400,
+        null,
+        "AUTH_INVALID_OTP",
       );
     }
 
-    // Verify OTP
     const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
     if (!otpValidation.valid) {
       logger.security("Forgot password reset failed - invalid OTP", {
         userId: user.id,
       });
-      return errorResponse(res, otpValidation.message, 400);
+      return errorResponse(
+        res,
+        "Kode OTP tidak valid atau telah kedaluwarsa.",
+        400,
+        null,
+        "AUTH_INVALID_OTP",
+      );
     }
 
-    // Hash new password
     const hashedPassword = await hashPassword(newPassword);
 
-    // Update password & clear OTP
     await db
       .update(users)
       .set({
@@ -1144,7 +1148,6 @@ export const resetPasswordWithOTP = async (req, res, next) => {
 
     logger.security("Forgot password reset successfully", { userId: user.id });
 
-    // Clear access_token cookie if logged in
     res.clearCookie("access_token", getAuthCookieOptions(req));
 
     return successResponse(
