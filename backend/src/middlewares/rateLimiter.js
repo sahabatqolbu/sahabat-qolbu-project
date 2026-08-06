@@ -146,7 +146,7 @@ export const otpLimiter = createLimiter({
 
 export const createAccountLimiter = createLimiter({
   windowMs: parseWindowMs(process.env.CREATE_ACCOUNT_RATE_LIMIT_WINDOW, 60),
-  max: parseMaxRequests(process.env.CREATE_ACCOUNT_RATE_LIMIT_MAX, 5),
+  max: parseMaxRequests(process.env.CREATE_ACCOUNT_RATE_LIMIT_MAX, 3),
   message: "Terlalu banyak pendaftaran. Silakan coba lagi nanti.",
   logMessage: "Account creation rate limit exceeded",
 });
