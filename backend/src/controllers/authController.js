@@ -53,36 +53,6 @@ const getAuthCookieOptions = (req) => {
   };
 };
 
-const getCookieClearOptions = (options) => ({
-  httpOnly: true,
-  secure: options.secure,
-  sameSite: options.sameSite,
-  path: "/",
-  ...(options.domain ? { domain: options.domain } : {}),
-});
-
-const clearLegacyAuthCookie = (req, res) => {
-  const legacyDomain = process.env.COOKIE_LEGACY_DOMAIN?.trim();
-  if (!legacyDomain) return;
-
-  const options = getAuthCookieOptions(req);
-  res.clearCookie("access_token", {
-    ...getCookieClearOptions(options),
-    domain: legacyDomain,
-  });
-};
-
-const setAuthCookie = (req, res, token) => {
-  clearLegacyAuthCookie(req, res);
-  res.cookie("access_token", token, getAuthCookieOptions(req));
-};
-
-const clearAuthCookie = (req, res) => {
-  const options = getAuthCookieOptions(req);
-  res.clearCookie("access_token", getCookieClearOptions(options));
-  clearLegacyAuthCookie(req, res);
-};
-
 const getOtpExpiryMinutes = () => {
   const parsed = Number.parseInt(process.env.OTP_EXPIRY_MINUTES || "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 5;
@@ -193,7 +163,7 @@ const issueAuthSession = async (
     role: user.role,
   });
 
-  setAuthCookie(req, res, token);
+  res.cookie("access_token", token, getAuthCookieOptions(req));
 
   return successResponse(
     res,
@@ -598,7 +568,7 @@ export const handleGoogleOAuthCallback = async (req, res, next) => {
       role: user.role,
     });
 
-    setAuthCookie(req, res, token);
+    res.cookie("access_token", token, getAuthCookieOptions(req));
 
     logger.security("Google OAuth login succeeded", {
       userId: user.id,
@@ -667,7 +637,7 @@ export const verifyOTPLogin = async (req, res, next) => {
       email: user.email,
     });
 
-    setAuthCookie(req, res, token);
+    res.cookie("access_token", token, getAuthCookieOptions(req));
 
     return successResponse(
       res,
@@ -889,7 +859,7 @@ export const changePasswordWithOTP = async (req, res, next) => {
 
     logger.security("Password changed successfully", { userId });
 
-    clearAuthCookie(req, res);
+    res.clearCookie("access_token", getAuthCookieOptions(req));
 
     return successResponse(
       res,
@@ -1015,7 +985,7 @@ export const changeEmailWithOTP = async (req, res, next) => {
       newEmail: normalizedNewEmail,
     });
 
-    clearAuthCookie(req, res);
+    res.clearCookie("access_token", getAuthCookieOptions(req));
 
     return successResponse(
       res,
@@ -1029,7 +999,14 @@ export const changeEmailWithOTP = async (req, res, next) => {
 };
 
 export const logout = async (req, res) => {
-  clearAuthCookie(req, res);
+  const cookieOptions = getAuthCookieOptions(req);
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: cookieOptions.secure,
+    sameSite: cookieOptions.sameSite,
+    path: "/",
+    ...(cookieOptions.domain ? { domain: cookieOptions.domain } : {}),
+  });
   return successResponse(res, null, "Logout berhasil");
 };
 
@@ -1171,7 +1148,7 @@ export const resetPasswordWithOTP = async (req, res, next) => {
 
     logger.security("Forgot password reset successfully", { userId: user.id });
 
-    clearAuthCookie(req, res);
+    res.clearCookie("access_token", getAuthCookieOptions(req));
 
     return successResponse(
       res,
