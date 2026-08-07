@@ -97,6 +97,7 @@ export const optimizeImage =
         "general",
         "gallery",
         "articles",
+        "promotional-popups",
       ];
 
       if (!validFolders.includes(folder)) {
@@ -201,6 +202,7 @@ export const optimizeMultipleImages = (folder = "general", options = {}) => {
         "general",
         "gallery",
         "articles",
+        "promotional-popups",
       ];
 
       if (!validFolders.includes(folder)) {
@@ -455,4 +457,3 @@ export const deleteFile = async (filePath) => {
 };
 
 export { UPLOAD_BASE };
-

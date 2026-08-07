@@ -213,6 +213,20 @@ function getPackageAvailability(pkg: PackageCardProps) {
     };
   }
 
+  if (status === "LAST_CALL" || remainingSeats <= 5) {
+    return {
+      isBookable: pkg.isBookable !== false,
+      status: "LAST_CALL",
+      label:
+        pkg.bookingStatusLabel || `Last Call - Sisa ${remainingSeats} Seat`,
+      badgeClass: "bg-red-600 text-white ring-2 ring-white",
+      buttonLabel: "Daftar Sekarang",
+      overlayLabel: "",
+      cardClass: "border-2 border-red-500 bg-red-50/30",
+      imageClass: "",
+    };
+  }
+
   return {
     isBookable: pkg.isBookable !== false,
     status: "OPEN",
@@ -487,6 +501,16 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
               {availability.label}
             </div>
           </>
+        )}
+        {availability.status === "LAST_CALL" && (
+          <div
+            className={cn(
+              "absolute right-3 top-3 z-40 rounded-md bg-red-600 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-white shadow-lg ring-2 ring-white",
+              hasMultiple && "top-12",
+            )}
+          >
+            {availability.label}
+          </div>
         )}
       </div>
 

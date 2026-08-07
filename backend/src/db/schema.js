@@ -790,8 +790,38 @@ export const gallery = mysqlTable("gallery", {
 });
 
 // =====================================================
+// WEBSITE PROMOTIONAL POPUPS
+// =====================================================
+export const promotionalPopups = mysqlTable(
+  "promotional_popups",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    title: varchar("title", { length: 255 }),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    altText: varchar("alt_text", { length: 255 }),
+    targetUrl: varchar("target_url", { length: 500 }),
+    isActive: boolean("is_active").notNull().default(false),
+    startAt: datetime("start_at"),
+    endAt: datetime("end_at"),
+    delaySeconds: int("delay_seconds").notNull().default(2),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    activeIdx: index("promotional_popup_active_idx").on(table.isActive),
+    scheduleIdx: index("promotional_popup_schedule_idx").on(
+      table.startAt,
+      table.endAt,
+    ),
+  }),
+);
+
+// =====================================================
 // ARTICLES / EDUCATIONAL CONTENT
 // =====================================================
+
 export const articles = mysqlTable(
   "articles",
   {

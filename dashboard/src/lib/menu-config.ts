@@ -154,6 +154,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
           href: "/admin/content/gallery",
           icon: ImageIcon,
         },
+        {
+          label: "Popup Website",
+          href: "/admin/content/promotional-popups",
+          icon: ImageIcon,
+        },
       ],
     },
     {

@@ -17,6 +17,7 @@ import {
   getPublicHotelById,
   getPublicAirlineById,
 } from "../controllers/articleController.js";
+import { getPublicPromotionalPopup } from "../controllers/promotionalPopupController.js";
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.get("/packages/:id", getPublicPackageById);
 router.get("/company-profile", getPublicCompanyProfile);
 router.get("/faqs", getPublicFaqs);
 router.get("/gallery", getPublicGallery);
+router.get("/promotional-popup", getPublicPromotionalPopup);
 router.get("/articles", getPublicArticles);
 router.get("/articles/:slug", getPublicArticleBySlug);
 router.get("/hotels/:id", getPublicHotelById);

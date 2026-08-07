@@ -515,7 +515,7 @@ const isPackageComingSoon = (pkg = {}) => {
   );
 };
 
-const getPackageBookingState = ({
+export const getPackageBookingState = ({
   pkg,
   remainingSeats,
   daysUntilDeparture,
@@ -542,6 +542,14 @@ const getPackageBookingState = ({
       bookingStatusLabel:
         daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close",
       isBookable: false,
+    };
+  }
+
+  if (remainingSeats <= 5) {
+    return {
+      bookingStatus: "LAST_CALL",
+      bookingStatusLabel: `Last Call - Sisa ${remainingSeats} Seat`,
+      isBookable: true,
     };
   }
 

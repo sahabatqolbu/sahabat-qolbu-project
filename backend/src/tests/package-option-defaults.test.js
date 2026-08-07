@@ -1,6 +1,53 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizePackageOptionsWithDefaults } from "../controllers/packageController.js";
+import {
+  getPackageBookingState,
+  normalizePackageOptionsWithDefaults,
+} from "../controllers/packageController.js";
+
+const readyPackage = {
+  departureDate: "2026-10-01",
+  returnDate: "2026-10-10",
+  totalSeats: 45,
+  priceQuad: "35000000",
+  airlineId: 1,
+  hotelMakkahId: 1,
+  hotelMadinahId: 2,
+  airlineStatus: "CONFIRMED",
+  hotelMakkahStatus: "CONFIRMED",
+  hotelMadinahStatus: "CONFIRMED",
+};
+
+test("package becomes Last Call when only one to five seats remain", () => {
+  const state = getPackageBookingState({
+    pkg: readyPackage,
+    remainingSeats: 5,
+    daysUntilDeparture: 30,
+  });
+
+  assert.equal(state.bookingStatus, "LAST_CALL");
+  assert.equal(state.isBookable, true);
+  assert.match(state.bookingStatusLabel, /Sisa 5 Seat/);
+});
+
+test("Last Call never overrides close or sold out rules", () => {
+  assert.equal(
+    getPackageBookingState({
+      pkg: readyPackage,
+      remainingSeats: 5,
+      daysUntilDeparture: 7,
+    }).bookingStatus,
+    "CLOSED",
+  );
+  assert.equal(
+    getPackageBookingState({
+      pkg: readyPackage,
+      remainingSeats: 0,
+      daysUntilDeparture: 30,
+    }).bookingStatus,
+    "SOLD_OUT",
+  );
+});
 
 const basePackage = {
   hotelMakkahId: 13,

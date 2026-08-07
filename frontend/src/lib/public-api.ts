@@ -838,6 +838,15 @@ export interface PublicGalleryImage {
   category?: string | null;
   sortOrder?: number | null;
 }
+export interface PublicPromotionalPopup {
+  id: number;
+  title?: string | null;
+  imageUrl: string;
+  altText?: string | null;
+  targetUrl?: string | null;
+  delaySeconds?: number | null;
+  updatedAt?: string | null;
+}
 
 const normalizeStructuredContent = (
   value: unknown,
@@ -903,6 +912,18 @@ export const getPublicGallery = async (): Promise<PublicGalleryImage[]> => {
     }))
     .filter((item): item is PublicGalleryImage => Boolean(item.imageUrl));
 };
+
+export const getPublicPromotionalPopup =
+  async (): Promise<PublicPromotionalPopup | null> => {
+    const payload = await fetchApi<{ popup?: PublicPromotionalPopup | null }>(
+      "/public/promotional-popup",
+    );
+    if (!payload?.popup?.imageUrl) return null;
+    return {
+      ...payload.popup,
+      imageUrl: resolveAssetUrl(payload.popup.imageUrl) || "",
+    };
+  };
 
 export interface PublicArticle {
   id: number;

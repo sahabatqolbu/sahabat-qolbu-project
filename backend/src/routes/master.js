@@ -70,6 +70,12 @@ import * as agentLevelController from "../controllers/agentLevelController.js";
 import * as agentRequirementController from "../controllers/agentRequirementController.js";
 import * as agentPurposeController from "../controllers/agentPurposeController.js";
 import * as periodController from "../controllers/periodController.js";
+import {
+  createPromotionalPopup,
+  deletePromotionalPopup,
+  getAllPromotionalPopups,
+  updatePromotionalPopup,
+} from "../controllers/promotionalPopupController.js";
 
 const router = express.Router();
 
@@ -224,6 +230,38 @@ router.delete(
 );
 
 // =====================================================
+// =====================================================
+// WEBSITE PROMOTIONAL POPUPS
+// =====================================================
+router.get(
+  "/promotional-popups",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  getAllPromotionalPopups,
+);
+router.post(
+  "/promotional-popups",
+  authenticate,
+  authorize(["ADMIN"]),
+  upload.single("image"),
+  optimizeImage("promotional-popups", { outputFormat: "webp" }),
+  createPromotionalPopup,
+);
+router.put(
+  "/promotional-popups/:id",
+  authenticate,
+  authorize(["ADMIN"]),
+  upload.single("image"),
+  optimizeImage("promotional-popups", { outputFormat: "webp" }),
+  updatePromotionalPopup,
+);
+router.delete(
+  "/promotional-popups/:id",
+  authenticate,
+  authorize(["ADMIN"]),
+  deletePromotionalPopup,
+);
+
 // ARTICLES
 // =====================================================
 router.get(

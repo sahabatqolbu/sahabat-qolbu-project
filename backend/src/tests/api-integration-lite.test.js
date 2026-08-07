@@ -38,10 +38,7 @@ describe("api integration lite", () => {
 
     assert.equal(v1HealthRes.status, 200);
     assert.equal(v1HealthBody.status, "API router is alive");
-    assert.match(
-      v1HealthRes.headers.get("cache-control") || "",
-      /no-store/,
-    );
+    assert.match(v1HealthRes.headers.get("cache-control") || "", /no-store/);
   });
 
   it("exposes detailed health with email queue stats", async () => {
@@ -156,7 +153,17 @@ describe("api integration lite", () => {
   });
 
   it("allows direct static access to public gallery upload folder", async () => {
-    const response = await fetch(`${baseUrl}/uploads/gallery/not-existing.webp`);
+    const response = await fetch(
+      `${baseUrl}/uploads/gallery/not-existing.webp`,
+    );
+
+    assert.notEqual(response.status, 403);
+  });
+
+  it("allows direct static access to public promotional popup folder", async () => {
+    const response = await fetch(
+      `${baseUrl}/uploads/promotional-popups/not-existing.webp`,
+    );
 
     assert.notEqual(response.status, 403);
   });
@@ -193,7 +200,10 @@ describe("api integration lite", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email: "jamaah@example.com", password: "Passw0rd!" }),
+      body: JSON.stringify({
+        email: "jamaah@example.com",
+        password: "Passw0rd!",
+      }),
     });
 
     if (loginRes.status !== 200) {
@@ -249,4 +259,3 @@ describe("api integration lite", () => {
     assert.equal(payload.code, "RESOURCE_NOT_FOUND");
   });
 });
-

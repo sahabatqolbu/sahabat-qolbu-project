@@ -91,6 +91,15 @@ const getPackageAvailability = (pkg: MarketingPackage, seatsLeft: number) => {
     };
   }
 
+  if (status === "LAST_CALL" || seatsLeft <= 5) {
+    return {
+      isBookable: true,
+      label: pkg.bookingStatusLabel || `Last Call - Sisa ${seatsLeft} Seat`,
+      description: "Seat terbatas. Segera amankan pilihan kamar Anda.",
+      buttonLabel: "Daftar Sekarang",
+    };
+  }
+
   return {
     isBookable: true,
     label: "Tersedia",
@@ -184,6 +193,10 @@ function BookingPanel({
   const topPrice = pkg.discountedPrice || pkg.priceQuad;
   const originalPrice = getOriginalPrice(pkg, topPrice);
   const availability = getPackageAvailability(pkg, seatsLeft);
+  const isLastCall =
+    availability.isBookable &&
+    (String(pkg.bookingStatus || "").toUpperCase() === "LAST_CALL" ||
+      seatsLeft <= 5);
   const selectedOption = pkg.options?.find(
     (option) => option.id === selectedOptionId,
   );
@@ -317,9 +330,21 @@ function BookingPanel({
               />
             </div>
           </div>
-          {!availability.isBookable ? (
-            <div className="rounded-sm border border-neutral-200 bg-neutral-50 p-4">
-              <p className="font-extrabold text-primary">
+          {!availability.isBookable || isLastCall ? (
+            <div
+              className={
+                isLastCall
+                  ? "rounded-sm border border-red-200 bg-red-50 p-4"
+                  : "rounded-sm border border-neutral-200 bg-neutral-50 p-4"
+              }
+            >
+              <p
+                className={
+                  isLastCall
+                    ? "font-extrabold text-red-700"
+                    : "font-extrabold text-primary"
+                }
+              >
                 {availability.label}
               </p>
               <p className="mt-1 text-sm font-semibold text-neutral-500">
@@ -333,7 +358,7 @@ function BookingPanel({
               className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-5 py-4 font-extrabold text-white transition hover:bg-primary-700"
             >
               <ClipboardList className="h-5 w-5" />
-              Daftar Paket
+              {availability.buttonLabel}
             </a>
           ) : (
             <span className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-sm bg-neutral-200 px-5 py-4 font-extrabold text-neutral-500">
