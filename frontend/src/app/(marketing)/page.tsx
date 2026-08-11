@@ -151,7 +151,7 @@ export default function MarketingHomePage() {
             {/* Badge Resmi */}
             <div className="mb-6 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-gold sm:text-xs">
               <span className="h-px w-8 bg-gold" />
-              Travel Umroh Sunnah · PPIU Resmi
+              Travel Umroh Sunnah · PPIU Berizin Resmi
             </div>
 
             {/* Headline */}
@@ -263,7 +263,9 @@ export default function MarketingHomePage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-white font-semibold">PPIU Resmi</p>
+                  <p className="text-white font-semibold">
+                    PPIU Berizin Resmi
+                  </p>
                   <p className="text-gray-400 text-xs">
                     PPIU 12112100038690008
                   </p>
