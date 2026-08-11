@@ -18,29 +18,59 @@ export const metadata: Metadata = getMetadata();
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "TravelAgency",
-  name: "Sahabat Qolbu Cahaya Baitullah",
-  description: "Tour & Travel Umroh Terpercaya Sejak 2010",
-  url: "https://sahabatqolbu.com",
-  telephone: "+62-21-22866671",
-  email: "admin@sahabatqolbu.com",
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "Ruko Taman Permata Buana Blok C No 7",
-    addressLocality: "Jakarta Barat",
-    addressRegion: "DKI Jakarta",
-    postalCode: "11740",
-    addressCountry: "ID",
-  },
-  sameAs: [
-    "https://www.facebook.com/sahabatqolbu",
-    "https://www.instagram.com/sahabatqolbu",
+  "@graph": [
+    {
+      "@type": ["TravelAgency", "Organization"],
+      "@id": "https://sahabatqolbu.com/#organization",
+      name: "Sahabat Qolbu Cahaya Baitullah",
+      legalName: "PT Sahabat Qolbu Cahaya Baitullah",
+      alternateName: "Sahabat Qolbu",
+      slogan: "Berangkat Umroh, Pulang Berhijrah",
+      description:
+        "Travel umroh Sunnah resmi yang melayani jamaah dari seluruh Indonesia dengan bimbingan ibadah, pelayanan amanah, dan pendampingan perjalanan.",
+      url: "https://sahabatqolbu.com",
+      logo: "https://sahabatqolbu.com/landing/images/icon.png",
+      image: "https://sahabatqolbu.com/og-image.jpg",
+      telephone: "+62-812-5587-1984",
+      email: "Sahabatqolbucahayabaitullah@gmail.com",
+      identifier: {
+        "@type": "PropertyValue",
+        name: "Nomor PPIU",
+        value: "12112100038690008",
+      },
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Ruko Jl. Ebony, Metland Transyogi No. 11",
+        addressLocality: "Cileungsi",
+        addressRegion: "Jawa Barat",
+        postalCode: "16820",
+        addressCountry: "ID",
+      },
+      areaServed: {
+        "@type": "Country",
+        name: "Indonesia",
+      },
+      hasMap: "https://maps.app.goo.gl/iUtoNEKQhq8T1ftKA",
+      memberOf: {
+        "@type": "Organization",
+        name: "Asosiasi Mutiara Haji Indonesia",
+      },
+      sameAs: [
+        "https://www.facebook.com/sahabatqolbu.ofc",
+        "https://www.instagram.com/sahabatqolbu.ofc/",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://sahabatqolbu.com/#website",
+      url: "https://sahabatqolbu.com",
+      name: "Sahabat Qolbu",
+      publisher: {
+        "@id": "https://sahabatqolbu.com/#organization",
+      },
+      inLanguage: "id-ID",
+    },
   ],
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    reviewCount: "500",
-  },
 };
 
 export default function RootLayout({

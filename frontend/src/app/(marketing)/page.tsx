@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import HomepageHero from "@/components/marketing/HomepageHero";
 import PackageCard from "@/components/marketing/PackageCard";
-import { getCalonJamaahRegisterUrl } from "@/lib/dashboard-url";
 import {
   COMPANY_GOOGLE_MAPS_URL,
   COMPANY_MAP_EMBED_URL,
@@ -107,7 +107,6 @@ export default function MarketingHomePage() {
     `Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik dengan paket umroh ${branding.companyName}`,
   );
   const waHeroLink = `https://wa.me/${branding.whatsappNumber}?text=${messageConsult}`;
-  const registerUrl = getCalonJamaahRegisterUrl();
   const renderFaqAnswer = (answer: string) =>
     answer.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
       if (!part.startsWith("http://") && !part.startsWith("https://")) {
@@ -135,149 +134,7 @@ export default function MarketingHomePage() {
   return (
     <div className="min-h-screen bg-white font-sans antialiased text-gray-800">
       {/* HERO SECTION */}
-      <section id="beranda" className="relative min-h-screen flex items-center">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80"
-            alt="Ka'bah Masjidil Haram"
-            className="w-full h-full object-cover"
-          />
-          <div className="gradient-overlay absolute inset-0"></div>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40">
-          <div className="max-w-3xl animate-fade-in">
-            {/* Badge Resmi */}
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/20">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              <span className="text-white text-sm font-medium">
-                Resmi PPIU: 12112100038690008
-              </span>
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
-              Travel Umroh Sunnah Resmi & Terpercaya
-              <span className="text-gold block mt-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
-                Tergabung dalam Asosiasi Mutiara Haji Indonesia
-              </span>
-            </h1>
-
-            {/* Subheadline */}
-            <p className="text-lg sm:text-xl text-gray-200 mb-8 max-w-2xl leading-relaxed">
-              {`${branding.companyName} melayani perjalanan umroh sesuai Al-Qur'an dan Sunnah, dengan legalitas resmi, pembimbing terpercaya, jadwal keberangkatan jelas, serta fasilitas perjalanan yang transparan.`}
-            </p>
-
-            {/* Promo Badge */}
-            <div className="mb-8 inline-block bg-white text-primary px-6 py-3 rounded-lg font-bold transform -rotate-1 shadow-lg text-sm sm:text-base">
-              Tergabung Asosiasi Mutiara Haji Indonesia - Ketua Umum: Ustadz
-              Khalid Basalamah
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <a
-                href={registerUrl}
-                className="gold-gradient text-primary font-bold px-8 py-4 rounded-full text-center hover:opacity-90 transition-all hover:scale-105 inline-flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Daftar Jadi Calon Jamaah
-              </a>
-              <Link
-                href="/paket"
-                className="border-2 border-white text-white font-semibold px-8 py-4 rounded-full text-center hover:bg-white hover:text-primary transition-all inline-flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-                Lihat Paket
-              </Link>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap items-center gap-6 mt-12 pt-8 border-t border-white/20">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-gold"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-white font-semibold">Ratusan</p>
-                  <p className="text-gray-400 text-xs">Jamaah Puas</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-gold"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-white font-semibold">Travel Resmi</p>
-                  <p className="text-gray-400 text-xs">
-                    PPIU 12112100038690008
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-gold"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-white font-semibold">Profesional</p>
-                  <p className="text-gray-400 text-xs">Tim Berpengalaman</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HomepageHero />
 
       {/* PAKET UMROH */}
       <section id="paket" className="py-16 md:py-24">

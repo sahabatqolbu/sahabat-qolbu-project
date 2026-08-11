@@ -3,17 +3,19 @@ import { Metadata } from "next";
 const siteConfig = {
   name: "Sahabat Qolbu Cahaya Baitullah",
   description:
-    "Travel umroh sunnah resmi Kemenag dari Cileungsi, Bogor. Melayani jamaah seluruh Indonesia dengan pendampingan ibadah profesional dan amanah.",
+    "Sahabat Qolbu adalah travel umroh Sunnah resmi yang mendampingi jamaah dari seluruh Indonesia dengan pelayanan amanah, fasilitas transparan, dan bimbingan sesuai Al-Qur'an dan Sunnah.",
   url: "https://sahabatqolbu.com",
   ogImage: "https://sahabatqolbu.com/og-image.jpg",
   keywords: [
-    "travel umroh sunnah cileungsi",
-    "travel umroh bogor",
+    "travel umroh sunnah",
+    "travel umroh resmi",
     "travel umroh resmi kemenag",
-    "paket umroh 2026",
-    "haji furoda",
-    "sahabat qolbu",
     "travel umroh indonesia",
+    "paket umroh sunnah",
+    "paket umroh 2026",
+    "sahabat qolbu",
+    "travel umroh bogor",
+    "travel umroh cileungsi",
     "umroh ramadhan",
     "biaya umroh",
     "daftar umroh",
@@ -34,7 +36,7 @@ export function generateMetadata(page?: {
 }): Metadata {
   const title = page?.title
     ? `${page.title} | ${siteConfig.name}`
-    : `${siteConfig.name} - Tour & Travel`;
+    : `Sahabat Qolbu | Travel Umroh Sunnah Resmi`;
 
   const description = page?.description || siteConfig.description;
   const keywords = page?.keywords || siteConfig.keywords;

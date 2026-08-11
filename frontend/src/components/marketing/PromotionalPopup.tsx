@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import {
   getPublicPromotionalPopup,
   type PublicPromotionalPopup,
 } from "@/lib/public-api";
 
-const storageKey = (popup: PublicPromotionalPopup) =>
-  `sq:promotional-popup:${popup.id}:${popup.updatedAt || "initial"}`;
-
 export default function PromotionalPopup() {
+  const pathname = usePathname();
   const [popup, setPopup] = useState<PublicPromotionalPopup | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -21,14 +20,10 @@ export default function PromotionalPopup() {
     getPublicPromotionalPopup()
       .then((campaign) => {
         if (!mounted || !campaign) return;
-        const key = storageKey(campaign);
-        if (window.localStorage.getItem(key)) return;
-
         setPopup(campaign);
         timer = setTimeout(
           () => {
             if (!mounted) return;
-            window.localStorage.setItem(key, new Date().toISOString());
             setOpen(true);
           },
           Math.max(Number(campaign.delaySeconds || 0), 0) * 1000,
@@ -40,7 +35,7 @@ export default function PromotionalPopup() {
       mounted = false;
       if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,6 +85,7 @@ export default function PromotionalPopup() {
         {popup.targetUrl ? (
           <a
             href={popup.targetUrl}
+            onClick={() => setOpen(false)}
             target={popup.targetUrl.startsWith("http") ? "_blank" : undefined}
             rel={
               popup.targetUrl.startsWith("http")
