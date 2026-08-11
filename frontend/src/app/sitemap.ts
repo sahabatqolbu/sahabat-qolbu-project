@@ -29,10 +29,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${BASE_URL}/tentang-kami`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${BASE_URL}/artikel`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/faq`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
     },
     {
       url: `${BASE_URL}/kebijakan-privasi`,

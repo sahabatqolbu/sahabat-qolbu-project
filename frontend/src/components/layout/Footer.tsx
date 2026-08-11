@@ -122,7 +122,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/#tentang"
+                  href="/tentang-kami"
                   className="text-gray-300 hover:text-gold transition-colors"
                 >
                   Tentang Kami
@@ -138,7 +138,15 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/#faq"
+                  href="/artikel"
+                  className="text-gray-300 hover:text-gold transition-colors"
+                >
+                  Artikel
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/faq"
                   className="text-gray-300 hover:text-gold transition-colors"
                 >
                   FAQ

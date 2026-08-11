@@ -10,10 +10,10 @@ import { getDashboardBaseUrl, getDashboardUrl } from "@/lib/dashboard-url";
 
 const navigation = [
   { name: "Beranda", href: "/#beranda" },
-  { name: "Tentang", href: "/#tentang" },
+  { name: "Tentang Kami", href: "/tentang-kami" },
   { name: "Paket Umroh", href: "/#paket" },
-  { name: "Artikel", href: "/#artikel" },
-  { name: "FAQ", href: "/#faq" },
+  { name: "Artikel", href: "/artikel" },
+  { name: "FAQ", href: "/faq" },
 ];
 
 export default function Navbar() {
@@ -23,6 +23,8 @@ export default function Navbar() {
     pathname?.startsWith("/paket/") ||
     pathname?.startsWith("/packages/") ||
     pathname?.startsWith("/itinerary/") ||
+    pathname === "/tentang-kami" ||
+    pathname === "/faq" ||
     pathname === "/artikel" ||
     pathname?.startsWith("/artikel/") ||
     pathname?.startsWith("/hotel/") ||
