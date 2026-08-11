@@ -10,6 +10,13 @@ import {
 
 export default function PromotionalPopup() {
   const pathname = usePathname();
+
+  if (pathname !== "/") return null;
+
+  return <HomePromotionalPopup />;
+}
+
+function HomePromotionalPopup() {
   const [popup, setPopup] = useState<PublicPromotionalPopup | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -35,7 +42,7 @@ export default function PromotionalPopup() {
       mounted = false;
       if (timer) clearTimeout(timer);
     };
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
