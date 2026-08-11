@@ -149,11 +149,9 @@ export default function MarketingHomePage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40">
           <div className="max-w-3xl animate-fade-in">
             {/* Badge Resmi */}
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/20">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              <span className="text-white text-sm font-medium">
-                Travel Umroh Sunnah · PPIU Resmi
-              </span>
+            <div className="mb-6 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-gold sm:text-xs">
+              <span className="h-px w-8 bg-gold" />
+              Travel Umroh Sunnah · PPIU Resmi
             </div>
 
             {/* Headline */}
@@ -170,9 +168,27 @@ export default function MarketingHomePage() {
             </p>
 
             {/* Promo Badge */}
-            <div className="mb-8 inline-block bg-white text-primary px-6 py-3 rounded-lg font-bold transform -rotate-1 shadow-lg text-sm sm:text-base">
-              Anggota Asosiasi Mutiara Haji Indonesia · Ketua Umum: Ustadz
-              Khalid Basalamah
+            <div className="mb-8 flex items-center gap-4 border-l-2 border-gold pl-4">
+              <div className="flex h-11 w-16 shrink-0 items-center justify-center bg-white px-1.5">
+                <Image
+                  src="/images/partners/LOGO MHI utama.png"
+                  alt="Logo Mutiara Haji Indonesia"
+                  width={52}
+                  height={36}
+                  className="max-h-9 w-auto object-contain"
+                />
+              </div>
+              <div>
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/50">
+                  Anggota asosiasi
+                </span>
+                <strong className="mt-1 block text-sm text-white/90">
+                  Mutiara Haji Indonesia
+                </strong>
+                <span className="mt-1 block text-[10px] text-white/55">
+                  Ketua Umum: Ustadz Khalid Basalamah
+                </span>
+              </div>
             </div>
 
             {/* CTA Buttons */}
