@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import GalleryMarquee from "@/components/marketing/GalleryMarquee";
 import PackageCard from "@/components/marketing/PackageCard";
@@ -17,7 +18,6 @@ import {
 } from "@/lib/public-api";
 
 const EMPTY_PACKAGE_FILTERS: PackageFilters = {
-  destination: "",
   departureMonth: "",
   duration: "",
   airline: "",
@@ -56,24 +56,15 @@ export default function MarketingHomePage() {
 
   const filteredPackages = useMemo(
     () =>
-      packages.filter((pkg) => {
-        const destination =
-          pkg.route?.arrivalCity ||
-          pkg.route?.arrivalCode ||
-          pkg.route?.code ||
-          "";
-
-        return (
-          (!appliedFilters.destination ||
-            destination === appliedFilters.destination) &&
+      packages.filter(
+        (pkg) =>
           (!appliedFilters.departureMonth ||
             pkg.departureDate?.startsWith(appliedFilters.departureMonth)) &&
           (!appliedFilters.duration ||
             String(pkg.duration) === appliedFilters.duration) &&
           (!appliedFilters.airline ||
-            pkg.airline?.name === appliedFilters.airline)
-        );
-      }),
+            pkg.airline?.name === appliedFilters.airline),
+      ),
     [appliedFilters, packages],
   );
   const featuredPackages = filteredPackages.slice(0, 6);
@@ -139,27 +130,43 @@ export default function MarketingHomePage() {
               {`${branding.companyName} mendampingi jamaah dari seluruh Indonesia menjalani umroh sesuai Al-Qur'an dan Sunnah, dengan pelayanan amanah, fasilitas transparan, serta pendampingan sejak persiapan hingga kembali ke Tanah Air.`}
             </p>
 
-            {/* Promo Badge */}
-            <div className="mb-8 flex items-center gap-4 border-l-2 border-gold pl-4">
-              <div className="flex h-11 w-16 shrink-0 items-center justify-center bg-white px-1.5">
-                <Image
-                  src="/images/partners/LOGO MHI utama.png"
-                  alt="Logo Mutiara Haji Indonesia"
-                  width={52}
-                  height={36}
-                  className="max-h-9 w-auto object-contain"
-                />
+            {/* Association and government oversight */}
+            <div className="mb-8 grid max-w-2xl gap-3 sm:grid-cols-2">
+              <div className="flex items-center gap-4 border-l-2 border-gold bg-black/10 px-4 py-3 backdrop-blur-[2px]">
+                <div className="flex h-11 w-16 shrink-0 items-center justify-center bg-white px-1.5">
+                  <Image
+                    src="/images/partners/LOGO MHI utama.png"
+                    alt="Logo Mutiara Haji Indonesia"
+                    width={52}
+                    height={36}
+                    className="max-h-9 w-auto object-contain"
+                  />
+                </div>
+                <div>
+                  <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/50">
+                    Anggota asosiasi
+                  </span>
+                  <strong className="mt-1 block text-sm text-white/90">
+                    Mutiara Haji Indonesia
+                  </strong>
+                  <span className="mt-1 block text-[10px] text-white/55">
+                    Ketua Umum: Ustadz Khalid Basalamah
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/50">
-                  Anggota asosiasi
+
+              <div className="flex items-center gap-3 border-l-2 border-gold bg-black/10 px-4 py-3 backdrop-blur-[2px]">
+                <span className="grid h-11 w-11 shrink-0 place-items-center bg-gold/15 text-gold">
+                  <ShieldCheck className="h-6 w-6" />
                 </span>
-                <strong className="mt-1 block text-sm text-white/90">
-                  Mutiara Haji Indonesia
-                </strong>
-                <span className="mt-1 block text-[10px] text-white/55">
-                  Ketua Umum: Ustadz Khalid Basalamah
-                </span>
+                <div>
+                  <strong className="block text-sm leading-5 text-white/90">
+                    Diawasi Kementerian Haji dan Umrah RI
+                  </strong>
+                  <span className="mt-1 block text-[10px] leading-4 text-white/55">
+                    Penyelenggaraan sesuai regulasi pemerintah
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -328,7 +335,7 @@ export default function MarketingHomePage() {
                 Paket yang dicari belum tersedia
               </p>
               <p className="mt-2 text-sm text-gray-500">
-                Coba ubah pilihan tanggal, durasi, tujuan, atau maskapai.
+                Coba ubah pilihan bulan, durasi, atau maskapai.
               </p>
               {hasActiveFilters ? (
                 <button
