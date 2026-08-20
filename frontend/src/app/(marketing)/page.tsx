@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
+import GalleryMarquee from "@/components/marketing/GalleryMarquee";
 import PackageCard from "@/components/marketing/PackageCard";
+import PackageSearchBar, {
+  type PackageFilters,
+} from "@/components/marketing/PackageSearchBar";
 import {
   getMarketingPackages,
   getPublicGallery,
@@ -12,11 +16,21 @@ import {
   type PublicGalleryImage,
 } from "@/lib/public-api";
 
+const EMPTY_PACKAGE_FILTERS: PackageFilters = {
+  destination: "",
+  departureMonth: "",
+  duration: "",
+  airline: "",
+};
+
 export default function MarketingHomePage() {
   const branding = useBranding();
   const [packages, setPackages] = useState<MarketingPackage[]>([]);
   const [galleryImages, setGalleryImages] = useState<PublicGalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<PackageFilters>(EMPTY_PACKAGE_FILTERS);
+  const [appliedFilters, setAppliedFilters] =
+    useState<PackageFilters>(EMPTY_PACKAGE_FILTERS);
 
   useEffect(() => {
     let active = true;
@@ -40,7 +54,45 @@ export default function MarketingHomePage() {
     };
   }, []);
 
-  const featuredPackages = packages.slice(0, 6);
+  const filteredPackages = useMemo(
+    () =>
+      packages.filter((pkg) => {
+        const destination =
+          pkg.route?.arrivalCity ||
+          pkg.route?.arrivalCode ||
+          pkg.route?.code ||
+          "";
+
+        return (
+          (!appliedFilters.destination ||
+            destination === appliedFilters.destination) &&
+          (!appliedFilters.departureMonth ||
+            pkg.departureDate?.startsWith(appliedFilters.departureMonth)) &&
+          (!appliedFilters.duration ||
+            String(pkg.duration) === appliedFilters.duration) &&
+          (!appliedFilters.airline ||
+            pkg.airline?.name === appliedFilters.airline)
+        );
+      }),
+    [appliedFilters, packages],
+  );
+  const featuredPackages = filteredPackages.slice(0, 6);
+  const hasActiveFilters = Object.values(appliedFilters).some(Boolean);
+
+  const handlePackageSearch = () => {
+    setAppliedFilters(filters);
+    window.setTimeout(() => {
+      document.getElementById("paket")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
+
+  const resetPackageSearch = () => {
+    setFilters(EMPTY_PACKAGE_FILTERS);
+    setAppliedFilters(EMPTY_PACKAGE_FILTERS);
+  };
 
   const messageConsult = encodeURIComponent(
     `Assalamualaikum, saya lihat di website sahabatqolbu.com dan tertarik dengan paket umroh ${branding.companyName}`,
@@ -50,7 +102,10 @@ export default function MarketingHomePage() {
   return (
     <div className="min-h-screen bg-white font-sans antialiased text-gray-800">
       {/* HERO SECTION */}
-      <section id="beranda" className="relative min-h-screen flex items-center">
+      <section
+        id="beranda"
+        className="relative flex min-h-[860px] items-center pb-24 md:min-h-screen md:pb-20"
+      >
         {/* Background Image */}
         <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -212,10 +267,35 @@ export default function MarketingHomePage() {
             </div>
           </div>
         </div>
+
+        <svg
+          className="pointer-events-none absolute -bottom-[38px] left-0 z-[5] h-10 w-full md:-bottom-[48px] md:h-[50px]"
+          viewBox="0 0 1440 70"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path d="M0 0 H1440 V1 Q720 69 0 1 Z" fill="#0a2c45" />
+          <path
+            d="M0 1 Q720 69 1440 1"
+            fill="none"
+            stroke="#ffc107"
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
       </section>
 
+      <div className="relative z-20 -mt-16 md:-mt-[58px]">
+        <PackageSearchBar
+          packages={packages}
+          filters={filters}
+          onChange={setFilters}
+          onSearch={handlePackageSearch}
+        />
+      </div>
+
       {/* PAKET UMROH */}
-      <section id="paket" className="py-16 md:py-24">
+      <section id="paket" className="scroll-mt-24 pb-16 pt-14 md:pb-24 md:pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -226,7 +306,9 @@ export default function MarketingHomePage() {
               Seat Terbatas! Booking Sekarang
             </h2>
             <p className="text-gray-600 font-medium">
-              Rasakan Kekhusyukan Saat Beribadah bersama Sahabat Qolbu
+              {hasActiveFilters
+                ? `${filteredPackages.length} paket sesuai pencarian Anda`
+                : "Rasakan Kekhusyukan Saat Beribadah bersama Sahabat Qolbu"}
             </p>
             <div className="mt-4 bg-primary/5 inline-block px-4 py-2 rounded-lg text-sm sm:text-base">
               <span className="text-primary font-bold">
@@ -243,11 +325,20 @@ export default function MarketingHomePage() {
           ) : featuredPackages.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
               <p className="text-lg font-bold text-primary">
-                Paket belum tersedia
+                Paket yang dicari belum tersedia
               </p>
               <p className="mt-2 text-sm text-gray-500">
-                Data paket akan tampil otomatis setelah dipublish.
+                Coba ubah pilihan tanggal, durasi, tujuan, atau maskapai.
               </p>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={resetPackageSearch}
+                  className="mt-5 rounded-lg border border-primary px-5 py-2.5 text-sm font-bold text-primary transition hover:bg-primary hover:text-white"
+                >
+                  Tampilkan Semua Paket
+                </button>
+              ) : null}
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -408,49 +499,21 @@ export default function MarketingHomePage() {
       </section>
 
       {galleryImages.length > 0 ? (
-        <section id="gallery" className="py-16 md:py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl mb-10">
+        <section id="gallery" className="overflow-hidden bg-gray-50 py-16 md:py-24">
+          <div className="mx-auto mb-10 max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl">
               <span className="text-gold font-semibold text-sm uppercase tracking-wider">
                 Gallery
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4">
-                Momen Perjalanan Jamaah
+                Dokumentasi Perjalanan Jamaah
               </h2>
               <p className="text-gray-600">
                 Momen jamaah Sahabat Qolbu dalam perjalanan ibadah.
               </p>
             </div>
-
-            <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5">
-              {galleryImages.map((image) => (
-                <figure
-                  key={image.id}
-                  className="group relative break-inside-avoid overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-100"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image.imageUrl}
-                    alt={image.title || "Dokumentasi Sahabat Qolbu"}
-                    loading="lazy"
-                    className="w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                  {image.title || image.description ? (
-                    <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4 pt-12 text-white opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                      {image.title ? (
-                        <h3 className="font-semibold">{image.title}</h3>
-                      ) : null}
-                      {image.description ? (
-                        <p className="mt-1 text-sm text-white/80">
-                          {image.description}
-                        </p>
-                      ) : null}
-                    </figcaption>
-                  ) : null}
-                </figure>
-              ))}
-            </div>
           </div>
+          <GalleryMarquee images={galleryImages} />
         </section>
       ) : null}
 

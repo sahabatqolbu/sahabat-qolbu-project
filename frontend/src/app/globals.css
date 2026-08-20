@@ -406,3 +406,155 @@
     transform: translateY(0);
   }
 }
+
+/* Two-row, seamless journey gallery */
+.gallery-marquee-shell {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  width: 100%;
+}
+
+.gallery-marquee-shell::before,
+.gallery-marquee-shell::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  bottom: 0;
+  width: clamp(32px, 7vw, 120px);
+  pointer-events: none;
+}
+
+.gallery-marquee-shell::before {
+  left: 0;
+  background: linear-gradient(90deg, #f9fafb 0%, rgba(249, 250, 251, 0) 100%);
+}
+
+.gallery-marquee-shell::after {
+  right: 0;
+  background: linear-gradient(270deg, #f9fafb 0%, rgba(249, 250, 251, 0) 100%);
+}
+
+.gallery-marquee-row {
+  width: 100%;
+  overflow: hidden;
+}
+
+.gallery-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: galleryMarquee 58s linear infinite;
+}
+
+.gallery-marquee-track.gallery-marquee-reverse {
+  animation-direction: reverse;
+  animation-duration: 64s;
+}
+
+.gallery-marquee-group {
+  display: flex;
+  flex: none;
+  gap: 14px;
+  padding-right: 14px;
+}
+
+.gallery-marquee-card {
+  position: relative;
+  flex: none;
+  width: clamp(250px, 28vw, 430px);
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e5e7eb;
+  box-shadow: 0 10px 30px rgba(7, 26, 51, 0.08);
+}
+
+@keyframes galleryMarquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gallery-marquee-shell:hover .gallery-marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+/* WhatsApp attention treatment: visible, but deliberately infrequent. */
+.wa-floating-button {
+  animation: waAttention 5.5s ease-in-out infinite;
+}
+
+.wa-floating-ring {
+  animation: waRing 2.6s ease-out infinite;
+}
+
+@keyframes waAttention {
+  0%,
+  72%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  76% {
+    transform: rotate(-7deg) scale(1.03);
+  }
+  80% {
+    transform: rotate(7deg) scale(1.03);
+  }
+  84% {
+    transform: rotate(-4deg) scale(1.02);
+  }
+  88% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes waRing {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.95);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+@media (max-width: 639px) {
+  .gallery-marquee-shell {
+    gap: 10px;
+  }
+
+  .gallery-marquee-group {
+    gap: 10px;
+    padding-right: 10px;
+  }
+
+  .gallery-marquee-card {
+    width: min(72vw, 290px);
+    border-radius: 8px;
+  }
+
+  .gallery-marquee-track {
+    animation-duration: 46s;
+  }
+
+  .gallery-marquee-track.gallery-marquee-reverse {
+    animation-duration: 52s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-marquee-track,
+  .wa-floating-button,
+  .wa-floating-ring {
+    animation-play-state: paused;
+  }
+}
