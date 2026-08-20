@@ -94,7 +94,7 @@ export default function AboutPageClient({
                     ],
                     ["/images/partners/logo_5p.png", "5 Pasti Umrah"],
                     [
-                      "/images/partners/LOGO MHI utama.png",
+                      "/images/partners/logo-mutiara-haji-indonesia.png",
                       "Mutiara Haji Indonesia",
                     ],
                   ].map(([src, alt]) => (

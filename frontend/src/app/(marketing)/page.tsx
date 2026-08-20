@@ -135,7 +135,7 @@ export default function MarketingHomePage() {
               <div className="flex items-center gap-4 border-l-2 border-gold bg-black/10 px-4 py-3 backdrop-blur-[2px]">
                 <div className="flex h-11 w-16 shrink-0 items-center justify-center bg-white px-1.5">
                   <Image
-                    src="/images/partners/LOGO MHI utama.png"
+                    src="/images/partners/logo-mutiara-haji-indonesia.png"
                     alt="Logo Mutiara Haji Indonesia"
                     width={52}
                     height={36}
