@@ -38,7 +38,7 @@ export default function HeroSlider({ slides }: { slides: PublicHeroSlide[] }) {
 
   return (
     <div
-      className="relative h-[clamp(260px,57.14vw,calc(100vh-5rem))] w-full overflow-hidden bg-[#071a33]"
+      className="relative aspect-[1672/941] w-full overflow-hidden bg-[#071a33]"
       role="region"
       aria-roledescription="carousel"
       aria-label="Informasi utama Sahabat Qolbu"
