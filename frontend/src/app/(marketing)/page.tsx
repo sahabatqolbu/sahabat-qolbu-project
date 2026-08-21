@@ -133,7 +133,7 @@ export default function MarketingHomePage() {
           {/* Association and government oversight */}
           <aside className="order-3 grid gap-3 sm:grid-cols-2 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:grid-cols-1 lg:self-center">
             <div className="flex min-h-28 items-center gap-4 border border-white/15 border-l-2 border-l-gold bg-primary/55 p-4 shadow-xl shadow-black/10 backdrop-blur-md lg:p-5">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center bg-white p-2 shadow-sm">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center">
                 <Image
                   src="/images/partners/logo-mutiara-haji-indonesia.png"
                   alt="Logo Mutiara Haji Indonesia"
@@ -156,7 +156,7 @@ export default function MarketingHomePage() {
             </div>
 
             <div className="flex min-h-28 items-center gap-4 border border-white/15 border-l-2 border-l-gold bg-primary/55 p-4 shadow-xl shadow-black/10 backdrop-blur-md lg:p-5">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center bg-white p-2 shadow-sm">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center">
                 <Image
                   src="/images/partners/logo-kementerian-haji-umrah-ri.png"
                   alt="Logo Kementerian Haji dan Umrah Republik Indonesia"
@@ -167,7 +167,7 @@ export default function MarketingHomePage() {
               </div>
               <div>
                 <strong className="block text-sm leading-5 text-white/90">
-                  Diawasi Kementerian Haji dan Umrah RI
+                  Diawasi Oleh Kementerian Haji dan Umrah RI
                 </strong>
                 <span className="mt-1 block text-[10px] leading-4 text-white/55">
                   Penyelenggaraan sesuai regulasi pemerintah
