@@ -18,6 +18,7 @@ import {
   getPublicAirlineById,
 } from "../controllers/articleController.js";
 import { getPublicPromotionalPopup } from "../controllers/promotionalPopupController.js";
+import { getPublicHeroSlides } from "../controllers/heroSlideController.js";
 
 const router = express.Router();
 
@@ -33,6 +34,7 @@ router.get("/company-profile", getPublicCompanyProfile);
 router.get("/faqs", getPublicFaqs);
 router.get("/gallery", getPublicGallery);
 router.get("/promotional-popup", getPublicPromotionalPopup);
+router.get("/hero-slides", getPublicHeroSlides);
 router.get("/articles", getPublicArticles);
 router.get("/articles/:slug", getPublicArticleBySlug);
 router.get("/hotels/:id", getPublicHotelById);

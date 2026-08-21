@@ -159,6 +159,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
           href: "/admin/content/promotional-popups",
           icon: ImageIcon,
         },
+        {
+          label: "Hero Slider",
+          href: "/admin/content/hero-slides",
+          icon: ImageIcon,
+        },
       ],
     },
     {
@@ -412,6 +417,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
         {
           label: "Gallery",
           href: "/staff/content/gallery",
+          icon: ImageIcon,
+        },
+        {
+          label: "Hero Slider",
+          href: "/staff/content/hero-slides",
           icon: ImageIcon,
         },
       ],

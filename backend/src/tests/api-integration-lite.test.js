@@ -167,6 +167,13 @@ describe("api integration lite", () => {
 
     assert.notEqual(response.status, 403);
   });
+  it("allows direct static access to public hero slide folder", async () => {
+    const response = await fetch(
+      `${baseUrl}/uploads/hero-slides/not-existing.webp`,
+    );
+
+    assert.notEqual(response.status, 403);
+  });
   it("blocks direct static access to protected upload folders", async () => {
     const response = await fetch(`${baseUrl}/uploads/payments/not-allowed.jpg`);
     const payload = await response.json();

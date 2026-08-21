@@ -98,6 +98,7 @@ export const optimizeImage =
         "gallery",
         "articles",
         "promotional-popups",
+        "hero-slides",
       ];
 
       if (!validFolders.includes(folder)) {
@@ -136,15 +137,18 @@ export const optimizeImage =
       await fs.mkdir(uploadDir, { recursive: true });
 
       if (extension === "webp") {
+        const maxWidth = Number.parseInt(options.maxWidth, 10) || 1000;
+        const maxHeight = Number.parseInt(options.maxHeight, 10) || 1000;
+        const quality = Number.parseInt(options.quality, 10) || 82;
         await sharp(req.file.buffer)
           .rotate()
           .resize({
-            width: 1000,
-            height: 1000,
+            width: maxWidth,
+            height: maxHeight,
             fit: "inside",
             withoutEnlargement: true,
           })
-          .webp({ quality: 82 })
+          .webp({ quality })
           .toFile(outputPath);
       } else {
         const image = await Jimp.read(req.file.buffer);
@@ -203,6 +207,7 @@ export const optimizeMultipleImages = (folder = "general", options = {}) => {
         "gallery",
         "articles",
         "promotional-popups",
+        "hero-slides",
       ];
 
       if (!validFolders.includes(folder)) {

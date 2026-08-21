@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import GalleryMarquee from "@/components/marketing/GalleryMarquee";
+import HeroSlider from "@/components/marketing/HeroSlider";
 import PackageCard from "@/components/marketing/PackageCard";
 import PackageSearchBar, {
   type PackageFilters,
@@ -12,8 +12,10 @@ import PackageSearchBar, {
 import {
   getMarketingPackages,
   getPublicGallery,
+  getPublicHeroSlides,
   type MarketingPackage,
   type PublicGalleryImage,
+  type PublicHeroSlide,
 } from "@/lib/public-api";
 
 const EMPTY_PACKAGE_FILTERS: PackageFilters = {
@@ -26,6 +28,7 @@ export default function MarketingHomePage() {
   const branding = useBranding();
   const [packages, setPackages] = useState<MarketingPackage[]>([]);
   const [galleryImages, setGalleryImages] = useState<PublicGalleryImage[]>([]);
+  const [heroSlides, setHeroSlides] = useState<PublicHeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<PackageFilters>(EMPTY_PACKAGE_FILTERS);
   const [appliedFilters, setAppliedFilters] =
@@ -33,20 +36,23 @@ export default function MarketingHomePage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getMarketingPackages(), getPublicGallery()])
-      .then(([packageData, galleryData]) => {
-        if (active) {
-          setPackages(packageData);
-          setGalleryImages(galleryData);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load marketing packages", err);
-        if (active) {
-          setLoading(false);
-        }
-      });
+    Promise.allSettled([
+      getMarketingPackages(),
+      getPublicGallery(),
+      getPublicHeroSlides(),
+    ]).then(([packageResult, galleryResult, heroResult]) => {
+      if (!active) return;
+      if (packageResult.status === "fulfilled") {
+        setPackages(packageResult.value);
+      }
+      if (galleryResult.status === "fulfilled") {
+        setGalleryImages(galleryResult.value);
+      }
+      if (heroResult.status === "fulfilled") {
+        setHeroSlides(heroResult.value);
+      }
+      setLoading(false);
+    });
 
     return () => {
       active = false;
@@ -94,193 +100,16 @@ export default function MarketingHomePage() {
       {/* HERO SECTION */}
       <section
         id="beranda"
-        className="relative flex min-h-[860px] items-center pb-24 md:min-h-screen md:pb-20"
+        className="relative bg-[#071a33] pb-20 pt-20 md:pb-16"
       >
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80"
-            alt="Ka'bah Masjidil Haram"
-            className="w-full h-full object-cover"
-          />
-          <div className="gradient-overlay absolute inset-0"></div>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-6 px-4 pb-32 pt-28 sm:px-6 md:gap-8 md:py-40 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)] lg:gap-x-12 lg:px-8 xl:gap-x-16">
-          <div className="order-1 max-w-3xl animate-fade-in lg:col-start-1 lg:row-start-1">
-            {/* Badge Resmi */}
-            <div className="mb-6 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-gold sm:text-xs">
-              <span className="h-px w-8 bg-gold" />
-              Travel Umroh Sunnah · PPIU Berizin Resmi
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
-              Berangkat Umroh,
-              <span className="text-gold block mt-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
-                Pulang Berhijrah.
-              </span>
-            </h1>
-
-            {/* Subheadline */}
-            <p className="text-lg sm:text-xl text-gray-200 mb-8 max-w-2xl leading-relaxed">
-              {`${branding.companyName} mendampingi jamaah dari seluruh Indonesia menjalani umroh sesuai Al-Qur'an dan Sunnah, dengan pelayanan amanah, fasilitas transparan, serta pendampingan sejak persiapan hingga kembali ke Tanah Air.`}
-            </p>
-          </div>
-
-          {/* Association and government oversight */}
-          <aside className="order-3 grid gap-3 sm:grid-cols-2 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:grid-cols-1 lg:self-center">
-            <div className="flex min-h-28 items-center gap-4 border border-white/15 border-l-2 border-l-gold bg-primary/55 p-4 shadow-xl shadow-black/10 backdrop-blur-md lg:p-5">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center">
-                <Image
-                  src="/images/partners/logo-mutiara-haji-indonesia.png"
-                  alt="Logo Mutiara Haji Indonesia"
-                  width={72}
-                  height={64}
-                  className="max-h-16 w-auto object-contain"
-                />
-              </div>
-              <div>
-                <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/50">
-                  Anggota asosiasi
-                </span>
-                <strong className="mt-1 block text-sm text-white/90">
-                  Mutiara Haji Indonesia
-                </strong>
-                <span className="mt-1 block text-[10px] text-white/55">
-                  Ketua Umum: Ustadz Khalid Basalamah
-                </span>
-              </div>
-            </div>
-
-            <div className="flex min-h-28 items-center gap-4 border border-white/15 border-l-2 border-l-gold bg-primary/55 p-4 shadow-xl shadow-black/10 backdrop-blur-md lg:p-5">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center">
-                <Image
-                  src="/images/partners/logo-kementerian-haji-umrah-ri.png"
-                  alt="Logo Kementerian Haji dan Umrah Republik Indonesia"
-                  width={68}
-                  height={68}
-                  className="max-h-[68px] w-auto object-contain"
-                />
-              </div>
-              <div>
-                <strong className="block text-sm leading-5 text-white/90">
-                  Diawasi Oleh Kementerian Haji dan Umrah RI
-                </strong>
-                <span className="mt-1 block text-[10px] leading-4 text-white/55">
-                  Penyelenggaraan sesuai regulasi pemerintah
-                </span>
-              </div>
-            </div>
-          </aside>
-
-          <div className="order-2 animate-fade-in lg:col-start-1 lg:row-start-2">
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/paket"
-                className="gold-gradient text-primary font-bold px-8 py-4 rounded-full text-center hover:opacity-90 transition-all hover:scale-105 inline-flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Lihat Paket Umroh
-              </Link>
-              <a
-                href={waHeroLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="border-2 border-white text-white font-semibold px-8 py-4 rounded-full text-center hover:bg-white hover:text-primary transition-all inline-flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-                Konsultasi dengan Kami
-              </a>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="flex flex-wrap items-center gap-6 mt-12 pt-8 border-t border-white/20">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-gold"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-white font-semibold">Umroh Sesuai Sunnah</p>
-                  <p className="text-gray-400 text-xs">Bimbingan ibadah terarah</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-gold"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-white font-semibold">
-                    PPIU Berizin Resmi
-                  </p>
-                  <p className="text-gray-400 text-xs">
-                    PPIU 12112100038690008
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-gold"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-white font-semibold">Pendampingan Jamaah</p>
-                  <p className="text-gray-400 text-xs">Pembimbing & tim medis</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <h1 className="sr-only">
+          Sahabat Qolbu, Travel Umroh Sunnah Berizin Resmi
+        </h1>
+        <p className="sr-only">
+          Berangkat Umroh, Pulang Berhijrah dengan pendampingan jamaah dari
+          seluruh Indonesia sesuai Al-Qur&apos;an dan Sunnah.
+        </p>
+        <HeroSlider slides={heroSlides} />
 
         <svg
           className="pointer-events-none absolute -bottom-[38px] left-0 z-[5] h-10 w-full md:-bottom-[48px] md:h-[50px]"

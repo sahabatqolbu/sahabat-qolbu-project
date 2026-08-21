@@ -848,6 +848,14 @@ export interface PublicPromotionalPopup {
   updatedAt?: string | null;
 }
 
+export interface PublicHeroSlide {
+  id: number;
+  title?: string | null;
+  imageUrl: string;
+  altText?: string | null;
+  sortOrder?: number | null;
+}
+
 const normalizeStructuredContent = (
   value: unknown,
 ): StructuredContentItem[] => {
@@ -924,6 +932,23 @@ export const getPublicPromotionalPopup =
       imageUrl: resolveAssetUrl(payload.popup.imageUrl) || "",
     };
   };
+
+export const getPublicHeroSlides = async (): Promise<PublicHeroSlide[]> => {
+  const payload = await fetchApi<{
+    slides?: (Omit<PublicHeroSlide, "imageUrl"> & {
+      imageUrl?: string | null;
+    })[];
+  }>("/public/hero-slides");
+
+  if (!Array.isArray(payload?.slides)) return [];
+
+  return payload.slides
+    .map((slide) => ({
+      ...slide,
+      imageUrl: resolveAssetUrl(slide.imageUrl) || "",
+    }))
+    .filter((slide): slide is PublicHeroSlide => Boolean(slide.imageUrl));
+};
 
 export interface PublicArticle {
   id: number;

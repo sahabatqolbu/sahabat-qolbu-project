@@ -819,6 +819,31 @@ export const promotionalPopups = mysqlTable(
 );
 
 // =====================================================
+// WEBSITE HERO SLIDES
+// =====================================================
+export const heroSlides = mysqlTable(
+  "hero_slides",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    title: varchar("title", { length: 255 }),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    altText: varchar("alt_text", { length: 255 }),
+    isActive: boolean("is_active").notNull().default(true),
+    sortOrder: int("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .onUpdateNow(),
+  },
+  (table) => ({
+    activeOrderIdx: index("hero_slide_active_order_idx").on(
+      table.isActive,
+      table.sortOrder,
+    ),
+  }),
+);
+
+// =====================================================
 // ARTICLES / EDUCATIONAL CONTENT
 // =====================================================
 

@@ -205,6 +205,7 @@ const publicUploadsOnly = (req, res, next) => {
     "gallery",
     "articles",
     "promotional-popups",
+    "hero-slides",
   ]);
 
   const protectedFolders = new Set([

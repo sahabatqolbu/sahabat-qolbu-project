@@ -76,6 +76,12 @@ import {
   getAllPromotionalPopups,
   updatePromotionalPopup,
 } from "../controllers/promotionalPopupController.js";
+import {
+  createHeroSlide,
+  deleteHeroSlide,
+  getAllHeroSlides,
+  updateHeroSlide,
+} from "../controllers/heroSlideController.js";
 
 const router = express.Router();
 
@@ -260,6 +266,48 @@ router.delete(
   authenticate,
   authorize(["ADMIN"]),
   deletePromotionalPopup,
+);
+
+// =====================================================
+// WEBSITE HERO SLIDES
+// =====================================================
+router.get(
+  "/hero-slides",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  getAllHeroSlides,
+);
+router.post(
+  "/hero-slides",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  upload.single("image"),
+  optimizeImage("hero-slides", {
+    outputFormat: "webp",
+    maxWidth: 1920,
+    maxHeight: 1080,
+    quality: 84,
+  }),
+  createHeroSlide,
+);
+router.put(
+  "/hero-slides/:id",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  upload.single("image"),
+  optimizeImage("hero-slides", {
+    outputFormat: "webp",
+    maxWidth: 1920,
+    maxHeight: 1080,
+    quality: 84,
+  }),
+  updateHeroSlide,
+);
+router.delete(
+  "/hero-slides/:id",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  deleteHeroSlide,
 );
 
 // ARTICLES
