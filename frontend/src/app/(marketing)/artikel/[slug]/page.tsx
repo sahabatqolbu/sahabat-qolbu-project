@@ -1,15 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import {
   ArrowLeft,
   BookOpen,
   CalendarDays,
   ChevronRight,
   FileText,
-  Quote,
-  Sparkles,
 } from "lucide-react";
 import {
   getMarketingPackageById,
@@ -17,7 +14,6 @@ import {
   getPublicArticles,
   getPublicAirlineDetail,
   getPublicHotelDetail,
-  resolveAssetUrl,
   slugifyPackageName,
 } from "@/lib/public-api";
 import ArticleEngagement from "@/components/marketing/ArticleEngagement";
@@ -36,11 +32,51 @@ const formatDate = (value?: string | null) => {
   }).format(date);
 };
 
-const markdownImagePattern = /!?\[([^\]]*)\]\(([^)]+)\)/g;
-
 const estimateReadingTime = (content: string) => {
   const words = content.trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 180));
+};
+
+const normalizeComparableText = (value: string) =>
+  value
+    .toLocaleLowerCase("id-ID")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const prepareArticleContent = (content: string, title: string) => {
+  const normalized = content
+    .replace(/(\S)[ \t]+\*\*(?=[\s,.;:!?]|$)/g, "$1**")
+    .replace(/(\S)[ \t]+\*(?=[\s,.;:!?]|$)/g, "$1*")
+    .replace(/^•\s+/gm, "- ")
+    .replace(/[ \t]+([,.;:!?])/g, "$1")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
+  const lines = normalized.split("\n");
+  const firstContentLine = lines.findIndex((line) => line.trim());
+
+  if (firstContentLine >= 0) {
+    const firstLine = lines[firstContentLine].trim();
+    const heading =
+      firstLine.match(/^#{1,4}\s+(.+)$/) ||
+      firstLine.match(/^\*\*(.+)\*\*$/);
+    if (
+      heading &&
+      normalizeComparableText(heading[1]) === normalizeComparableText(title)
+    ) {
+      lines.splice(firstContentLine, 1);
+    }
+  }
+
+  return lines
+    .map((line) => {
+      const standaloneBold = line.trim().match(/^\*\*([^*]{2,90})\*\*$/);
+      if (standaloneBold && !/[.!?]$/.test(standaloneBold[1])) {
+        return `## ${standaloneBold[1]}`;
+      }
+      return line;
+    })
+    .join("\n")
+    .trim();
 };
 
 type RelatedPackageSummary = {
@@ -110,129 +146,6 @@ const getRelatedPackages = async (
   return [];
 };
 
-const looksLikeHeading = (block: string) => {
-  const text = block.trim();
-  if (!text || text.includes("\n")) return false;
-  if (text.length > 90) return false;
-  return !/[.!?]$/.test(text);
-};
-
-const renderTextBlock = (block: string, key: string) => {
-  const markdownHeading = block.trim().match(/^(#{2,4})\s+(.+)$/);
-  if (markdownHeading && !markdownHeading[2].includes("\n")) {
-    const level = markdownHeading[1].length;
-    const text = markdownHeading[2].trim();
-
-    if (level === 2) {
-      return (
-        <h2 key={key} className="pt-4 text-2xl font-extrabold text-primary">
-          {text}
-        </h2>
-      );
-    }
-
-    return (
-      <h3 key={key} className="pt-2 text-xl font-extrabold text-primary">
-        {text}
-      </h3>
-    );
-  }
-
-  const lines = block
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const isList =
-    lines.length > 1 && lines.every((line) => /^[-•]\s+/.test(line));
-
-  if (isList) {
-    return (
-      <ul key={key} className="space-y-3">
-        {lines.map((line) => (
-          <li
-            key={line}
-            className="flex gap-3 rounded-sm bg-primary/5 px-4 py-3 leading-7 text-neutral-700"
-          >
-            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gold" />
-            <span>{line.replace(/^[-•]\s+/, "")}</span>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  if (looksLikeHeading(block)) {
-    return (
-      <h2 key={key} className="pt-4 text-2xl font-extrabold text-primary">
-        {block.trim()}
-      </h2>
-    );
-  }
-
-  return (
-    <p key={key} className="whitespace-pre-line leading-8 text-neutral-700">
-      {block}
-    </p>
-  );
-};
-
-const renderArticleImage = (alt: string, src: string, key: string) => (
-  <figure
-    key={key}
-    className="my-8 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-50"
-  >
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img
-      src={resolveAssetUrl(src) || src}
-      alt={alt || "Gambar artikel"}
-      className="h-auto w-full object-contain"
-    />
-    {alt ? (
-      <figcaption className="px-4 py-3 text-sm text-neutral-500">
-        {alt}
-      </figcaption>
-    ) : null}
-  </figure>
-);
-
-const renderContentBlock = (block: string, index: number) => {
-  const parts: ReactNode[] = [];
-  let lastIndex = 0;
-  const matches = Array.from(block.matchAll(markdownImagePattern));
-
-  if (!matches.length) {
-    return renderTextBlock(block, `${block}-${index}`);
-  }
-
-  matches.forEach((match, matchIndex) => {
-    const start = match.index ?? 0;
-    const text = block.slice(lastIndex, start).trim();
-    if (text) {
-      parts.push(renderTextBlock(text, `text-${index}-${matchIndex}`));
-    }
-
-    parts.push(
-      renderArticleImage(
-        match[1],
-        match[2],
-        `image-${index}-${matchIndex}-${match[2]}`,
-      ),
-    );
-    lastIndex = start + match[0].length;
-  });
-
-  const tail = block.slice(lastIndex).trim();
-  if (tail) {
-    parts.push(renderTextBlock(tail, `tail-${index}`));
-  }
-
-  return (
-    <div key={`${block}-${index}`} className="space-y-6">
-      {parts}
-    </div>
-  );
-};
-
 const renderContent = (content: string) => renderMarkdownContent(content);
 
 export const dynamic = "force-dynamic";
@@ -272,7 +185,11 @@ export default async function ArticleDetailPage({
     article.relatedType,
     article.relatedId,
   );
-  const readingTime = estimateReadingTime(article.content || "");
+  const preparedContent = prepareArticleContent(
+    article.content || "",
+    article.title,
+  );
+  const readingTime = estimateReadingTime(preparedContent);
 
   return (
     <main className="min-h-screen bg-[#f8faf8] pt-24 text-neutral-800">
@@ -320,28 +237,9 @@ export default async function ArticleDetailPage({
         ) : null}
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:py-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
           <div className="space-y-8">
-            {article.excerpt ? (
-              <blockquote className="rounded-sm border-l-4 border-gold bg-white p-6 shadow-sm">
-                <Quote className="mb-3 h-7 w-7 text-gold" />
-                <p className="text-xl font-bold leading-8 text-primary">
-                  {article.excerpt}
-                </p>
-              </blockquote>
-            ) : null}
-
-            <div className="rounded-sm border border-gold/30 bg-gold/10 p-5">
-              <div className="flex items-start gap-3">
-                <Sparkles className="mt-1 h-5 w-5 shrink-0 text-gold" />
-                <p className="font-semibold leading-7 text-primary">
-                  Ringkasnya, artikel ini membantu calon jamaah memahami poin
-                  penting sebelum memilih fasilitas perjalanan umroh.
-                </p>
-              </div>
-            </div>
-
-            <div className="px-0 py-1 md:rounded-sm md:border md:border-neutral-200 md:bg-white md:p-8 md:shadow-sm">
-              <div className="space-y-6 text-base">
-                {renderContent(article.content)}
+            <div className="min-w-0 px-0 py-1 md:rounded-md md:border md:border-neutral-200 md:bg-white md:px-10 md:py-9 md:shadow-sm lg:px-12">
+              <div className="mx-auto max-w-[780px] text-base">
+                {renderContent(preparedContent)}
               </div>
             </div>
 
@@ -434,5 +332,3 @@ export default async function ArticleDetailPage({
     </main>
   );
 }
-
-

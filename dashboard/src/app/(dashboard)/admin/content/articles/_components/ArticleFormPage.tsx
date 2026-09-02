@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import ArticleMarkdownEditor from "@/components/articles/ArticleMarkdownEditor";
 import {
   ArrowLeft,
   FileText,
@@ -275,6 +276,7 @@ export default function ArticleFormPage({
   const [removeCoverImage, setRemoveCoverImage] = useState(false);
   const hydratedArticleSignatureRef = useRef<string | null>(null);
   const isDirtyRef = useRef(false);
+  const contentEditorRef = useRef<HTMLTextAreaElement>(null);
 
   const articleId = params?.id;
   const isEdit = mode === "edit";
@@ -395,13 +397,22 @@ export default function ArticleFormPage({
     onSuccess: (response) => {
       const url = response.data?.data?.url;
       if (!url) return;
+      const editor = contentEditorRef.current;
+      const insertion = `![Gambar artikel](${url})`;
       updateFormData((prev) => ({
         ...prev,
-        content: `${prev.content}${prev.content ? "\n\n" : ""}![Gambar artikel](${url})`,
+        content: editor
+          ? `${prev.content.slice(0, editor.selectionStart)}${
+              editor.selectionStart > 0 ? "\n\n" : ""
+            }${insertion}${
+              editor.selectionEnd < prev.content.length ? "\n\n" : ""
+            }${prev.content.slice(editor.selectionEnd)}`
+          : `${prev.content}${prev.content ? "\n\n" : ""}${insertion}`,
       }));
       toast({
         title: "Gambar konten ditambahkan",
-        description: "Preview gambar tampil di bawah editor konten.",
+        description:
+          "Gambar dimasukkan pada posisi kursor dan dikonversi ke WebP.",
       });
     },
     onError: (error: unknown) =>
@@ -679,8 +690,8 @@ export default function ArticleFormPage({
               <div>
                 <CardTitle>Konten Artikel *</CardTitle>
                 <CardDescription>
-                  Upload gambar konten dari tombol ini. Preview gambar akan
-                  tampil di bawah editor setelah upload berhasil.
+                  Pilih teks lalu gunakan toolbar untuk mengatur struktur.
+                  Gunakan Preview untuk memeriksa hasil sebelum diterbitkan.
                 </CardDescription>
               </div>
               <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
@@ -698,15 +709,12 @@ export default function ArticleFormPage({
             </div>
           </CardHeader>
           <CardContent>
-            <Textarea
-              rows={24}
+            <ArticleMarkdownEditor
+              textareaRef={contentEditorRef}
               value={formData.content}
-              onChange={(e) =>
-                updateFormData((p) => ({ ...p, content: e.target.value }))
+              onChange={(content) =>
+                updateFormData((prev) => ({ ...prev, content }))
               }
-              required
-              className="min-h-[520px] font-mono text-sm leading-relaxed"
-              placeholder="Tulis artikel panjang di sini..."
             />
             {contentImages.length ? (
               <div className="mt-5 rounded-md border border-dashed bg-gray-50 p-4">
