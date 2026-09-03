@@ -318,7 +318,10 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   const seatLabel = hasSeatData
     ? `Sisa ${remainingSeats} seat`
     : "Kuota menyusul";
-  const waMessage = `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${pkg.name}*`;
+  const isSoldOut = availability.status === "SOLD_OUT";
+  const waMessage = isSoldOut
+    ? `Assalamualaikum, saya lihat paket *${pkg.name}* sudah sold out di website sahabatqolbu.com. Apakah masih bisa masuk waiting list jika ada seat yang batal?`
+    : `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${pkg.name}*`;
   const waLink = `https://wa.me/${branding.whatsappNumber || "6281255871984"}?text=${encodeURIComponent(waMessage)}`;
 
   const nextSlide = (e: React.MouseEvent) => {
@@ -625,6 +628,15 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
             >
               Daftar Paket
             </a>
+          ) : isSoldOut ? (
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="js-package-soldout-waitlist flex items-center justify-center w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-md transition-colors text-center text-xs px-2 text-center"
+            >
+              Waiting List
+            </a>
           ) : (
             <span className="flex items-center justify-center w-full bg-gray-200 text-gray-500 font-semibold py-3 rounded-md text-center text-sm cursor-not-allowed">
               {availability.buttonLabel}
@@ -635,9 +647,14 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="js-package-wa-link mt-2 flex items-center justify-center w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-md transition-colors text-center text-sm"
+          className={cn(
+            "js-package-wa-link mt-2 flex items-center justify-center w-full text-white font-semibold py-3 rounded-md transition-colors text-center text-sm",
+            isSoldOut
+              ? "bg-amber-600 hover:bg-amber-700"
+              : "bg-green-500 hover:bg-green-600",
+          )}
         >
-          Tanya via WhatsApp
+          {isSoldOut ? "Hubungi Admin (Waiting List)" : "Tanya via WhatsApp"}
         </a>
       </div>
 

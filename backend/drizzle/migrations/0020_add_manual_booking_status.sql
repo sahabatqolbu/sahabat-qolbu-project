@@ -1,0 +1,1 @@
+ALTER TABLE packages ADD COLUMN manual_booking_status ENUM('AUTO', 'OPEN', 'SOLD_OUT', 'CLOSED') NOT NULL DEFAULT 'AUTO';

@@ -179,12 +179,14 @@ function BookingPanel({
   seatsLeft,
   bookingLink,
   consultLink,
+  waitlistLink,
   selectedOptionId,
 }: {
   pkg: MarketingPackage;
   seatsLeft: number;
   bookingLink: string;
   consultLink: string;
+  waitlistLink?: string;
   selectedOptionId?: number;
 }) {
   const seatPercent = pkg.totalSeats
@@ -359,6 +361,16 @@ function BookingPanel({
             >
               <ClipboardList className="h-5 w-5" />
               {availability.buttonLabel}
+            </a>
+          ) : availability.label === "Sold Out" && waitlistLink ? (
+            <a
+              href={waitlistLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-sm bg-amber-600 px-5 py-4 font-extrabold text-white transition hover:bg-amber-700"
+            >
+              <ClipboardList className="h-5 w-5" />
+              Hubungi Admin (Waiting List)
             </a>
           ) : (
             <span className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-sm bg-neutral-200 px-5 py-4 font-extrabold text-neutral-500">
@@ -595,10 +607,14 @@ export default async function LandingPackageDetailPage({
 
   const getWhatsappLink = (
     pkg: MarketingPackage,
-    intent: "consult" | "book",
+    intent: "consult" | "book" | "waitlist",
   ) => {
     const action =
-      intent === "book" ? "ingin booking seat" : "tertarik konsultasi";
+      intent === "book"
+        ? "ingin booking seat"
+        : intent === "waitlist"
+          ? "ingin masuk waiting list karena kuota sold out"
+          : "tertarik konsultasi";
     const optionText = selectedOption ? `, opsi ${selectedOption.name}` : "";
     const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan ${action} paket ${pkg.name}${optionText}`;
     return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
@@ -617,6 +633,7 @@ export default async function LandingPackageDetailPage({
   const heroImages = validGallery.length ? validGallery : [fallbackHeroImage];
   const seatsLeft = getSeatsLeft(pkg);
   const consultLink = getWhatsappLink(pkg, "consult");
+  const waitlistLink = getWhatsappLink(pkg, "waitlist");
   const bookingLink = getCalonJamaahPackageRegisterUrl(
     pkg.slug,
     selectedOption?.id,
@@ -724,6 +741,7 @@ export default async function LandingPackageDetailPage({
                 seatsLeft={seatsLeft}
                 bookingLink={bookingLink}
                 consultLink={consultLink}
+                waitlistLink={waitlistLink}
                 selectedOptionId={selectedOption?.id}
               />
             </div>

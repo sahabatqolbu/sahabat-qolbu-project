@@ -74,6 +74,9 @@ import {
   Clock,
   AlertTriangle,
   Image as ImageIcon,
+  Ban,
+  Check,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
@@ -140,6 +143,36 @@ export default function PackagesPage() {
         variant: "destructive",
         title: "❌ Import Gagal",
         description: error.response?.data?.message,
+      });
+    },
+  });
+
+  // Quick Status Mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: number;
+      status: "AUTO" | "OPEN" | "SOLD_OUT" | "CLOSED";
+    }) => packageService.update(id, { manualBookingStatus: status }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      const label =
+        variables.status === "SOLD_OUT"
+          ? "Paket diatur menjadi Sold Out / Habis"
+          : variables.status === "OPEN"
+            ? "Paket dibuka kembali"
+            : variables.status === "CLOSED"
+              ? "Paket ditutup"
+              : "Status ketersediaan diatur ke Otomatis";
+      toast({ title: "✅ Status Paket Diperbarui", description: label });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal Memperbarui Status",
+        description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
   });
@@ -219,8 +252,19 @@ export default function PackagesPage() {
   };
 
   const getBookingStatusBadge = (pkg: Package) => {
+    const isManualSoldOut = pkg.manualBookingStatus === "SOLD_OUT";
+    const isManualClosed = pkg.manualBookingStatus === "CLOSED";
+    const isManualOpen = pkg.manualBookingStatus === "OPEN";
+
     if (pkg.bookingStatus === "SOLD_OUT" || pkg.remainingSeats <= 0) {
-      return <Badge variant="destructive">Sold Out</Badge>;
+      return (
+        <div className="flex flex-col gap-1 items-start">
+          <Badge variant="destructive">Sold Out</Badge>
+          {isManualSoldOut && (
+            <span className="text-[10px] text-red-600 font-medium">(Manual)</span>
+          )}
+        </div>
+      );
     }
 
     if (pkg.bookingStatus === "COMING_SOON") {
@@ -233,13 +277,25 @@ export default function PackagesPage() {
 
     if (pkg.bookingStatus === "CLOSED" || pkg.isBookable === false) {
       return (
-        <Badge className="bg-slate-100 text-slate-800">
-          {pkg.bookingStatusLabel || "Paket Close"}
-        </Badge>
+        <div className="flex flex-col gap-1 items-start">
+          <Badge className="bg-slate-100 text-slate-800">
+            {pkg.bookingStatusLabel || "Paket Close"}
+          </Badge>
+          {isManualClosed && (
+            <span className="text-[10px] text-slate-500 font-medium">(Manual)</span>
+          )}
+        </div>
       );
     }
 
-    return <Badge className="bg-green-100 text-green-800">Aktif</Badge>;
+    return (
+      <div className="flex flex-col gap-1 items-start">
+        <Badge className="bg-green-100 text-green-800">Aktif</Badge>
+        {isManualOpen && (
+          <span className="text-[10px] text-green-600 font-medium">(Buka Manual)</span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -631,6 +687,68 @@ export default function PackagesPage() {
                                   Lihat Itinerary
                                 </DropdownMenuItem>
                               </Link>
+                              {!isFinanceReadOnly && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuLabel>Status Kuota / Pendaftaran</DropdownMenuLabel>
+                                  {pkg.manualBookingStatus === "SOLD_OUT" ? (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        updateStatusMutation.mutate({
+                                          id: pkg.id,
+                                          status: "AUTO",
+                                        })
+                                      }
+                                      disabled={updateStatusMutation.isPending}
+                                    >
+                                      <RefreshCw className="mr-2 h-4 w-4 text-blue-600" />
+                                      Reset ke Otomatis (Buka)
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        updateStatusMutation.mutate({
+                                          id: pkg.id,
+                                          status: "SOLD_OUT",
+                                        })
+                                      }
+                                      disabled={updateStatusMutation.isPending}
+                                      className="text-amber-700"
+                                    >
+                                      <Ban className="mr-2 h-4 w-4 text-amber-600" />
+                                      Set Habis / Sold Out
+                                    </DropdownMenuItem>
+                                  )}
+
+                                  {pkg.manualBookingStatus === "CLOSED" ? (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        updateStatusMutation.mutate({
+                                          id: pkg.id,
+                                          status: "AUTO",
+                                        })
+                                      }
+                                      disabled={updateStatusMutation.isPending}
+                                    >
+                                      <RefreshCw className="mr-2 h-4 w-4 text-blue-600" />
+                                      Reset ke Otomatis
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        updateStatusMutation.mutate({
+                                          id: pkg.id,
+                                          status: "CLOSED",
+                                        })
+                                      }
+                                      disabled={updateStatusMutation.isPending}
+                                    >
+                                      <Ban className="mr-2 h-4 w-4 text-gray-500" />
+                                      Tutup Pendaftaran (Close)
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
+                              )}
                               {!isFinanceReadOnly && (
                                 <>
                                   <DropdownMenuSeparator />

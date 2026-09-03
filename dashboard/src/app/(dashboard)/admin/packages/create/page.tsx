@@ -89,6 +89,7 @@ export default function CreatePackagePage() {
       totalSeats: 45,
       isActive: true,
       isPublished: false,
+      manualBookingStatus: "AUTO",
       airlineStatus: "PLANNING",
       airlineTermin1Status: "UNPAID",
       airlineTermin2Status: "UNPAID",
@@ -797,6 +798,46 @@ export default function CreatePackagePage() {
                       )}
                     />
                   </div>
+                </div>
+
+                {/* ===== MANUAL BOOKING STATUS (HABIS / SOLD OUT) ===== */}
+                <div className="rounded-lg border p-4 bg-gray-50/50 space-y-2">
+                  <div>
+                    <Label className="font-semibold text-gray-800">
+                      Status Ketersediaan / Kuota Paket
+                    </Label>
+                    <p className="text-sm text-gray-500">
+                      Atur apakah paket mengikuti sisa seat otomatis atau dipaksa Habis/Sold Out
+                    </p>
+                  </div>
+                  <Controller
+                    name="manualBookingStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || "AUTO"}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className="w-full md:w-[320px] bg-white">
+                          <SelectValue placeholder="Pilih status ketersediaan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AUTO">
+                            🔄 Otomatis (Sesuai Kuota & Tanggal)
+                          </SelectItem>
+                          <SelectItem value="SOLD_OUT">
+                            ⛔ Habis / Sold Out (Manual)
+                          </SelectItem>
+                          <SelectItem value="CLOSED">
+                            🔒 Ditutup / Closed (Manual)
+                          </SelectItem>
+                          <SelectItem value="OPEN">
+                            ✅ Buka Pendaftaran (Manual)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>

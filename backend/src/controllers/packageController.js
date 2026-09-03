@@ -58,6 +58,20 @@ const PACKAGE_TYPES = new Set([
   "LA",
 ]);
 
+const MANUAL_BOOKING_STATUSES = new Set([
+  "AUTO",
+  "OPEN",
+  "SOLD_OUT",
+  "CLOSED",
+]);
+
+const parseManualBookingStatus = (value, fallback = "AUTO") => {
+  if (!value) return fallback;
+  const upper = String(value).trim().toUpperCase();
+  return MANUAL_BOOKING_STATUSES.has(upper) ? upper : fallback;
+};
+
+
 const parsePositiveInt = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
@@ -520,6 +534,28 @@ export const getPackageBookingState = ({
   remainingSeats,
   daysUntilDeparture,
 }) => {
+  const manualStatus = String(pkg?.manualBookingStatus || "").toUpperCase();
+
+  // Manual override: SOLD_OUT always forces Sold Out
+  if (manualStatus === "SOLD_OUT") {
+    return {
+      bookingStatus: "SOLD_OUT",
+      bookingStatusLabel: "Sold Out",
+      isBookable: false,
+    };
+  }
+
+  // Manual override: CLOSED forces Closed
+  if (manualStatus === "CLOSED") {
+    return {
+      bookingStatus: "CLOSED",
+      bookingStatusLabel:
+        daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close",
+      isBookable: false,
+    };
+  }
+
+  // Automatic / natural checks
   if (isPackageComingSoon(pkg)) {
     return {
       bookingStatus: "COMING_SOON",
@@ -528,11 +564,21 @@ export const getPackageBookingState = ({
     };
   }
 
+  // Safety guard: if remaining seats <= 0, it is ALWAYS sold out, even if manualStatus === 'OPEN'
   if (remainingSeats <= 0) {
     return {
       bookingStatus: "SOLD_OUT",
       bookingStatusLabel: "Sold Out",
       isBookable: false,
+    };
+  }
+
+  // If manual override is OPEN, bypass normal closed or last call if seats still exist
+  if (manualStatus === "OPEN") {
+    return {
+      bookingStatus: "OPEN",
+      bookingStatusLabel: "Tersedia",
+      isBookable: true,
     };
   }
 
@@ -874,6 +920,10 @@ export const createPackage = async (req, res, next) => {
       returnAirportId: parseOptionalForeignKey(data.returnAirportId, null),
       isActive: parseBoolean(data.isActive, true),
       isPublished: parseBoolean(data.isPublished, false),
+      manualBookingStatus: parseManualBookingStatus(
+        data.manualBookingStatus,
+        "AUTO",
+      ),
     };
 
     logger.debug("Create package insert", {
@@ -1129,6 +1179,13 @@ export const updatePackage = async (req, res, next) => {
       ),
       isActive: parseBoolean(data.isActive, existingPackage.isActive),
       isPublished: parseBoolean(data.isPublished, existingPackage.isPublished),
+      manualBookingStatus:
+        data.manualBookingStatus !== undefined
+          ? parseManualBookingStatus(
+              data.manualBookingStatus,
+              existingPackage.manualBookingStatus || "AUTO",
+            )
+          : existingPackage.manualBookingStatus || "AUTO",
       updatedAt: new Date(),
     };
 

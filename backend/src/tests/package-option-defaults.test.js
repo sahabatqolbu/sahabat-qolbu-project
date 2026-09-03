@@ -49,6 +49,37 @@ test("Last Call never overrides close or sold out rules", () => {
   );
 });
 
+test("manualBookingStatus SOLD_OUT overrides available seats", () => {
+  const state = getPackageBookingState({
+    pkg: { ...readyPackage, manualBookingStatus: "SOLD_OUT" },
+    remainingSeats: 25,
+    daysUntilDeparture: 30,
+  });
+  assert.equal(state.bookingStatus, "SOLD_OUT");
+  assert.equal(state.isBookable, false);
+});
+
+test("manualBookingStatus CLOSED overrides booking status", () => {
+  const state = getPackageBookingState({
+    pkg: { ...readyPackage, manualBookingStatus: "CLOSED" },
+    remainingSeats: 25,
+    daysUntilDeparture: 30,
+  });
+  assert.equal(state.bookingStatus, "CLOSED");
+  assert.equal(state.isBookable, false);
+});
+
+test("manualBookingStatus OPEN cannot bypass zero remaining seats", () => {
+  const state = getPackageBookingState({
+    pkg: { ...readyPackage, manualBookingStatus: "OPEN" },
+    remainingSeats: 0,
+    daysUntilDeparture: 30,
+  });
+  assert.equal(state.bookingStatus, "SOLD_OUT");
+  assert.equal(state.isBookable, false);
+});
+
+
 const basePackage = {
   hotelMakkahId: 13,
   hotelMadinahId: 15,

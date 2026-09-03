@@ -83,6 +83,9 @@ export const createPackageSchema = z.object({
   // ===== STATUS =====
   isActive: z.boolean().optional(),
   isPublished: z.boolean().optional(),
+  manualBookingStatus: z
+    .enum(["AUTO", "OPEN", "SOLD_OUT", "CLOSED"])
+    .optional(),
 
   // ✅ MEDIA (tidak di form validation, karena file upload)
   // itinerary_pdf: handled separately
@@ -170,6 +173,9 @@ export const updatePackageSchema = z.object({
   // ===== STATUS =====
   isActive: z.boolean().optional(),
   isPublished: z.boolean().optional(),
+  manualBookingStatus: z
+    .enum(["AUTO", "OPEN", "SOLD_OUT", "CLOSED"])
+    .optional(),
 });
 
 export type UpdatePackageFormData = z.infer<typeof updatePackageSchema>;

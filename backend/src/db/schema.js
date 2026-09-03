@@ -311,6 +311,14 @@ export const packages = mysqlTable(
     // ===== STATUS =====
     isActive: boolean("is_active").notNull().default(true),
     isPublished: boolean("is_published").notNull().default(false),
+    manualBookingStatus: mysqlEnum("manual_booking_status", [
+      "AUTO",
+      "OPEN",
+      "SOLD_OUT",
+      "CLOSED",
+    ])
+      .notNull()
+      .default("AUTO"),
 
     // ===== TIMESTAMPS =====
     createdAt: timestamp("created_at")

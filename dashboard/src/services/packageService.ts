@@ -25,6 +25,8 @@ export interface Package {
   notes?: string;
   isActive: boolean;
   isPublished: boolean;
+  manualBookingStatus?: "AUTO" | "OPEN" | "SOLD_OUT" | "CLOSED";
+
 
   // Relations
   airlineId?: number;
