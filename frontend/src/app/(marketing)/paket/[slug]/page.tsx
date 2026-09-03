@@ -51,14 +51,19 @@ const getOriginalPrice = (pkg: MarketingPackage, currentPrice?: string) => {
   return originalPrice > activePrice ? pkg.originalPrice : undefined;
 };
 
-const getSeatsLeft = (pkg: MarketingPackage) =>
-  Math.max(
+const getSeatsLeft = (pkg: MarketingPackage) => {
+  const status = String(pkg.bookingStatus || "").toUpperCase();
+  if (status === "SOLD_OUT" || status === "CLOSED") {
+    return 0;
+  }
+  return Math.max(
     Number(
       pkg.remainingSeats ??
         Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0),
     ),
     0,
   );
+};
 
 const getPackageAvailability = (pkg: MarketingPackage, seatsLeft: number) => {
   const status = String(pkg.bookingStatus || "").toUpperCase();

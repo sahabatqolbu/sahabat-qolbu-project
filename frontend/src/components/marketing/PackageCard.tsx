@@ -312,13 +312,23 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
     pkg.remainingSeats ??
       Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0),
   );
-  const remainingSeats = Number.isFinite(rawRemainingSeats)
-    ? Math.max(rawRemainingSeats, 0)
-    : 0;
-  const seatLabel = hasSeatData
-    ? `Sisa ${remainingSeats} seat`
-    : "Kuota menyusul";
   const isSoldOut = availability.status === "SOLD_OUT";
+  const isClosedOrDeparted =
+    availability.status === "CLOSED" || daysUntilDeparture < 0;
+
+  const remainingSeats = isSoldOut
+    ? 0
+    : Number.isFinite(rawRemainingSeats)
+      ? Math.max(rawRemainingSeats, 0)
+      : 0;
+
+  const seatLabel = isSoldOut
+    ? "Habis (0 seat)"
+    : isClosedOrDeparted
+      ? "Ditutup"
+      : hasSeatData
+        ? `Sisa ${remainingSeats} seat`
+        : "Kuota menyusul";
   const waMessage = isSoldOut
     ? `Assalamualaikum, saya lihat paket *${pkg.name}* sudah sold out di website sahabatqolbu.com. Apakah masih bisa masuk waiting list jika ada seat yang batal?`
     : `Halo, saya lihat di website sahabatqolbu.com dan tertarik paket *${pkg.name}*`;

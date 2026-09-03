@@ -542,6 +542,7 @@ export const getPackageBookingState = ({
       bookingStatus: "SOLD_OUT",
       bookingStatusLabel: "Sold Out",
       isBookable: false,
+      remainingSeats: 0,
     };
   }
 
@@ -552,6 +553,7 @@ export const getPackageBookingState = ({
       bookingStatusLabel:
         daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close",
       isBookable: false,
+      remainingSeats: 0,
     };
   }
 
@@ -570,6 +572,7 @@ export const getPackageBookingState = ({
       bookingStatus: "SOLD_OUT",
       bookingStatusLabel: "Sold Out",
       isBookable: false,
+      remainingSeats: 0,
     };
   }
 
@@ -588,6 +591,7 @@ export const getPackageBookingState = ({
       bookingStatusLabel:
         daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close",
       isBookable: false,
+      remainingSeats: 0,
     };
   }
 
