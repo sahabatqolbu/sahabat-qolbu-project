@@ -47,6 +47,14 @@ test("Last Call never overrides close or sold out rules", () => {
     }).bookingStatus,
     "SOLD_OUT",
   );
+  assert.equal(
+    getPackageBookingState({
+      pkg: readyPackage,
+      remainingSeats: 0,
+      daysUntilDeparture: -5,
+    }).bookingStatus,
+    "CLOSED",
+  );
 });
 
 test("manualBookingStatus SOLD_OUT overrides available seats", () => {

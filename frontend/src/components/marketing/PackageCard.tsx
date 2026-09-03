@@ -172,19 +172,6 @@ function getPackageAvailability(pkg: PackageCardProps) {
     };
   }
 
-  if (status === "SOLD_OUT" || remainingSeats <= 0) {
-    return {
-      isBookable: false,
-      status: "SOLD_OUT",
-      label: "Sold Out",
-      badgeClass: "bg-red-600 text-white ring-2 ring-white",
-      buttonLabel: "Sold Out",
-      overlayLabel: "SOLD OUT",
-      cardClass: "",
-      imageClass: "",
-    };
-  }
-
   if (status === "CLOSED" || daysUntilDeparture <= 7) {
     return {
       isBookable: false,
@@ -197,6 +184,19 @@ function getPackageAvailability(pkg: PackageCardProps) {
       overlayLabel: daysUntilDeparture < 0 ? "SUDAH BERANGKAT" : "PAKET CLOSE",
       cardClass: "border border-slate-300 bg-slate-50",
       imageClass: "grayscale opacity-60",
+    };
+  }
+
+  if (status === "SOLD_OUT" || remainingSeats <= 0) {
+    return {
+      isBookable: false,
+      status: "SOLD_OUT",
+      label: "Sold Out",
+      badgeClass: "bg-red-600 text-white ring-2 ring-white",
+      buttonLabel: "Sold Out",
+      overlayLabel: "SOLD OUT",
+      cardClass: "",
+      imageClass: "",
     };
   }
 

@@ -557,6 +557,17 @@ export const getPackageBookingState = ({
     };
   }
 
+  // Departure date passed or within close cutoff: ALWAYS CLOSED/Sudah Berangkat
+  if (daysUntilDeparture <= PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE) {
+    return {
+      bookingStatus: "CLOSED",
+      bookingStatusLabel:
+        daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close",
+      isBookable: false,
+      remainingSeats: 0,
+    };
+  }
+
   // Automatic / natural checks
   if (isPackageComingSoon(pkg)) {
     return {
@@ -576,22 +587,12 @@ export const getPackageBookingState = ({
     };
   }
 
-  // If manual override is OPEN, bypass normal closed or last call if seats still exist
+  // If manual override is OPEN, bypass normal last call if seats still exist
   if (manualStatus === "OPEN") {
     return {
       bookingStatus: "OPEN",
       bookingStatusLabel: "Tersedia",
       isBookable: true,
-    };
-  }
-
-  if (daysUntilDeparture <= PACKAGE_CLOSE_DAYS_BEFORE_DEPARTURE) {
-    return {
-      bookingStatus: "CLOSED",
-      bookingStatusLabel:
-        daysUntilDeparture < 0 ? "Sudah Berangkat" : "Paket Close",
-      isBookable: false,
-      remainingSeats: 0,
     };
   }
 
