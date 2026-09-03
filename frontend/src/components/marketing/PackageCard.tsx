@@ -180,8 +180,8 @@ function getPackageAvailability(pkg: PackageCardProps) {
       badgeClass: "bg-red-600 text-white ring-2 ring-white",
       buttonLabel: "Sold Out",
       overlayLabel: "SOLD OUT",
-      cardClass: "border border-red-200 bg-red-50/40",
-      imageClass: "grayscale opacity-55",
+      cardClass: "",
+      imageClass: "",
     };
   }
 

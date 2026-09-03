@@ -610,15 +610,8 @@ const getPackageDisplayRank = (pkg = {}) => {
 
   const status = String(pkg.bookingStatus || "").toUpperCase();
   if (status === "COMING_SOON") return 0;
-  if (
-    pkg.isBookable !== false &&
-    status !== "CLOSED" &&
-    status !== "SOLD_OUT"
-  ) {
-    return 1;
-  }
-  if (status === "CLOSED" || status === "SOLD_OUT") return 2;
-  return 3;
+  if (status === "CLOSED") return 2;
+  return 1;
 };
 
 const getPackageDepartureTime = (pkg = {}) => {
