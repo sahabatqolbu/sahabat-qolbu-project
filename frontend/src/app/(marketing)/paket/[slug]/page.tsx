@@ -221,7 +221,7 @@ function BookingPanel({
         ) : null}
         <div className="border-b border-neutral-200 p-6">
           <h2 className="text-xl font-extrabold leading-tight text-primary">
-            Pesan {pkg.name}
+            {pkg.name}
           </h2>
           <p className="mt-5 text-sm font-semibold text-neutral-500">From</p>
           {originalPrice ? (
