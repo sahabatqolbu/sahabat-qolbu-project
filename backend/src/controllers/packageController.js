@@ -6,6 +6,7 @@ import {
   packageImages,
   packageOptions,
   packageOptionImages,
+  packageItinerary,
   jamaahData,
   calendarEvents,
 } from "../db/schema.js";
@@ -58,19 +59,38 @@ const PACKAGE_TYPES = new Set([
   "LA",
 ]);
 
-const MANUAL_BOOKING_STATUSES = new Set([
-  "AUTO",
-  "OPEN",
-  "SOLD_OUT",
-  "CLOSED",
-]);
+const MANUAL_BOOKING_STATUSES = new Set(["AUTO", "OPEN", "SOLD_OUT", "CLOSED"]);
+
+const DEFAULT_REGISTRATION_REQUIREMENTS = [
+  "Fotokopi KTP",
+  "Fotokopi Kartu Keluarga",
+  "Paspor aktif sesuai ketentuan paket",
+  "Pas foto 4x6",
+  "Sehat jasmani dan rohani",
+].join("\n");
+
+const DEFAULT_TERMS_CONDITIONS = [
+  "Pendaftaran dan penguncian seat berlaku setelah data serta pembayaran DP dikonfirmasi",
+  "Pembayaran hanya dilakukan ke rekening resmi PT Sahabat Qolbu Cahaya Baitullah",
+  "Biaya yang tidak tercantum dalam fasilitas paket menjadi tanggungan jamaah",
+  "Jadwal, hotel, dan maskapai dapat menyesuaikan kondisi operasional dengan pemberitahuan resmi",
+  "Dokumen perjalanan dan ketentuan kesehatan wajib dipenuhi sebelum keberangkatan",
+].join("\n");
+
+const DEFAULT_REGISTRATION_STEPS = [
+  "Hubungi admin untuk mengecek seat, jadwal, dan pilihan kamar",
+  "Pilih paket serta komposisi kamar yang sesuai",
+  "Kirim data dan dokumen pendaftaran",
+  "Bayar DP melalui rekening resmi perusahaan",
+  "Konfirmasi pembayaran kepada admin",
+  "Ikuti grup keberangkatan untuk persiapan lanjutan",
+].join("\n");
 
 const parseManualBookingStatus = (value, fallback = "AUTO") => {
   if (!value) return fallback;
   const upper = String(value).trim().toUpperCase();
   return MANUAL_BOOKING_STATUSES.has(upper) ? upper : fallback;
 };
-
 
 const parsePositiveInt = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
@@ -111,6 +131,10 @@ const packageOptionRelation = {
   },
 };
 
+const packageItineraryRelation = {
+  orderBy: (items, { asc }) => [asc(items.dayNumber), asc(items.id)],
+};
+
 const parseJsonPayload = (value, fallback = undefined) => {
   if (value === undefined) return fallback;
   if (value === null || value === "") return [];
@@ -124,6 +148,63 @@ const parseJsonPayload = (value, fallback = undefined) => {
     }
   }
   return [];
+};
+
+const normalizeItinerary = (value, duration = 0) => {
+  const parsed = parseJsonPayload(value, []);
+  const maximumDay = Math.max(parsePositiveInt(duration, 0), 0);
+  const byDay = new Map();
+
+  for (const item of parsed) {
+    const dayNumber = parsePositiveInt(item?.dayNumber ?? item?.day, 0);
+    if (dayNumber < 1 || (maximumDay > 0 && dayNumber > maximumDay)) continue;
+
+    const title = String(item?.title || "")
+      .trim()
+      .slice(0, 255);
+    const activities = Array.isArray(item?.activities)
+      ? item.activities
+      : String(item?.activities || "").split(/\r?\n/);
+    const cleanActivities = activities
+      .map((activity) =>
+        String(activity || "")
+          .replace(/^[-*\s]+/, "")
+          .trim(),
+      )
+      .filter(Boolean)
+      .slice(0, 30);
+
+    if (!title && cleanActivities.length === 0) continue;
+
+    byDay.set(dayNumber, {
+      dayNumber,
+      title,
+      activities: cleanActivities,
+    });
+  }
+
+  return [...byDay.values()].sort(
+    (left, right) => left.dayNumber - right.dayNumber,
+  );
+};
+
+const syncPackageItinerary = async (packageId, rawItinerary, duration) => {
+  const itinerary = normalizeItinerary(rawItinerary, duration);
+  await db
+    .delete(packageItinerary)
+    .where(eq(packageItinerary.packageId, packageId));
+
+  if (itinerary.length === 0) return;
+
+  await db.insert(packageItinerary).values(
+    itinerary.map((item) => ({
+      packageId,
+      dayNumber: item.dayNumber,
+      title: item.title || `Hari ke-${item.dayNumber}`,
+      description: null,
+      activities: JSON.stringify(item.activities),
+    })),
+  );
 };
 
 const normalizePackageOptions = (rawOptions = []) => {
@@ -513,7 +594,7 @@ const isPackageComingSoon = (pkg = {}) => {
   const hasOptionPackage = hasReadyPackageOption(pkg);
   const hasCoreVendors = Boolean(
     pkg.airlineId &&
-    ((pkg.hotelMakkahId && pkg.hotelMadinahId) || hasOptionPackage),
+      ((pkg.hotelMakkahId && pkg.hotelMadinahId) || hasOptionPackage),
   );
   const hasConfirmedVendors =
     String(pkg.airlineStatus || "").toUpperCase() === "CONFIRMED" &&
@@ -698,6 +779,7 @@ export const getAllPackages = async (req, res, next) => {
         arrivalAirport: true,
         returnAirport: true,
         options: packageOptionRelation,
+        itinerary: packageItineraryRelation,
         images: {
           orderBy: (images, { asc }) => [asc(images.sortOrder)],
         },
@@ -815,6 +897,7 @@ export const getPackageById = async (req, res, next) => {
         arrivalAirport: true,
         returnAirport: true,
         options: packageOptionRelation,
+        itinerary: packageItineraryRelation,
         images: {
           orderBy: (images, { asc }) => [asc(images.sortOrder)],
         },
@@ -882,6 +965,18 @@ export const createPackage = async (req, res, next) => {
       facilities: data.facilities || null,
       excludedFacilities: data.excludedFacilities || null,
       notes: data.notes || null,
+      registrationRequirements:
+        data.registrationRequirements !== undefined
+          ? String(data.registrationRequirements)
+          : DEFAULT_REGISTRATION_REQUIREMENTS,
+      termsConditions:
+        data.termsConditions !== undefined
+          ? String(data.termsConditions)
+          : DEFAULT_TERMS_CONDITIONS,
+      registrationSteps:
+        data.registrationSteps !== undefined
+          ? String(data.registrationSteps)
+          : DEFAULT_REGISTRATION_STEPS,
       itineraryPdf,
       airlineId: parseOptionalForeignKey(data.airlineId, null),
       airlineStatus: data.airlineStatus || "PLANNING",
@@ -942,6 +1037,7 @@ export const createPackage = async (req, res, next) => {
 
     const optionPayload = parseJsonPayload(data.options, []);
     await syncPackageOptions(packageId, optionPayload, baseInsertData);
+    await syncPackageItinerary(packageId, data.itinerary, duration);
 
     if (data.images && data.images.length > 0) {
       const imageValues = data.images.map((img, index) => ({
@@ -965,6 +1061,7 @@ export const createPackage = async (req, res, next) => {
         arrivalAirport: true,
         returnAirport: true,
         options: packageOptionRelation,
+        itinerary: packageItineraryRelation,
         images: true,
       },
     });
@@ -1065,6 +1162,18 @@ export const updatePackage = async (req, res, next) => {
       excludedFacilities:
         data.excludedFacilities ?? existingPackage.excludedFacilities,
       notes: data.notes ?? existingPackage.notes,
+      registrationRequirements:
+        data.registrationRequirements !== undefined
+          ? String(data.registrationRequirements)
+          : existingPackage.registrationRequirements,
+      termsConditions:
+        data.termsConditions !== undefined
+          ? String(data.termsConditions)
+          : existingPackage.termsConditions,
+      registrationSteps:
+        data.registrationSteps !== undefined
+          ? String(data.registrationSteps)
+          : existingPackage.registrationSteps,
       itineraryPdf,
       airlineId: parseOptionalForeignKey(
         data.airlineId,
@@ -1199,6 +1308,9 @@ export const updatePackage = async (req, res, next) => {
       parseJsonPayload(data.options, []),
       updateData,
     );
+    if (data.itinerary !== undefined) {
+      await syncPackageItinerary(parseInt(id, 10), data.itinerary, duration);
+    }
 
     const updatedPackage = await db.query.packages.findFirst({
       where: eq(packages.id, parseInt(id)),
@@ -1210,6 +1322,7 @@ export const updatePackage = async (req, res, next) => {
         arrivalAirport: true,
         returnAirport: true,
         options: packageOptionRelation,
+        itinerary: packageItineraryRelation,
         images: true,
       },
     });
@@ -1687,6 +1800,7 @@ export const getPublicPackageById = async (req, res, next) => {
         arrivalAirport: true,
         returnAirport: true,
         options: packageOptionRelation,
+        itinerary: packageItineraryRelation,
         images: {
           orderBy: (images, { asc }) => [asc(images.sortOrder)],
         },

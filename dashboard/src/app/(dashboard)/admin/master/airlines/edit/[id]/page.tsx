@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { getImageUrl } from "@/lib/utils";
 import {
   Card,
@@ -30,6 +31,9 @@ const airlineSchema = z.object({
   code: z.string().min(2, "Kode minimal 2 karakter").max(10),
   name: z.string().min(3, "Nama minimal 3 karakter"),
   country: z.string().optional(),
+  description: z.string().optional(),
+  facilities: z.string().optional(),
+  videoUrls: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -86,6 +90,11 @@ export default function EditAirlinePage() {
         code: airline.code,
         name: airline.name,
         country: airline.country || "",
+        description: airline.description || "",
+        facilities: airline.facilities || "",
+        videoUrls: Array.isArray(airline.videoUrls)
+          ? airline.videoUrls.join("\n")
+          : airline.videoUrls || "",
         isActive: airline.isActive ?? true,
       });
 
@@ -103,31 +112,18 @@ export default function EditAirlinePage() {
       payload.append("name", formData.name);
       payload.append("isActive", formData.isActive.toString());
 
-      if (formData.country) payload.append("country", formData.country);
+      payload.append("country", formData.country || "");
+      payload.append("description", formData.description || "");
+      payload.append("facilities", formData.facilities || "");
+      payload.append("videoUrls", formData.videoUrls || "");
 
-      // ✅ TAMBAH DEBUG
       if (logoFile) {
-        console.log("📤 Logo file to upload:", {
-          name: logoFile.name,
-          size: logoFile.size,
-          type: logoFile.type,
-        });
-        payload.append("logo", logoFile); // ✅ Name HARUS "logo" sesuai backend
-      } else {
-        console.warn("⚠️ No logo file selected!");
-      }
-
-      // ✅ DEBUG: Log all FormData entries
-      console.log("📦 FormData contents:");
-      for (const [key, value] of payload.entries()) {
-        console.log(`  - ${key}:`, value);
+        payload.append("logo", logoFile);
       }
 
       return masterService.airlines.update(parseInt(id), payload);
     },
-    onSuccess: (response) => {
-      console.log("✅ Update response:", response);
-
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["airlines"] });
 
       // ✅ TOAST SUCCESS
@@ -144,8 +140,6 @@ export default function EditAirlinePage() {
       }, 1000);
     },
     onError: (error: unknown) => {
-      console.error("❌ Update error:", error);
-
       // ✅ TOAST ERROR
       toast({
         title: "❌ Gagal Update",
@@ -305,6 +299,36 @@ export default function EditAirlinePage() {
                   id="country"
                   placeholder="Indonesia"
                   {...register("country")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Deskripsi Publik</Label>
+                <Textarea
+                  id="description"
+                  rows={5}
+                  placeholder="Jelaskan kenyamanan dan layanan maskapai untuk jamaah."
+                  {...register("description")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="facilities">Fasilitas</Label>
+                <Textarea
+                  id="facilities"
+                  rows={4}
+                  placeholder="Satu fasilitas per baris"
+                  {...register("facilities")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="videoUrls">Video YouTube / Instagram</Label>
+                <Textarea
+                  id="videoUrls"
+                  rows={4}
+                  placeholder="Satu URL video per baris"
+                  {...register("videoUrls")}
                 />
               </div>
 

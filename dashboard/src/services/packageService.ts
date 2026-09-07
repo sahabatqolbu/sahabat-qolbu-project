@@ -23,10 +23,18 @@ export interface Package {
   facilities?: string;
   excludedFacilities?: string;
   notes?: string;
+  registrationRequirements?: string;
+  termsConditions?: string;
+  registrationSteps?: string;
+  itinerary?: {
+    dayNumber: number;
+    title?: string | null;
+    activities?: string[] | string | null;
+    description?: string | null;
+  }[];
   isActive: boolean;
   isPublished: boolean;
   manualBookingStatus?: "AUTO" | "OPEN" | "SOLD_OUT" | "CLOSED";
-
 
   // Relations
   airlineId?: number;
@@ -156,8 +164,22 @@ export const packageService = {
     };
 
     // ✅ APPEND SEMUA FIELD KE FORMDATA
+    const clearableTextFields = new Set([
+      "description",
+      "facilities",
+      "excludedFacilities",
+      "notes",
+      "registrationRequirements",
+      "termsConditions",
+      "registrationSteps",
+    ]);
+
     Object.entries(sanitizedData).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== "") {
+      if (
+        value !== null &&
+        value !== undefined &&
+        (value !== "" || clearableTextFields.has(key))
+      ) {
         formData.append(key, value.toString());
       }
     });

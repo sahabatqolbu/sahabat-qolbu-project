@@ -12,6 +12,7 @@ import {
   packageImages,
   packageOptions,
   packageOptionImages,
+  packageItinerary,
   jamaahData,
   jamaahPayments, // ✅ TAMBAH INI (yang lu bikin)
   transactions,
@@ -62,8 +63,19 @@ export const packagesRelations = relations(packages, ({ one, many }) => ({
   }),
   options: many(packageOptions),
   images: many(packageImages),
+  itinerary: many(packageItinerary),
   jamaahList: many(jamaahData),
 }));
+
+export const packageItineraryRelations = relations(
+  packageItinerary,
+  ({ one }) => ({
+    package: one(packages, {
+      fields: [packageItinerary.packageId],
+      references: [packages.id],
+    }),
+  }),
+);
 
 // =====================================================
 // PACKAGE IMAGES RELATIONS

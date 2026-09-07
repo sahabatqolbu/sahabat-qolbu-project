@@ -8,6 +8,36 @@ import {
   createdResponse,
 } from "../utils/response.js";
 
+const normalizeVideoUrls = (value) => {
+  if (!value) return [];
+  let candidates = value;
+  if (typeof value === "string") {
+    try {
+      candidates = JSON.parse(value);
+    } catch {
+      candidates = value.split(/\r?\n/);
+    }
+  }
+
+  return (Array.isArray(candidates) ? candidates : [])
+    .map((item) => String(item?.url || item || "").trim())
+    .filter((url) => {
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, "");
+        return (
+          host === "youtu.be" ||
+          host === "youtube.com" ||
+          host.endsWith(".youtube.com") ||
+          host === "instagram.com" ||
+          host.endsWith(".instagram.com")
+        );
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 10);
+};
+
 // =====================================================
 // GET ALL AIRLINES
 // =====================================================
@@ -50,28 +80,26 @@ export const getAirlineById = async (req, res, next) => {
 // =====================================================
 export const createAirline = async (req, res, next) => {
   try {
-    const { code, name, country, isActive } = req.body;
-
-    console.log("📥 RAW REQUEST:");
-    console.log("  - Body:", req.body);
-    console.log("  - File:", req.file); // ✅ Harus ada object jika upload file
-    console.log("  - File path:", req.file?.path); // ✅ Harus ada path
-
-    // ✅ CEK: Jika req.file kosong, berarti multer belum jalan
-    if (!req.file) {
-      console.warn("⚠️ No file uploaded!");
-    }
+    const {
+      code,
+      name,
+      country,
+      description,
+      facilities,
+      videoUrls,
+      isActive,
+    } = req.body;
 
     const result = await db.insert(masterAirlines).values({
       code: code.toUpperCase(),
       name,
       country: country || null,
+      description: description || null,
+      facilities: facilities || null,
+      videoUrls: normalizeVideoUrls(videoUrls),
       logo: req.uploadedFile ? req.uploadedFile.path : null,
       isActive: isActive === true || isActive === "true",
     });
-
-    console.log("✅ Insert result:", result);
-    console.log("✅ insertId:", result[0].insertId);
 
     const insertId = result[0].insertId;
     const [newAirline] = await db
@@ -80,11 +108,8 @@ export const createAirline = async (req, res, next) => {
       .where(eq(masterAirlines.id, insertId))
       .limit(1);
 
-    console.log("✅ Created airline with logo:", newAirline.logo); // ✅ Cek logo ada
-
     return createdResponse(res, newAirline, "Maskapai berhasil ditambahkan");
   } catch (error) {
-    console.error("❌ Create airline error:", error);
     next(error);
   }
 };
@@ -95,20 +120,26 @@ export const createAirline = async (req, res, next) => {
 export const updateAirline = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { code, name, country, isActive } = req.body;
-
-    console.log("📥 Update airline request:", {
-      id,
+    const {
       code,
       name,
-      hasFile: !!req.file,
-    });
+      country,
+      description,
+      facilities,
+      videoUrls,
+      isActive,
+    } = req.body;
 
     const updateData = { updatedAt: new Date() };
 
     if (code) updateData.code = code.toUpperCase();
     if (name) updateData.name = name;
     if (country !== undefined) updateData.country = country || null;
+    if (description !== undefined) updateData.description = description || null;
+    if (facilities !== undefined) updateData.facilities = facilities || null;
+    if (videoUrls !== undefined) {
+      updateData.videoUrls = normalizeVideoUrls(videoUrls);
+    }
 
     // Parse isActive
     if (isActive !== undefined) {
@@ -119,10 +150,7 @@ export const updateAirline = async (req, res, next) => {
     // Upload logo baru (opsional)
     if (req.uploadedFile?.path) {
       updateData.logo = req.uploadedFile.path;
-      console.log("📸 New logo path:", updateData.logo);
     }
-
-    console.log("💾 Update data:", updateData);
 
     // ✅ UPDATE tanpa .returning()
     await db
@@ -141,11 +169,8 @@ export const updateAirline = async (req, res, next) => {
       return errorResponse(res, "Maskapai tidak ditemukan", 404);
     }
 
-    console.log("✅ Updated airline:", updatedAirline);
-
     return successResponse(res, updatedAirline, "Maskapai berhasil diupdate");
   } catch (error) {
-    console.error("❌ Update airline error:", error);
     next(error);
   }
 };

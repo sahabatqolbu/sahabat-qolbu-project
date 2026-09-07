@@ -22,10 +22,15 @@ import RelatedPackages from "@/components/marketing/PackageDetail/RelatedPackage
 import PackageDetailNav from "@/components/marketing/PackageDetail/PackageDetailNav";
 import PackageOptionSelect from "@/components/marketing/PackageDetail/PackageOptionSelect";
 import PackageFlyerGallery from "@/components/marketing/PackageDetail/PackageFlyerGallery";
+import VendorInfoDrawer, {
+  type PackageVendor,
+} from "@/components/marketing/PackageDetail/VendorInfoDrawer";
 import {
   entitySlug,
   getMarketingPackageBySlug,
+  getPublicAirlineDetail,
   getPublicAgentLanding,
+  getPublicHotelDetail,
   type MarketingPackage,
 } from "@/lib/public-api";
 import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
@@ -112,17 +117,6 @@ const getPackageAvailability = (pkg: MarketingPackage, seatsLeft: number) => {
     buttonLabel: "Daftar Paket",
   };
 };
-
-const getDescriptionItems = (value?: string) =>
-  String(value || "")
-    .split(/\r?\n/)
-    .map((item) =>
-      item
-        .replace(/^[-*\s]+/, "")
-        .replace(/\*+/g, "")
-        .trim(),
-    )
-    .filter(Boolean);
 
 const getPackageTypeLabel = (pkg: MarketingPackage) => {
   const rawType = String(pkg.backendType || "").trim();
@@ -411,6 +405,7 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
   const hotels = [
     {
       city: "Makkah",
+      id: pkg.hotelMakkah.id,
       name: pkg.hotelMakkah.name,
       distance: pkg.hotelMakkah.distanceToHaram,
       rating: pkg.hotelMakkah.starRating,
@@ -418,6 +413,7 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
     pkg.hotelMadinah
       ? {
           city: "Madinah",
+          id: pkg.hotelMadinah.id,
           name: pkg.hotelMadinah.name,
           distance: pkg.hotelMadinah.distanceToMasjid,
           rating: pkg.hotelMadinah.starRating,
@@ -480,7 +476,111 @@ function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
           </div>
         </article>
       ))}
+      <article className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          <span className="flex h-12 w-12 flex-none items-center justify-center rounded-sm bg-gold/10 text-gold">
+            <Plane className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">
+              Maskapai
+            </p>
+            {pkg.airline.id ? (
+              <Link
+                href={`/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`}
+                className="mt-1 inline-flex text-xl font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
+              >
+                {pkg.airline.name}
+              </Link>
+            ) : (
+              <h3 className="mt-1 text-xl font-extrabold text-primary">
+                {pkg.airline.name}
+              </h3>
+            )}
+            {pkg.airline.code || pkg.airline.country ? (
+              <p className="mt-2 text-sm font-semibold text-neutral-500">
+                {[pkg.airline.code, pkg.airline.country]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </article>
     </div>
+  );
+}
+
+const formatItineraryDate = (departureDate: string, dayNumber: number) => {
+  const date = new Date(`${departureDate.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "Tanggal menyusul";
+  date.setUTCDate(date.getUTCDate() + dayNumber - 1);
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+};
+
+function ItineraryTimeline({ pkg }: { pkg: MarketingPackage }) {
+  const savedByDay = new Map(
+    (pkg.itinerary || []).map((item) => [item.day, item]),
+  );
+  const days = Array.from(
+    { length: Math.max(pkg.duration || 0, 0) },
+    (_, index) => {
+      const day = index + 1;
+      return (
+        savedByDay.get(day) || {
+          day,
+          title: "Agenda menunggu konfirmasi",
+          activities: [],
+        }
+      );
+    },
+  );
+
+  if (!days.length) {
+    return (
+      <p className="leading-7 text-neutral-600">
+        Itinerary teks sedang disiapkan oleh tim Sahabat Qolbu.
+      </p>
+    );
+  }
+
+  return (
+    <ol className="relative ml-3 border-l border-gold/40">
+      {days.map((item) => (
+        <li key={item.day} className="relative pb-8 pl-8 last:pb-0">
+          <span className="absolute -left-4 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-white ring-4 ring-white">
+            {item.day}
+          </span>
+          <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-gold">
+            {formatItineraryDate(pkg.departureDate, item.day)}
+          </p>
+          <h3 className="mt-1 text-lg font-extrabold text-primary">
+            {item.title || "Agenda menunggu konfirmasi"}
+          </h3>
+          {item.activities.length ? (
+            <ul className="mt-3 space-y-2 text-neutral-700">
+              {item.activities.map((activity) => (
+                <li key={activity} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-gold" />
+                  {activity}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-neutral-500">
+              Rincian kegiatan akan diperbarui setelah jadwal operasional
+              dikonfirmasi.
+            </p>
+          )}
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -578,8 +678,8 @@ export default async function LandingPackageDetailPage({
     defaultOption;
   const hasDedicatedOptionFlyer = Boolean(
     selectedOption &&
-    !selectedOption.isDefault &&
-    selectedOption.gallery?.length,
+      !selectedOption.isDefault &&
+      selectedOption.gallery?.length,
   );
   const selectedGallery = hasDedicatedOptionFlyer
     ? selectedOption?.gallery || basePackage.gallery
@@ -643,20 +743,80 @@ export default async function LandingPackageDetailPage({
     pkg.slug,
     selectedOption?.id,
   );
-  const descriptionItems = getDescriptionItems(pkg.description);
   const typeLabel = getPackageTypeLabel(pkg);
-  const heroDescription =
-    descriptionItems[0] ||
-    `Paket umroh ${pkg.duration || ""} hari bersama Sahabat Qolbu dengan pendampingan tim berpengalaman.`;
   const packageDescription =
     String(pkg.description || "").trim() ||
     "Deskripsi paket akan diinformasikan lebih lanjut oleh admin Sahabat Qolbu.";
   const packageAdvantages = pkg.terms?.length ? pkg.terms : undefined;
+  const [makkahDetail, madinahDetail, airlineDetail] = await Promise.all([
+    pkg.hotelMakkah.id ? getPublicHotelDetail(pkg.hotelMakkah.id) : null,
+    pkg.hotelMadinah?.id ? getPublicHotelDetail(pkg.hotelMadinah.id) : null,
+    pkg.airline.id ? getPublicAirlineDetail(pkg.airline.id) : null,
+  ]);
+  const vendors: PackageVendor[] = [
+    {
+      key: "makkah",
+      label: "Hotel Makkah",
+      kind: "hotel" as const,
+      name: pkg.hotelMakkah.name,
+      detailUrl: pkg.hotelMakkah.id
+        ? `/hotel/${entitySlug(pkg.hotelMakkah.name, pkg.hotelMakkah.id)}`
+        : undefined,
+      imageUrl: pkg.hotelMakkah.imageUrl,
+      description: pkg.hotelMakkah.description,
+      meta: pkg.hotelMakkah.distanceToHaram,
+      address: pkg.hotelMakkah.address,
+      mapUrl: pkg.hotelMakkah.mapUrl,
+      facilities: pkg.hotelMakkah.facilities,
+      videoUrls: pkg.hotelMakkah.videoUrls,
+      articles: makkahDetail?.articles,
+    },
+    ...(pkg.hotelMadinah
+      ? [
+          {
+            key: "madinah",
+            label: "Hotel Madinah",
+            kind: "hotel" as const,
+            name: pkg.hotelMadinah.name,
+            detailUrl: pkg.hotelMadinah.id
+              ? `/hotel/${entitySlug(pkg.hotelMadinah.name, pkg.hotelMadinah.id)}`
+              : undefined,
+            imageUrl: pkg.hotelMadinah.imageUrl,
+            description: pkg.hotelMadinah.description,
+            meta: pkg.hotelMadinah.distanceToMasjid,
+            address: pkg.hotelMadinah.address,
+            mapUrl: pkg.hotelMadinah.mapUrl,
+            facilities: pkg.hotelMadinah.facilities,
+            videoUrls: pkg.hotelMadinah.videoUrls,
+            articles: madinahDetail?.articles,
+          },
+        ]
+      : []),
+    {
+      key: "airline",
+      label: "Maskapai",
+      kind: "airline" as const,
+      name: pkg.airline.name,
+      detailUrl: pkg.airline.id
+        ? `/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`
+        : undefined,
+      imageUrl: pkg.airline.logo,
+      description: pkg.airline.description,
+      meta: [pkg.airline.code, pkg.airline.country].filter(Boolean).join(" · "),
+      facilities: pkg.airline.facilities,
+      videoUrls: pkg.airline.videoUrls,
+      articles: airlineDetail?.articles,
+    },
+  ];
   const infoNav = [
     { id: "deskripsi", label: "Deskripsi" },
+    { id: "itinerary", label: "Itinerary" },
+    { id: "syarat-daftar", label: "Syarat Daftar" },
     { id: "termasuk", label: "Termasuk" },
     { id: "tidak-termasuk", label: "Tidak Termasuk" },
     { id: "keunggulan", label: "Keunggulan Paket" },
+    { id: "syarat-ketentuan", label: "Syarat & Ketentuan" },
+    { id: "cara-daftar", label: "Tata Cara Daftar" },
     { id: "info", label: "Informasi Lebih Lanjut" },
   ];
 
@@ -695,9 +855,6 @@ export default async function LandingPackageDetailPage({
                   <h1 className="mt-3 text-3xl font-extrabold leading-tight text-primary sm:text-4xl lg:text-5xl">
                     {pkg.name}
                   </h1>
-                  <p className="mt-4 max-w-3xl text-base font-medium leading-8 text-neutral-600">
-                    {heroDescription}
-                  </p>
                 </div>
 
                 <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -764,6 +921,27 @@ export default async function LandingPackageDetailPage({
                 </div>
               </DetailSection>
 
+              <DetailSection id="itinerary" title="Itinerary Perjalanan">
+                <ItineraryTimeline pkg={pkg} />
+                {pkg.itineraryPdf ? (
+                  <Link
+                    href={getItineraryPreviewUrl(pkg.slug)}
+                    className="mt-6 inline-flex items-center gap-2 rounded-sm border border-primary px-5 py-3 font-extrabold text-primary transition hover:bg-primary hover:text-white"
+                  >
+                    <Download className="h-5 w-5" />
+                    Lihat Itinerary PDF
+                  </Link>
+                ) : null}
+              </DetailSection>
+
+              <DetailSection id="syarat-daftar" title="Syarat Pendaftaran">
+                <SimpleList
+                  items={pkg.registrationRequirements}
+                  fallback="Persyaratan pendaftaran akan dikonfirmasi oleh admin Sahabat Qolbu."
+                  icon={CheckCircle2}
+                />
+              </DetailSection>
+
               <DetailSection id="termasuk" title="Termasuk">
                 <SimpleList
                   items={pkg.included}
@@ -786,6 +964,35 @@ export default async function LandingPackageDetailPage({
                   fallback="Keunggulan paket belum diisi di dashboard."
                   icon={CheckCircle2}
                 />
+              </DetailSection>
+
+              <DetailSection id="syarat-ketentuan" title="Syarat & Ketentuan">
+                <SimpleList
+                  items={pkg.termsConditions}
+                  fallback="Syarat dan ketentuan paket akan dikonfirmasi oleh admin Sahabat Qolbu."
+                  icon={ClipboardList}
+                />
+              </DetailSection>
+
+              <DetailSection id="cara-daftar" title="Tata Cara Pendaftaran">
+                <ol className="space-y-4">
+                  {(pkg.registrationSteps?.length
+                    ? pkg.registrationSteps
+                    : ["Hubungi admin Sahabat Qolbu untuk memulai pendaftaran."]
+                  ).map((step, index) => (
+                    <li
+                      key={`${step}-${index}`}
+                      className="flex gap-4 rounded-sm border border-neutral-200 p-4"
+                    >
+                      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">
+                        {index + 1}
+                      </span>
+                      <span className="pt-1 font-semibold leading-6 text-neutral-700">
+                        {step}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
               </DetailSection>
 
               <DetailSection id="info" title="Informasi Lebih Lanjut">
@@ -903,6 +1110,7 @@ export default async function LandingPackageDetailPage({
       >
         <MessageCircle className="h-7 w-7" />
       </a>
+      <VendorInfoDrawer vendors={vendors} />
     </div>
   );
 }

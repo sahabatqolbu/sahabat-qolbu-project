@@ -55,6 +55,7 @@ import {
   X,
   FileText,
   Eye,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import PackageOptionsEditor, {
@@ -62,6 +63,12 @@ import PackageOptionsEditor, {
   normalizePackageOptionsForSubmit,
   type PackageOptionDraft,
 } from "@/components/packages/PackageOptionsEditor";
+import PackageContentEditor, {
+  DEFAULT_REGISTRATION_REQUIREMENTS,
+  DEFAULT_REGISTRATION_STEPS,
+  DEFAULT_TERMS_CONDITIONS,
+  type PackageItineraryDraft,
+} from "@/components/packages/PackageContentEditor";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -100,6 +107,8 @@ export default function EditPackagePage({ params }: PageProps) {
     [],
   );
   const [hasOptionsChanged, setHasOptionsChanged] = useState(false);
+  const [itinerary, setItinerary] = useState<PackageItineraryDraft[]>([]);
+  const [hasContentChanged, setHasContentChanged] = useState(false);
   const [uploadingOptionId, setUploadingOptionId] = useState<number | null>(
     null,
   );
@@ -125,7 +134,11 @@ export default function EditPackagePage({ params }: PageProps) {
   });
 
   const isDirty =
-    isDirtyFromForm || hasPdfChanged || hasOptionsChanged || uploadingPdf;
+    isDirtyFromForm ||
+    hasPdfChanged ||
+    hasOptionsChanged ||
+    hasContentChanged ||
+    uploadingPdf;
 
   // Fetch Package
   const { data: packageData, isLoading: packageLoading } = useQuery({
@@ -194,6 +207,11 @@ export default function EditPackagePage({ params }: PageProps) {
           facilities: pkg.facilities || "",
           excludedFacilities: pkg.excludedFacilities || "",
           notes: pkg.notes || "",
+          registrationRequirements:
+            pkg.registrationRequirements || DEFAULT_REGISTRATION_REQUIREMENTS,
+          termsConditions: pkg.termsConditions || DEFAULT_TERMS_CONDITIONS,
+          registrationSteps:
+            pkg.registrationSteps || DEFAULT_REGISTRATION_STEPS,
 
           airlineId: pkg.airlineId,
           airlineStatus: pkg.airlineStatus,
@@ -236,7 +254,29 @@ export default function EditPackagePage({ params }: PageProps) {
         },
       );
       setPackageOptions(buildDefaultPackageOptions(pkg));
+      setItinerary(
+        Array.isArray(pkg.itinerary)
+          ? pkg.itinerary.map((item: any, index: number) => ({
+              dayNumber: Number(item.dayNumber || item.day || index + 1),
+              title: String(item.title || ""),
+              activities: Array.isArray(item.activities)
+                ? item.activities.join("\n")
+                : (() => {
+                    const raw = String(
+                      item.activities || item.description || "",
+                    );
+                    try {
+                      const parsed = JSON.parse(raw);
+                      return Array.isArray(parsed) ? parsed.join("\n") : raw;
+                    } catch {
+                      return raw;
+                    }
+                  })(),
+            }))
+          : [],
+      );
       setHasOptionsChanged(false);
+      setHasContentChanged(false);
       hydratedPackageId.current = pkg.id;
     }
   }, [pkg, reset, hotelsLoading, airlinesLoading, airportsLoading]);
@@ -278,9 +318,11 @@ export default function EditPackagePage({ params }: PageProps) {
         options: JSON.stringify(
           normalizePackageOptionsForSubmit(packageOptions, data),
         ),
+        itinerary: JSON.stringify(itinerary),
       }),
     onSuccess: () => {
       setHasOptionsChanged(false);
+      setHasContentChanged(false);
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       toast({
@@ -558,7 +600,7 @@ export default function EditPackagePage({ params }: PageProps) {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Info className="h-4 w-4" />
               <span className="hidden md:inline">Info</span>
@@ -574,6 +616,10 @@ export default function EditPackagePage({ params }: PageProps) {
             <TabsTrigger value="options" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden md:inline">Pilihan</span>
+            </TabsTrigger>
+            <TabsTrigger value="content" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden md:inline">Detail</span>
             </TabsTrigger>
             <TabsTrigger value="images" className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
@@ -984,7 +1030,8 @@ export default function EditPackagePage({ params }: PageProps) {
                       Status Ketersediaan / Kuota Paket
                     </Label>
                     <p className="text-sm text-gray-500">
-                      Atur apakah paket mengikuti sisa seat otomatis atau dipaksa Habis/Sold Out
+                      Atur apakah paket mengikuti sisa seat otomatis atau
+                      dipaksa Habis/Sold Out
                     </p>
                   </div>
                   <Controller
@@ -1248,6 +1295,25 @@ export default function EditPackagePage({ params }: PageProps) {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ===== TAB: DETAIL PUBLIK ===== */}
+          <TabsContent value="content">
+            <PackageContentEditor
+              departureDate={watchDepartureDate}
+              returnDate={watchReturnDate}
+              itinerary={itinerary}
+              onItineraryChange={(items) => {
+                setItinerary(items);
+                setHasContentChanged(true);
+              }}
+              registrationRequirements={watch("registrationRequirements") || ""}
+              termsConditions={watch("termsConditions") || ""}
+              registrationSteps={watch("registrationSteps") || ""}
+              onContentChange={(field, value) =>
+                setValue(field, value, { shouldDirty: true })
+              }
+            />
           </TabsContent>
 
           {/* ===== TAB: IMAGES ===== */}

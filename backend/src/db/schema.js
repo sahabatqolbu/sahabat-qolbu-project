@@ -82,6 +82,9 @@ export const masterHotels = mysqlTable(
     distanceToHaram: int("distance_to_haram"), // dalam meter
     facilities: text("facilities"), // JSON string
     imageUrl: varchar("image_url", { length: 500 }),
+    description: text("description"),
+    mapUrl: varchar("map_url", { length: 500 }),
+    videoUrls: json("video_urls"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at")
       .notNull()
@@ -102,6 +105,9 @@ export const masterAirlines = mysqlTable("master_airlines", {
   name: varchar("name", { length: 255 }).notNull(),
   logo: varchar("logo", { length: 500 }),
   country: varchar("country", { length: 100 }),
+  description: text("description"),
+  facilities: text("facilities"),
+  videoUrls: json("video_urls"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at")
     .notNull()
@@ -248,6 +254,9 @@ export const packages = mysqlTable(
     facilities: text("facilities"), // bisa plain text atau JSON
     excludedFacilities: text("excluded_facilities"), // Tidak termasuk dalam paket
     notes: text("notes"), // Keterangan tambahan
+    registrationRequirements: text("registration_requirements"),
+    termsConditions: text("terms_conditions"),
+    registrationSteps: text("registration_steps"),
 
     itineraryPdf: varchar("itinerary_pdf", { length: 500 }),
 
@@ -426,7 +435,9 @@ export const packageItinerary = mysqlTable(
   "package_itinerary",
   {
     id: int("id").primaryKey().autoincrement(),
-    packageId: int("package_id").notNull(),
+    packageId: int("package_id")
+      .notNull()
+      .references(() => packages.id, { onDelete: "cascade" }),
     dayNumber: int("day_number").notNull(), // Hari ke-1, ke-2, dst
     title: varchar("title", { length: 255 }).notNull(), // "Keberangkatan Jakarta - Madinah"
     description: text("description"),
@@ -441,6 +452,10 @@ export const packageItinerary = mysqlTable(
   (table) => ({
     packageIdx: index("package_idx").on(table.packageId),
     dayIdx: index("day_idx").on(table.dayNumber),
+    packageDayUnique: uniqueIndex("package_itinerary_package_day_unique").on(
+      table.packageId,
+      table.dayNumber,
+    ),
   }),
 );
 

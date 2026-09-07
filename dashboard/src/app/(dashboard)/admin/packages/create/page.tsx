@@ -50,6 +50,7 @@ import {
   Users,
   CheckCircle2,
   Clock,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { MediaUpload } from "@/components/packages/MediaUpload";
@@ -58,6 +59,12 @@ import PackageOptionsEditor, {
   normalizePackageOptionsForSubmit,
   type PackageOptionDraft,
 } from "@/components/packages/PackageOptionsEditor";
+import PackageContentEditor, {
+  DEFAULT_REGISTRATION_REQUIREMENTS,
+  DEFAULT_REGISTRATION_STEPS,
+  DEFAULT_TERMS_CONDITIONS,
+  type PackageItineraryDraft,
+} from "@/components/packages/PackageContentEditor";
 
 const PACKAGE_DRAFT_KEY = "sq-admin-package-create-draft-v1";
 
@@ -72,6 +79,7 @@ export default function CreatePackagePage() {
   const [packageOptions, setPackageOptions] = useState<PackageOptionDraft[]>(
     buildDefaultPackageOptions(),
   );
+  const [itinerary, setItinerary] = useState<PackageItineraryDraft[]>([]);
 
   const {
     register,
@@ -109,6 +117,9 @@ export default function CreatePackagePage() {
       hotelMadinahQuint: 0,
       airlineTermin1Amount: 0,
       airlineTermin2Amount: 0,
+      registrationRequirements: DEFAULT_REGISTRATION_REQUIREMENTS,
+      termsConditions: DEFAULT_TERMS_CONDITIONS,
+      registrationSteps: DEFAULT_REGISTRATION_STEPS,
     },
   });
 
@@ -137,6 +148,9 @@ export default function CreatePackagePage() {
         if (Array.isArray(parsed?.options) && parsed.options.length > 0) {
           setPackageOptions(parsed.options);
         }
+        if (Array.isArray(parsed?.itinerary)) {
+          setItinerary(parsed.itinerary);
+        }
       }
     } catch {
       sessionStorage.removeItem(PACKAGE_DRAFT_KEY);
@@ -154,6 +168,7 @@ export default function CreatePackagePage() {
         JSON.stringify({
           form: formValues,
           options: packageOptions,
+          itinerary,
         }),
       );
     };
@@ -161,7 +176,7 @@ export default function CreatePackagePage() {
     saveDraft();
     const subscription = watch((formValues) => saveDraft(formValues));
     return () => subscription.unsubscribe();
-  }, [packageOptions, watch]);
+  }, [itinerary, packageOptions, watch]);
 
   // Calculate duration
   const calculateDuration = () => {
@@ -211,6 +226,7 @@ export default function CreatePackagePage() {
           options: JSON.stringify(
             normalizePackageOptionsForSubmit(packageOptions, data),
           ),
+          itinerary: JSON.stringify(itinerary),
         },
         itineraryPdf: uploadPdf || undefined,
         images: uploadImages.length > 0 ? uploadImages : undefined,
@@ -312,7 +328,7 @@ export default function CreatePackagePage() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Info className="h-4 w-4" />
               <span className="hidden md:inline">Info Dasar</span>
@@ -331,6 +347,10 @@ export default function CreatePackagePage() {
             <TabsTrigger value="options" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden md:inline">Pilihan</span>
+            </TabsTrigger>
+            <TabsTrigger value="content" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden md:inline">Konten</span>
             </TabsTrigger>
             <TabsTrigger value="media" className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" />
@@ -807,7 +827,8 @@ export default function CreatePackagePage() {
                       Status Ketersediaan / Kuota Paket
                     </Label>
                     <p className="text-sm text-gray-500">
-                      Atur apakah paket mengikuti sisa seat otomatis atau dipaksa Habis/Sold Out
+                      Atur apakah paket mengikuti sisa seat otomatis atau
+                      dipaksa Habis/Sold Out
                     </p>
                   </div>
                   <Controller
@@ -1130,6 +1151,21 @@ export default function CreatePackagePage() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="content">
+            <PackageContentEditor
+              departureDate={watchDepartureDate}
+              returnDate={watchReturnDate}
+              itinerary={itinerary}
+              onItineraryChange={setItinerary}
+              registrationRequirements={watch("registrationRequirements") || ""}
+              termsConditions={watch("termsConditions") || ""}
+              registrationSteps={watch("registrationSteps") || ""}
+              onContentChange={(field, value) =>
+                setValue(field, value, { shouldDirty: true })
+              }
+            />
           </TabsContent>
 
           {/* ✅ TAB: MEDIA (BARU) */}

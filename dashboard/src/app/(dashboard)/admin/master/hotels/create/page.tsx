@@ -1,6 +1,7 @@
 // dashboard/src/app/(dashboard)/admin/master/hotels/create/page.tsx
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +28,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Loader2, Building2, Star } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  Building2,
+  Star,
+  Upload,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 
 // ✅ VALIDATION SCHEMA: Proper TypeScript types for useForm
@@ -35,10 +44,12 @@ const hotelSchema = z.object({
   name: z.string().min(3, "Nama hotel minimal 3 karakter"),
   city: z.enum(["MAKKAH", "MADINAH"]),
   address: z.string().optional(),
+  description: z.string().optional(),
+  mapUrl: z.string().optional(),
+  videoUrls: z.string().optional(),
   starRating: z.number().min(1).max(5),
   distanceToHaram: z.number().min(0).optional(),
   facilities: z.string().optional(),
-  imageUrl: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -47,6 +58,8 @@ type HotelFormData = z.infer<typeof hotelSchema>;
 export default function CreateHotelPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   const {
     register,
@@ -65,7 +78,16 @@ export default function CreateHotelPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: HotelFormData) => masterService.hotels.create(data),
+    mutationFn: (data: HotelFormData) => {
+      const payload = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          payload.append(key, String(value));
+        }
+      });
+      if (imageFile) payload.append("image", imageFile);
+      return masterService.hotels.create(payload);
+    },
     onSuccess: () => {
       toast({
         title: "✅ Hotel Berhasil Ditambahkan",
@@ -89,6 +111,17 @@ export default function CreateHotelPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleFormSubmit = handleSubmit(onSubmit as any);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 3 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "Gunakan gambar maksimal 3MB" });
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -209,6 +242,26 @@ export default function CreateHotelPage() {
               </p>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="description">Deskripsi Publik</Label>
+              <Textarea
+                id="description"
+                rows={5}
+                placeholder="Jelaskan lokasi, kenyamanan, dan nilai utama hotel untuk jamaah."
+                {...register("description")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mapUrl">Link Google Maps</Label>
+              <Input
+                id="mapUrl"
+                type="url"
+                placeholder="https://maps.google.com/..."
+                {...register("mapUrl")}
+              />
+            </div>
+
             {/* Fasilitas */}
             <div className="space-y-2">
               <Label htmlFor="facilities">Fasilitas</Label>
@@ -223,15 +276,62 @@ export default function CreateHotelPage() {
               </p>
             </div>
 
-            {/* Image URL */}
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">URL Gambar</Label>
-              <Input
-                id="imageUrl"
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                {...register("imageUrl")}
+              <Label htmlFor="videoUrls">Video YouTube / Instagram</Label>
+              <Textarea
+                id="videoUrls"
+                rows={4}
+                placeholder="Satu URL video per baris"
+                {...register("videoUrls")}
               />
+              <p className="text-xs text-gray-500">
+                Maksimal 10 video. Gunakan URL YouTube atau Instagram.
+              </p>
+            </div>
+
+            {/* Gambar Hotel */}
+            <div className="space-y-2">
+              <Label>Gambar Hotel</Label>
+              {imagePreview ? (
+                <div className="relative h-56 overflow-hidden rounded-lg border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagePreview}
+                    alt="Preview hotel"
+                    className="h-full w-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute right-2 top-2"
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview("");
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : null}
+              <Input
+                id="hotel-image"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+              <Label
+                htmlFor="hotel-image"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2 hover:bg-gray-50"
+              >
+                <Upload className="h-4 w-4" />
+                {imagePreview ? "Ganti Gambar" : "Upload Gambar"}
+              </Label>
+              <p className="text-xs text-gray-500">
+                JPG, PNG, atau WebP maksimal 3MB. Sistem menyimpan hasil optimal
+                dalam WebP.
+              </p>
             </div>
 
             {/* Status Aktif */}

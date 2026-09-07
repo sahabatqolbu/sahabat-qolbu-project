@@ -44,6 +44,11 @@ type BackendHotel = {
   distanceToHaram?: number | null;
   facilities?: string | null;
   imageUrl?: string | null;
+  city?: string | null;
+  address?: string | null;
+  description?: string | null;
+  mapUrl?: string | null;
+  videoUrls?: string[] | string | null;
 };
 
 type BackendAirline = {
@@ -51,6 +56,10 @@ type BackendAirline = {
   code?: string | null;
   name?: string | null;
   logo?: string | null;
+  country?: string | null;
+  description?: string | null;
+  facilities?: string | null;
+  videoUrls?: string[] | string | null;
 };
 
 type BackendItineraryItem = {
@@ -103,6 +112,9 @@ type BackendPackage = {
   facilities?: string | null;
   excludedFacilities?: string | null;
   notes?: string | null;
+  registrationRequirements?: string | null;
+  termsConditions?: string | null;
+  registrationSteps?: string | null;
   itineraryPdf?: string | null;
   itinerary?: BackendItineraryItem[] | null;
   hotelMakkah?: BackendHotel | null;
@@ -116,7 +128,12 @@ type BackendPackage = {
   isPublished?: boolean | null;
   isActive?: boolean | null;
   bookingStatus?:
-    "OPEN" | "CLOSED" | "SOLD_OUT" | "COMING_SOON" | string | null;
+    | "OPEN"
+    | "CLOSED"
+    | "SOLD_OUT"
+    | "COMING_SOON"
+    | string
+    | null;
   bookingStatusLabel?: string | null;
   isBookable?: boolean | null;
   daysUntilDeparture?: number | null;
@@ -187,7 +204,16 @@ export interface MarketingPackage {
   duration: number;
   departureDate: string;
   returnDate: string;
-  airline: { id?: number; name: string; logo?: string; code?: string };
+  airline: {
+    id?: number;
+    name: string;
+    logo?: string;
+    code?: string;
+    country?: string;
+    description?: string;
+    facilities?: string[];
+    videoUrls?: string[];
+  };
   route?: {
     arrivalCode?: string;
     returnCode?: string;
@@ -201,6 +227,12 @@ export interface MarketingPackage {
     starRating: number;
     distanceToHaram?: string;
     facilities?: string[];
+    imageUrl?: string;
+    city?: string;
+    address?: string;
+    description?: string;
+    mapUrl?: string;
+    videoUrls?: string[];
   };
   hotelMadinah?: {
     id?: number;
@@ -208,6 +240,12 @@ export interface MarketingPackage {
     starRating: number;
     distanceToMasjid?: string;
     facilities?: string[];
+    imageUrl?: string;
+    city?: string;
+    address?: string;
+    description?: string;
+    mapUrl?: string;
+    videoUrls?: string[];
   };
   priceQuad: string;
   priceTriple?: string;
@@ -238,6 +276,9 @@ export interface MarketingPackage {
   itineraryPdf?: string;
   documents?: string[];
   terms?: string[];
+  registrationRequirements?: string[];
+  termsConditions?: string[];
+  registrationSteps?: string[];
   backendType?: string;
 }
 
@@ -414,6 +455,12 @@ const mapHotel = (
     name: hotel.name,
     starRating: toNumber(hotel.starRating, 0),
     facilities: parseStringList(hotel.facilities),
+    imageUrl: resolveAssetUrl(hotel.imageUrl),
+    city: toNonEmptyString(hotel.city),
+    address: toNonEmptyString(hotel.address),
+    description: toNonEmptyString(hotel.description),
+    mapUrl: toNonEmptyString(hotel.mapUrl),
+    videoUrls: parseStringList(hotel.videoUrls),
   };
 
   if (destination === "Masjidil Haram") {
@@ -497,6 +544,10 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
       code: toNonEmptyString(pkg.airline?.code),
       name: toNonEmptyString(pkg.airline?.name, "Maskapai belum tersedia"),
       logo: resolveAssetUrl(pkg.airline?.logo),
+      country: toNonEmptyString(pkg.airline?.country),
+      description: toNonEmptyString(pkg.airline?.description),
+      facilities: parseStringList(pkg.airline?.facilities),
+      videoUrls: parseStringList(pkg.airline?.videoUrls),
     },
     route: {
       arrivalCode: toNonEmptyString(pkg.arrivalAirport?.code),
@@ -582,6 +633,9 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
       : undefined,
     documents: undefined,
     terms: parseStringList(pkg.notes),
+    registrationRequirements: parseStringList(pkg.registrationRequirements),
+    termsConditions: parseStringList(pkg.termsConditions),
+    registrationSteps: parseStringList(pkg.registrationSteps),
     backendType: toNonEmptyString(pkg.type),
   };
 };

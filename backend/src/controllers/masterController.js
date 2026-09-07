@@ -26,6 +26,36 @@ const parseBoolean = (value, fallback = false) => {
   return fallback;
 };
 
+const normalizeVideoUrls = (value) => {
+  if (!value) return [];
+  let candidates = value;
+  if (typeof value === "string") {
+    try {
+      candidates = JSON.parse(value);
+    } catch {
+      candidates = value.split(/\r?\n/);
+    }
+  }
+
+  return (Array.isArray(candidates) ? candidates : [])
+    .map((item) => String(item?.url || item || "").trim())
+    .filter((url) => {
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, "");
+        return (
+          host === "youtu.be" ||
+          host === "youtube.com" ||
+          host.endsWith(".youtube.com") ||
+          host === "instagram.com" ||
+          host.endsWith(".instagram.com")
+        );
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, 10);
+};
+
 // HELPER
 function facilitiesToString(facilities) {
   if (!facilities) return "";
@@ -103,12 +133,15 @@ export const createHotel = async (req, res, next) => {
   try {
     const {
       name,
+      description,
       address,
+      mapUrl,
       city,
       country,
       stars,
       distanceToHaram,
       facilities,
+      videoUrls,
       isActive,
     } = req.body;
 
@@ -116,12 +149,15 @@ export const createHotel = async (req, res, next) => {
 
     const result = await db.insert(masterHotels).values({
       name,
+      description: description || null,
       address: address || null,
+      mapUrl: mapUrl || null,
       city,
       country: country || "Saudi Arabia",
       starRating: starsToUse ? parseInt(starsToUse) : null,
       distanceToHaram: distanceToHaram ? parseInt(distanceToHaram) : null,
       facilities: stringToFacilities(facilities),
+      videoUrls: normalizeVideoUrls(videoUrls),
       imageUrl: req.uploadedFile ? req.uploadedFile.path : null,
       isActive: isActive === true || isActive === "true",
     });
@@ -149,12 +185,15 @@ export const updateHotel = async (req, res, next) => {
     // ✅ FIX: distanceToHaram (BUKAN distanceToHarem)
     const {
       name,
+      description,
       address,
+      mapUrl,
       city,
       country,
       stars,
       distanceToHaram,
       facilities,
+      videoUrls,
       isActive,
     } = req.body;
 
@@ -167,7 +206,9 @@ export const updateHotel = async (req, res, next) => {
     const updateData = { updatedAt: new Date() };
 
     if (name) updateData.name = name;
+    if (description !== undefined) updateData.description = description || null;
     if (address !== undefined) updateData.address = address || null;
+    if (mapUrl !== undefined) updateData.mapUrl = mapUrl || null;
     if (city) updateData.city = city;
     if (country !== undefined) updateData.country = country || null;
 
@@ -183,6 +224,9 @@ export const updateHotel = async (req, res, next) => {
 
     if (facilities !== undefined) {
       updateData.facilities = stringToFacilities(facilities);
+    }
+    if (videoUrls !== undefined) {
+      updateData.videoUrls = normalizeVideoUrls(videoUrls);
     }
 
     if (isActive !== undefined) {

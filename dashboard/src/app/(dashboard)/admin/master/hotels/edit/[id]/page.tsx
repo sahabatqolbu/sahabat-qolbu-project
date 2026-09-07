@@ -32,6 +32,9 @@ const hotelSchema = z.object({
   name: z.string().min(3, "Nama hotel minimal 3 karakter"),
   city: z.string().min(1, "Kota wajib dipilih"),
   address: z.string().optional(),
+  description: z.string().optional(),
+  mapUrl: z.string().optional(),
+  videoUrls: z.string().optional(),
   starRating: z.number().min(1).max(5),
   distanceToHaram: z.coerce.number().min(0).optional(),
   facilities: z.string().optional(),
@@ -75,8 +78,6 @@ export default function EditHotelPage() {
   useEffect(() => {
     if (data?.data) {
       const hotel = data.data;
-      console.log("🔍 Hotel data dari API:", hotel);
-
       reset({
         name: hotel.name || "",
         city: hotel.city || "MAKKAH",
@@ -84,6 +85,11 @@ export default function EditHotelPage() {
         starRating: hotel.starRating || 4,
         distanceToHaram: hotel.distanceToHaram ?? undefined,
         facilities: hotel.facilities || "",
+        description: hotel.description || "",
+        mapUrl: hotel.mapUrl || "",
+        videoUrls: Array.isArray(hotel.videoUrls)
+          ? hotel.videoUrls.join("\n")
+          : hotel.videoUrls || "",
         isActive: hotel.isActive ?? true,
       });
 
@@ -110,32 +116,34 @@ export default function EditHotelPage() {
       payload.append("stars", formData.starRating.toString());
       payload.append("isActive", formData.isActive.toString());
 
-      if (formData.address) payload.append("address", formData.address);
-      if (formData.distanceToHaram !== undefined && formData.distanceToHaram !== null) {
+      payload.append("address", formData.address || "");
+      payload.append("description", formData.description || "");
+      payload.append("mapUrl", formData.mapUrl || "");
+      payload.append("videoUrls", formData.videoUrls || "");
+      if (
+        formData.distanceToHaram !== undefined &&
+        formData.distanceToHaram !== null
+      ) {
         payload.append("distanceToHaram", formData.distanceToHaram.toString());
       } else {
         payload.append("distanceToHaram", "");
       }
-      if (formData.facilities)
-        payload.append("facilities", formData.facilities);
+      payload.append("facilities", formData.facilities || "");
 
       if (imageFile) {
-        console.log("📤 Uploading image:", imageFile.name);
         payload.append("image", imageFile);
       }
 
       const response = await api.put(`/master/hotels/${id}`, payload);
       return response.data;
     },
-    onSuccess: (response) => {
-      console.log("✅ Update success:", response);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["hotels"] });
       queryClient.invalidateQueries({ queryKey: ["hotel", id] });
       toast({ title: "✅ Hotel berhasil diupdate" });
       router.push("/admin/master/hotels");
     },
     onError: (error: any) => {
-      console.error("❌ Update error:", error);
       toast({
         variant: "destructive",
         title: "Gagal update hotel",
@@ -196,7 +204,11 @@ export default function EditHotelPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit((data) => updateMutation.mutate(data as HotelFormData) as any)}>
+      <form
+        onSubmit={handleSubmit(
+          (data) => updateMutation.mutate(data as HotelFormData) as any,
+        )}
+      >
         <div className="grid gap-6">
           {/* Gambar Hotel */}
           <Card>
@@ -334,12 +346,40 @@ export default function EditHotelPage() {
               </div>
 
               <div className="space-y-2">
+                <Label>Deskripsi Publik</Label>
+                <Textarea
+                  {...register("description")}
+                  rows={5}
+                  placeholder="Jelaskan lokasi, kenyamanan, dan nilai utama hotel untuk jamaah."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Link Google Maps</Label>
+                <Input
+                  type="url"
+                  {...register("mapUrl")}
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label>Fasilitas (pisahkan dengan Enter)</Label>
                 <Textarea
                   {...register("facilities")}
                   rows={6}
                   placeholder="WiFi Gratis&#10;AC&#10;Breakfast&#10;Shuttle"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Video YouTube / Instagram</Label>
+                <Textarea
+                  {...register("videoUrls")}
+                  rows={4}
+                  placeholder="Satu URL video per baris"
+                />
+                <p className="text-xs text-gray-500">Maksimal 10 video.</p>
               </div>
 
               <div className="flex items-center justify-between p-4 border rounded-lg">

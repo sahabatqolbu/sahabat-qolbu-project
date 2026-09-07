@@ -44,6 +44,10 @@ export const createPackageSchema = z.object({
   facilities: z.string().optional(),
   excludedFacilities: z.string().optional(),
   notes: z.string().optional(),
+  registrationRequirements: z.string().optional(),
+  termsConditions: z.string().optional(),
+  registrationSteps: z.string().optional(),
+  itinerary: z.string().optional(),
 
   // ===== AIRLINE =====
   airlineId: z.number().optional().nullable(),
@@ -131,6 +135,10 @@ export const updatePackageSchema = z.object({
   facilities: z.string().optional(),
   excludedFacilities: z.string().optional(),
   notes: z.string().optional(),
+  registrationRequirements: z.string().optional(),
+  termsConditions: z.string().optional(),
+  registrationSteps: z.string().optional(),
+  itinerary: z.string().optional(),
 
   // ===== AIRLINE =====
   airlineId: z.number().optional().nullable(),

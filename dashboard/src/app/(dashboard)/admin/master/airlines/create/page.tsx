@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -29,6 +30,9 @@ const airlineSchema = z.object({
   code: z.string().min(2, "Kode minimal 2 karakter").max(10),
   name: z.string().min(3, "Nama minimal 3 karakter"),
   country: z.string().optional(),
+  description: z.string().optional(),
+  facilities: z.string().optional(),
+  videoUrls: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -80,6 +84,9 @@ export default function CreateAirlinePage() {
       payload.append("isActive", formData.isActive.toString());
 
       if (formData.country) payload.append("country", formData.country);
+      payload.append("description", formData.description || "");
+      payload.append("facilities", formData.facilities || "");
+      payload.append("videoUrls", formData.videoUrls || "");
       if (logoFile) {
         payload.append("logo", logoFile);
       } else {
@@ -110,8 +117,7 @@ export default function CreateAirlinePage() {
       // ✅ TOAST ERROR
       toast({
         title: "❌ Gagal Menambahkan",
-        description:
-          getErrorMessage(error),
+        description: getErrorMessage(error),
         variant: "destructive",
         duration: 5000,
       });
@@ -265,6 +271,36 @@ export default function CreateAirlinePage() {
                 <p className="text-xs text-gray-500">
                   Negara asal maskapai (opsional)
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Deskripsi Publik</Label>
+                <Textarea
+                  id="description"
+                  rows={5}
+                  placeholder="Jelaskan kenyamanan dan layanan maskapai untuk jamaah."
+                  {...register("description")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="facilities">Fasilitas</Label>
+                <Textarea
+                  id="facilities"
+                  rows={4}
+                  placeholder="Satu fasilitas per baris"
+                  {...register("facilities")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="videoUrls">Video YouTube / Instagram</Label>
+                <Textarea
+                  id="videoUrls"
+                  rows={4}
+                  placeholder="Satu URL video per baris"
+                  {...register("videoUrls")}
+                />
               </div>
 
               <div className="flex items-center justify-between rounded-lg border p-4">
