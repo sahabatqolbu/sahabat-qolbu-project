@@ -1,7 +1,7 @@
 // backend/src/controllers/masterController.js
 import { db } from "../db/index.js";
 import { masterHotels } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 import xlsx from "xlsx";
 import {
   successResponse,
@@ -116,6 +116,11 @@ export const getHotelById = async (req, res, next) => {
     const { id } = req.params;
     const hotel = await db.query.masterHotels.findFirst({
       where: eq(masterHotels.id, parseInt(id)),
+      with: {
+        images: {
+          orderBy: (images) => [asc(images.sortOrder), asc(images.id)],
+        },
+      },
     });
     if (!hotel) return errorResponse(res, "Hotel tidak ditemukan", 404);
 

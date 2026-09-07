@@ -18,6 +18,7 @@ export type PackageVendor = {
   name: string;
   detailUrl?: string;
   imageUrl?: string;
+  gallery?: string[];
   description?: string;
   meta?: string;
   address?: string;
@@ -62,8 +63,16 @@ export default function VendorInfoDrawer({
 }) {
   const [open, setOpen] = useState(false);
   const [activeKey, setActiveKey] = useState(vendors[0]?.key || "");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const active =
     vendors.find((vendor) => vendor.key === activeKey) || vendors[0];
+  const activeImages = active
+    ? (Array.from(
+        new Set(
+          [active.imageUrl, ...(active.gallery || [])].filter(Boolean),
+        ),
+      ) as string[])
+    : [];
 
   useEffect(() => {
     if (!open) return;
@@ -130,7 +139,10 @@ export default function VendorInfoDrawer({
                 <button
                   key={vendor.key}
                   type="button"
-                  onClick={() => setActiveKey(vendor.key)}
+                  onClick={() => {
+                    setActiveKey(vendor.key);
+                    setActiveImageIndex(0);
+                  }}
                   className={`whitespace-nowrap rounded-sm px-4 py-2 text-sm font-extrabold transition ${active?.key === vendor.key ? "bg-primary text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"}`}
                 >
                   {vendor.label}
@@ -140,14 +152,32 @@ export default function VendorInfoDrawer({
 
             {active ? (
               <div className="overflow-y-auto p-5 sm:p-6">
-                {active.imageUrl ? (
-                  <div className="mb-5 h-52 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-50">
+                {activeImages.length ? (
+                  <div className="mb-5 space-y-3">
+                    <div className="h-56 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-50 sm:h-64">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={active.imageUrl}
-                      alt={active.name}
-                      className={`h-full w-full ${active.kind === "airline" ? "object-contain p-8" : "object-cover"}`}
+                      src={activeImages[activeImageIndex] || activeImages[0]}
+                      alt={`${active.name} - foto ${activeImageIndex + 1}`}
+                      className="h-full w-full object-cover"
                     />
+                    </div>
+                    {activeImages.length > 1 ? (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {activeImages.map((image, index) => (
+                          <button
+                            key={`${image}-${index}`}
+                            type="button"
+                            onClick={() => setActiveImageIndex(index)}
+                            aria-label={`Tampilkan foto ${index + 1} ${active.name}`}
+                            className={`h-16 w-20 flex-none overflow-hidden rounded-sm border-2 bg-neutral-100 transition ${activeImageIndex === index ? "border-gold" : "border-transparent hover:border-neutral-300"}`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={image} alt="" className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
 

@@ -25,6 +25,16 @@ export const masterService = {
       const response = await api.delete(`/master/hotels/${id}`);
       return response.data;
     },
+    uploadImages: async (id: number, files: File[]) => {
+      const payload = new FormData();
+      files.forEach((file) => payload.append("images", file));
+      const response = await api.post(`/master/hotels/${id}/images`, payload);
+      return response.data;
+    },
+    deleteImage: async (imageId: number) => {
+      const response = await api.delete(`/master/hotels/images/${imageId}`);
+      return response.data;
+    },
   },
 
   // ===== AIRLINES =====
@@ -48,6 +58,16 @@ export const masterService = {
     },
     delete: async (id: number) => {
       const response = await api.delete(`/master/airlines/${id}`);
+      return response.data;
+    },
+    uploadImages: async (id: number, files: File[]) => {
+      const payload = new FormData();
+      files.forEach((file) => payload.append("images", file));
+      const response = await api.post(`/master/airlines/${id}/images`, payload);
+      return response.data;
+    },
+    deleteImage: async (imageId: number) => {
+      const response = await api.delete(`/master/airlines/images/${imageId}`);
       return response.data;
     },
   },

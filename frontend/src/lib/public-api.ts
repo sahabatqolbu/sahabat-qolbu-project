@@ -37,6 +37,13 @@ type BackendPackageImage = {
   isPrimary?: boolean | null;
 };
 
+type BackendMasterImage = {
+  id: number;
+  imageUrl: string;
+  caption?: string | null;
+  sortOrder?: number | null;
+};
+
 type BackendHotel = {
   id?: number | null;
   name?: string | null;
@@ -49,6 +56,7 @@ type BackendHotel = {
   description?: string | null;
   mapUrl?: string | null;
   videoUrls?: string[] | string | null;
+  images?: BackendMasterImage[] | null;
 };
 
 type BackendAirline = {
@@ -60,6 +68,7 @@ type BackendAirline = {
   description?: string | null;
   facilities?: string | null;
   videoUrls?: string[] | string | null;
+  images?: BackendMasterImage[] | null;
 };
 
 type BackendItineraryItem = {
@@ -213,6 +222,7 @@ export interface MarketingPackage {
     description?: string;
     facilities?: string[];
     videoUrls?: string[];
+    gallery?: string[];
   };
   route?: {
     arrivalCode?: string;
@@ -233,6 +243,7 @@ export interface MarketingPackage {
     description?: string;
     mapUrl?: string;
     videoUrls?: string[];
+    gallery?: string[];
   };
   hotelMadinah?: {
     id?: number;
@@ -246,6 +257,7 @@ export interface MarketingPackage {
     description?: string;
     mapUrl?: string;
     videoUrls?: string[];
+    gallery?: string[];
   };
   priceQuad: string;
   priceTriple?: string;
@@ -461,6 +473,9 @@ const mapHotel = (
     description: toNonEmptyString(hotel.description),
     mapUrl: toNonEmptyString(hotel.mapUrl),
     videoUrls: parseStringList(hotel.videoUrls),
+    gallery: (hotel.images || [])
+      .map((image) => resolveAssetUrl(image.imageUrl))
+      .filter((value): value is string => Boolean(value)),
   };
 
   if (destination === "Masjidil Haram") {
@@ -548,6 +563,9 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
       description: toNonEmptyString(pkg.airline?.description),
       facilities: parseStringList(pkg.airline?.facilities),
       videoUrls: parseStringList(pkg.airline?.videoUrls),
+      gallery: (pkg.airline?.images || [])
+        .map((image) => resolveAssetUrl(image.imageUrl))
+        .filter((value): value is string => Boolean(value)),
     },
     route: {
       arrivalCode: toNonEmptyString(pkg.arrivalAirport?.code),
@@ -1077,6 +1095,10 @@ export const getPublicHotelDetail = async (id: number | string) => {
     hotel: {
       ...payload.hotel,
       imageUrl: resolveAssetUrl(payload.hotel.imageUrl) || null,
+      images: (payload.hotel.images || []).map((image) => ({
+        ...image,
+        imageUrl: resolveAssetUrl(image.imageUrl) || image.imageUrl,
+      })),
     },
     articles: Array.isArray(payload.articles)
       ? payload.articles.map(mapPublicArticle)
@@ -1093,6 +1115,10 @@ export const getPublicAirlineDetail = async (id: number | string) => {
     airline: {
       ...payload.airline,
       logo: resolveAssetUrl(payload.airline.logo) || null,
+      images: (payload.airline.images || []).map((image) => ({
+        ...image,
+        imageUrl: resolveAssetUrl(image.imageUrl) || image.imageUrl,
+      })),
     },
     articles: Array.isArray(payload.articles)
       ? payload.articles.map(mapPublicArticle)

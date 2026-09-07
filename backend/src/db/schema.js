@@ -98,6 +98,25 @@ export const masterHotels = mysqlTable(
   }),
 );
 
+export const masterHotelImages = mysqlTable(
+  "master_hotel_images",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    hotelId: int("hotel_id")
+      .notNull()
+      .references(() => masterHotels.id, { onDelete: "cascade" }),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    caption: varchar("caption", { length: 255 }),
+    sortOrder: int("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    hotelIdx: index("master_hotel_image_hotel_idx").on(table.hotelId),
+  }),
+);
+
 // Master Maskapai
 export const masterAirlines = mysqlTable("master_airlines", {
   id: int("id").primaryKey().autoincrement(),
@@ -116,6 +135,25 @@ export const masterAirlines = mysqlTable("master_airlines", {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
+
+export const masterAirlineImages = mysqlTable(
+  "master_airline_images",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    airlineId: int("airline_id")
+      .notNull()
+      .references(() => masterAirlines.id, { onDelete: "cascade" }),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    caption: varchar("caption", { length: 255 }),
+    sortOrder: int("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    airlineIdx: index("master_airline_image_airline_idx").on(table.airlineId),
+  }),
+);
 
 // Master Bandara
 export const masterAirports = mysqlTable("master_airports", {

@@ -488,11 +488,20 @@
 
 /* WhatsApp attention treatment: visible, but deliberately infrequent. */
 .wa-floating-button {
-  animation: waAttention 5.5s ease-in-out infinite;
+  animation: waAttention 4.8s ease-in-out infinite;
 }
 
 .wa-floating-ring {
-  animation: waRing 2.6s ease-out infinite;
+  animation: waRing 2.4s ease-out infinite;
+}
+
+.wa-floating-button::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1px solid rgba(32, 191, 90, 0.75);
+  border-radius: inherit;
+  animation: waRing 2.4s 1.2s ease-out infinite;
 }
 
 @keyframes waAttention {
@@ -556,5 +565,9 @@
   .wa-floating-button,
   .wa-floating-ring {
     animation-play-state: paused;
+  }
+
+  .wa-floating-button::before {
+    animation: none;
   }
 }

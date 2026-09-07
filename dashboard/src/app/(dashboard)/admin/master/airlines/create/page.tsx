@@ -100,17 +100,22 @@ export default function CreateAirlinePage() {
 
       return masterService.airlines.create(payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       // ✅ TOAST SUCCESS
       toast({
         title: "✅ Berhasil",
-        description: "Maskapai berhasil ditambahkan",
+        description: "Maskapai tersimpan. Tambahkan foto pesawat dan kabin di galeri.",
         variant: "default",
         duration: 3000,
       });
 
       setTimeout(() => {
-        router.push("/admin/master/airlines");
+        const createdId = response?.data?.id;
+        router.push(
+          createdId
+            ? `/admin/master/airlines/edit/${createdId}`
+            : "/admin/master/airlines",
+        );
       }, 1000);
     },
     onError: (error: unknown) => {

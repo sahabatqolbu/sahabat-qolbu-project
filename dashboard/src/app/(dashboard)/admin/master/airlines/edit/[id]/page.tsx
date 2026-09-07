@@ -25,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save, Loader2, Plane, Upload, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import MasterImageGallery from "@/components/master/MasterImageGallery";
 
 // Removed .default(true) to fix type mismatch with useForm
 const airlineSchema = z.object({
@@ -247,6 +248,12 @@ export default function EditAirlinePage() {
               </div>
             </CardContent>
           </Card>
+
+          <MasterImageGallery
+            kind="airline"
+            masterId={parseInt(id)}
+            images={data?.data?.images || []}
+          />
 
           {/* Informasi Maskapai */}
           <Card>

@@ -4,7 +4,9 @@ import { relations } from "drizzle-orm";
 import {
   users,
   masterHotels,
+  masterHotelImages,
   masterAirlines,
+  masterAirlineImages,
   masterAirports,
   masterDocuments,
   masterBanks,
@@ -289,12 +291,34 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 export const masterHotelsRelations = relations(masterHotels, ({ many }) => ({
   packagesMakkah: many(packages, { relationName: "hotelMakkah" }),
   packagesMadinah: many(packages, { relationName: "hotelMadinah" }),
+  images: many(masterHotelImages),
 }));
+
+export const masterHotelImagesRelations = relations(
+  masterHotelImages,
+  ({ one }) => ({
+    hotel: one(masterHotels, {
+      fields: [masterHotelImages.hotelId],
+      references: [masterHotels.id],
+    }),
+  }),
+);
 
 export const masterAirlinesRelations = relations(
   masterAirlines,
   ({ many }) => ({
     packages: many(packages),
+    images: many(masterAirlineImages),
+  }),
+);
+
+export const masterAirlineImagesRelations = relations(
+  masterAirlineImages,
+  ({ one }) => ({
+    airline: one(masterAirlines, {
+      fields: [masterAirlineImages.airlineId],
+      references: [masterAirlines.id],
+    }),
   }),
 );
 

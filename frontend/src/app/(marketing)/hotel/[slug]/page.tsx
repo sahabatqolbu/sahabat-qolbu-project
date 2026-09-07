@@ -32,6 +32,7 @@ export default async function HotelDetailPage({ params }: { params: Params }) {
   if (!detail) notFound();
   const { hotel, articles, packages } = detail;
   const facilities = parseFacilities(hotel.facilities);
+  const gallery = hotel.images || [];
 
   return (
     <main className="min-h-screen bg-white pt-24 text-neutral-800">
@@ -85,6 +86,31 @@ export default async function HotelDetailPage({ params }: { params: Params }) {
       <section className="py-14 md:py-20">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
           <article className="space-y-8">
+            {gallery.length ? (
+              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
+                <h2 className="text-2xl font-extrabold text-primary">
+                  Galeri Hotel
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-600">
+                  Lihat suasana gedung, kamar, dan fasilitas yang tersedia.
+                </p>
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {gallery.map((image, index) => (
+                    <div
+                      key={image.id}
+                      className={`${index === 0 ? "col-span-2 row-span-2 sm:col-span-2" : ""} aspect-[4/3] overflow-hidden rounded-sm bg-neutral-100`}
+                    >
+                      <img
+                        src={image.imageUrl}
+                        alt={`${hotel.name} - foto ${index + 1}`}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-extrabold text-primary">
                 Fasilitas Hotel

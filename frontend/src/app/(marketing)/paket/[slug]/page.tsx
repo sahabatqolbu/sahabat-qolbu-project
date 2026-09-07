@@ -763,6 +763,9 @@ export default async function LandingPackageDetailPage({
         ? `/hotel/${entitySlug(pkg.hotelMakkah.name, pkg.hotelMakkah.id)}`
         : undefined,
       imageUrl: pkg.hotelMakkah.imageUrl,
+      gallery:
+        makkahDetail?.hotel?.images?.map((image) => image.imageUrl) ||
+        pkg.hotelMakkah.gallery,
       description: pkg.hotelMakkah.description,
       meta: pkg.hotelMakkah.distanceToHaram,
       address: pkg.hotelMakkah.address,
@@ -782,6 +785,9 @@ export default async function LandingPackageDetailPage({
               ? `/hotel/${entitySlug(pkg.hotelMadinah.name, pkg.hotelMadinah.id)}`
               : undefined,
             imageUrl: pkg.hotelMadinah.imageUrl,
+            gallery:
+              madinahDetail?.hotel?.images?.map((image) => image.imageUrl) ||
+              pkg.hotelMadinah.gallery,
             description: pkg.hotelMadinah.description,
             meta: pkg.hotelMadinah.distanceToMasjid,
             address: pkg.hotelMadinah.address,
@@ -801,6 +807,9 @@ export default async function LandingPackageDetailPage({
         ? `/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`
         : undefined,
       imageUrl: pkg.airline.logo,
+      gallery:
+        airlineDetail?.airline?.images?.map((image) => image.imageUrl) ||
+        pkg.airline.gallery,
       description: pkg.airline.description,
       meta: [pkg.airline.code, pkg.airline.country].filter(Boolean).join(" · "),
       facilities: pkg.airline.facilities,
@@ -1101,15 +1110,6 @@ export default async function LandingPackageDetailPage({
         </Suspense>
       </main>
 
-      <a
-        href={consultLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Hubungi via WhatsApp"
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl transition hover:bg-green-600"
-      >
-        <MessageCircle className="h-7 w-7" />
-      </a>
       <VendorInfoDrawer vendors={vendors} />
     </div>
   );

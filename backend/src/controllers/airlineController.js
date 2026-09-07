@@ -1,7 +1,7 @@
 // backend/src/controllers/airlineController.js
 import { db } from "../db/index.js";
 import { masterAirlines } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 import {
   successResponse,
   errorResponse,
@@ -63,6 +63,11 @@ export const getAirlineById = async (req, res, next) => {
 
     const airline = await db.query.masterAirlines.findFirst({
       where: eq(masterAirlines.id, parseInt(id)),
+      with: {
+        images: {
+          orderBy: (images) => [asc(images.sortOrder), asc(images.id)],
+        },
+      },
     });
 
     if (!airline) {

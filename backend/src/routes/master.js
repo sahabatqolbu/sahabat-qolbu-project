@@ -2,7 +2,11 @@
 import express from "express";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
-import { upload, optimizeImage } from "../utils/upload.js";
+import {
+  upload,
+  optimizeImage,
+  optimizeMultipleImages,
+} from "../utils/upload.js";
 
 // Controllers
 import {
@@ -20,6 +24,10 @@ import {
   updateAirline,
   deleteAirline,
 } from "../controllers/airlineController.js";
+import {
+  deleteMasterImage,
+  uploadMasterImages,
+} from "../controllers/masterMediaController.js";
 import {
   getAllAirports,
   getAirportById,
@@ -108,6 +116,20 @@ router.put(
 );
 router.delete("/hotels/:id", authenticate, authorize(["ADMIN"]), deleteHotel);
 router.post(
+  "/hotels/:id/images",
+  authenticate,
+  authorize(["ADMIN"]),
+  upload.array("images", 10),
+  optimizeMultipleImages("hotels", { outputFormat: "webp" }),
+  uploadMasterImages("hotel"),
+);
+router.delete(
+  "/hotels/images/:imageId",
+  authenticate,
+  authorize(["ADMIN"]),
+  deleteMasterImage("hotel"),
+);
+router.post(
   "/import/hotels",
   authenticate,
   authorize(["ADMIN"]),
@@ -141,6 +163,20 @@ router.delete(
   authenticate,
   authorize(["ADMIN"]),
   deleteAirline,
+);
+router.post(
+  "/airlines/:id/images",
+  authenticate,
+  authorize(["ADMIN"]),
+  upload.array("images", 10),
+  optimizeMultipleImages("airlines", { outputFormat: "webp" }),
+  uploadMasterImages("airline"),
+);
+router.delete(
+  "/airlines/images/:imageId",
+  authenticate,
+  authorize(["ADMIN"]),
+  deleteMasterImage("airline"),
 );
 
 // =====================================================

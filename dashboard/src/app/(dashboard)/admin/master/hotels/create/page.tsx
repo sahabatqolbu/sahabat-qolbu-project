@@ -88,12 +88,17 @@ export default function CreateHotelPage() {
       if (imageFile) payload.append("image", imageFile);
       return masterService.hotels.create(payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast({
         title: "✅ Hotel Berhasil Ditambahkan",
-        description: "Data hotel telah disimpan",
+        description: "Data tersimpan. Tambahkan foto kamar dan fasilitas di galeri.",
       });
-      router.push("/admin/master/hotels");
+      const createdId = response?.data?.id;
+      router.push(
+        createdId
+          ? `/admin/master/hotels/edit/${createdId}`
+          : "/admin/master/hotels",
+      );
     },
     onError: (error: any) => {
       toast({

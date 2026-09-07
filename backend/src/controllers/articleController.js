@@ -365,6 +365,14 @@ export const getPublicHotelById = async (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     const hotel = await db.query.masterHotels.findFirst({
       where: eq(masterHotels.id, id),
+      with: {
+        images: {
+          orderBy: (images, { asc }) => [
+            asc(images.sortOrder),
+            asc(images.id),
+          ],
+        },
+      },
     });
     if (!hotel || hotel.isActive === false)
       return errorResponse(res, "Hotel tidak ditemukan", 404);
@@ -402,6 +410,14 @@ export const getPublicAirlineById = async (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     const airline = await db.query.masterAirlines.findFirst({
       where: eq(masterAirlines.id, id),
+      with: {
+        images: {
+          orderBy: (images, { asc }) => [
+            asc(images.sortOrder),
+            asc(images.id),
+          ],
+        },
+      },
     });
     if (!airline || airline.isActive === false)
       return errorResponse(res, "Maskapai tidak ditemukan", 404);

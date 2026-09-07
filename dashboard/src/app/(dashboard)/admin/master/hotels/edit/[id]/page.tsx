@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save, Loader2, Building2, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { getImageUrl } from "@/lib/utils";
+import MasterImageGallery from "@/components/master/MasterImageGallery";
 
 // ✅ VALIDATION SCHEMA: Use z.coerce for numeric fields to avoid TypeScript unknown type issue
 const hotelSchema = z.object({
@@ -256,6 +257,12 @@ export default function EditHotelPage() {
               </div>
             </CardContent>
           </Card>
+
+          <MasterImageGallery
+            kind="hotel"
+            masterId={parseInt(id)}
+            images={data?.data?.images || []}
+          />
 
           {/* Informasi Hotel */}
           <Card>
