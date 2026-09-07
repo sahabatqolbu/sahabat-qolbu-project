@@ -812,6 +812,15 @@ export default async function LandingPackageDetailPage({
         pkg.airline.gallery,
       description: pkg.airline.description,
       meta: [pkg.airline.code, pkg.airline.country].filter(Boolean).join(" · "),
+      departureDate: pkg.departureDate
+        ? formatDate(pkg.departureDate, "long")
+        : undefined,
+      route:
+        pkg.route?.code ||
+        [pkg.route?.arrivalCity, pkg.route?.returnCity]
+          .filter(Boolean)
+          .join(" - ") ||
+        undefined,
       facilities: pkg.airline.facilities,
       videoUrls: pkg.airline.videoUrls,
       articles: airlineDetail?.articles,

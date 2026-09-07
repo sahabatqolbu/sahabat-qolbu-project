@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Building2,
+  CalendarDays,
   ExternalLink,
   MapPin,
   Plane,
   PlayCircle,
+  Route,
   X,
 } from "lucide-react";
 
@@ -23,6 +25,8 @@ export type PackageVendor = {
   meta?: string;
   address?: string;
   mapUrl?: string;
+  departureDate?: string;
+  route?: string;
   facilities?: string[];
   videoUrls?: string[];
   articles?: {
@@ -56,6 +60,39 @@ const getEmbedUrl = (value: string) => {
   return null;
 };
 
+const getGoogleMapsEmbedUrl = (
+  mapUrl: string | undefined,
+  address: string | undefined,
+  name: string,
+) => {
+  if (!mapUrl) return null;
+
+  let query = address || name;
+  try {
+    const url = new URL(mapUrl);
+    const host = url.hostname.replace(/^www\./, "");
+    const isGoogleMapsHost =
+      host === "maps.app.goo.gl" ||
+      host === "goo.gl" ||
+      host === "google.com" ||
+      host.endsWith(".google.com");
+    if (!isGoogleMapsHost) return null;
+
+    if (url.pathname.startsWith("/maps/embed")) return url.toString();
+    query =
+      url.searchParams.get("q") ||
+      url.searchParams.get("query") ||
+      decodeURIComponent(
+        url.pathname.match(/\/maps\/place\/([^/]+)/)?.[1] || "",
+      ).replace(/\+/g, " ") ||
+      query;
+  } catch {
+    return null;
+  }
+
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+};
+
 export default function VendorInfoDrawer({
   vendors,
 }: {
@@ -73,6 +110,9 @@ export default function VendorInfoDrawer({
         ),
       ) as string[])
     : [];
+  const mapEmbedUrl = active
+    ? getGoogleMapsEmbedUrl(active.mapUrl, active.address, active.name)
+    : null;
 
   useEffect(() => {
     if (!open) return;
@@ -95,10 +135,19 @@ export default function VendorInfoDrawer({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 left-4 z-40 inline-flex items-center gap-2 rounded-sm border border-gold/40 bg-primary px-4 py-3 text-sm font-extrabold text-white shadow-xl transition hover:bg-primary-700"
+        className="vendor-info-floating group fixed bottom-5 left-4 z-40 inline-flex items-center gap-3 rounded-md border border-gold/60 bg-primary px-4 py-3 text-sm font-extrabold text-white shadow-xl shadow-primary/25 transition hover:bg-primary-700 sm:bottom-7 sm:left-7"
+        aria-label="Buka informasi hotel dan maskapai paket"
       >
-        <Building2 className="h-5 w-5 text-gold" />
-        Info Hotel & Maskapai
+        <span className="vendor-info-floating-icon grid h-9 w-9 flex-none place-items-center rounded-sm bg-gold text-primary">
+          <Building2 className="h-5 w-5" />
+        </span>
+        <span className="text-left leading-tight">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-gold">
+            Lihat fasilitas
+          </span>
+          <span className="mt-0.5 block">Info Hotel & Maskapai</span>
+        </span>
+        <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-gold" />
       </button>
 
       {open ? (
@@ -201,6 +250,34 @@ export default function VendorInfoDrawer({
                   </div>
                 </div>
 
+                {active.kind === "airline" &&
+                (active.departureDate || active.route) ? (
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    {active.departureDate ? (
+                      <div className="rounded-sm border border-neutral-200 bg-neutral-50 p-3">
+                        <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-neutral-500">
+                          <CalendarDays className="h-4 w-4 text-gold" />
+                          Berangkat
+                        </p>
+                        <p className="mt-2 text-sm font-extrabold text-primary">
+                          {active.departureDate}
+                        </p>
+                      </div>
+                    ) : null}
+                    {active.route ? (
+                      <div className="rounded-sm border border-neutral-200 bg-neutral-50 p-3">
+                        <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-neutral-500">
+                          <Route className="h-4 w-4 text-gold" />
+                          Rute
+                        </p>
+                        <p className="mt-2 text-sm font-extrabold text-primary">
+                          {active.route}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {active.description ? (
                   <p className="mt-5 leading-7 text-neutral-700">
                     {active.description}
@@ -233,6 +310,24 @@ export default function VendorInfoDrawer({
                         </li>
                       ))}
                     </ul>
+                  </div>
+                ) : null}
+
+                {active.kind === "hotel" && mapEmbedUrl ? (
+                  <div className="mt-7">
+                    <h4 className="flex items-center gap-2 font-extrabold text-primary">
+                      <MapPin className="h-5 w-5 text-gold" />
+                      Lokasi Hotel
+                    </h4>
+                    <div className="mt-3 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-100">
+                      <iframe
+                        src={mapEmbedUrl}
+                        title={`Peta lokasi ${active.name}`}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        className="h-64 w-full"
+                      />
+                    </div>
                   </div>
                 ) : null}
 

@@ -262,9 +262,12 @@ export default function CreateHotelPage() {
               <Input
                 id="mapUrl"
                 type="url"
-                placeholder="https://maps.google.com/..."
+                placeholder="https://maps.app.goo.gl/..."
                 {...register("mapUrl")}
               />
+              <p className="text-xs text-gray-500">
+                Tempel link lokasi dari Google Maps. Peta akan tampil otomatis di detail paket.
+              </p>
             </div>
 
             {/* Fasilitas */}

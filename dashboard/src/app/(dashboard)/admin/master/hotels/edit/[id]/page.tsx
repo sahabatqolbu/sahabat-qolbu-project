@@ -366,8 +366,11 @@ export default function EditHotelPage() {
                 <Input
                   type="url"
                   {...register("mapUrl")}
-                  placeholder="https://maps.google.com/..."
+                  placeholder="https://maps.app.goo.gl/..."
                 />
+                <p className="text-xs text-gray-500">
+                  Tempel link lokasi dari Google Maps. Peta akan tampil otomatis di detail paket.
+                </p>
               </div>
 
               <div className="space-y-2">

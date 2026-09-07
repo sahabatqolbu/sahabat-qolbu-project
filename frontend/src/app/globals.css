@@ -536,6 +536,81 @@
   }
 }
 
+/* Package service drawer: periodically draws attention without blocking content. */
+.vendor-info-floating {
+  isolation: isolate;
+  animation: vendorInvite 5.2s ease-in-out infinite;
+}
+
+.vendor-info-floating::before,
+.vendor-info-floating::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -1px;
+  border: 1px solid rgba(255, 193, 7, 0.75);
+  border-radius: 7px;
+  pointer-events: none;
+  animation: vendorInviteRing 2.8s ease-out infinite;
+}
+
+.vendor-info-floating::after {
+  animation-delay: 1.4s;
+}
+
+.vendor-info-floating-icon {
+  animation: vendorIconCall 5.2s ease-in-out infinite;
+}
+
+@keyframes vendorInvite {
+  0%,
+  68%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  73% {
+    transform: translate3d(0, -5px, 0);
+  }
+  78% {
+    transform: translate3d(0, 1px, 0);
+  }
+  83% {
+    transform: translate3d(0, -3px, 0);
+  }
+  88% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vendorIconCall {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  75% {
+    transform: rotate(-8deg) scale(1.06);
+  }
+  80% {
+    transform: rotate(8deg) scale(1.06);
+  }
+  85% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes vendorInviteRing {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.98);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.12, 1.28);
+  }
+}
+
 @media (max-width: 639px) {
   .gallery-marquee-shell {
     gap: 10px;
@@ -568,6 +643,13 @@
   }
 
   .wa-floating-button::before {
+    animation: none;
+  }
+
+  .vendor-info-floating,
+  .vendor-info-floating::before,
+  .vendor-info-floating::after,
+  .vendor-info-floating-icon {
     animation: none;
   }
 }

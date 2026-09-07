@@ -33,6 +33,9 @@ export default async function HotelDetailPage({ params }: { params: Params }) {
   const { hotel, articles, packages } = detail;
   const facilities = parseFacilities(hotel.facilities);
   const gallery = hotel.images || [];
+  const mapEmbedUrl = hotel.mapUrl
+    ? `https://www.google.com/maps?q=${encodeURIComponent(hotel.address || hotel.name || "Hotel Umroh")}&output=embed`
+    : null;
 
   return (
     <main className="min-h-screen bg-white pt-24 text-neutral-800">
@@ -109,6 +112,30 @@ export default async function HotelDetailPage({ params }: { params: Params }) {
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : null}
+            {mapEmbedUrl ? (
+              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
+                <h2 className="flex items-center gap-2 text-2xl font-extrabold text-primary">
+                  <MapPin className="h-6 w-6 text-gold" /> Lokasi Hotel
+                </h2>
+                <div className="mt-5 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-100">
+                  <iframe
+                    src={mapEmbedUrl}
+                    title={`Peta lokasi ${hotel.name}`}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="h-72 w-full md:h-96"
+                  />
+                </div>
+                <a
+                  href={hotel.mapUrl || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 font-extrabold text-primary transition hover:text-gold"
+                >
+                  Buka di Google Maps <MapPin className="h-4 w-4" />
+                </a>
               </div>
             ) : null}
             <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
