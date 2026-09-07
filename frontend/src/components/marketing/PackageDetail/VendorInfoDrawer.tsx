@@ -38,16 +38,24 @@ export type PackageVendor = {
 };
 
 const getEmbedUrl = (value: string) => {
+  const iframeSource = value.match(/src=["']([^"']+)["']/i)?.[1];
+  const normalizedValue = (iframeSource || value).trim();
+
   try {
-    const url = new URL(value);
+    const url = new URL(
+      /^https?:\/\//i.test(normalizedValue)
+        ? normalizedValue
+        : `https://${normalizedValue}`,
+    );
     const host = url.hostname.replace(/^www\./, "");
     if (host === "youtu.be") {
-      return `https://www.youtube-nocookie.com/embed/${url.pathname.split("/").filter(Boolean)[0]}`;
+      const id = url.pathname.split("/").filter(Boolean)[0];
+      return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
     }
     if (host === "youtube.com" || host.endsWith(".youtube.com")) {
       const id =
         url.searchParams.get("v") ||
-        url.pathname.match(/\/(?:shorts|embed)\/([^/?]+)/)?.[1];
+        url.pathname.match(/\/(?:shorts|embed|live)\/([^/?]+)/)?.[1];
       return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
     }
     if (host === "instagram.com" || host.endsWith(".instagram.com")) {
@@ -105,9 +113,7 @@ export default function VendorInfoDrawer({
     vendors.find((vendor) => vendor.key === activeKey) || vendors[0];
   const activeImages = active
     ? (Array.from(
-        new Set(
-          [active.imageUrl, ...(active.gallery || [])].filter(Boolean),
-        ),
+        new Set([active.imageUrl, ...(active.gallery || [])].filter(Boolean)),
       ) as string[])
     : [];
   const mapEmbedUrl = active
@@ -164,7 +170,7 @@ export default function VendorInfoDrawer({
             aria-label="Informasi hotel dan maskapai"
             className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col overflow-hidden rounded-t-xl bg-white shadow-2xl md:inset-y-0 md:left-auto md:w-[520px] md:max-h-none md:rounded-none"
           >
-            <header className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
+            <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-5 py-4 sm:px-6">
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-gold">
                   Layanan perjalanan
@@ -183,20 +189,37 @@ export default function VendorInfoDrawer({
               </button>
             </header>
 
-            <div className="flex gap-2 overflow-x-auto border-b border-neutral-200 px-4 py-3">
-              {vendors.map((vendor) => (
-                <button
-                  key={vendor.key}
-                  type="button"
-                  onClick={() => {
-                    setActiveKey(vendor.key);
-                    setActiveImageIndex(0);
-                  }}
-                  className={`whitespace-nowrap rounded-sm px-4 py-2 text-sm font-extrabold transition ${active?.key === vendor.key ? "bg-primary text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"}`}
-                >
-                  {vendor.label}
-                </button>
-              ))}
+            <div className="border-b border-neutral-200 bg-neutral-50/80 px-3 py-3 sm:px-5">
+              <div
+                className="grid gap-1.5 rounded-md border border-neutral-200 bg-white p-1.5 shadow-sm"
+                style={{
+                  gridTemplateColumns: `repeat(${vendors.length}, minmax(0, 1fr))`,
+                }}
+              >
+                {vendors.map((vendor) => (
+                  <button
+                    key={vendor.key}
+                    type="button"
+                    aria-pressed={active?.key === vendor.key}
+                    onClick={() => {
+                      setActiveKey(vendor.key);
+                      setActiveImageIndex(0);
+                    }}
+                    className={`flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-sm px-1.5 py-2 text-center text-[11px] font-extrabold leading-tight transition sm:gap-2 sm:px-3 sm:text-sm ${active?.key === vendor.key ? "bg-primary text-white shadow-sm" : "text-neutral-600 hover:bg-neutral-100 hover:text-primary"}`}
+                  >
+                    {vendor.kind === "airline" ? (
+                      <Plane
+                        className={`h-4 w-4 flex-none ${active?.key === vendor.key ? "text-gold" : "text-neutral-400"}`}
+                      />
+                    ) : (
+                      <Building2
+                        className={`h-4 w-4 flex-none ${active?.key === vendor.key ? "text-gold" : "text-neutral-400"}`}
+                      />
+                    )}
+                    <span className="min-w-0">{vendor.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {active ? (
@@ -204,12 +227,12 @@ export default function VendorInfoDrawer({
                 {activeImages.length ? (
                   <div className="mb-5 space-y-3">
                     <div className="h-56 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-50 sm:h-64">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={activeImages[activeImageIndex] || activeImages[0]}
-                      alt={`${active.name} - foto ${activeImageIndex + 1}`}
-                      className="h-full w-full object-cover"
-                    />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={activeImages[activeImageIndex] || activeImages[0]}
+                        alt={`${active.name} - foto ${activeImageIndex + 1}`}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     {activeImages.length > 1 ? (
                       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -222,7 +245,11 @@ export default function VendorInfoDrawer({
                             className={`h-16 w-20 flex-none overflow-hidden rounded-sm border-2 bg-neutral-100 transition ${activeImageIndex === index ? "border-gold" : "border-transparent hover:border-neutral-300"}`}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={image} alt="" className="h-full w-full object-cover" />
+                            <img
+                              src={image}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
                           </button>
                         ))}
                       </div>
@@ -338,18 +365,35 @@ export default function VendorInfoDrawer({
                       Video
                     </h4>
                     <div className="mt-3 space-y-4">
-                      {active.videoUrls.map((video) => {
+                      {active.videoUrls.map((video, index) => {
                         const embedUrl = getEmbedUrl(video);
                         return embedUrl ? (
-                          <iframe
-                            key={video}
-                            src={embedUrl}
-                            title={`Video ${active.name}`}
-                            loading="lazy"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            className="aspect-video w-full rounded-sm border"
-                          />
-                        ) : null;
+                          <div
+                            key={`${video}-${index}`}
+                            className="overflow-hidden rounded-sm border border-neutral-200 bg-black shadow-sm"
+                          >
+                            <iframe
+                              src={embedUrl}
+                              title={`Video ${active.name} ${index + 1}`}
+                              loading="lazy"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              className="aspect-video w-full"
+                            />
+                          </div>
+                        ) : (
+                          <a
+                            key={`${video}-${index}`}
+                            href={video}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-3 rounded-sm border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-extrabold text-primary transition hover:border-gold"
+                          >
+                            Buka video {index + 1}
+                            <ExternalLink className="h-4 w-4 flex-none text-gold" />
+                          </a>
+                        );
                       })}
                     </div>
                   </div>
