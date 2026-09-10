@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import PackageCard from "@/components/marketing/PackageCard";
-import { getMarketingPackages, type MarketingPackage } from "@/lib/public-api";
+import PackageSearchBar, { type PackageFilters } from "@/components/marketing/PackageSearchBar";
+import PackageScheduleLists from "@/components/marketing/PackageScheduleLists";
+import {
+  getMarketingPackages,
+  getPublicPackageScheduleLists,
+  type MarketingPackage,
+  type PublicPackageScheduleList,
+} from "@/lib/public-api";
+
+const EMPTY_FILTERS: PackageFilters = { departureMonth: "", duration: "", airline: "" };
 
 // Helper categories matching legacy style
 const typeList = [
@@ -159,14 +168,18 @@ function PackagesInnerPage() {
     getTabFromPackageType(searchParams.get("type")),
   );
   const [packages, setPackages] = useState<MarketingPackage[]>([]);
+  const [scheduleLists, setScheduleLists] = useState<PublicPackageScheduleList[]>([]);
+  const [filters, setFilters] = useState<PackageFilters>(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<PackageFilters>(EMPTY_FILTERS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    getMarketingPackages()
-      .then((data) => {
+    Promise.all([getMarketingPackages(), getPublicPackageScheduleLists()])
+      .then(([data, schedules]) => {
         if (active) {
           setPackages(data);
+          setScheduleLists(schedules);
           setLoading(false);
         }
       })
@@ -194,10 +207,12 @@ function PackagesInnerPage() {
   };
 
   // Filter packages based on activeTab
-  const filteredPackages = packages.filter((pkg) => {
-    if (activeTab === "all") return true;
-    return getMappedType(pkg) === activeTab;
-  });
+  const filteredPackages = useMemo(() => packages.filter((pkg) => {
+    if (activeTab !== "all" && getMappedType(pkg) !== activeTab) return false;
+    return (!appliedFilters.departureMonth || pkg.departureDate.startsWith(appliedFilters.departureMonth)) &&
+      (!appliedFilters.duration || String(pkg.duration) === appliedFilters.duration) &&
+      (!appliedFilters.airline || pkg.airline?.name === appliedFilters.airline);
+  }), [activeTab, appliedFilters, packages]);
 
   // Count helper
   const getCountByTipe = (tipeId: string) => {
@@ -298,6 +313,15 @@ function PackagesInnerPage() {
           </div>
         </div>
       </section>
+      <div className="relative z-20 -mt-5 px-1">
+        <PackageSearchBar
+          packages={packages}
+          scheduleLists={scheduleLists}
+          filters={filters}
+          onChange={setFilters}
+          onSearch={() => setAppliedFilters(filters)}
+        />
+      </div>
       {/* Grid Section */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -322,6 +346,9 @@ function PackagesInnerPage() {
               ))}
             </div>
           )}
+          {!loading && activeTab === "all" ? (
+            <PackageScheduleLists lists={scheduleLists} filters={appliedFilters} />
+          ) : null}
         </div>
       </section>
       {/* CTA Section */}

@@ -466,6 +466,82 @@ export const packageOptionImages = mysqlTable(
     optionIdx: index("package_option_image_option_idx").on(table.optionId),
   }),
 );
+
+// =====================================================
+// PACKAGE SCHEDULE LISTS (Daftar jadwal ringkas bulanan)
+// =====================================================
+export const packageScheduleLists = mysqlTable(
+  "package_schedule_lists",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    name: varchar("name", { length: 180 }).notNull(),
+    month: varchar("month", { length: 7 }).notNull(),
+    subtitle: varchar("subtitle", { length: 255 }),
+    note: text("note"),
+    isActive: boolean("is_active").notNull().default(true),
+    isPublished: boolean("is_published").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    monthIdx: index("package_schedule_list_month_idx").on(table.month),
+    publicationIdx: index("package_schedule_list_publication_idx").on(
+      table.isActive,
+      table.isPublished,
+    ),
+  }),
+);
+
+export const packageScheduleItems = mysqlTable(
+  "package_schedule_items",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    listId: int("list_id")
+      .notNull()
+      .references(() => packageScheduleLists.id, { onDelete: "cascade" }),
+    departureDate: date("departure_date").notNull(),
+    duration: int("duration"),
+    airlineId: int("airline_id")
+      .notNull()
+      .references(() => masterAirlines.id),
+    arrivalAirportId: int("arrival_airport_id")
+      .notNull()
+      .references(() => masterAirports.id),
+    returnAirportId: int("return_airport_id")
+      .notNull()
+      .references(() => masterAirports.id),
+    hotelMakkahLabel: varchar("hotel_makkah_label", { length: 255 }).notNull(),
+    hotelMadinahLabel: varchar("hotel_madinah_label", { length: 255 }).notNull(),
+    hotelMakkahId: int("hotel_makkah_id").references(() => masterHotels.id),
+    hotelMadinahId: int("hotel_madinah_id").references(() => masterHotels.id),
+    priceQuad: decimal("price_quad", { precision: 15, scale: 2 }).notNull(),
+    priceTriple: decimal("price_triple", { precision: 15, scale: 2 }).notNull(),
+    priceDouble: decimal("price_double", { precision: 15, scale: 2 }).notNull(),
+    note: varchar("note", { length: 255 }),
+    status: mysqlEnum("status", ["CHECK_SEAT", "SOLD_OUT", "CLOSED"])
+      .notNull()
+      .default("CHECK_SEAT"),
+    sortOrder: int("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    listIdx: index("package_schedule_item_list_idx").on(table.listId),
+    departureIdx: index("package_schedule_item_departure_idx").on(
+      table.departureDate,
+    ),
+    airlineIdx: index("package_schedule_item_airline_idx").on(table.airlineId),
+    uniqueScheduleIdx: uniqueIndex("package_schedule_item_unique_idx").on(
+      table.listId,
+      table.departureDate,
+      table.airlineId,
+    ),
+  }),
+);
 // =====================================================
 // PACKAGE ITINERARY (Agenda Perjalanan - Terpisah)
 // =====================================================

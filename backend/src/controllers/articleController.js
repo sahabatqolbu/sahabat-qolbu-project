@@ -5,7 +5,7 @@ import {
   masterAirlines,
   packages,
 } from "../db/schema.js";
-import { and, desc, eq, like, or } from "drizzle-orm";
+import { and, count, desc, eq, like, or } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { deleteFile } from "../utils/upload.js";
 
@@ -317,8 +317,28 @@ export const uploadArticleImage = async (req, res, next) => {
 
 export const getPublicArticles = async (req, res, next) => {
   try {
-    const { category, relatedType, relatedId, limit = 20 } = req.query;
+    const {
+      category,
+      relatedType,
+      relatedId,
+      search,
+      page = 1,
+      limit = 20,
+    } = req.query;
     const conditions = [eq(articles.status, "PUBLISHED")];
+
+    if (search?.trim()) {
+      const keyword = `%${search.trim()}%`;
+      conditions.push(
+        or(
+          like(articles.title, keyword),
+          like(articles.excerpt, keyword),
+          like(articles.content, keyword),
+          like(articles.category, keyword),
+          like(articles.tags, keyword),
+        ),
+      );
+    }
 
     if (category && category !== "all") {
       conditions.push(eq(articles.category, normalizeCategory(category)));
@@ -332,13 +352,30 @@ export const getPublicArticles = async (req, res, next) => {
       conditions.push(eq(articles.relatedId, parseInt(relatedId, 10)));
     }
 
-    const rows = await db.query.articles.findMany({
-      where: and(...conditions),
-      orderBy: [desc(articles.publishedAt), desc(articles.createdAt)],
-      limit: Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100),
-    });
+    const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
+    const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const where = and(...conditions);
+    const [rows, totalResult] = await Promise.all([
+      db.query.articles.findMany({
+        where,
+        orderBy: [desc(articles.publishedAt), desc(articles.createdAt)],
+        limit: parsedLimit,
+        offset: (parsedPage - 1) * parsedLimit,
+      }),
+      db.select({ count: count() }).from(articles).where(where),
+    ]);
 
-    return successResponse(res, { articles: rows.map(mapArticle) });
+    const total = Number(totalResult[0]?.count || 0);
+
+    return successResponse(res, {
+      articles: rows.map(mapArticle),
+      pagination: {
+        total,
+        page: parsedPage,
+        limit: parsedLimit,
+        totalPages: Math.max(Math.ceil(total / parsedLimit), 1),
+      },
+    });
   } catch (error) {
     next(error);
   }

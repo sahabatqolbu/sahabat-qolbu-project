@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import {
+  getAllPublicArticles,
   getMarketingPackages,
-  getPublicArticles,
 } from "@/lib/public-api";
 
 const BASE_URL = "https://sahabatqolbu.com";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [packages, articles] = await Promise.all([
     getMarketingPackages(),
-    getPublicArticles("limit=500"),
+    getAllPublicArticles(),
   ]);
   const now = new Date();
 

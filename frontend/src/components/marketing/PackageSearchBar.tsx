@@ -9,7 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { MarketingPackage } from "@/lib/public-api";
+import type {
+  MarketingPackage,
+  PublicPackageScheduleList,
+} from "@/lib/public-api";
 
 export interface PackageFilters {
   departureMonth: string;
@@ -19,6 +22,7 @@ export interface PackageFilters {
 
 interface PackageSearchBarProps {
   packages: MarketingPackage[];
+  scheduleLists?: PublicPackageScheduleList[];
   filters: PackageFilters;
   onChange: (filters: PackageFilters) => void;
   onSearch: () => void;
@@ -57,8 +61,14 @@ const getCurrentMonth = () => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 };
 
+export interface PackageSearchEntry {
+  departureDate: string;
+  duration: number | null;
+  airline: string;
+}
+
 const matchesOtherFilters = (
-  pkg: MarketingPackage,
+  pkg: PackageSearchEntry,
   filters: PackageFilters,
   ignoredFilter: keyof PackageFilters,
 ) =>
@@ -70,16 +80,31 @@ const matchesOtherFilters = (
     String(pkg.duration) === filters.duration) &&
   (ignoredFilter === "airline" ||
     !filters.airline ||
-    pkg.airline?.name === filters.airline);
+    pkg.airline === filters.airline);
 
 export default function PackageSearchBar({
   packages,
+  scheduleLists = [],
   filters,
   onChange,
   onSearch,
 }: PackageSearchBarProps) {
   const currentMonth = getCurrentMonth();
-  const upcomingPackages = packages.filter(
+  const searchEntries: PackageSearchEntry[] = [
+    ...packages.map((pkg) => ({
+      departureDate: pkg.departureDate,
+      duration: pkg.duration || null,
+      airline: pkg.airline?.name || "",
+    })),
+    ...scheduleLists.flatMap((list) =>
+      list.items.map((item) => ({
+        departureDate: item.departureDate,
+        duration: item.duration,
+        airline: item.airline?.name || "",
+      })),
+    ),
+  ];
+  const upcomingPackages = searchEntries.filter(
     (pkg) =>
       Boolean(pkg.departureDate) && pkg.departureDate.slice(0, 7) >= currentMonth,
   );
@@ -101,11 +126,11 @@ export default function PackageSearchBar({
     new Set(
       durationCandidates
         .map((pkg) => pkg.duration)
-        .filter((value) => value > 0),
+        .filter((value): value is number => value !== null && value > 0),
     ),
   ).sort((left, right) => left - right);
   const airlines = uniqueOptions(
-    airlineCandidates.map((pkg) => pkg.airline?.name || ""),
+    airlineCandidates.map((pkg) => pkg.airline),
   );
 
   const updateFilter = (key: keyof PackageFilters, value: string) => {

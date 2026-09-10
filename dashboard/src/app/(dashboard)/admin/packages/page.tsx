@@ -5,6 +5,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageService, Package } from "@/services/packageService";
+import ScheduleListAdminSection from "@/components/packages/ScheduleListAdminSection";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ import {
   Ban,
   Check,
   RefreshCw,
+  ListPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
@@ -333,12 +335,25 @@ export default function PackagesPage() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Link href="/admin/packages/create">
-              <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Paket
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
+                  <Plus className="h-4 w-4 mr-2" />Tambah Paket
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Pilih jenis data</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => router.push("/admin/packages/create")}>
+                  <Plane className="mr-2 h-4 w-4" />
+                  <div><p className="font-medium">Paket Detail</p><p className="text-xs text-gray-500">Satu paket dengan halaman detail lengkap</p></div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => router.push("/admin/packages/schedules/create")}>
+                  <ListPlus className="mr-2 h-4 w-4" />
+                  <div><p className="font-medium">Daftar Jadwal Bulanan</p><p className="text-xs text-gray-500">Banyak tanggal dalam satu daftar</p></div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
@@ -800,6 +815,8 @@ export default function PackagesPage() {
           )}
         </CardContent>
       </Card>
+
+      <ScheduleListAdminSection readOnly={isFinanceReadOnly} />
 
       {/* Delete Dialog */}
       {!isFinanceReadOnly && (

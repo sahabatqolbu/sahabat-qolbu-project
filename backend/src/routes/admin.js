@@ -71,6 +71,13 @@ import {
     deletePackageOptionImage,
 } from "../controllers/packageController.js";
 import {
+    createPackageScheduleList,
+    deletePackageScheduleList,
+    getAllPackageScheduleLists,
+    getPackageScheduleListById,
+    updatePackageScheduleList,
+} from "../controllers/packageScheduleController.js";
+import {
     assignJamaahToPackage,
     sendJamaahNotification,
 } from "../controllers/financePosController.js";
@@ -129,6 +136,12 @@ router.get("/reports/growth", authenticate, authorize(["ADMIN", "FINANCE"]), get
 // =====================================================
 // PACKAGE MANAGEMENT
 // =====================================================
+
+router.get("/package-schedule-lists", authenticate, authorize(["ADMIN", "STAFF", "FINANCE"]), getAllPackageScheduleLists);
+router.post("/package-schedule-lists", authenticate, authorize(["ADMIN"]), createPackageScheduleList);
+router.get("/package-schedule-lists/:id", authenticate, authorize(["ADMIN", "STAFF", "FINANCE"]), getPackageScheduleListById);
+router.put("/package-schedule-lists/:id", authenticate, authorize(["ADMIN"]), updatePackageScheduleList);
+router.delete("/package-schedule-lists/:id", authenticate, authorize(["ADMIN"]), deletePackageScheduleList);
 
 // Static routes first
 router.get("/packages/export", authenticate, authorize(["ADMIN"]), exportPackages);

@@ -19,6 +19,7 @@ import {
 } from "../controllers/articleController.js";
 import { getPublicPromotionalPopup } from "../controllers/promotionalPopupController.js";
 import { getPublicHeroSlides } from "../controllers/heroSlideController.js";
+import { getPublicPackageScheduleLists } from "../controllers/packageScheduleController.js";
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.get("/health-check", (req, res) =>
 
 // Public package listing (no auth required)
 router.get("/packages", getPublicPackages);
+router.get("/package-schedule-lists", getPublicPackageScheduleLists);
 router.get("/packages/:id", getPublicPackageById);
 router.get("/company-profile", getPublicCompanyProfile);
 router.get("/faqs", getPublicFaqs);

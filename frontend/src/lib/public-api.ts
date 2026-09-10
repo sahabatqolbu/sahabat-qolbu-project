@@ -294,6 +294,39 @@ export interface MarketingPackage {
   backendType?: string;
 }
 
+export type PackageScheduleStatus = "CHECK_SEAT" | "SOLD_OUT" | "CLOSED";
+
+export interface PublicPackageScheduleItem {
+  id: number;
+  departureDate: string;
+  duration: number | null;
+  airlineId: number;
+  airline: { id: number; name: string; code: string; logo?: string | null } | null;
+  arrivalAirport: { id: number; name: string; code: string; city: string } | null;
+  returnAirport: { id: number; name: string; code: string; city: string } | null;
+  route: string;
+  hotelMakkahLabel: string;
+  hotelMadinahLabel: string;
+  hotelMakkah?: { id: number; name: string; city: string } | null;
+  hotelMadinah?: { id: number; name: string; city: string } | null;
+  priceQuad: string;
+  priceTriple: string;
+  priceDouble: string;
+  note?: string | null;
+  status: PackageScheduleStatus;
+  effectiveStatus: PackageScheduleStatus;
+  sortOrder: number;
+}
+
+export interface PublicPackageScheduleList {
+  id: number;
+  name: string;
+  month: string;
+  subtitle?: string | null;
+  note?: string | null;
+  items: PublicPackageScheduleItem[];
+}
+
 export interface PublicAgentLanding {
   slug: string;
   agent: {
@@ -761,6 +794,13 @@ export const getMarketingPackages = async (): Promise<MarketingPackage[]> =>
       .map((pkg) => mapPackage(pkg)),
   );
 
+export const getPublicPackageScheduleLists = async (): Promise<PublicPackageScheduleList[]> => {
+  const payload = await fetchApi<{ lists: PublicPackageScheduleList[] }>(
+    "/public/package-schedule-lists",
+  );
+  return payload?.lists || [];
+};
+
 export const getMarketingPackageSlugs = async (): Promise<string[]> => {
   const packages = await getMarketingPackages();
   return packages.map((pkg) => pkg.slug);
@@ -1071,13 +1111,53 @@ const mapPublicArticle = (article: PublicArticle): PublicArticle => ({
 export const getPublicArticles = async (
   params = "",
 ): Promise<PublicArticle[]> => {
+  const payload = await getPublicArticlesPage(params);
+  return payload.articles;
+};
+
+export type PublicArticlePage = {
+  articles: PublicArticle[];
+  pagination: BackendPagination;
+};
+
+export const getPublicArticlesPage = async (
+  params = "",
+): Promise<PublicArticlePage> => {
   const query = params ? `?${params.replace(/^\?/, "")}` : "";
-  const payload = await fetchApi<{ articles?: PublicArticle[] }>(
+  const payload = await fetchApi<{
+    articles?: PublicArticle[];
+    pagination?: BackendPagination;
+  }>(
     `/public/articles${query}`,
   );
-  return Array.isArray(payload?.articles)
+  const mappedArticles = Array.isArray(payload?.articles)
     ? payload.articles.map(mapPublicArticle)
     : [];
+  return {
+    articles: mappedArticles,
+    pagination: payload?.pagination || {
+      total: mappedArticles.length,
+      page: 1,
+      limit: mappedArticles.length || 20,
+      totalPages: 1,
+    },
+  };
+};
+
+export const getAllPublicArticles = async (): Promise<PublicArticle[]> => {
+  const firstPage = await getPublicArticlesPage("page=1&limit=100");
+  const totalPages = Math.max(firstPage.pagination.totalPages || 1, 1);
+  if (totalPages === 1) return firstPage.articles;
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getPublicArticlesPage(`page=${index + 2}&limit=100`),
+    ),
+  );
+  return [
+    ...firstPage.articles,
+    ...remainingPages.flatMap((result) => result.articles),
+  ];
 };
 
 export const getPublicArticleBySlug = async (slug: string) => {

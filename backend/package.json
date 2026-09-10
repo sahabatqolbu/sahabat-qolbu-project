@@ -30,7 +30,8 @@
     "seed:faqs": "node -r dotenv/config src/db/seedFaqs.js",
     "seed:articles": "node -r dotenv/config src/db/seedArticles.js",
     "test:email": "node src/utils/testEmail.js",
-    "seed:material-articles": "node -r dotenv/config src/db/seedMaterialArticles.js"
+    "seed:material-articles": "node -r dotenv/config src/db/seedMaterialArticles.js",
+    "seed:package-schedules": "node -r dotenv/config src/db/seedPackageSchedules.js"
   },
   "keywords": [
     "umrah",

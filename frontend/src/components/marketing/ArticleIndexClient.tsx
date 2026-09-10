@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, FileText, Loader2, Search } from "lucide-react";
 import {
-  getPublicArticles,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Loader2,
+  Search,
+} from "lucide-react";
+import {
+  getPublicArticlesPage,
   PublicArticle,
   resolveAssetUrl,
 } from "@/lib/public-api";
@@ -19,11 +26,6 @@ const formatDate = (value?: string | null) => {
     year: "numeric",
   }).format(date);
 };
-
-const normalize = (value: unknown) =>
-  String(value || "")
-    .toLowerCase()
-    .trim();
 
 function ArticleCard({ article }: { article: PublicArticle }) {
   return (
@@ -84,8 +86,20 @@ function ArticleSkeleton() {
 export default function ArticleIndexClient() {
   const [articles, setArticles] = useState<PublicArticle[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
 
   useEffect(() => {
     let mounted = true;
@@ -93,9 +107,16 @@ export default function ArticleIndexClient() {
     const loadArticles = async () => {
       try {
         setIsLoading(true);
-        const rows = await getPublicArticles("limit=100");
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: "9",
+        });
+        if (debouncedSearch) params.set("search", debouncedSearch);
+        const result = await getPublicArticlesPage(params.toString());
         if (mounted) {
-          setArticles(rows);
+          setArticles(result.articles);
+          setTotal(result.pagination.total || 0);
+          setTotalPages(result.pagination.totalPages || 1);
           setError("");
         }
       } catch {
@@ -111,24 +132,7 @@ export default function ArticleIndexClient() {
     return () => {
       mounted = false;
     };
-  }, []);
-
-  const filteredArticles = useMemo(() => {
-    const keyword = normalize(search);
-    if (!keyword) return articles;
-
-    return articles.filter((article) => {
-      const haystack = [
-        article.title,
-        article.excerpt,
-        article.category,
-        ...(Array.isArray(article.tags) ? article.tags : []),
-      ]
-        .map(normalize)
-        .join(" ");
-      return haystack.includes(keyword);
-    });
-  }, [articles, search]);
+  }, [debouncedSearch, page]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -166,18 +170,53 @@ export default function ArticleIndexClient() {
         <div className="rounded-sm border border-red-200 bg-red-50 p-10 text-center text-red-700">
           {error}
         </div>
-      ) : filteredArticles.length === 0 ? (
+      ) : articles.length === 0 ? (
         <div className="rounded-sm border border-neutral-200 bg-white p-10 text-center text-neutral-500">
-          {articles.length === 0
-            ? "Belum ada artikel published."
-            : "Artikel tidak ditemukan untuk pencarian tersebut."}
+          {debouncedSearch
+            ? "Artikel tidak ditemukan untuk pencarian tersebut."
+            : "Belum ada artikel yang dipublikasikan."}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredArticles.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
+        <>
+          <div className="mb-5 text-sm text-neutral-500">
+            Menampilkan {articles.length} dari {total} artikel
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {articles.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+          {totalPages > 1 ? (
+            <nav
+              aria-label="Navigasi halaman artikel"
+              className="mt-10 flex items-center justify-center gap-3"
+            >
+              <button
+                type="button"
+                onClick={() => setPage((value) => Math.max(value - 1, 1))}
+                disabled={page === 1 || isLoading}
+                className="inline-flex h-10 items-center gap-2 rounded-sm border border-neutral-300 bg-white px-4 text-sm font-bold text-primary transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Sebelumnya
+              </button>
+              <span className="min-w-24 text-center text-sm font-bold text-primary">
+                {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((value) => Math.min(value + 1, totalPages))
+                }
+                disabled={page === totalPages || isLoading}
+                className="inline-flex h-10 items-center gap-2 rounded-sm border border-neutral-300 bg-white px-4 text-sm font-bold text-primary transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Berikutnya
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </nav>
+          ) : null}
+        </>
       )}
     </div>
   );

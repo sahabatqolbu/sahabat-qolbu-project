@@ -6,16 +6,19 @@ import { useBranding } from "@/components/providers/BrandingProvider";
 import GalleryMarquee from "@/components/marketing/GalleryMarquee";
 import HeroSlider from "@/components/marketing/HeroSlider";
 import PackageCard from "@/components/marketing/PackageCard";
+import PackageScheduleLists from "@/components/marketing/PackageScheduleLists";
 import PackageSearchBar, {
   type PackageFilters,
 } from "@/components/marketing/PackageSearchBar";
 import {
   getMarketingPackages,
+  getPublicPackageScheduleLists,
   getPublicGallery,
   getPublicHeroSlides,
   type MarketingPackage,
   type PublicGalleryImage,
   type PublicHeroSlide,
+  type PublicPackageScheduleList,
 } from "@/lib/public-api";
 
 const EMPTY_PACKAGE_FILTERS: PackageFilters = {
@@ -29,6 +32,7 @@ export default function MarketingHomePage() {
   const [packages, setPackages] = useState<MarketingPackage[]>([]);
   const [galleryImages, setGalleryImages] = useState<PublicGalleryImage[]>([]);
   const [heroSlides, setHeroSlides] = useState<PublicHeroSlide[]>([]);
+  const [scheduleLists, setScheduleLists] = useState<PublicPackageScheduleList[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<PackageFilters>(EMPTY_PACKAGE_FILTERS);
   const [appliedFilters, setAppliedFilters] =
@@ -40,7 +44,8 @@ export default function MarketingHomePage() {
       getMarketingPackages(),
       getPublicGallery(),
       getPublicHeroSlides(),
-    ]).then(([packageResult, galleryResult, heroResult]) => {
+      getPublicPackageScheduleLists(),
+    ]).then(([packageResult, galleryResult, heroResult, scheduleResult]) => {
       if (!active) return;
       if (packageResult.status === "fulfilled") {
         setPackages(packageResult.value);
@@ -50,6 +55,9 @@ export default function MarketingHomePage() {
       }
       if (heroResult.status === "fulfilled") {
         setHeroSlides(heroResult.value);
+      }
+      if (scheduleResult.status === "fulfilled") {
+        setScheduleLists(scheduleResult.value);
       }
       setLoading(false);
     });
@@ -73,6 +81,13 @@ export default function MarketingHomePage() {
     [appliedFilters, packages],
   );
   const featuredPackages = filteredPackages.slice(0, 6);
+  const scheduleMatchCount = scheduleLists.reduce(
+    (total, list) => total + list.items.filter((item) =>
+      (!appliedFilters.departureMonth || item.departureDate.startsWith(appliedFilters.departureMonth)) &&
+      (!appliedFilters.duration || String(item.duration) === appliedFilters.duration) &&
+      (!appliedFilters.airline || item.airline?.name === appliedFilters.airline)).length,
+    0,
+  );
   const hasActiveFilters = Object.values(appliedFilters).some(Boolean);
 
   const handlePackageSearch = () => {
@@ -131,6 +146,7 @@ export default function MarketingHomePage() {
       <div className="relative z-20 -mt-16 md:-mt-[58px]">
         <PackageSearchBar
           packages={packages}
+          scheduleLists={scheduleLists}
           filters={filters}
           onChange={setFilters}
           onSearch={handlePackageSearch}
@@ -150,7 +166,7 @@ export default function MarketingHomePage() {
             </h2>
             <p className="text-gray-600 font-medium">
               {hasActiveFilters
-                ? `${filteredPackages.length} paket sesuai pencarian Anda`
+                ? `${filteredPackages.length + scheduleMatchCount} jadwal sesuai pencarian Anda`
                 : "Rasakan Kekhusyukan Saat Beribadah bersama Sahabat Qolbu"}
             </p>
             <div className="mt-4 bg-primary/5 inline-block px-4 py-2 rounded-lg text-sm sm:text-base">
@@ -165,7 +181,7 @@ export default function MarketingHomePage() {
             <div className="flex justify-center py-12">
               <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ) : featuredPackages.length === 0 ? (
+          ) : featuredPackages.length === 0 && scheduleMatchCount === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
               <p className="text-lg font-bold text-primary">
                 Paket yang dicari belum tersedia
@@ -224,6 +240,10 @@ export default function MarketingHomePage() {
               jamaah.
             </p>
           </div>
+
+          {!loading ? (
+            <PackageScheduleLists lists={scheduleLists} filters={appliedFilters} />
+          ) : null}
         </div>
       </section>
 
