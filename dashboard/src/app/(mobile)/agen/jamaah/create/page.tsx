@@ -131,6 +131,7 @@ export default function CreateJamaahPage() {
   });
 
   const onSubmit = (data: FormData) => {
+    if (createMutation.isPending) return;
     createMutation.mutate({
       fullName: data.fullName,
       email: data.email,

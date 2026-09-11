@@ -68,6 +68,7 @@ export default function PackageScheduleForm({ value, saving, onSubmit }: {
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (saving) return;
     onSubmit({ ...form, items: form.items.map((item, index) => ({ ...item, sortOrder: index })) });
   };
 

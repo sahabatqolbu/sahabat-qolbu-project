@@ -260,6 +260,7 @@ export default function CreatePackagePage() {
   });
 
   const onSubmit = (data: CreatePackageFormData) => {
+    if (createMutation.isPending) return;
     createMutation.mutate(data);
   };
 

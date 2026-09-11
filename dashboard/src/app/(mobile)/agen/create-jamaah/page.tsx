@@ -96,6 +96,7 @@ export default function CreateJamaahPage() {
 
   // Submit Handler
   const onSubmit = (data: CreateJamaahFormData) => {
+    if (createMutation.isPending) return;
     createMutation.mutate(data);
   };
 

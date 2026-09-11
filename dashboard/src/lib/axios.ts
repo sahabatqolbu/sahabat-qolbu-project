@@ -104,10 +104,76 @@ const api = axios.create({
 
 logger.debug("🌐 API baseURL:", resolvedApiUrl);
 
+// Map to track in-flight mutating requests and prevent duplicate submissions from rapid clicks
+const inFlightMutations = new Map<string, Promise<any>>();
+
+const getMutationSignature = (config: any): string => {
+  const method = (config.method || "get").toUpperCase();
+  const url = config.url || "";
+  let payloadStr = "";
+  if (config.data instanceof FormData) {
+    try {
+      const entries: string[] = [];
+      config.data.forEach((val: any, key: string) => {
+        if (val instanceof File) {
+          entries.push(`${key}:${val.name}_${val.size}_${val.lastModified}`);
+        } else {
+          entries.push(`${key}:${String(val)}`);
+        }
+      });
+      payloadStr = entries.sort().join(";");
+    } catch {
+      payloadStr = "formdata";
+    }
+  } else if (config.data && typeof config.data === "object") {
+    try {
+      payloadStr = JSON.stringify(config.data);
+    } catch {
+      payloadStr = "";
+    }
+  } else if (config.data) {
+    payloadStr = String(config.data);
+  }
+  return `${method}:${url}:${payloadStr}`;
+};
+
+const originalRequest = api.request.bind(api);
+
+api.request = (function (config: any): any {
+  const method = (config.method || "get").toUpperCase();
+  const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
+  if (isMutating) {
+    const signature = getMutationSignature(config);
+    if (inFlightMutations.has(signature)) {
+      logger.warn(
+        "🛑 Anti-duplikat: Request identik sedang berjalan. Menggunakan in-flight promise:",
+        method,
+        config.url,
+      );
+      return inFlightMutations.get(signature)!;
+    }
+
+    const promise = originalRequest(config).finally(() => {
+      inFlightMutations.delete(signature);
+    });
+
+    inFlightMutations.set(signature, promise);
+    return promise;
+  }
+
+  return originalRequest(config);
+} as any);
+
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
     logger.debug("🚀 API REQUEST:", config.method?.toUpperCase(), config.url);
+
+    // Attach request ID for tracing
+    if (!config.headers["X-Request-ID"]) {
+      config.headers["X-Request-ID"] = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    }
 
     // Handle FormData
     if (config.data instanceof FormData) {

@@ -538,6 +538,7 @@ export default function EditPackagePage({ params }: PageProps) {
   };
 
   const onSubmit = (data: UpdatePackageFormData) => {
+    if (updateMutation.isPending) return;
     updateMutation.mutate(data);
   };
 

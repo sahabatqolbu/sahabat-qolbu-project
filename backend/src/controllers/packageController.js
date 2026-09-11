@@ -1023,6 +1023,27 @@ export const createPackage = async (req, res, next) => {
       hasImages: Boolean(data.images?.length),
     });
 
+    // Check recent duplicate package within 15 seconds to prevent double submit
+    const recentPackage = await db.query.packages.findFirst({
+      where: and(
+        eq(packages.name, baseInsertData.name),
+        eq(packages.departureDate, baseInsertData.departureDate)
+      ),
+      orderBy: [desc(packages.createdAt)],
+    });
+
+    if (
+      recentPackage &&
+      recentPackage.createdAt &&
+      Date.now() - new Date(recentPackage.createdAt).getTime() < 15000
+    ) {
+      logger.warn("Prevented duplicate package creation within 15s window", {
+        name: baseInsertData.name,
+        packageId: recentPackage.id,
+      });
+      return createdResponse(res, recentPackage, "Paket berhasil dibuat");
+    }
+
     const [newPackage] = await withGeneratedPackageCodeRetry(async (code) => {
       return db
         .insert(packages)
@@ -1066,9 +1087,11 @@ export const createPackage = async (req, res, next) => {
       },
     });
 
-    // ✅ SYNC KE CALENDAR
-    logger.info("Syncing new package to calendar", { packageId });
-    await syncPackageEvent(createdPackage);
+    // ✅ SYNC KE CALENDAR (Background non-blocking)
+    logger.info("Syncing new package to calendar in background", { packageId });
+    syncPackageEvent(createdPackage).catch((err) => {
+      logger.error("Failed to sync new package to calendar in background", err);
+    });
 
     return createdResponse(res, createdPackage, "Paket berhasil dibuat");
   } catch (error) {

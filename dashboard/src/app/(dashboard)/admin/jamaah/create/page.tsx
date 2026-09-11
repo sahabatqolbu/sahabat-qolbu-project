@@ -226,7 +226,12 @@ export default function CreateJamaahPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit((data) => createMutation.mutate(data))}>
+      <form
+        onSubmit={handleSubmit((data) => {
+          if (createMutation.isPending) return;
+          createMutation.mutate(data);
+        })}
+      >
         <div className="grid gap-6">
           {/* STEP 1: USER SELECTION */}
           <Card>

@@ -400,7 +400,28 @@ export const createJamaah = async (req, res, next) => {
         where: eq(jamaahData.userId, existingUser.id),
       });
 
-        if (existingJamaah) {
+      if (existingJamaah) {
+        if (
+          existingJamaah.createdAt &&
+          Date.now() - new Date(existingJamaah.createdAt).getTime() < 15000
+        ) {
+          logger.warn("Returned recent existing jamaah for duplicate agen request", {
+            userId: existingUser.id,
+            bookingNumber: existingJamaah.bookingNumber,
+          });
+          return createdResponse(
+            res,
+            {
+              id: existingJamaah.id,
+              bookingNumber: existingJamaah.bookingNumber,
+              userId: existingUser.id,
+              email: email.toLowerCase(),
+              isNewUser: false,
+              emailSent: false,
+            },
+            "Jamaah berhasil didaftarkan."
+          );
+        }
         return errorResponse(
           res,
           "Email sudah terdaftar sebagai jamaah",
@@ -476,17 +497,15 @@ export const createJamaah = async (req, res, next) => {
         outstanding: hargaPaket.toString(),
       })
     );
-    // Send credentials email for new accounts (best-effort)
+    // Send credentials email for new accounts in background (non-blocking)
     if (isNewUser && generatedPassword) {
-      try {
-        await sendCredentialsEmail(
-          email.toLowerCase(),
-          fullName.toUpperCase(),
-          generatedPassword
-        );
-      } catch {
-        // ignore email errors
-      }
+      sendCredentialsEmail(
+        email.toLowerCase(),
+        fullName.toUpperCase(),
+        generatedPassword
+      ).catch((err) => {
+        logger.error("Failed to send credentials email in background", err);
+      });
     }
 
     return createdResponse(

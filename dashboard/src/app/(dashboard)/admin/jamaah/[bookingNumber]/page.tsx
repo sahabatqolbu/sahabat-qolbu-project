@@ -2504,6 +2504,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
                           });
                           return;
                         }
+                        if (addPaymentMutation.isPending) return;
                         addPaymentMutation.mutate({
                           paidBy: paymentForm.paidBy,
                           paymentDate: paymentForm.paymentDate,

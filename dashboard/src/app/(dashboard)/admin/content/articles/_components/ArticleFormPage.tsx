@@ -455,6 +455,7 @@ export default function ArticleFormPage({
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (saveMutation.isPending) return;
     saveMutation.mutate();
   };
 
