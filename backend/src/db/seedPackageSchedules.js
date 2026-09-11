@@ -13,35 +13,63 @@ const sharedSubtitle = "Pilih Jadwal, Maskapai & Tipe Kamar Sesuai Kebutuhan Kel
 
 const scheduleLists = [
   {
+    name: "PAKET FAMILY COMFY",
+    month: "2026-10",
+    subtitle: sharedSubtitle,
+    note: "Harga & ketersediaan seat dapat berubah. Konfirmasi program final sebelum booking atau pembayaran.",
+    rows: [
+      ["2026-10-03", 9, "SV", "Azka Al-Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 35.9, 37.9, 39.9],
+      ["2026-10-05", 9, "SV", "Maisyan Al-Mashaer / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+      ["2026-10-12", 9, "SV", "Azka Al-Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 36.9, 39.9, 41.9],
+      ["2026-10-21", 9, "SV", "Maisyan Al-Mashaer / Azka Al-Safa / setaraf", "ODST / Triple One / setaraf", 33.9, 36.9, 38.9],
+      ["2026-10-21", 9, "QR", "Royal Majestic / setaraf", "ODST / Triple One / setaraf", 32.5, 34.5, 36.5],
+      ["2026-10-29", 9, "SV", "Azka Al-Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 36.5, 38.5, 40.5],
+      ["2026-10-31", 9, "QR", "Maisyan Al-Mashaer / Azka Al-Safa / setaraf", "ODST / Triple One / setaraf", 33.5, 36.5, 38.5],
+    ],
+  },
+  {
     name: "PAKET FAMILY PELATARAN",
     month: "2026-10",
     subtitle: sharedSubtitle,
-    note: "Harga dan ketersediaan seat dapat berubah. Konfirmasi program final sebelum booking atau pembayaran.",
+    note: "Harga & ketersediaan seat dapat berubah. Konfirmasi program final sebelum booking atau pembayaran.",
     rows: [
       ["2026-10-03", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 40.5, 43.5, 45.5],
-      ["2026-10-05", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 36.9, 39.9, 41.9],
+      ["2026-10-05", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 36.9, 39.9, 41.9],
       ["2026-10-12", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44.9, 46.9],
-      ["2026-10-21", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 36.9, 39.9, 42.9],
+      ["2026-10-21", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 36.9, 39.9, 42.9],
       ["2026-10-29", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 40.9, 43.9, 46.9],
-      ["2026-10-31", 9, "QR", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 36.5, 38.5, 41.5],
+      ["2026-10-31", 9, "QR", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 36.5, 38.5, 41.5],
     ],
   },
   {
     name: "PAKET FAMILY SMART",
     month: "2026-11",
     subtitle: sharedSubtitle,
-    note: "Harga, hotel setaraf, rute dan ketersediaan seat dapat berubah. Konfirmasi program final sebelum booking atau pembayaran.",
+    note: "Harga & ketersediaan seat dapat berubah. Konfirmasi program final sebelum booking atau pembayaran.",
     rows: [
-      ["2026-11-02", 9, "GA", "Maysan Al Mashaer / setaraf", "Al Saha / setaraf", 35.9, 37.9, 41.9, null, null, "Prosesi Umroh bersama Ustadz Khalid Basalamah"],
-      ["2026-11-04", 12, "QR", "Snood Ajyad / setaraf", "Durrat Al Eiman / setaraf", 34.5, 36.5, 39.5, null, null, "2X Jumaat"],
-      ["2026-11-07", null, "QR", "Al-Massa Fayzeen / setaraf", "Mukhtara / Triple One / setaraf", 34.5, 36.5, 38.5],
-      ["2026-11-10", null, "SV", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.9, 34.9],
-      ["2026-11-11", null, "GA", "Al-Massa Fayzeen / setaraf", "Mukhtara / Triple One / setaraf", 36.5, 38.5, 40.5],
-      ["2026-11-14", null, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 31.5, 33.5, 35.5],
-      ["2026-11-16", 12, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 33.5, 36.5, 38.5, "MED", "JED"],
-      ["2026-11-21", null, "SV", "Al-Massa Fayzeen / setaraf", "Mukhtara / Triple One / setaraf", 32.5, 34.5, 36.5],
-      ["2026-11-25", null, "QR", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.9, 34.9],
-      ["2026-11-30", null, "GA", "Al-Massa Fayzeen / setaraf", "Mukhtara / Triple One / setaraf", 34.5, 37.5, 39.5, "MED", "JED"],
+      ["2026-11-07", 9, "GA", "Azka Al-Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 37.5, 40.5, 43.5],
+      ["2026-11-10", 9, "QR", "Royal Majestic / setaraf", "ODST / Triple One / setaraf", 32.5, 34.5, 36.5],
+      ["2026-11-14", 9, "GA", "Azka Al-Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 38.5, 40.5, 43.5],
+      ["2026-11-14", 9, "WY", "Maisyan Al-Mashaer / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+      ["2026-11-16", 12, "WY", "Maisyan Al-Mashaer / setaraf", "ODST / Triple One / setaraf", 37.9, 41.5, 43.5, "MED", "JED"],
+      ["2026-11-21", 9, "SV", "Azka Al-Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 37.5, 40.5, 43.5],
+      ["2026-11-25", 9, "QR", "Royal Majestic / setaraf", "ODST / Triple One / setaraf", 32.5, 34.9, 36.9],
+      ["2026-11-30", 9, "GA", "Azka Al-Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 37.5, 40.5, 43.5],
+    ],
+  },
+  {
+    name: "PAKET FAMILY PELATARAN",
+    month: "2026-11",
+    subtitle: "±3–5 menit jalan kaki dari hotel ke pelataran Masjid",
+    note: "Harga & ketersediaan seat dapat berubah. Konfirmasi program final sebelum booking atau pembayaran.",
+    rows: [
+      ["2026-11-02", 9, "GA", "Safwah Tower 1", "Al Saha", 44.9, 47.9, 53.0, null, null, "Prosesi Umroh bersama Ustadz Khalid Basalamah"],
+      ["2026-11-14", 9, "GA", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / ODST / setaraf", 43.9, 46.9, 48.9],
+      ["2026-11-14", 9, "WY", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 36.9, 39.9, 42.9],
+      ["2026-11-16", 12, "WY", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 42.4, 48.5, 52.5, "MED", "JED"],
+      ["2026-11-21", 9, "SV", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / ODST / setaraf", 48.5, 51.5, 55.5],
+      ["2026-11-25", 9, "QR", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 36.9, 39.9, 42.9],
+      ["2026-11-30", 9, "GA", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / ODST / setaraf", 42.9, 45.9, 48.5],
     ],
   },
 ];
@@ -67,6 +95,16 @@ const run = async () => {
   const airportByCode = new Map(airports.map((item) => [item.code, item.id]));
   if (!airportByCode.get("JED") || !airportByCode.get("MED")) {
     throw new Error("Master bandara JED dan MED wajib tersedia sebelum seed jadwal");
+  }
+
+  // Archive / remove any old lists for the targeted months that are not in the new active definitions
+  const activeKeys = new Set(scheduleLists.map((s) => `${s.name}::${s.month}`));
+  const allExisting = await db.select().from(packageScheduleLists);
+  for (const ex of allExisting) {
+    if ((ex.month === "2026-10" || ex.month === "2026-11") && !activeKeys.has(`${ex.name}::${ex.month}`)) {
+      await db.delete(packageScheduleItems).where(eq(packageScheduleItems.listId, ex.id));
+      await db.delete(packageScheduleLists).where(eq(packageScheduleLists.id, ex.id));
+    }
   }
 
   for (const definition of scheduleLists) {
