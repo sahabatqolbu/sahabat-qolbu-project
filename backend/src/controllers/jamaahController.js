@@ -1,4 +1,7 @@
 // backend/src/controllers/jamaahController.js
+import { concurrentMutation } from "../utils/concurrentMutation.js";
+export const createJamaah = concurrentMutation(createJamaahHandler);
+export const addPayment = concurrentMutation(addPaymentHandler);
 import { db } from "../db/index.js";
 import {
   jamaahData,
@@ -657,7 +660,7 @@ export const uploadAdminDocument = async (req, res, next) => {
 // =====================================================
 // CREATE JAMAAH (Manual)
 // =====================================================
-export const createJamaah = async (req, res, next) => {
+async function createJamaahHandler(req, res, next) {
   try {
     const payload = req.validatedBody || req.body;
     const {
@@ -694,20 +697,6 @@ export const createJamaah = async (req, res, next) => {
         where: eq(jamaahData.userId, parseInt(userId)),
       });
       if (existingJamaah) {
-        if (
-          existingJamaah.createdAt &&
-          Date.now() - new Date(existingJamaah.createdAt).getTime() < 15000
-        ) {
-          logger.warn("Returned recent existing jamaah for duplicate request", {
-            userId,
-            bookingNumber: existingJamaah.bookingNumber,
-          });
-          return createdResponse(
-            res,
-            { id: existingJamaah.id, bookingNumber: existingJamaah.bookingNumber },
-            "Jamaah berhasil ditambahkan"
-          );
-        }
         return errorResponse(
           res,
           "User sudah memiliki data jamaah",
@@ -958,7 +947,7 @@ export const deleteJamaah = async (req, res, next) => {
 // =====================================================
 // PAYMENTS
 // =====================================================
-export const addPayment = async (req, res, next) => {
+async function addPaymentHandler(req, res, next) {
   try {
     const { bookingNumber } = req.params;
     const payload = req.validatedBody || req.body;
@@ -978,35 +967,6 @@ export const addPayment = async (req, res, next) => {
       return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
-    // Check recent duplicate payment within 15 seconds to prevent double-click duplicates
-    const recentDuplicatePayment = await db.query.jamaahPayments.findFirst({
-      where: and(
-        eq(jamaahPayments.jamaahId, jamaah.id),
-        eq(jamaahPayments.amount, amount.toString()),
-        eq(jamaahPayments.paidBy, paidBy)
-      ),
-      orderBy: [desc(jamaahPayments.createdAt)],
-    });
-
-    if (
-      recentDuplicatePayment &&
-      recentDuplicatePayment.createdAt &&
-      Date.now() - new Date(recentDuplicatePayment.createdAt).getTime() < 15000
-    ) {
-      logger.warn("Prevented duplicate payment within 15s window", {
-        bookingNumber,
-        paymentId: recentDuplicatePayment.id,
-      });
-      return createdResponse(
-        res,
-        {
-          paymentId: recentDuplicatePayment.id,
-          paymentNumber: recentDuplicatePayment.paymentNumber,
-          verificationStatus: recentDuplicatePayment.proofStatus,
-        },
-        "Pembayaran berhasil dicatat dan menunggu verifikasi"
-      );
-    }
 
     const { inserted: newPayment, paymentNumber } = await createPaymentWithRetry(
       jamaah.id,

@@ -90,10 +90,21 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
 
   // Sync when filters prop changes
   useEffect(() => {
-    if (filters.departureMonth && availableMonths.includes(filters.departureMonth)) {
-      setSelectedMonth(filters.departureMonth);
+    const matchingMonth = lists.find((list) => list.items.some((item) =>
+      (!filters.duration || String(item.duration) === filters.duration) &&
+      (!filters.airline || item.airline?.name === filters.airline)
+    ))?.month;
+    const nextMonth = filters.departureMonth && availableMonths.includes(filters.departureMonth)
+      ? filters.departureMonth
+      : matchingMonth || availableMonths[0] || "";
+    if (nextMonth) {
+      setSelectedMonth(nextMonth);
+      setSelectedPackage("ALL");
+      setSelectedAirline("ALL");
+      setExpandedId(null);
+      setShowAll(false);
     }
-  }, [filters.departureMonth, availableMonths]);
+  }, [filters.departureMonth, filters.duration, filters.airline, availableMonths, lists]);
 
   // Level 2: Selected Package Type for the active month ("ALL" or specific name)
   const [selectedPackage, setSelectedPackage] = useState<string>("ALL");
@@ -107,19 +118,21 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
 
   // Pagination / Limit state (default show 5)
   const [showAll, setShowAll] = useState<boolean>(false);
+  const activeMonth = availableMonths.includes(selectedMonth) ? selectedMonth : availableMonths[0] || "";
 
   // When month changes, reset package tab & expanded state
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
     setSelectedPackage("ALL");
+    setSelectedAirline("ALL");
     setExpandedId(null);
     setShowAll(false);
   };
 
   // Lists matching the selected month
   const currentMonthLists = useMemo(() => {
-    return lists.filter((l) => l.month === selectedMonth);
-  }, [lists, selectedMonth]);
+    return lists.filter((l) => l.month === activeMonth);
+  }, [lists, activeMonth]);
 
   // Available package names in current month
   const availablePackagesInMonth = useMemo(() => {
@@ -230,15 +243,15 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
             Jadwal Paket Umroh
           </h2>
           <p className="mt-1 text-xs text-slate-500 md:text-sm">
-            Pilih bulan dan program keberangkatan terbaik untuk keluarga Anda. Hemat ruang, transparan, dan mudah dibandingkan.
+            Pilih bulan dan program keberangkatan sesuai kebutuhan keluarga Anda.
           </p>
         </div>
 
         {/* LEVEL 1 NAVIGATION: TABS BULAN */}
         {availableMonths.length > 1 && (
-          <div className="inline-flex rounded-xl bg-slate-100 p-1.5 shadow-inner">
+          <div className="inline-flex max-w-full flex-wrap gap-1 rounded-xl bg-slate-100 p-1.5 shadow-inner">
             {availableMonths.map((month) => {
-              const isActive = month === selectedMonth;
+              const isActive = month === activeMonth;
               const count = lists
                 .filter((l) => l.month === month)
                 .reduce((acc, curr) => acc + curr.items.length, 0);
@@ -275,10 +288,10 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-widest text-gold">
-              Ringkasan Program Bulan {formatMonth(selectedMonth)}
+              Ringkasan Program Bulan {formatMonth(activeMonth)}
             </p>
             <h3 className="mt-0.5 text-xl font-black md:text-2xl">
-              {formatMonth(selectedMonth)}
+              {formatMonth(activeMonth)}
             </h3>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-200">
               <span className="font-semibold text-white">{monthStats.totalSchedules} Keberangkatan</span>
@@ -309,6 +322,8 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
             type="button"
             onClick={() => {
               setSelectedPackage("ALL");
+              setSelectedAirline("ALL");
+              setShowAll(false);
               setExpandedId(null);
             }}
             className={`rounded-full px-4 py-1.5 text-xs font-extrabold transition ${
@@ -333,6 +348,8 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
                 type="button"
                 onClick={() => {
                   setSelectedPackage(pkgName);
+                  setSelectedAirline("ALL");
+                  setShowAll(false);
                   setExpandedId(null);
                 }}
                 className={`rounded-full px-4 py-1.5 text-xs font-extrabold transition ${
@@ -355,7 +372,11 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
               <Filter className="h-3.5 w-3.5 text-slate-400" />
               <select
                 value={selectedAirline}
-                onChange={(e) => setSelectedAirline(e.target.value)}
+                onChange={(e) => {
+                  setSelectedAirline(e.target.value);
+                  setExpandedId(null);
+                  setShowAll(false);
+                }}
                 className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm focus:border-primary focus:outline-none"
               >
                 <option value="ALL">Semua Maskapai</option>
@@ -430,7 +451,7 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
                     <div>
                       <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-black text-primary">
                         <Clock3 className="h-3 w-3 text-gold-dark" />
-                        {item.duration ? `${item.duration} Hari` : "9 Hari"}
+                        {item.duration ? `${item.duration} Hari` : "Durasi menyusul"}
                       </span>
                       <p className="mt-0.5 text-[10px] font-semibold text-slate-400">
                         {asDate(item.departureDate).getUTCFullYear()}
@@ -529,7 +550,7 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
                     {/* 3 PILIHAN HARGA KAMAR */}
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                        Pilihan Tipe Kamar & Harga Per Orang (All-In):
+                        Pilihan Tipe Kamar & Harga Per Orang:
                       </p>
                       <div className="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                         {/* QUAD */}
@@ -618,6 +639,9 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
                       <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/80 p-2.5 text-xs font-semibold text-amber-900">
                         📌 <strong>Catatan:</strong> {item.note}
                       </div>
+                    )}
+                    {item.listNote && (
+                      <p className="mt-3 break-words text-xs leading-relaxed text-slate-600">{item.listNote}</p>
                     )}
 
                     {/* CTA ACTION */}

@@ -1,4 +1,6 @@
 import { db } from "../db/index.js";
+import { concurrentMutation } from "../utils/concurrentMutation.js";
+export const createArticle = concurrentMutation(createArticleHandler);
 import {
   articles,
   masterHotels,
@@ -234,7 +236,7 @@ export const getArticleById = async (req, res, next) => {
   }
 };
 
-export const createArticle = async (req, res, next) => {
+async function createArticleHandler(req, res, next) {
   try {
     const built = await buildArticlePayload(
       req.body,
@@ -244,31 +246,6 @@ export const createArticle = async (req, res, next) => {
     );
     if (built.error) return errorResponse(res, built.error, 400);
 
-    // Check if an article with identical title was created in the last 15 seconds to prevent double submit
-    const recentArticle = await db.query.articles.findFirst({
-      where: and(
-        eq(articles.title, built.payload.title),
-        req.user?.userId ? eq(articles.authorId, req.user.userId) : undefined
-      ),
-      orderBy: [desc(articles.createdAt)],
-    });
-
-    if (
-      recentArticle &&
-      recentArticle.createdAt &&
-      Date.now() - new Date(recentArticle.createdAt).getTime() < 15000
-    ) {
-      logger.warn("Prevented duplicate article creation within 15s window", {
-        title: built.payload.title,
-        articleId: recentArticle.id,
-      });
-      return successResponse(
-        res,
-        { id: recentArticle.id },
-        "Artikel berhasil ditambahkan",
-        201
-      );
-    }
 
     const [created] = await db
       .insert(articles)

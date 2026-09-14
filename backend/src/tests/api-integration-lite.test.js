@@ -201,7 +201,7 @@ describe("api integration lite", () => {
     assert.equal(payload.code, "AUTH_UNAUTHORIZED");
   });
 
-  it("returns structured code for forbidden role access", async () => {
+  it("returns structured code for forbidden role access", async (t) => {
     const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
       method: "POST",
       headers: {
@@ -214,14 +214,14 @@ describe("api integration lite", () => {
     });
 
     if (loginRes.status !== 200) {
-      return;
+      return t.skip("Login fixture unavailable; RBAC integration requires a test database");
     }
 
     const loginBody = await loginRes.json();
     const email = loginBody?.data?.email;
 
     if (!email) {
-      return;
+      return t.skip("Login fixture does not use the OTP flow");
     }
 
     const verifyRes = await fetch(`${baseUrl}/api/auth/verify-otp`, {
@@ -233,12 +233,12 @@ describe("api integration lite", () => {
     });
 
     if (verifyRes.status !== 200) {
-      return;
+      return t.skip("OTP fixture unavailable");
     }
 
     const setCookie = verifyRes.headers.get("set-cookie");
     if (!setCookie) {
-      return;
+      return t.skip("Authenticated cookie fixture unavailable");
     }
 
     const tokenCookie = setCookie.split(";")[0];

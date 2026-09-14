@@ -1,4 +1,6 @@
 // backend/src/controllers/agenJamaahController.js
+import { concurrentMutation } from "../utils/concurrentMutation.js";
+export const createJamaah = concurrentMutation(createJamaahHandler);
 import { db } from "../db/index.js";
 import {
   jamaahData,
@@ -357,7 +359,7 @@ export const getJamaahById = async (req, res, next) => {
 // =====================================================
 // CREATE JAMAAH (oleh Agen) - ✅ WITH EMAIL
 // =====================================================
-export const createJamaah = async (req, res, next) => {
+async function createJamaahHandler(req, res, next) {
   try {
     const agenUserId = req.user.userId;
     const { fullName, email, phone, packageId, roomType } = req.body;
@@ -401,27 +403,6 @@ export const createJamaah = async (req, res, next) => {
       });
 
       if (existingJamaah) {
-        if (
-          existingJamaah.createdAt &&
-          Date.now() - new Date(existingJamaah.createdAt).getTime() < 15000
-        ) {
-          logger.warn("Returned recent existing jamaah for duplicate agen request", {
-            userId: existingUser.id,
-            bookingNumber: existingJamaah.bookingNumber,
-          });
-          return createdResponse(
-            res,
-            {
-              id: existingJamaah.id,
-              bookingNumber: existingJamaah.bookingNumber,
-              userId: existingUser.id,
-              email: email.toLowerCase(),
-              isNewUser: false,
-              emailSent: false,
-            },
-            "Jamaah berhasil didaftarkan."
-          );
-        }
         return errorResponse(
           res,
           "Email sudah terdaftar sebagai jamaah",

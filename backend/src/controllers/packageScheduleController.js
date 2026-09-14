@@ -1,4 +1,6 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { concurrentMutation } from "../utils/concurrentMutation.js";
+export const createPackageScheduleList = concurrentMutation(createPackageScheduleListHandler);
 import { db } from "../db/index.js";
 import {
   masterAirlines,
@@ -202,36 +204,11 @@ export const getPackageScheduleListById = async (req, res, next) => {
   }
 };
 
-export const createPackageScheduleList = async (req, res, next) => {
+async function createPackageScheduleListHandler(req, res, next) {
   try {
     const parsed = await parseListPayload(req.body);
     if (parsed.error) return errorResponse(res, parsed.error, 400);
 
-    // Check recent duplicate schedule list within 15 seconds to prevent double-click duplicates
-    const [existingRecent] = await db
-      .select({ id: packageScheduleLists.id, createdAt: packageScheduleLists.createdAt })
-      .from(packageScheduleLists)
-      .where(
-        and(
-          eq(packageScheduleLists.name, parsed.list.name),
-          eq(packageScheduleLists.month, parsed.list.month)
-        )
-      )
-      .orderBy(desc(packageScheduleLists.createdAt))
-      .limit(1);
-
-    if (
-      existingRecent &&
-      existingRecent.createdAt &&
-      Date.now() - new Date(existingRecent.createdAt).getTime() < 15000
-    ) {
-      return successResponse(
-        res,
-        { id: existingRecent.id },
-        "Daftar jadwal berhasil dibuat",
-        201
-      );
-    }
 
     const id = await db.transaction(async (tx) => {
       const [created] = await tx.insert(packageScheduleLists).values(parsed.list).$returningId();

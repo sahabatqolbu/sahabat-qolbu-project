@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./index.js";
+import { decemberPackageSchedules } from "./decemberPackageSchedules.js";
 import {
   masterAirlines,
   masterAirports,
@@ -80,6 +81,10 @@ const findHotel = (hotels, label, city) => {
 };
 
 const run = async () => {
+  const monthArgument = process.argv.find((arg) => arg.startsWith("--month="))?.split("=")[1];
+  if (monthArgument && !/^\d{4}-\d{2}$/.test(monthArgument)) throw new Error("Invalid --month=YYYY-MM");
+  const definitions = [...scheduleLists, ...decemberPackageSchedules].filter((list) => !monthArgument || list.month === monthArgument);
+  if (!definitions.length) throw new Error("Tidak ada definisi seed untuk bulan ini");
   let [airlines, airports, hotels] = await Promise.all([
     db.select().from(masterAirlines),
     db.select().from(masterAirports),
@@ -92,22 +97,16 @@ const run = async () => {
   }
 
   const airlineByCode = new Map(airlines.map((item) => [item.code, item.id]));
+  if (definitions.some((list) => list.rows.some((row) => row[9] === "TIF")) && !airports.some((airport) => airport.code === "TIF")) {
+    await db.insert(masterAirports).values({ code: "TIF", name: "Taif International Airport", city: "Taif", country: "Saudi Arabia", isActive: true });
+    airports = await db.select().from(masterAirports);
+  }
   const airportByCode = new Map(airports.map((item) => [item.code, item.id]));
   if (!airportByCode.get("JED") || !airportByCode.get("MED")) {
     throw new Error("Master bandara JED dan MED wajib tersedia sebelum seed jadwal");
   }
 
-  // Archive / remove any old lists for the targeted months that are not in the new active definitions
-  const activeKeys = new Set(scheduleLists.map((s) => `${s.name}::${s.month}`));
-  const allExisting = await db.select().from(packageScheduleLists);
-  for (const ex of allExisting) {
-    if ((ex.month === "2026-10" || ex.month === "2026-11") && !activeKeys.has(`${ex.name}::${ex.month}`)) {
-      await db.delete(packageScheduleItems).where(eq(packageScheduleItems.listId, ex.id));
-      await db.delete(packageScheduleLists).where(eq(packageScheduleLists.id, ex.id));
-    }
-  }
-
-  for (const definition of scheduleLists) {
+  for (const definition of definitions) {
     await db.transaction(async (tx) => {
       const [existing] = await tx
         .select()
@@ -115,6 +114,10 @@ const run = async () => {
         .where(and(eq(packageScheduleLists.name, definition.name), eq(packageScheduleLists.month, definition.month)))
         .limit(1);
       let listId = existing?.id;
+      if (listId && !process.argv.includes("--replace")) {
+        console.log(`Preserved existing schedule list: ${definition.name} (${definition.month})`);
+        return;
+      }
       const listData = {
         name: definition.name,
         month: definition.month,
@@ -153,7 +156,7 @@ const run = async () => {
       );
     });
   }
-  console.log(`Seeded ${scheduleLists.length} package schedule lists.`);
+  console.log(`Processed ${definitions.length} package schedule lists.`);
   process.exit(0);
 };
 

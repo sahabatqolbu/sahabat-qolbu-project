@@ -1,6 +1,7 @@
 // dashboard/src/lib/axios.ts
 
 import axios, { AxiosError } from "axios";
+import type { AxiosRequestConfig, AxiosResponse } from "axios";
 
 const isProduction = process.env.NODE_ENV === "production";
 const enableDebugLogs = process.env.NEXT_PUBLIC_DEBUG_LOGS === "true" || !isProduction;
@@ -105,23 +106,23 @@ const api = axios.create({
 logger.debug("🌐 API baseURL:", resolvedApiUrl);
 
 // Map to track in-flight mutating requests and prevent duplicate submissions from rapid clicks
-const inFlightMutations = new Map<string, Promise<any>>();
+const inFlightMutations = new Map<string, Promise<AxiosResponse>>();
 
-const getMutationSignature = (config: any): string => {
+const getMutationSignature = (config: AxiosRequestConfig): string => {
   const method = (config.method || "get").toUpperCase();
   const url = config.url || "";
   let payloadStr = "";
   if (config.data instanceof FormData) {
     try {
       const entries: string[] = [];
-      config.data.forEach((val: any, key: string) => {
+      config.data.forEach((val, key) => {
         if (val instanceof File) {
-          entries.push(`${key}:${val.name}_${val.size}_${val.lastModified}`);
+          entries.push(JSON.stringify([key, val.name, val.size, val.lastModified]));
         } else {
-          entries.push(`${key}:${String(val)}`);
+          entries.push(JSON.stringify([key, String(val)]));
         }
       });
-      payloadStr = entries.sort().join(";");
+      payloadStr = JSON.stringify(entries.sort());
     } catch {
       payloadStr = "formdata";
     }
@@ -134,16 +135,16 @@ const getMutationSignature = (config: any): string => {
   } else if (config.data) {
     payloadStr = String(config.data);
   }
-  return `${method}:${url}:${payloadStr}`;
+  return JSON.stringify([method, config.baseURL, url, config.params, config.headers, payloadStr]);
 };
 
 const originalRequest = api.request.bind(api);
 
-api.request = (function (config: any): any {
+const deduplicatedRequest = (config: AxiosRequestConfig): Promise<AxiosResponse> => {
   const method = (config.method || "get").toUpperCase();
   const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
 
-  if (isMutating) {
+  if (isMutating && !config.signal && !config.cancelToken) {
     const signature = getMutationSignature(config);
     if (inFlightMutations.has(signature)) {
       logger.warn(
@@ -163,7 +164,30 @@ api.request = (function (config: any): any {
   }
 
   return originalRequest(config);
-} as any);
+};
+
+// Axios convenience methods are bound to its internal context, not api.request.
+// Wrap the callable instance as well as request/post/put/patch/delete.
+const wrappedApi = new Proxy(api, {
+  apply(_target, _thisArg, args: [AxiosRequestConfig | string, AxiosRequestConfig?]) {
+    return deduplicatedRequest(typeof args[0] === "string" ? { ...args[1], url: args[0] } : args[0]);
+  },
+  get(target, property) {
+    if (property === "request") {
+      return (config: AxiosRequestConfig | string, options?: AxiosRequestConfig) =>
+        deduplicatedRequest(typeof config === "string" ? { ...options, url: config } : config);
+    }
+    if (["post", "put", "patch"].includes(String(property))) {
+      return (url: string, data?: unknown, config?: AxiosRequestConfig) =>
+        deduplicatedRequest({ ...config, method: String(property), url, data });
+    }
+    if (property === "delete") {
+      return (url: string, config?: AxiosRequestConfig) =>
+        deduplicatedRequest({ ...config, method: "delete", url });
+    }
+    return Reflect.get(target, property);
+  },
+});
 
 // Request interceptor
 api.interceptors.request.use(
@@ -263,4 +287,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default wrappedApi;
