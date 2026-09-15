@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { concurrentMutation } from "../utils/concurrentMutation.js";
 import { decemberPackageSchedules } from "../db/decemberPackageSchedules.js";
+import { dubaiPackageSchedules } from "../db/dubaiPackageSchedules.js";
 import { turkeyPackageSchedules } from "../db/turkeyPackageSchedules.js";
 
 const response = () => ({
@@ -98,4 +99,27 @@ test("Turkey programs preserve all schedules, prices, and distinct options", () 
   const correctedMarchRows = rows.filter((row) => row[0] === "2027-03-13");
   assert.equal(correctedMarchRows.length, 4);
   assert.equal(rows.some((row) => row[0] === "2026-03-13"), false);
+});
+
+test("Dubai Mahabbah preserves both hotel options for each departure", () => {
+  const rows = dubaiPackageSchedules.flatMap((list) => list.rows);
+  assert.equal(dubaiPackageSchedules.length, 4);
+  assert.equal(rows.length, 4);
+
+  for (const list of dubaiPackageSchedules) {
+    assert.equal(list.rows.length, 1);
+    const [schedule] = list.rows;
+    assert.equal(schedule[0].slice(0, 7), list.month);
+    assert.equal(schedule[1], 12);
+    assert.equal(schedule[2], "EK");
+    assert.equal(schedule[8], "JED");
+    assert.equal(schedule[9], "JED");
+    assert.match(schedule[10], /Grand Kingsgate Hotel Waterfront/);
+    assert.ok(schedule[5] <= schedule[6] && schedule[6] <= schedule[7]);
+  }
+
+  assert.deepEqual(
+    rows.map((schedule) => schedule[0]),
+    ["2026-11-14", "2026-11-14", "2027-01-06", "2027-01-06"],
+  );
 });

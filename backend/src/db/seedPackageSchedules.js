@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./index.js";
 import { decemberPackageSchedules } from "./decemberPackageSchedules.js";
+import { dubaiPackageSchedules } from "./dubaiPackageSchedules.js";
 import { turkeyPackageSchedules } from "./turkeyPackageSchedules.js";
 import {
   masterAirlines,
@@ -84,7 +85,12 @@ const findHotel = (hotels, label, city) => {
 const run = async () => {
   const monthArgument = process.argv.find((arg) => arg.startsWith("--month="))?.split("=")[1];
   if (monthArgument && !/^\d{4}-\d{2}$/.test(monthArgument)) throw new Error("Invalid --month=YYYY-MM");
-  const definitions = [...scheduleLists, ...decemberPackageSchedules, ...turkeyPackageSchedules]
+  const definitions = [
+    ...scheduleLists,
+    ...decemberPackageSchedules,
+    ...turkeyPackageSchedules,
+    ...dubaiPackageSchedules,
+  ]
     .filter((list) => !monthArgument || list.month === monthArgument);
   if (!definitions.length) throw new Error("Tidak ada definisi seed untuk bulan ini");
   let [airlines, airports, hotels] = await Promise.all([
