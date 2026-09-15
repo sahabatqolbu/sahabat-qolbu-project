@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { concurrentMutation } from "../utils/concurrentMutation.js";
 import { decemberPackageSchedules } from "../db/decemberPackageSchedules.js";
+import { turkeyPackageSchedules } from "../db/turkeyPackageSchedules.js";
 
 const response = () => ({
   statusCode: 200,
@@ -73,4 +74,28 @@ test("December preserves all 31 rows and distinct hotel options", () => {
       assert.ok(row[5] <= row[6] && row[6] <= row[7]);
     }
   }
+});
+
+test("Turkey programs preserve all schedules, prices, and distinct options", () => {
+  const rows = turkeyPackageSchedules.flatMap((list) => list.rows);
+  assert.equal(turkeyPackageSchedules.length, 14);
+  assert.equal(rows.length, 20);
+  assert.equal(rows.filter((row) => row[2] === "EK").length, 14);
+  assert.equal(rows.filter((row) => row[2] === "SV").length, 6);
+
+  for (const list of turkeyPackageSchedules) {
+    const keys = list.rows.map((row) => `${row[0]}:${row[2]}`);
+    assert.equal(new Set(keys).size, keys.length);
+    for (const row of list.rows) {
+      assert.equal(row[0].slice(0, 7), list.month);
+      assert.equal(row[1], list.name.includes("16D") ? 16 : 12);
+      assert.equal(row[8], "JED");
+      assert.equal(row[9], "JED");
+      assert.ok(row[5] <= row[6] && row[6] <= row[7]);
+    }
+  }
+
+  const correctedMarchRows = rows.filter((row) => row[0] === "2027-03-13");
+  assert.equal(correctedMarchRows.length, 4);
+  assert.equal(rows.some((row) => row[0] === "2026-03-13"), false);
 });

@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./index.js";
 import { decemberPackageSchedules } from "./decemberPackageSchedules.js";
+import { turkeyPackageSchedules } from "./turkeyPackageSchedules.js";
 import {
   masterAirlines,
   masterAirports,
@@ -83,7 +84,8 @@ const findHotel = (hotels, label, city) => {
 const run = async () => {
   const monthArgument = process.argv.find((arg) => arg.startsWith("--month="))?.split("=")[1];
   if (monthArgument && !/^\d{4}-\d{2}$/.test(monthArgument)) throw new Error("Invalid --month=YYYY-MM");
-  const definitions = [...scheduleLists, ...decemberPackageSchedules].filter((list) => !monthArgument || list.month === monthArgument);
+  const definitions = [...scheduleLists, ...decemberPackageSchedules, ...turkeyPackageSchedules]
+    .filter((list) => !monthArgument || list.month === monthArgument);
   if (!definitions.length) throw new Error("Tidak ada definisi seed untuk bulan ini");
   let [airlines, airports, hotels] = await Promise.all([
     db.select().from(masterAirlines),
@@ -91,8 +93,20 @@ const run = async () => {
     db.select().from(masterHotels),
   ]);
 
-  if (!airlines.some((airline) => airline.code === "WY")) {
-    await db.insert(masterAirlines).values({ code: "WY", name: "Oman Air", country: "Oman", isActive: true });
+  const requiredAirlines = {
+    WY: { name: "Oman Air", country: "Oman", logo: null },
+    EK: {
+      name: "Emirates",
+      country: "United Arab Emirates",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/c/cd/Emirates-Updated-Logo.png",
+    },
+  };
+  const missingAirlines = Object.entries(requiredAirlines)
+    .filter(([code]) => definitions.some((list) => list.rows.some((row) => row[2] === code)))
+    .filter(([code]) => !airlines.some((airline) => airline.code === code))
+    .map(([code, airline]) => ({ code, ...airline, isActive: true }));
+  if (missingAirlines.length) {
+    await db.insert(masterAirlines).values(missingAirlines);
     airlines = await db.select().from(masterAirlines);
   }
 
