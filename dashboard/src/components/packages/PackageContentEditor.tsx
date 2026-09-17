@@ -70,7 +70,12 @@ export const buildItineraryDrafts = (
   current: PackageItineraryDraft[] = [],
 ) => {
   const duration = getItineraryDuration(departureDate, returnDate);
-  const currentByDay = new Map(current.map((item) => [item.dayNumber, item]));
+  const currentList = Array.isArray(current) ? current : [];
+  const currentByDay = new Map(
+    currentList
+      .filter((item) => item && typeof item === "object" && typeof item.dayNumber === "number")
+      .map((item) => [item.dayNumber, item]),
+  );
   return Array.from({ length: duration }, (_, index) => {
     const dayNumber = index + 1;
     return (

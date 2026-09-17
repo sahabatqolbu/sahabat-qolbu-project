@@ -175,8 +175,9 @@ export default function PackageOptionsEditor({
     hotelId: number | string | null | undefined,
     hotels: any[],
   ) =>
-    hotels.find((hotel) => Number(hotel.id) === Number(hotelId))?.name ||
-    "Belum dipilih";
+    (Array.isArray(hotels) ? hotels : []).find(
+      (hotel) => Number(hotel?.id) === Number(hotelId),
+    )?.name || "Belum dipilih";
 
   const formatPrice = (value: number | string | null | undefined) =>
     Number(value || 0).toLocaleString("id-ID");
@@ -199,8 +200,8 @@ export default function PackageOptionsEditor({
         </Button>
       </div>
 
-      {options.map((option, index) => (
-        <Card key={option.id || index} className="border-gray-200 shadow-sm">
+      {(Array.isArray(options) ? options : []).map((option, index) => (
+        <Card key={option?.id || index} className="border-gray-200 shadow-sm">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
               {index === 0 ? "Opsi Utama" : `Opsi ${index + 1}`}
@@ -319,7 +320,7 @@ export default function PackageOptionsEditor({
                         <SelectValue placeholder="Pilih hotel Makkah" />
                       </SelectTrigger>
                       <SelectContent>
-                        {hotelsMakkah.map((hotel) => (
+                        {(Array.isArray(hotelsMakkah) ? hotelsMakkah : []).map((hotel) => (
                           <SelectItem
                             key={hotel.id}
                             value={hotel.id.toString()}
@@ -344,7 +345,7 @@ export default function PackageOptionsEditor({
                         <SelectValue placeholder="Pilih hotel Madinah" />
                       </SelectTrigger>
                       <SelectContent>
-                        {hotelsMadinah.map((hotel) => (
+                        {(Array.isArray(hotelsMadinah) ? hotelsMadinah : []).map((hotel) => (
                           <SelectItem
                             key={hotel.id}
                             value={hotel.id.toString()}

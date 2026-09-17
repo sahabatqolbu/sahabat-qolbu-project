@@ -303,12 +303,12 @@ export default function PackageDetailPage({ params }: PageProps) {
             </div>
             <p className="text-2xl font-bold">{pkg.duration} Hari</p>
             <p className="text-xs text-gray-500 mt-1">
-              {pkg.departureDate &&
+              {pkg.departureDate && !isNaN(new Date(pkg.departureDate).getTime()) &&
                 format(new Date(pkg.departureDate), "dd MMM", {
                   locale: localeId,
                 })}
               {" - "}
-              {pkg.returnDate &&
+              {pkg.returnDate && !isNaN(new Date(pkg.returnDate).getTime()) &&
                 format(new Date(pkg.returnDate), "dd MMM yyyy", {
                   locale: localeId,
                 })}
@@ -347,7 +347,7 @@ export default function PackageDetailPage({ params }: PageProps) {
                     {getStatusBadge(pkg.airlineStatus)}
                   </div>
 
-                  {pkg.airlineIssuedDate && (
+                  {pkg.airlineIssuedDate && !isNaN(new Date(pkg.airlineIssuedDate).getTime()) && (
                     <div className="text-sm">
                       <span className="text-gray-500">Issued Date:</span>{" "}
                       <span className="font-medium">
@@ -432,7 +432,7 @@ export default function PackageDetailPage({ params }: PageProps) {
                       {getStatusBadge(pkg.hotelMakkahStatus)}
                     </div>
                     <p className="text-sm text-yellow-500">
-                      {"⭐".repeat(pkg.hotelMakkah.starRating || 0)}
+                      {"⭐".repeat(Math.max(0, Math.min(5, Math.floor(Number(pkg.hotelMakkah?.starRating) || 0))))}
                     </p>
                   </div>
                 ) : (
@@ -457,7 +457,7 @@ export default function PackageDetailPage({ params }: PageProps) {
                       {getStatusBadge(pkg.hotelMadinahStatus)}
                     </div>
                     <p className="text-sm text-yellow-500">
-                      {"⭐".repeat(pkg.hotelMadinah.starRating || 0)}
+                      {"⭐".repeat(Math.max(0, Math.min(5, Math.floor(Number(pkg.hotelMadinah?.starRating) || 0))))}
                     </p>
                   </div>
                 ) : (

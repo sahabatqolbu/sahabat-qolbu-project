@@ -37,6 +37,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   Loader2,
@@ -146,14 +147,25 @@ export default function CreatePackagePage() {
           reset(parsed.form);
         }
         if (Array.isArray(parsed?.options) && parsed.options.length > 0) {
-          setPackageOptions(parsed.options);
+          setPackageOptions(
+            buildDefaultPackageOptions({ options: parsed.options }),
+          );
         }
         if (Array.isArray(parsed?.itinerary)) {
-          setItinerary(parsed.itinerary);
+          setItinerary(
+            parsed.itinerary.filter(
+              (item: any) => item && typeof item === "object",
+            ),
+          );
         }
       }
-    } catch {
-      sessionStorage.removeItem(PACKAGE_DRAFT_KEY);
+    } catch (e) {
+      console.error("Failed to restore package draft:", e);
+      try {
+        sessionStorage.removeItem(PACKAGE_DRAFT_KEY);
+      } catch {
+        // ignore
+      }
     } finally {
       draftHydrated.current = true;
     }
@@ -163,14 +175,18 @@ export default function CreatePackagePage() {
     if (!draftHydrated.current) return;
 
     const saveDraft = (formValues: unknown = watch()) => {
-      sessionStorage.setItem(
-        PACKAGE_DRAFT_KEY,
-        JSON.stringify({
-          form: formValues,
-          options: packageOptions,
-          itinerary,
-        }),
-      );
+      try {
+        sessionStorage.setItem(
+          PACKAGE_DRAFT_KEY,
+          JSON.stringify({
+            form: formValues,
+            options: packageOptions,
+            itinerary,
+          }),
+        );
+      } catch (err) {
+        console.warn("Failed to save package draft to sessionStorage", err);
+      }
     };
 
     saveDraft();
@@ -192,30 +208,30 @@ export default function CreatePackagePage() {
   };
 
   // Fetch Master Data
-  const { data: hotelsData } = useQuery({
+  const { data: hotelsData, isLoading: hotelsLoading } = useQuery({
     queryKey: ["hotels-active"],
     queryFn: () => masterService.hotels.getAll({ isActive: true }),
   });
 
-  const { data: airlinesData } = useQuery({
+  const { data: airlinesData, isLoading: airlinesLoading } = useQuery({
     queryKey: ["airlines-active"],
     queryFn: () => masterService.airlines.getAll({ isActive: true }),
   });
 
-  const { data: airportsData } = useQuery({
+  const { data: airportsData, isLoading: airportsLoading } = useQuery({
     queryKey: ["airports-active"],
     queryFn: () => masterService.airports.getAll({ isActive: true }),
   });
 
-  const hotels = hotelsData?.data || [];
-  const airlines = airlinesData?.data || [];
-  const airports = airportsData?.data || [];
+  const hotels = Array.isArray(hotelsData?.data) ? hotelsData.data : [];
+  const airlines = Array.isArray(airlinesData?.data) ? airlinesData.data : [];
+  const airports = Array.isArray(airportsData?.data) ? airportsData.data : [];
   const routeAirports = airports.filter((airport: any) =>
-    ["JED", "MED"].includes(String(airport.code || "").toUpperCase()),
+    ["JED", "MED"].includes(String(airport?.code || "").toUpperCase()),
   );
 
-  const hotelsMakkah = hotels.filter((h: any) => h.city === "MAKKAH");
-  const hotelsMadinah = hotels.filter((h: any) => h.city === "MADINAH");
+  const hotelsMakkah = hotels.filter((h: any) => h?.city === "MAKKAH");
+  const hotelsMadinah = hotels.filter((h: any) => h?.city === "MADINAH");
 
   // ✅ CREATE MUTATION
   const createMutation = useMutation({
@@ -233,7 +249,11 @@ export default function CreatePackagePage() {
       });
     },
     onSuccess: (data) => {
-      sessionStorage.removeItem(PACKAGE_DRAFT_KEY);
+      try {
+        sessionStorage.removeItem(PACKAGE_DRAFT_KEY);
+      } catch {
+        // ignore
+      }
       const packageId = data.data.id;
       toast({
         variant: data.imageUploadFailed ? "destructive" : "default",
@@ -306,6 +326,21 @@ export default function CreatePackagePage() {
       setActiveTab("hotels");
   };
 
+  if (hotelsLoading || airlinesLoading || airportsLoading) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-6 pb-20">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-md" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+        </div>
+        <Skeleton className="h-[600px] w-full rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Header */}
@@ -323,7 +358,7 @@ export default function CreatePackagePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -1001,7 +1036,17 @@ export default function CreatePackagePage() {
                                     <Building2 className="h-4 w-4" />
                                     {hotel.name}
                                     <span className="text-yellow-500">
-                                      {"⭐".repeat(hotel.starRating || 0)}
+                                      {"⭐".repeat(
+                                        Math.max(
+                                          0,
+                                          Math.min(
+                                            5,
+                                            Math.floor(
+                                              Number(hotel?.starRating) || 0,
+                                            ),
+                                          ),
+                                        ),
+                                      )}
                                     </span>
                                   </div>
                                 </SelectItem>
@@ -1085,7 +1130,17 @@ export default function CreatePackagePage() {
                                     <Building2 className="h-4 w-4" />
                                     {hotel.name}
                                     <span className="text-yellow-500">
-                                      {"⭐".repeat(hotel.starRating || 0)}
+                                      {"⭐".repeat(
+                                        Math.max(
+                                          0,
+                                          Math.min(
+                                            5,
+                                            Math.floor(
+                                              Number(hotel?.starRating) || 0,
+                                            ),
+                                          ),
+                                        ),
+                                      )}
                                     </span>
                                   </div>
                                 </SelectItem>

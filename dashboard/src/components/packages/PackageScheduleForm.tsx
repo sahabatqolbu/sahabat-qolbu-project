@@ -26,7 +26,7 @@ const initialList: PackageScheduleList = {
   isActive: true, isPublished: false, items: [blankItem()],
 };
 
-const unwrap = (value: any) => value?.data || [];
+const unwrap = (value: any) => (Array.isArray(value?.data) ? value.data : []);
 
 export default function PackageScheduleForm({ value, saving, onSubmit }: {
   value?: PackageScheduleList;
@@ -42,9 +42,9 @@ export default function PackageScheduleForm({ value, saving, onSubmit }: {
   const airlines = unwrap(airlinesQuery.data);
   const hotels = unwrap(hotelsQuery.data);
   const airports = unwrap(airportsQuery.data);
-  const makkahHotels = hotels.filter((hotel: any) => hotel.city === "MAKKAH");
-  const madinahHotels = hotels.filter((hotel: any) => hotel.city === "MADINAH");
-  const jedId = useMemo(() => airports.find((airport: any) => airport.code === "JED")?.id || null, [airports]);
+  const makkahHotels = hotels.filter((hotel: any) => hotel?.city === "MAKKAH");
+  const madinahHotels = hotels.filter((hotel: any) => hotel?.city === "MADINAH");
+  const jedId = useMemo(() => airports.find((airport: any) => airport?.code === "JED")?.id || null, [airports]);
 
   useEffect(() => {
     if (!jedId) return;

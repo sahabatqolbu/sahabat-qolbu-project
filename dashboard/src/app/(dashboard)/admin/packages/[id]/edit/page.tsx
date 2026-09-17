@@ -166,15 +166,15 @@ export default function EditPackagePage({ params }: PageProps) {
     queryFn: () => masterService.airports.getAll(),
   });
 
-  const hotels = hotelsData?.data || [];
-  const airlines = airlinesData?.data || [];
-  const airports = airportsData?.data || [];
+  const hotels = Array.isArray(hotelsData?.data) ? hotelsData.data : [];
+  const airlines = Array.isArray(airlinesData?.data) ? airlinesData.data : [];
+  const airports = Array.isArray(airportsData?.data) ? airportsData.data : [];
   const routeAirports = airports.filter((airport: any) =>
-    ["JED", "MED"].includes(String(airport.code || "").toUpperCase()),
+    ["JED", "MED"].includes(String(airport?.code || "").toUpperCase()),
   );
 
-  const hotelsMakkah = hotels.filter((h: any) => h.city === "MAKKAH");
-  const hotelsMadinah = hotels.filter((h: any) => h.city === "MADINAH");
+  const hotelsMakkah = hotels.filter((h: any) => h?.city === "MAKKAH");
+  const hotelsMadinah = hotels.filter((h: any) => h?.city === "MADINAH");
 
   useEffect(() => {
     if (
@@ -1170,7 +1170,17 @@ export default function EditPackagePage({ params }: PageProps) {
                                   value={hotel.id.toString()}
                                 >
                                   {hotel.name}{" "}
-                                  {"⭐".repeat(hotel.starRating || 0)}
+                                  {"⭐".repeat(
+                                    Math.max(
+                                      0,
+                                      Math.min(
+                                        5,
+                                        Math.floor(
+                                          Number(hotel?.starRating) || 0,
+                                        ),
+                                      ),
+                                    ),
+                                  )}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1234,7 +1244,17 @@ export default function EditPackagePage({ params }: PageProps) {
                                   value={hotel.id.toString()}
                                 >
                                   {hotel.name}{" "}
-                                  {"⭐".repeat(hotel.starRating || 0)}
+                                  {"⭐".repeat(
+                                    Math.max(
+                                      0,
+                                      Math.min(
+                                        5,
+                                        Math.floor(
+                                          Number(hotel?.starRating) || 0,
+                                        ),
+                                      ),
+                                    ),
+                                  )}
                                 </SelectItem>
                               ))}
                             </SelectContent>
