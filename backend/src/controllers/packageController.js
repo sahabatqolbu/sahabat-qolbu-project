@@ -715,8 +715,31 @@ const getPackageFreshnessTime = (pkg = {}) => {
   return Number.isFinite(updatedTime) ? updatedTime : 0;
 };
 
-const sortPackagesForDisplay = (packageList = []) =>
+export const sortPackagesForDisplay = (packageList = []) =>
   [...packageList].sort((left, right) => {
+    // 1. Pinned packages always appear at the very top
+    const leftPinned = Boolean(left.isPinned);
+    const rightPinned = Boolean(right.isPinned);
+    if (leftPinned !== rightPinned) {
+      return leftPinned ? -1 : 1;
+    }
+
+    // 2. If both are pinned, order by pinnedOrder (ascending: 1, 2, 3...) then freshness
+    if (leftPinned && rightPinned) {
+      const leftOrder =
+        Number.isFinite(Number(left.pinnedOrder)) && Number(left.pinnedOrder) > 0
+          ? Number(left.pinnedOrder)
+          : 999999;
+      const rightOrder =
+        Number.isFinite(Number(right.pinnedOrder)) && Number(right.pinnedOrder) > 0
+          ? Number(right.pinnedOrder)
+          : 999999;
+      if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+
+      return getPackageFreshnessTime(right) - getPackageFreshnessTime(left);
+    }
+
+    // 3. Regular display ranking
     const leftRank = getPackageDisplayRank(left);
     const rightRank = getPackageDisplayRank(right);
     if (leftRank !== rightRank) return leftRank - rightRank;
@@ -744,6 +767,7 @@ export const getAllPackages = async (req, res, next) => {
       type,
       isActive,
       isPublished,
+      isPinned,
       page = 1,
       limit = 10,
     } = req.query;
@@ -768,6 +792,9 @@ export const getAllPackages = async (req, res, next) => {
     }
     if (isPublished !== undefined) {
       conditions.push(eq(packages.isPublished, isPublished === "true"));
+    }
+    if (isPinned !== undefined) {
+      conditions.push(eq(packages.isPinned, isPinned === "true" || isPinned === true));
     }
 
     const allPackages = await db.query.packages.findMany({
@@ -853,6 +880,7 @@ export const getAllPackages = async (req, res, next) => {
 
     let totalSeatsAll = 0;
     let bookedSeatsAll = 0;
+    let totalPinnedAll = 0;
 
     const statsPackageIds = allPackagesForStats.map((pkg) => pkg.id);
     const summaryBookedSeatsByPackageId =
@@ -861,6 +889,9 @@ export const getAllPackages = async (req, res, next) => {
     for (const pkg of allPackagesForStats) {
       totalSeatsAll += pkg.totalSeats;
       bookedSeatsAll += summaryBookedSeatsByPackageId.get(pkg.id) || 0;
+      if (pkg.isPinned) {
+        totalPinnedAll++;
+      }
     }
 
     return successResponse(res, {
@@ -875,6 +906,7 @@ export const getAllPackages = async (req, res, next) => {
         totalSeats: totalSeatsAll,
         bookedSeats: bookedSeatsAll,
         remainingSeats: totalSeatsAll - bookedSeatsAll,
+        totalPinned: totalPinnedAll,
       },
     });
   } catch (error) {
@@ -1019,6 +1051,8 @@ async function createPackageHandler(req, res, next) {
         data.manualBookingStatus,
         "AUTO",
       ),
+      isPinned: parseBoolean(data.isPinned, false),
+      pinnedOrder: parsePositiveInt(data.pinnedOrder, 0),
     };
 
     logger.debug("Create package insert", {
@@ -1298,6 +1332,14 @@ export const updatePackage = async (req, res, next) => {
               existingPackage.manualBookingStatus || "AUTO",
             )
           : existingPackage.manualBookingStatus || "AUTO",
+      isPinned:
+        data.isPinned !== undefined
+          ? parseBoolean(data.isPinned, existingPackage.isPinned)
+          : existingPackage.isPinned,
+      pinnedOrder:
+        data.pinnedOrder !== undefined
+          ? parsePositiveInt(data.pinnedOrder, existingPackage.pinnedOrder || 0)
+          : existingPackage.pinnedOrder || 0,
       updatedAt: new Date(),
     };
 
@@ -1943,3 +1985,104 @@ export const deletePackageOptionImage = async (req, res, next) => {
     next(error);
   }
 };
+
+// =====================================================
+// TOGGLE PINNED STATUS / UPDATE PINNED ORDER
+// =====================================================
+export const togglePackagePinned = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isPinned, pinnedOrder } = req.body || {};
+
+    const packageId = parseInt(id, 10);
+    const existingPackage = await db.query.packages.findFirst({
+      where: eq(packages.id, packageId),
+    });
+
+    if (!existingPackage) {
+      return errorResponse(res, "Paket tidak ditemukan", 404);
+    }
+
+    const nextPinned =
+      isPinned !== undefined
+        ? parseBoolean(isPinned, !existingPackage.isPinned)
+        : !existingPackage.isPinned;
+
+    let nextOrder = existingPackage.pinnedOrder || 0;
+    if (pinnedOrder !== undefined) {
+      nextOrder = parsePositiveInt(pinnedOrder, 0);
+    } else if (nextPinned && !nextOrder) {
+      const currentPinned = await db.query.packages.findMany({
+        where: eq(packages.isPinned, true),
+      });
+      nextOrder = currentPinned.length + 1;
+    } else if (!nextPinned) {
+      nextOrder = 0;
+    }
+
+    await db
+      .update(packages)
+      .set({
+        isPinned: nextPinned,
+        pinnedOrder: nextOrder,
+        updatedAt: new Date(),
+      })
+      .where(eq(packages.id, packageId));
+
+    return successResponse(
+      res,
+      {
+        id: packageId,
+        isPinned: nextPinned,
+        pinnedOrder: nextOrder,
+      },
+      nextPinned
+        ? "Paket berhasil disematkan (pinned) ke urutan teratas"
+        : "Sematan paket berhasil dilepas",
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// =====================================================
+// REORDER ALL PINNED PACKAGES
+// =====================================================
+export const reorderPinnedPackages = async (req, res, next) => {
+  try {
+    const { order } = req.body || {};
+    if (!Array.isArray(order) || order.length === 0) {
+      return errorResponse(res, "Data urutan paket tidak valid", 400);
+    }
+
+    for (let index = 0; index < order.length; index++) {
+      const item = order[index];
+      const pkgId =
+        typeof item === "object" && item !== null ? item.id : item;
+      const rank =
+        typeof item === "object" && item !== null && Number.isFinite(Number(item.pinnedOrder))
+          ? Number(item.pinnedOrder)
+          : index + 1;
+
+      if (pkgId) {
+        await db
+          .update(packages)
+          .set({
+            isPinned: true,
+            pinnedOrder: rank,
+            updatedAt: new Date(),
+          })
+          .where(eq(packages.id, parseInt(pkgId, 10)));
+      }
+    }
+
+    return successResponse(
+      res,
+      null,
+      "Urutan paket pinned berhasil diperbarui",
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+

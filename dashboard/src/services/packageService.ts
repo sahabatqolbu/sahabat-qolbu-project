@@ -35,6 +35,8 @@ export interface Package {
   isActive: boolean;
   isPublished: boolean;
   manualBookingStatus?: "AUTO" | "OPEN" | "SOLD_OUT" | "CLOSED";
+  isPinned?: boolean;
+  pinnedOrder?: number;
 
   // Relations
   airlineId?: number;
@@ -89,10 +91,28 @@ export const packageService = {
     search?: string;
     type?: string;
     isActive?: boolean;
+    isPinned?: boolean;
     page?: number;
     limit?: number;
   }) => {
     const response = await api.get("/admin/packages", { params }); // ✅ api
+    return response.data;
+  },
+
+  // ===== TOGGLE PIN / UPDATE PINNED ORDER =====
+  togglePin: async (id: number, isPinned?: boolean, pinnedOrder?: number) => {
+    const response = await api.patch(`/admin/packages/${id}/pin`, {
+      isPinned,
+      pinnedOrder,
+    });
+    return response.data;
+  },
+
+  // ===== REORDER PINNED PACKAGES =====
+  reorderPinned: async (
+    order: { id: number; pinnedOrder: number }[] | number[],
+  ) => {
+    const response = await api.post("/admin/packages/reorder-pinned", { order });
     return response.data;
   },
 

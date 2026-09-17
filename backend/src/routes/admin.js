@@ -69,6 +69,8 @@ import {
     uploadPackageOptionImage,
     bulkUploadPackageOptionImages,
     deletePackageOptionImage,
+    togglePackagePinned,
+    reorderPinnedPackages,
 } from "../controllers/packageController.js";
 import {
     createPackageScheduleList,
@@ -158,6 +160,10 @@ router.delete("/packages/images/:imageId", authenticate, authorize(["ADMIN"]), d
 router.post("/packages/:id/options/:optionId/images", authenticate, authorize(["ADMIN"]), upload.single("image"), optimizeImage("packages", { outputFormat: "webp" }), uploadPackageOptionImage);
 router.post("/packages/:id/options/:optionId/images/bulk", authenticate, authorize(["ADMIN"]), upload.array("images", 10), optimizeMultipleImages("packages", { outputFormat: "webp" }), bulkUploadPackageOptionImages);
 router.delete("/packages/options/images/:imageId", authenticate, authorize(["ADMIN"]), deletePackageOptionImage);
+
+// Pinned package management
+router.post("/packages/reorder-pinned", authenticate, authorize(["ADMIN"]), reorderPinnedPackages);
+router.patch("/packages/:id/pin", authenticate, authorize(["ADMIN"]), togglePackagePinned);
 
 // Generic CRUD (must be last to avoid matching static routes)
 router.get("/packages", authenticate, authorize(["ADMIN", "STAFF", "FINANCE"]), getAllPackages);

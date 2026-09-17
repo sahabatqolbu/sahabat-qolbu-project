@@ -136,6 +136,8 @@ type BackendPackage = {
   images?: BackendPackageImage[] | null;
   isPublished?: boolean | null;
   isActive?: boolean | null;
+  isPinned?: boolean | null;
+  pinnedOrder?: number | null;
   bookingStatus?:
     | "OPEN"
     | "CLOSED"
@@ -277,6 +279,8 @@ export interface MarketingPackage {
   gallery?: string[];
   options?: MarketingPackageOption[];
   featured?: boolean;
+  isPinned?: boolean;
+  pinnedOrder?: number;
   description?: string;
   included?: string[];
   excluded?: string[];
@@ -673,6 +677,8 @@ const mapPackage = (pkg: BackendPackage): MarketingPackage => {
       };
     }),
     featured: false,
+    isPinned: Boolean(pkg.isPinned),
+    pinnedOrder: typeof pkg.pinnedOrder === "number" ? pkg.pinnedOrder : 0,
     description:
       toNonEmptyString(pkg.description) ||
       "Detail paket akan diinformasikan lebih lanjut oleh tim Sahabat Qolbu.",
@@ -721,6 +727,29 @@ const getFreshnessTime = (pkg: MarketingPackage) => {
 
 const sortPackagesForDisplay = (packages: MarketingPackage[]) =>
   [...packages].sort((left, right) => {
+    // 1. Pinned packages always appear at the very top
+    const leftPinned = Boolean(left.isPinned);
+    const rightPinned = Boolean(right.isPinned);
+    if (leftPinned !== rightPinned) {
+      return leftPinned ? -1 : 1;
+    }
+
+    // 2. If both are pinned, order by pinnedOrder (ascending: 1, 2, 3...) then freshness
+    if (leftPinned && rightPinned) {
+      const leftOrder =
+        Number.isFinite(Number(left.pinnedOrder)) && Number(left.pinnedOrder) > 0
+          ? Number(left.pinnedOrder)
+          : 999999;
+      const rightOrder =
+        Number.isFinite(Number(right.pinnedOrder)) && Number(right.pinnedOrder) > 0
+          ? Number(right.pinnedOrder)
+          : 999999;
+      if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+
+      return getFreshnessTime(right) - getFreshnessTime(left);
+    }
+
+    // 3. Regular display ranking
     const rankDiff = getPackageDisplayRank(left) - getPackageDisplayRank(right);
     if (rankDiff !== 0) return rankDiff;
 

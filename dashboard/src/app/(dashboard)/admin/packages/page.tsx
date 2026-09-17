@@ -79,10 +79,15 @@ import {
   Check,
   RefreshCw,
   ListPlus,
+  Pin,
+  PinOff,
+  ArrowUpDown,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { format, differenceInDays } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import PinnedPackagesDialog from "@/components/packages/PinnedPackagesDialog";
 
 export default function PackagesPage() {
   const { toast } = useToast();
@@ -94,16 +99,22 @@ export default function PackagesPage() {
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [pinnedOnlyFilter, setPinnedOnlyFilter] = useState(false);
+  const [showPinnedDialog, setShowPinnedDialog] = useState(false);
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Fetch Packages
   const { data, isLoading } = useQuery({
-    queryKey: ["packages", { search, type: typeFilter, page }],
+    queryKey: [
+      "packages",
+      { search, type: typeFilter, page, isPinned: pinnedOnlyFilter ? true : undefined },
+    ],
     queryFn: () =>
       packageService.getAll({
         search: search || undefined,
         type: typeFilter !== "all" ? typeFilter : undefined,
+        isPinned: pinnedOnlyFilter ? true : undefined,
         page,
         limit: 10,
       }),
@@ -174,6 +185,36 @@ export default function PackagesPage() {
       toast({
         variant: "destructive",
         title: "❌ Gagal Memperbarui Status",
+        description: error.response?.data?.message || "Terjadi kesalahan",
+      });
+    },
+  });
+
+  // Toggle Pin Mutation
+  const togglePinMutation = useMutation({
+    mutationFn: ({
+      id,
+      isPinned,
+      pinnedOrder,
+    }: {
+      id: number;
+      isPinned: boolean;
+      pinnedOrder?: number;
+    }) => packageService.togglePin(id, isPinned, pinnedOrder),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      queryClient.invalidateQueries({ queryKey: ["packages-for-pinned-dialog"] });
+      toast({
+        title: variables.isPinned ? "📌 Paket Disematkan" : "Sematan Paket Dilepas",
+        description: variables.isPinned
+          ? "Paket sekarang berada di posisi paling atas."
+          : "Paket kembali ke urutan reguler.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal Mengubah Sematan",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -335,6 +376,19 @@ export default function PackagesPage() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
+            <Button
+              variant="outline"
+              className="border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 hover:text-amber-950 gap-1.5"
+              onClick={() => setShowPinnedDialog(true)}
+            >
+              <Pin className="h-4 w-4 fill-amber-600 text-amber-600" />
+              <span>Kelola Pinned</span>
+              {Boolean(summary?.totalPinned) && (
+                <Badge className="bg-amber-200 text-amber-900 hover:bg-amber-200 px-1.5 py-0 text-xs font-bold ml-0.5">
+                  {summary.totalPinned}
+                </Badge>
+              )}
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="bg-secondary hover:bg-secondary/90 text-primary font-medium">
@@ -359,7 +413,7 @@ export default function PackagesPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-600">
@@ -413,12 +467,70 @@ export default function PackagesPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card
+          className="border-amber-200 bg-amber-50/30 dark:bg-amber-950/10 cursor-pointer hover:border-amber-400 transition-colors"
+          onClick={() => setShowPinnedDialog(true)}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-300">
+                Paket Pinned
+              </CardTitle>
+              <Sparkles className="h-4 w-4 text-amber-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <Pin className="h-5 w-5 text-amber-600 fill-amber-600" />
+              <span className="text-2xl font-bold text-amber-900 dark:text-amber-200">
+                {summary?.totalPinned || 0}
+              </span>
+            </div>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-2 font-medium flex items-center justify-between">
+              <span>Tampil di paling atas</span>
+              <span className="underline text-[11px]">Atur Urutan &rarr;</span>
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant={!pinnedOnlyFilter ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs font-medium"
+              onClick={() => {
+                setPinnedOnlyFilter(false);
+                setPage(1);
+              }}
+            >
+              Semua Paket
+            </Button>
+            <Button
+              type="button"
+              variant={pinnedOnlyFilter ? "default" : "outline"}
+              size="sm"
+              className={`h-8 text-xs font-medium gap-1.5 ${
+                pinnedOnlyFilter
+                  ? "bg-amber-600 hover:bg-amber-700 text-white"
+                  : "border-amber-300 text-amber-800 bg-amber-50/80 hover:bg-amber-100"
+              }`}
+              onClick={() => {
+                setPinnedOnlyFilter(true);
+                setPage(1);
+              }}
+            >
+              <Pin className="h-3.5 w-3.5 fill-amber-500" />
+              Hanya Pinned / Pilihan Utama {Boolean(summary?.totalPinned) && `(${summary.totalPinned})`}
+            </Button>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 pt-1">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
@@ -502,7 +614,11 @@ export default function PackagesPage() {
                     {packages.map((pkg: Package) => (
                       <TableRow
                         key={pkg.id}
-                        className="hover:bg-gray-50/50 cursor-pointer group"
+                        className={`cursor-pointer group transition-colors ${
+                          pkg.isPinned
+                            ? "bg-amber-50/60 hover:bg-amber-100/60 dark:bg-amber-950/20 border-l-4 border-l-amber-500"
+                            : "hover:bg-gray-50/50"
+                        }`}
                         onClick={() => router.push(`/admin/packages/${pkg.id}`)}
                       >
                         {/* ID & Images */}
@@ -546,7 +662,15 @@ export default function PackagesPage() {
                         {/* Nama Paket */}
                         <TableCell>
                           <div className="max-w-[200px]">
-                            <p className="font-medium truncate">{pkg.name}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-medium truncate">{pkg.name}</p>
+                              {pkg.isPinned && (
+                                <Badge className="bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-100 shrink-0 text-[10px] px-1.5 py-0 font-semibold gap-0.5">
+                                  <Pin className="w-2.5 h-2.5 fill-amber-600 text-amber-600" />
+                                  #{pkg.pinnedOrder || 1}
+                                </Badge>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-xs text-gray-500 font-mono">
                                 {pkg.code}
@@ -671,113 +795,188 @@ export default function PackagesPage() {
                           className="text-right"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <Link href={`/admin/packages/${pkg.id}`}>
-                                <DropdownMenuItem>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  Lihat Detail
-                                </DropdownMenuItem>
-                              </Link>
-                              {!isFinanceReadOnly && (
-                                <Link href={`/admin/packages/${pkg.id}/edit`}>
+                          <div className="flex items-center justify-end gap-1">
+                            {!isFinanceReadOnly && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className={`h-8 w-8 ${
+                                        pkg.isPinned
+                                          ? "text-amber-600 hover:text-amber-700 hover:bg-amber-100"
+                                          : "text-gray-400 hover:text-amber-600 hover:bg-amber-50"
+                                      }`}
+                                      disabled={togglePinMutation.isPending}
+                                      onClick={() =>
+                                        togglePinMutation.mutate({
+                                          id: pkg.id,
+                                          isPinned: !pkg.isPinned,
+                                          pinnedOrder: !pkg.isPinned ? 1 : 0,
+                                        })
+                                      }
+                                    >
+                                      {pkg.isPinned ? (
+                                        <Pin className="h-4 w-4 fill-amber-500 text-amber-600" />
+                                      ) : (
+                                        <PinOff className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {pkg.isPinned
+                                      ? `Lepas Sematan (Urutan #${pkg.pinnedOrder || 1})`
+                                      : "Sematkan di paling atas"}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <Link href={`/admin/packages/${pkg.id}`}>
                                   <DropdownMenuItem>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit Paket
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    Lihat Detail
                                   </DropdownMenuItem>
                                 </Link>
-                              )}
-                              <Link
-                                href={`/admin/packages/${pkg.id}/itinerary`}
-                              >
-                                <DropdownMenuItem>
-                                  <CalendarDays className="mr-2 h-4 w-4" />
-                                  Lihat Itinerary
-                                </DropdownMenuItem>
-                              </Link>
-                              {!isFinanceReadOnly && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuLabel>Status Kuota / Pendaftaran</DropdownMenuLabel>
-                                  {pkg.manualBookingStatus === "SOLD_OUT" ? (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        updateStatusMutation.mutate({
-                                          id: pkg.id,
-                                          status: "AUTO",
-                                        })
-                                      }
-                                      disabled={updateStatusMutation.isPending}
-                                    >
-                                      <RefreshCw className="mr-2 h-4 w-4 text-blue-600" />
-                                      Reset ke Otomatis (Buka)
+                                {!isFinanceReadOnly && (
+                                  <Link href={`/admin/packages/${pkg.id}/edit`}>
+                                    <DropdownMenuItem>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit Paket
                                     </DropdownMenuItem>
-                                  ) : (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        updateStatusMutation.mutate({
-                                          id: pkg.id,
-                                          status: "SOLD_OUT",
-                                        })
-                                      }
-                                      disabled={updateStatusMutation.isPending}
-                                      className="text-amber-700"
-                                    >
-                                      <Ban className="mr-2 h-4 w-4 text-amber-600" />
-                                      Set Habis / Sold Out
-                                    </DropdownMenuItem>
-                                  )}
-
-                                  {pkg.manualBookingStatus === "CLOSED" ? (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        updateStatusMutation.mutate({
-                                          id: pkg.id,
-                                          status: "AUTO",
-                                        })
-                                      }
-                                      disabled={updateStatusMutation.isPending}
-                                    >
-                                      <RefreshCw className="mr-2 h-4 w-4 text-blue-600" />
-                                      Reset ke Otomatis
-                                    </DropdownMenuItem>
-                                  ) : (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        updateStatusMutation.mutate({
-                                          id: pkg.id,
-                                          status: "CLOSED",
-                                        })
-                                      }
-                                      disabled={updateStatusMutation.isPending}
-                                    >
-                                      <Ban className="mr-2 h-4 w-4 text-gray-500" />
-                                      Tutup Pendaftaran (Close)
-                                    </DropdownMenuItem>
-                                  )}
-                                </>
-                              )}
-                              {!isFinanceReadOnly && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => setDeleteId(pkg.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Hapus
+                                  </Link>
+                                )}
+                                <Link
+                                  href={`/admin/packages/${pkg.id}/itinerary`}
+                                >
+                                  <DropdownMenuItem>
+                                    <CalendarDays className="mr-2 h-4 w-4" />
+                                    Lihat Itinerary
                                   </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                </Link>
+
+                                {!isFinanceReadOnly && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>Sematan (Pinned)</DropdownMenuLabel>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        togglePinMutation.mutate({
+                                          id: pkg.id,
+                                          isPinned: !pkg.isPinned,
+                                          pinnedOrder: !pkg.isPinned ? 1 : 0,
+                                        })
+                                      }
+                                      disabled={togglePinMutation.isPending}
+                                    >
+                                      {pkg.isPinned ? (
+                                        <>
+                                          <PinOff className="mr-2 h-4 w-4 text-gray-500" />
+                                          Lepas Sematan
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Pin className="mr-2 h-4 w-4 fill-amber-500 text-amber-600" />
+                                          Sematkan di Paling Atas
+                                        </>
+                                      )}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => setShowPinnedDialog(true)}
+                                    >
+                                      <ArrowUpDown className="mr-2 h-4 w-4 text-amber-600" />
+                                      Kelola Urutan Pinned...
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+
+                                {!isFinanceReadOnly && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>Status Kuota / Pendaftaran</DropdownMenuLabel>
+                                    {pkg.manualBookingStatus === "SOLD_OUT" ? (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          updateStatusMutation.mutate({
+                                            id: pkg.id,
+                                            status: "AUTO",
+                                          })
+                                        }
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <RefreshCw className="mr-2 h-4 w-4 text-blue-600" />
+                                        Reset ke Otomatis (Buka)
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          updateStatusMutation.mutate({
+                                            id: pkg.id,
+                                            status: "SOLD_OUT",
+                                          })
+                                        }
+                                        disabled={updateStatusMutation.isPending}
+                                        className="text-amber-700"
+                                      >
+                                        <Ban className="mr-2 h-4 w-4 text-amber-600" />
+                                        Set Habis / Sold Out
+                                      </DropdownMenuItem>
+                                    )}
+
+                                    {pkg.manualBookingStatus === "CLOSED" ? (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          updateStatusMutation.mutate({
+                                            id: pkg.id,
+                                            status: "AUTO",
+                                          })
+                                        }
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <RefreshCw className="mr-2 h-4 w-4 text-blue-600" />
+                                        Reset ke Otomatis
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          updateStatusMutation.mutate({
+                                            id: pkg.id,
+                                            status: "CLOSED",
+                                          })
+                                        }
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <Ban className="mr-2 h-4 w-4 text-gray-500" />
+                                        Tutup Pendaftaran (Close)
+                                      </DropdownMenuItem>
+                                    )}
+                                  </>
+                                )}
+                                {!isFinanceReadOnly && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => setDeleteId(pkg.id)}
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Hapus
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -846,6 +1045,12 @@ export default function PackagesPage() {
           </AlertDialogContent>
         </AlertDialog>
       )}
+
+      {/* Dialog Kelola & Urutan Pinned Packages */}
+      <PinnedPackagesDialog
+        open={showPinnedDialog}
+        onOpenChange={setShowPinnedDialog}
+      />
     </div>
   );
 }

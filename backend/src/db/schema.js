@@ -367,6 +367,9 @@ export const packages = mysqlTable(
       .notNull()
       .default("AUTO"),
 
+    isPinned: boolean("is_pinned").notNull().default(false),
+    pinnedOrder: int("pinned_order").notNull().default(0),
+
     // ===== TIMESTAMPS =====
     createdAt: timestamp("created_at")
       .notNull()

@@ -2,7 +2,7 @@
 "use client";
 
 import { use } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { packageService } from "@/services/packageService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/authStore";
@@ -36,6 +36,8 @@ import {
   Image as ImageIcon,
   FileText,
   ExternalLink,
+  Pin,
+  PinOff,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -48,12 +50,40 @@ interface PageProps {
 export default function PackageDetailPage({ params }: PageProps) {
   const { id: packageId } = use(params);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const isFinanceReadOnly = user?.role === "FINANCE";
 
   const { data, isLoading } = useQuery({
     queryKey: ["package", packageId],
     queryFn: () => packageService.getById(parseInt(packageId)),
+  });
+
+  const togglePinMutation = useMutation({
+    mutationFn: ({
+      isPinned,
+      pinnedOrder,
+    }: {
+      isPinned: boolean;
+      pinnedOrder?: number;
+    }) => packageService.togglePin(parseInt(packageId), isPinned, pinnedOrder),
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["package", packageId] });
+      queryClient.invalidateQueries({ queryKey: ["packages"] });
+      toast({
+        title: variables.isPinned ? "📌 Paket Disematkan" : "Sematan Paket Dilepas",
+        description: variables.isPinned
+          ? "Paket sekarang berada di posisi paling atas."
+          : "Paket kembali ke urutan reguler.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Gagal Mengubah Sematan",
+        description: error.response?.data?.message || "Terjadi kesalahan",
+      });
+    },
   });
 
   const pkg = data?.data;
@@ -216,13 +246,49 @@ export default function PackageDetailPage({ params }: PageProps) {
                 <Badge className="bg-blue-100 text-blue-800">Published</Badge>
               )}
               {getBookingStatusBadge(pkg)}
+              {pkg.isPinned && (
+                <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-semibold gap-1">
+                  <Pin className="w-3 h-3 fill-amber-600 text-amber-600" />
+                  Pinned #{pkg.pinnedOrder || 1}
+                </Badge>
+              )}
             </div>
             <h1 className="text-2xl md:text-3xl font-serif font-bold text-gray-900">
               {pkg.name}
             </h1>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
+          {!isFinanceReadOnly && (
+            <Button
+              variant="outline"
+              size="default"
+              className={
+                pkg.isPinned
+                  ? "border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 gap-1.5"
+                  : "border-gray-300 text-gray-700 hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 gap-1.5"
+              }
+              disabled={togglePinMutation.isPending}
+              onClick={() =>
+                togglePinMutation.mutate({
+                  isPinned: !pkg.isPinned,
+                  pinnedOrder: !pkg.isPinned ? 1 : 0,
+                })
+              }
+            >
+              {pkg.isPinned ? (
+                <>
+                  <PinOff className="h-4 w-4 text-amber-700" />
+                  <span>Lepas Sematan</span>
+                </>
+              ) : (
+                <>
+                  <Pin className="h-4 w-4 fill-amber-600 text-amber-600" />
+                  <span>Sematkan Paket</span>
+                </>
+              )}
+            </Button>
+          )}
           <Link href={`/admin/packages/${packageId}/itinerary`}>
             <Button variant="outline">
               <CalendarDays className="h-4 w-4 mr-2" />

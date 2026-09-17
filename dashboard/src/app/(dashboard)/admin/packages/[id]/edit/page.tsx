@@ -56,6 +56,7 @@ import {
   FileText,
   Eye,
   ClipboardList,
+  Pin,
 } from "lucide-react";
 import Link from "next/link";
 import PackageOptionsEditor, {
@@ -130,6 +131,8 @@ export default function EditPackagePage({ params }: PageProps) {
     resolver: zodResolver(updatePackageSchema) as any,
     defaultValues: {
       type: "FULL_SERVICE",
+      isPinned: false,
+      pinnedOrder: 0,
     },
   });
 
@@ -245,6 +248,8 @@ export default function EditPackagePage({ params }: PageProps) {
 
           isActive: pkg.isActive,
           isPublished: pkg.isPublished,
+          isPinned: Boolean(pkg.isPinned),
+          pinnedOrder: pkg.pinnedOrder || 0,
           manualBookingStatus: pkg.manualBookingStatus || "AUTO",
         },
         {
@@ -1022,6 +1027,56 @@ export default function EditPackagePage({ params }: PageProps) {
                       )}
                     />
                   </div>
+                </div>
+
+                {/* ===== PINNED / PAKET SPESIAL ===== */}
+                <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <Pin className="h-4 w-4 text-amber-600 fill-amber-600" />
+                        <Label className="text-amber-950 font-semibold">
+                          Sematkan di Paling Atas (Pinned / Rekomendasi)
+                        </Label>
+                      </div>
+                      <p className="text-xs text-amber-800/80">
+                        Paket ini akan otomatis tampil di posisi paling awal di dashboard dan daftar paket.
+                      </p>
+                    </div>
+                    <Controller
+                      name="isPinned"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {watch("isPinned") && (
+                    <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="pinnedOrder" className="text-xs font-medium text-amber-900">
+                          Urutan Prioritas Pinned
+                        </Label>
+                        <p className="text-[11px] text-amber-700">
+                          Angka lebih kecil tampil lebih dulu (misal 1 untuk paling atas, lalu 2, 3 dst).
+                        </p>
+                      </div>
+                      <div className="w-28">
+                        <Input
+                          id="pinnedOrder"
+                          type="number"
+                          min={1}
+                          placeholder="1"
+                          className="bg-white border-amber-300 text-center font-bold"
+                          {...register("pinnedOrder", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* ===== MANUAL BOOKING STATUS (HABIS / SOLD OUT) ===== */}
