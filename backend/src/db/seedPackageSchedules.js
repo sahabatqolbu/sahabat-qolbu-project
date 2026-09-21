@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./index.js";
 import { decemberPackageSchedules } from "./decemberPackageSchedules.js";
+import { januaryPackageSchedules } from "./januaryPackageSchedules.js";
 import { dubaiPackageSchedules } from "./dubaiPackageSchedules.js";
 import { turkeyPackageSchedules } from "./turkeyPackageSchedules.js";
 import {
@@ -88,6 +89,7 @@ const run = async () => {
   const definitions = [
     ...scheduleLists,
     ...decemberPackageSchedules,
+    ...januaryPackageSchedules,
     ...turkeyPackageSchedules,
     ...dubaiPackageSchedules,
   ]

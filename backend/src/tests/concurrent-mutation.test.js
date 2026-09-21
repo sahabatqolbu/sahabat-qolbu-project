@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { concurrentMutation } from "../utils/concurrentMutation.js";
 import { decemberPackageSchedules } from "../db/decemberPackageSchedules.js";
+import { januaryPackageSchedules } from "../db/januaryPackageSchedules.js";
 import { dubaiPackageSchedules } from "../db/dubaiPackageSchedules.js";
 import { turkeyPackageSchedules } from "../db/turkeyPackageSchedules.js";
 
@@ -122,4 +123,30 @@ test("Dubai Mahabbah preserves both hotel options for each departure", () => {
     rows.map((schedule) => schedule[0]),
     ["2026-11-14", "2026-11-14", "2027-01-06", "2027-01-06"],
   );
+});
+
+test("January 2027 preserves all 27 rows and valid pricing across all 3 lists", () => {
+  const rows = januaryPackageSchedules.flatMap((list) => list.rows);
+  assert.equal(januaryPackageSchedules.length, 3);
+  assert.equal(rows.length, 27);
+
+  for (const list of januaryPackageSchedules) {
+    assert.equal(list.month, "2027-01");
+    const keys = list.rows.map((row) => `${row[0]}:${row[2]}`);
+    assert.equal(new Set(keys).size, keys.length, `Duplicate (date, airline) found in ${list.name}`);
+    for (const row of list.rows) {
+      assert.match(row[0], /^2027-01-\d{2}$/);
+      assert.ok([9, 12].includes(row[1]));
+      assert.ok(["GA", "WY", "SV"].includes(row[2]));
+      assert.ok(row[5] <= row[6] && row[6] <= row[7], `Invalid price order in ${row[0]} (${row[5]} <= ${row[6]} <= ${row[7]})`);
+    }
+  }
+
+  const smartList = januaryPackageSchedules.find((l) => l.name === "PAKET FAMILY SMART");
+  const pelataranList = januaryPackageSchedules.find((l) => l.name === "PAKET FAMILY PELATARAN");
+  const comfyList = januaryPackageSchedules.find((l) => l.name === "PAKET FAMILY SQ COMFY LIBURAN");
+
+  assert.equal(smartList.rows.length, 10);
+  assert.equal(pelataranList.rows.length, 7);
+  assert.equal(comfyList.rows.length, 10);
 });
