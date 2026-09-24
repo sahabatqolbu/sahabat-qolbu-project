@@ -141,6 +141,17 @@ export const jamaahService = {
     return response.data;
   },
 
+  uploadPaymentProof: async (paymentId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("proof", file);
+    const response = await api.post(
+      `/jamaah/admin/payments/${paymentId}/proof`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
   rejectPayment: async (paymentId: number, reason: string) => {
     const response = await api.patch(
       `/jamaah/admin/payments/${paymentId}/reject`,

@@ -2,7 +2,12 @@
 import express from "express";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
-import { uploadDocument, saveDocument } from "../utils/upload.js";
+import {
+  upload,
+  uploadDocument,
+  saveDocument,
+  optimizeImage,
+} from "../utils/upload.js";
 import {
   validate,
   validateParams,
@@ -18,6 +23,7 @@ import {
   submitForApproval,
   searchMahram,
   getMyPayments,
+  submitMyPayment,
   getMyPackage,
   requestPackageConsultation,
 } from "../controllers/jamaahSelfController.js";
@@ -36,6 +42,7 @@ import {
   rejectJamaah,
   revertToVerified,
   uploadAdminDocument,
+  uploadPaymentProof,
 } from "../controllers/jamaahController.js";
 
 const router = express.Router();
@@ -144,6 +151,14 @@ router.post(
 router.post("/submit", authenticate, authorize(["JAMAAH"]), submitForApproval);
 router.get("/mahram/search", authenticate, authorize(["JAMAAH"]), searchMahram);
 router.get("/payments", authenticate, authorize(["JAMAAH"]), getMyPayments);
+router.post(
+  "/payments",
+  authenticate,
+  authorize(["JAMAAH"]),
+  upload.single("proof"),
+  optimizeImage("payments", { outputFormat: "webp", maxWidth: 1600, maxHeight: 1600 }),
+  submitMyPayment,
+);
 router.get("/package", authenticate, authorize(["JAMAAH"]), getMyPackage);
 router.post(
   "/package/request",
@@ -228,6 +243,14 @@ router.patch(
   authorize(["ADMIN", "FINANCE"]),
   validateParams(jamaahAdminSchemas.paymentParams),
   verifyPayment,
+);
+router.post(
+  "/admin/payments/:paymentId/proof",
+  authenticate,
+  authorize(["ADMIN", "FINANCE"]),
+  upload.single("proof"),
+  optimizeImage("payments", { outputFormat: "webp", maxWidth: 1600, maxHeight: 1600 }),
+  uploadPaymentProof,
 );
 router.patch(
   "/admin/payments/:paymentId/reject",

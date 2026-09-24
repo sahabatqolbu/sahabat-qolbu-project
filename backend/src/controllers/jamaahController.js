@@ -1204,6 +1204,53 @@ export const getPayments = async (req, res, next) => {
   }
 };
 
+export const uploadPaymentProof = async (req, res, next) => {
+  try {
+    const paymentId = Number.parseInt(req.params.paymentId, 10);
+    if (!Number.isInteger(paymentId) || paymentId <= 0) {
+      return errorResponse(res, "paymentId tidak valid", 400);
+    }
+    if (!req.uploadedFile?.path) {
+      return errorResponse(res, "File bukti pembayaran tidak ditemukan", 400);
+    }
+
+    const payment = await db.query.jamaahPayments.findFirst({
+      where: eq(jamaahPayments.id, paymentId),
+      columns: { id: true, proofStatus: true },
+    });
+    if (!payment) {
+      return notFoundResponse(res, "Pembayaran tidak ditemukan");
+    }
+    if (payment.proofStatus === "VERIFIED") {
+      return errorResponse(res, "Pembayaran yang sudah diverifikasi tidak dapat diubah", 400);
+    }
+
+    await db
+      .update(jamaahPayments)
+      .set({
+        proofUrl: req.uploadedFile.path,
+        proofStatus: "UPLOADED",
+        rejectedBy: null,
+        rejectedAt: null,
+        rejectionReason: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(jamaahPayments.id, paymentId));
+
+    return successResponse(
+      res,
+      { paymentId, proofUrl: req.uploadedFile.path },
+      "Bukti pembayaran berhasil diupload",
+    );
+  } catch (error) {
+    logger.error("Upload payment proof error", error, {
+      paymentId: req.params?.paymentId,
+      requestedBy: req.user?.userId,
+    });
+    next(error);
+  }
+};
+
 export const verifyPayment = async (req, res, next) => {
   try {
     const { paymentId } = req.params;

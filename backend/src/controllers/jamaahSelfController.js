@@ -8,6 +8,7 @@ import {
   agentData,
 } from "../db/schema.js";
 import { eq, like, or, and, desc, sql, ne } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import path from "path";
 import fs from "fs";
 import { createNotification, notifyAdmins } from "./notificationController.js";
@@ -48,6 +49,34 @@ const getSelectedJamaahOrder = (req) => {
     desc(jamaahData.isPrimaryMember),
     desc(jamaahData.updatedAt),
   ];
+};
+
+const createSelfPayment = async (jamaahId, values) => {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const latest = await db.query.jamaahPayments.findFirst({
+      where: eq(jamaahPayments.jamaahId, jamaahId),
+      columns: { paymentNumber: true },
+      orderBy: [desc(jamaahPayments.paymentNumber)],
+    });
+    const paymentNumber = Number(latest?.paymentNumber || 0) + 1;
+
+    try {
+      const [inserted] = await db
+        .insert(jamaahPayments)
+        .values({ ...values, jamaahId, paymentNumber })
+        .$returningId();
+      return inserted;
+    } catch (error) {
+      if (
+        error?.code === "ER_DUP_ENTRY" &&
+        String(error?.sqlMessage || error?.message || "").includes("payment_number")
+      ) {
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error("Gagal membuat nomor pembayaran unik");
 };
 
 export const getMyMembers = async (req, res, next) => {
@@ -708,6 +737,68 @@ export const getMyPayments = async (req, res, next) => {
     });
   } catch (error) {
     logger.error("Get jamaah payments error", error, {
+      userId: req.user?.userId,
+    });
+    next(error);
+  }
+};
+
+// =====================================================
+// SUBMIT PAYMENT WITH PROOF
+// =====================================================
+export const submitMyPayment = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const amount = Number(req.body?.amount);
+    const bankId = req.body?.bankId ? Number(req.body.bankId) : null;
+    const paymentDate = req.body?.paymentDate
+      ? new Date(req.body.paymentDate)
+      : new Date();
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return errorResponse(res, "Nominal pembayaran harus lebih dari 0", 400);
+    }
+    if (Number.isNaN(paymentDate.getTime())) {
+      return errorResponse(res, "Tanggal pembayaran tidak valid", 400);
+    }
+    if (!req.uploadedFile?.path) {
+      return errorResponse(res, "Bukti transfer wajib diupload", 400);
+    }
+
+    const jamaah = await db.query.jamaahData.findFirst({
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
+    });
+    if (!jamaah) {
+      return notFoundResponse(res, "Data jamaah tidak ditemukan");
+    }
+
+    const payment = await createSelfPayment(jamaah.id, {
+      amount: amount.toString(),
+      bankId: Number.isInteger(bankId) && bankId > 0 ? bankId : null,
+      paidBy: req.body?.paidBy?.trim() || jamaah.memberName || null,
+      paymentDate,
+      proofStatus: "UPLOADED",
+      proofUrl: req.uploadedFile.path,
+      notes: req.body?.notes?.trim() || null,
+      familyPaymentGroupId: randomUUID(),
+    });
+
+    await notifyAdmins({
+      type: "PAYMENT_CREATED",
+      title: "Bukti pembayaran baru",
+      message: `${jamaah.memberName || jamaah.bookingNumber} mengirim bukti pembayaran sebesar Rp ${amount.toLocaleString("id-ID")}.`,
+      referenceId: payment.id,
+      referenceType: "JAMAAH_PAYMENT",
+    });
+
+    return successResponse(
+      res,
+      { paymentId: payment.id, proofUrl: req.uploadedFile.path },
+      "Bukti pembayaran berhasil dikirim dan menunggu verifikasi admin",
+    );
+  } catch (error) {
+    logger.error("Submit jamaah payment error", error, {
       userId: req.user?.userId,
     });
     next(error);

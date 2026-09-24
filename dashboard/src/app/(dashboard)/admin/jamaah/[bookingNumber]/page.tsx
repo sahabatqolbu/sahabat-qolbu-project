@@ -437,6 +437,24 @@ export default function JamaahDetailPage({ params }: PageProps) {
     },
   });
 
+  const uploadPaymentProofMutation = useMutation({
+    mutationFn: (payload: { paymentId: number; file: File }) =>
+      jamaahService.uploadPaymentProof(payload.paymentId, payload.file),
+    onSuccess: () => {
+      toast({ title: "✅ Bukti pembayaran berhasil diupload" });
+      queryClient.invalidateQueries({
+        queryKey: ["jamaah-payments", bookingNumber],
+      });
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Upload bukti gagal",
+        description: getErrorMessage(error),
+      });
+    },
+  });
+
   const rejectPaymentMutation = useMutation({
     mutationFn: (payload: { paymentId: number; reason: string }) =>
       jamaahService.rejectPayment(payload.paymentId, payload.reason),
@@ -2624,6 +2642,32 @@ export default function JamaahDetailPage({ params }: PageProps) {
                           <TableCell className="text-center">
                             {(payment.proofStatus || "UPLOADED") !== "VERIFIED" && (
                               <div className="flex items-center justify-center gap-2">
+                                <label className="inline-flex cursor-pointer items-center rounded-md border px-2 py-1 text-xs text-blue-600 hover:bg-blue-50">
+                                  {uploadPaymentProofMutation.isPending ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <FileText className="mr-1 h-3.5 w-3.5" />
+                                      Upload Bukti
+                                    </>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    className="hidden"
+                                    disabled={uploadPaymentProofMutation.isPending}
+                                    onChange={(event) => {
+                                      const file = event.target.files?.[0];
+                                      if (file) {
+                                        uploadPaymentProofMutation.mutate({
+                                          paymentId: payment.id,
+                                          file,
+                                        });
+                                      }
+                                      event.currentTarget.value = "";
+                                    }}
+                                  />
+                                </label>
                                 {(payment.proofStatus || "UPLOADED") === "UPLOADED" && (
                                   <>
                                     <Button

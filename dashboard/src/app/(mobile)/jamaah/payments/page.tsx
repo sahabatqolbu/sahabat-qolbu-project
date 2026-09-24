@@ -1,8 +1,10 @@
 // dashboard/src/app/(mobile)/jamaah/payments/page.tsx
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { jamaahSelfService } from "@/services/jamaahSelfService";
+import { masterService } from "@/services/masterService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,15 +20,54 @@ import {
   Calendar,
   Building,
   Phone,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
 export default function JamaahPaymentsPage() {
+  const queryClient = useQueryClient();
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    bankId: "",
+    paymentDate: new Date().toISOString().split("T")[0],
+    paidBy: "",
+    notes: "",
+  });
+  const [proofFile, setProofFile] = useState<File | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["jamaah-payments"],
     queryFn: () => jamaahSelfService.getPayments(),
+  });
+
+  const { data: banksData } = useQuery({
+    queryKey: ["jamaah-payment-banks"],
+    queryFn: () => masterService.banks.getActive(),
+  });
+  const banks = Array.isArray(banksData?.data) ? banksData.data : [];
+
+  const submitPaymentMutation = useMutation({
+    mutationFn: () => {
+      if (!proofFile) throw new Error("Bukti transfer wajib dipilih");
+      return jamaahSelfService.submitPayment({
+        ...paymentForm,
+        proof: proofFile,
+      });
+    },
+    onSuccess: () => {
+      setPaymentForm({
+        amount: "",
+        bankId: "",
+        paymentDate: new Date().toISOString().split("T")[0],
+        paidBy: "",
+        notes: "",
+      });
+      setProofFile(null);
+      queryClient.invalidateQueries({ queryKey: ["jamaah-payments"] });
+    },
   });
 
   const summary = data?.data?.summary;
@@ -140,6 +181,93 @@ export default function JamaahPaymentsPage() {
           </CardContent>
         </Card>
 
+        <Card className="border-0 shadow-md rounded-2xl">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Upload className="h-5 w-5 text-[var(--color-primary)]" />
+              <h3 className="font-semibold">Kirim Bukti Pembayaran</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Upload bukti transfer agar admin dapat memeriksa dan memverifikasi pembayaran Anda.
+            </p>
+            <div className="space-y-3">
+              <input
+                type="number"
+                min="1"
+                placeholder="Nominal transfer"
+                value={paymentForm.amount}
+                onChange={(event) =>
+                  setPaymentForm({ ...paymentForm, amount: event.target.value })
+                }
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+              />
+              <select
+                value={paymentForm.bankId}
+                onChange={(event) =>
+                  setPaymentForm({ ...paymentForm, bankId: event.target.value })
+                }
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
+              >
+                <option value="">Pilih rekening tujuan</option>
+                {banks.map((bank: any) => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.bankName} - {bank.accountNumber}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={paymentForm.paymentDate}
+                onChange={(event) =>
+                  setPaymentForm({ ...paymentForm, paymentDate: event.target.value })
+                }
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+              />
+              <input
+                type="text"
+                placeholder="Nama penyetor"
+                value={paymentForm.paidBy}
+                onChange={(event) =>
+                  setPaymentForm({ ...paymentForm, paidBy: event.target.value })
+                }
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+              />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => setProofFile(event.target.files?.[0] || null)}
+                className="block w-full rounded-lg border px-3 py-2 text-sm"
+              />
+              <Button
+                className="w-full"
+                disabled={
+                  submitPaymentMutation.isPending ||
+                  !paymentForm.amount ||
+                  !proofFile
+                }
+                onClick={() => submitPaymentMutation.mutate()}
+              >
+                {submitPaymentMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Kirim untuk Diverifikasi
+              </Button>
+              {submitPaymentMutation.isError && (
+                <p className="text-xs text-red-600">
+                  {(submitPaymentMutation.error as any)?.response?.data?.message ||
+                    (submitPaymentMutation.error as Error).message ||
+                    "Bukti pembayaran gagal dikirim"}
+                </p>
+              )}
+              {submitPaymentMutation.isSuccess && (
+                <p className="text-xs text-green-600">
+                  Bukti pembayaran berhasil dikirim dan menunggu verifikasi admin.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Payment Info */}
         <Card className="border-0 shadow-md rounded-2xl">
           <CardContent className="p-4">
@@ -204,7 +332,11 @@ export default function JamaahPaymentsPage() {
                             : "bg-amber-50 text-amber-700 border-amber-200"
                         }
                       >
-                        {payment.verifiedAt ? "Terverifikasi" : "Pending"}
+                        {payment.proofStatus === "VERIFIED"
+                          ? "Terverifikasi"
+                          : payment.proofStatus === "REJECTED"
+                            ? "Ditolak"
+                            : "Menunggu verifikasi"}
                       </Badge>
                     </div>
 

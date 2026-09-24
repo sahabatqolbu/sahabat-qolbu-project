@@ -331,6 +331,29 @@ export const jamaahSelfService = {
     return response.data;
   },
 
+  submitPayment: async (data: {
+    amount: string;
+    bankId?: string;
+    paymentDate: string;
+    paidBy?: string;
+    notes?: string;
+    proof: File;
+  }) => {
+    const formData = new FormData();
+    formData.append("amount", data.amount);
+    formData.append("paymentDate", data.paymentDate);
+    if (data.bankId) formData.append("bankId", data.bankId);
+    if (data.paidBy) formData.append("paidBy", data.paidBy);
+    if (data.notes) formData.append("notes", data.notes);
+    formData.append("proof", data.proof);
+
+    const response = await api.post("/jamaah/payments", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      params: getSelectedMemberParams(),
+    });
+    return response.data;
+  },
+
   getPackage: async () => {
     const response = await api.get("/jamaah/package", {
       params: getSelectedMemberParams(),
