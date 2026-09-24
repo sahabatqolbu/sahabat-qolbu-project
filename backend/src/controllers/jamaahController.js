@@ -1080,6 +1080,16 @@ async function addPaymentHandler(req, res, next) {
       return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
+    if (!jamaah.packageId || Number(jamaah.hargaFinal || 0) <= 0) {
+      return errorResponse(
+        res,
+        "Paket jamaah belum dipilih. Pilih paket dan simpan data jamaah terlebih dahulu sebelum mencatat pembayaran.",
+        422,
+        null,
+        "JAMAAH_PACKAGE_REQUIRED",
+      );
+    }
+
     let members = [jamaah];
     if (applyToFamily) {
       members = await db.query.jamaahData.findMany({
@@ -1091,6 +1101,19 @@ async function addPaymentHandler(req, res, next) {
           res,
           "Akun ini belum memiliki anggota keluarga lain",
           400,
+        );
+      }
+
+      const membersWithoutPackage = members.filter(
+        (member) => !member.packageId || Number(member.hargaFinal || 0) <= 0,
+      );
+      if (membersWithoutPackage.length > 0) {
+        return errorResponse(
+          res,
+          "Semua anggota keluarga harus sudah memiliki paket sebelum pembayaran keluarga dicatat.",
+          422,
+          { bookingNumbers: membersWithoutPackage.map((member) => member.bookingNumber) },
+          "FAMILY_PACKAGE_REQUIRED",
         );
       }
     }

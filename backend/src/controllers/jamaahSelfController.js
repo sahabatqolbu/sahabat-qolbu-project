@@ -773,6 +773,16 @@ export const submitMyPayment = async (req, res, next) => {
       return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
+    if (!jamaah.packageId || Number(jamaah.hargaFinal || 0) <= 0) {
+      return errorResponse(
+        res,
+        "Paket jamaah belum dipilih. Pilih paket terlebih dahulu sebelum mengirim pembayaran.",
+        422,
+        null,
+        "JAMAAH_PACKAGE_REQUIRED",
+      );
+    }
+
     const payment = await createSelfPayment(jamaah.id, {
       amount: amount.toString(),
       bankId: Number.isInteger(bankId) && bankId > 0 ? bankId : null,
