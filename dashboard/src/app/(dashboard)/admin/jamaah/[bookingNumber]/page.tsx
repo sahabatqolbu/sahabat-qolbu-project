@@ -287,9 +287,10 @@ export default function JamaahDetailPage({ params }: PageProps) {
 
   // ===== DIALOG STATES =====
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [rejectPaymentDialogOpen, setRejectPaymentDialogOpen] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
-  const [paymentRejectReason, setPaymentRejectReason] = useState("");
+const [rejectPaymentDialogOpen, setRejectPaymentDialogOpen] = useState(false);
+const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
+const [paymentRejectReason, setPaymentRejectReason] = useState("");
+const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [revertDialogOpen, setRevertDialogOpen] = useState(false);
@@ -455,6 +456,24 @@ export default function JamaahDetailPage({ params }: PageProps) {
     },
   });
 
+  const uploadDocumentMutation = useMutation({
+    mutationFn: (payload: { documentType: string; file: File }) =>
+      jamaahService.uploadDocument(bookingNumber, payload.documentType, payload.file),
+    onSuccess: () => {
+      toast({ title: "✅ Dokumen berhasil diupload" });
+      queryClient.invalidateQueries({
+        queryKey: ["jamaah-detail", bookingNumber],
+      });
+    },
+    onError: (error: unknown) => {
+      toast({
+        variant: "destructive",
+        title: "❌ Upload dokumen gagal",
+        description: getErrorMessage(error),
+      });
+    },
+  });
+
   const rejectPaymentMutation = useMutation({
     mutationFn: (payload: { paymentId: number; reason: string }) =>
       jamaahService.rejectPayment(payload.paymentId, payload.reason),
@@ -600,15 +619,10 @@ export default function JamaahDetailPage({ params }: PageProps) {
   }, [jamaah]);
 
   const handleInlineSave = () => {
-    const payload: Omit<Partial<InlineFormState>, "packageId" | "agenId" | "roomTypeMakkah" | "roomTypeMadinah" | "notePaket" | "notes"> & {
-      packageId?: number | null;
-      agenId?: number | null;
-      roomTypeMakkah?: string | null;
-      roomTypeMadinah?: string | null;
-      notePaket?: string | null;
-      notes?: string | null;
-    } = {
+    const payload: any = {
       ...inlineForm,
+      birthDate: inlineForm.birthDate || null,
+      gender: inlineForm.gender || null,
       packageId:
         inlineForm.packageId && inlineForm.packageId !== "none"
           ? parseInt(inlineForm.packageId, 10)
@@ -1234,6 +1248,37 @@ export default function JamaahDetailPage({ params }: PageProps) {
               Tolak Bukti
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(proofPreviewUrl)}
+        onOpenChange={(open) => !open && setProofPreviewUrl(null)}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Preview Bukti Pembayaran</DialogTitle>
+            <DialogDescription>
+              Bukti transfer hanya dapat dilihat oleh pengguna dashboard yang berwenang.
+            </DialogDescription>
+          </DialogHeader>
+          {proofPreviewUrl && (
+            <div className="flex max-h-[70vh] items-center justify-center overflow-auto rounded-lg bg-slate-50 p-3">
+              <img
+                src={proofPreviewUrl}
+                alt="Bukti pembayaran"
+                className="max-h-[65vh] max-w-full object-contain"
+                onError={() => {
+                  toast({
+                    variant: "destructive",
+                    title: "Bukti tidak dapat ditampilkan",
+                    description: "Sesi mungkin sudah berakhir. Silakan login ulang.",
+                  });
+                  setProofPreviewUrl(null);
+                }}
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -2640,6 +2685,19 @@ export default function JamaahDetailPage({ params }: PageProps) {
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
+                            {payment.proofUrl && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="mr-2 text-blue-600 hover:bg-blue-50"
+                                onClick={() =>
+                                  setProofPreviewUrl(getImageUrl(payment.proofUrl))
+                                }
+                              >
+                                <Eye className="mr-1 h-4 w-4" />
+                                Lihat Bukti
+                              </Button>
+                            )}
                             {(payment.proofStatus || "UPLOADED") !== "VERIFIED" && (
                               <div className="flex items-center justify-center gap-2">
                                 <label className="inline-flex cursor-pointer items-center rounded-md border px-2 py-1 text-xs text-blue-600 hover:bg-blue-50">
@@ -2796,9 +2854,35 @@ export default function JamaahDetailPage({ params }: PageProps) {
                             <Button size="sm" variant="ghost">
                               <Eye className="h-4 w-4" />
                             </Button>
-                          </a>
+                            </a>
                         )}
                       </div>
+                      <label className="mt-3 inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-dashed px-3 py-2 text-xs text-blue-600 hover:bg-blue-50">
+                        {uploadDocumentMutation.isPending ? (
+                          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <Plus className="mr-1 h-3.5 w-3.5" />
+                            {url ? "Ganti Dokumen" : "Upload Dokumen"}
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          className="hidden"
+                          disabled={uploadDocumentMutation.isPending}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) {
+                              uploadDocumentMutation.mutate({
+                                documentType: doc.key.replace(/Url$/, ""),
+                                file,
+                              });
+                            }
+                            event.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
                     </div>
                   );
                 })}
