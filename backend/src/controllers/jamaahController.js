@@ -1130,19 +1130,20 @@ async function addPaymentHandler(req, res, next) {
     }
 
     logger.info("Payment added", {
-      paymentId: newPayment.id,
+      paymentId: createdPayments[0]?.id,
       bookingNumber,
-      paymentNumber,
+      paymentCount: createdPayments.length,
+      familyApplied: Boolean(applyToFamily),
     });
 
     return createdResponse(
       res,
       {
-      paymentId: createdPayments[0]?.id,
-      paymentIds: createdPayments.map((payment) => payment.id),
-      familyApplied: Boolean(applyToFamily),
-      allocations: createdPayments,
-      verificationStatus: "UPLOADED",
+        paymentId: createdPayments[0]?.id,
+        paymentIds: createdPayments.map((payment) => payment.id),
+        familyApplied: Boolean(applyToFamily),
+        allocations: createdPayments,
+        verificationStatus: "UPLOADED",
       },
       applyToFamily
         ? "Pembayaran keluarga berhasil dicatat untuk seluruh anggota dan menunggu verifikasi"
