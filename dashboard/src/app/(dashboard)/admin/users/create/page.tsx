@@ -2,12 +2,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { adminService } from "@/services/adminService";
-import { agenService } from "@/services/agenService";
+import { packageService, type Package } from "@/services/packageService";
 import { useAuthStore } from "@/stores/authStore";
 import {
   createUserSchema,
@@ -36,10 +35,29 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ArrowLeft, UserPlus, Copy } from "lucide-react";
 import Link from "next/link";
 
+interface CreatedUserResult {
+  user: {
+    fullName: string;
+    email: string;
+  };
+}
+
+function getErrorMessage(error: unknown) {
+  const apiError = error as {
+    message?: string;
+    response?: { data?: { message?: string } };
+  };
+
+  return (
+    apiError.response?.data?.message || apiError.message || "Terjadi kesalahan"
+  );
+}
+
 export default function CreateUserPage() {
-  const router = useRouter();
   const { toast } = useToast();
-  const [createdUser, setCreatedUser] = useState<any>(null);
+  const [createdUser, setCreatedUser] = useState<CreatedUserResult | null>(
+    null,
+  );
   const { user: authUser } = useAuthStore();
   const isStaff = authUser?.role === "STAFF";
   const isFinance = authUser?.role === "FINANCE";
@@ -48,53 +66,46 @@ export default function CreateUserPage() {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
     reset,
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
   });
 
-  const selectedRole = watch("role");
+  const selectedRole = useWatch({ control, name: "role" });
 
   // Fetch packages (only if role is JAMAAH)
-  const { data: packagesData } = useQuery({
-    queryKey: ["packages"],
-    queryFn: agenService.getPackages,
+  const {
+    data: packagesData,
+    isLoading: packagesLoading,
+    isError: packagesError,
+    refetch: refetchPackages,
+  } = useQuery({
+    queryKey: ["admin-packages", "user-create", "active"],
+    queryFn: () =>
+      packageService.getAll({ isActive: true, page: 1, limit: 100 }),
     enabled: selectedRole === "JAMAAH",
   });
 
-  const packages = packagesData?.data?.packages || [];
+  const packages: Package[] = packagesData?.data?.packages || [];
 
   // Create User Mutation
   const createMutation = useMutation({
-    mutationFn: async (data: CreateUserFormData) => {
-      console.log("🔥 MUTATION START:", data);
-
-      try {
-        const result = await adminService.users.createUser(data);
-        console.log("✅ MUTATION SUCCESS:", result);
-        return result;
-      } catch (error) {
-        console.error("❌ MUTATION ERROR:", error);
-        throw error;
-      }
-    },
+    mutationFn: (data: CreateUserFormData) =>
+      adminService.users.createUser(data),
     onSuccess: (data) => {
-      console.log("🎉 ON SUCCESS:", data);
       setCreatedUser(data.data);
       toast({
         title: "✅ User Berhasil Dibuat!",
         description: `Akun ${data.data.user.fullName} telah dibuat.`,
       });
     },
-    onError: (error: any) => {
-      console.error("💥 ON ERROR:", error);
+    onError: (error: unknown) => {
       toast({
         variant: "destructive",
         title: "❌ Gagal Membuat User",
-        description:
-          error.response?.data?.message || error.message || "Terjadi kesalahan",
+        description: getErrorMessage(error),
       });
     },
   });
@@ -118,7 +129,6 @@ export default function CreateUserPage() {
       return;
     }
 
-    console.log("📤 SUBMIT DATA:", data); // ✅ DEBUG
     createMutation.mutate(data);
   };
 
@@ -171,8 +181,8 @@ export default function CreateUserPage() {
                 💌 <strong>Email Telah Dikirim!</strong>
                 <br />
                 Informasi login telah dikirim ke{" "}
-                <strong>{createdUser.user.email}</strong>. Jika jamaah
-                tidak menerima email dalam 5 menit, silakan cek folder spam.
+                <strong>{createdUser.user.email}</strong>. Jika jamaah tidak
+                menerima email dalam 5 menit, silakan cek folder spam.
               </AlertDescription>
             </Alert>
 
@@ -210,7 +220,7 @@ export default function CreateUserPage() {
                   const message = `Assalamu'alaikum ${createdUser.user.fullName},\n\nAkun umrah Anda telah dibuat.\n\n📧 Email: ${createdUser.user.email}\n🔐 Password sudah dikirim melalui email (cek inbox/spam).\n\n🔗 Login di: dashboard.sahabatqolbu.com/login\n\nBarakallahu fiikum,\nSahabat Qolbu Travel`;
                   window.open(
                     `https://wa.me/?text=${encodeURIComponent(message)}`,
-                    "_blank"
+                    "_blank",
                   );
                 }}
               >
@@ -294,19 +304,29 @@ export default function CreateUserPage() {
                   Role <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  onValueChange={(value) => setValue("role", value as any)}
+                  onValueChange={(value) =>
+                    setValue("role", value as CreateUserFormData["role"])
+                  }
                   disabled={createMutation.isPending}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="-- Pilih Role --" />
                   </SelectTrigger>
                   <SelectContent>
-                    {!isStaff && !isFinance && <SelectItem value="ADMIN">Admin</SelectItem>}
-                    {!isStaff && !isFinance && <SelectItem value="FINANCE">Finance</SelectItem>}
-                    {!isStaff && !isFinance && <SelectItem value="STAFF">Staff</SelectItem>}
+                    {!isStaff && !isFinance && (
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                    )}
+                    {!isStaff && !isFinance && (
+                      <SelectItem value="FINANCE">Finance</SelectItem>
+                    )}
+                    {!isStaff && !isFinance && (
+                      <SelectItem value="STAFF">Staff</SelectItem>
+                    )}
                     <SelectItem value="AGEN">Agen</SelectItem>
                     <SelectItem value="JAMAAH">Jamaah</SelectItem>
-                    {!isStaff && !isFinance && <SelectItem value="CALON_JAMAAH">Calon Jamaah</SelectItem>}
+                    {!isStaff && !isFinance && (
+                      <SelectItem value="CALON_JAMAAH">Calon Jamaah</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.role && (
@@ -322,33 +342,67 @@ export default function CreateUserPage() {
                     onValueChange={(value) =>
                       setValue("packageId", parseInt(value))
                     }
-                    disabled={createMutation.isPending}
+                    disabled={
+                      createMutation.isPending ||
+                      packagesLoading ||
+                      packagesError
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="-- Pilih Paket (Opsional) --" />
+                      <SelectValue
+                        placeholder={
+                          packagesLoading
+                            ? "Memuat paket..."
+                            : "-- Pilih Paket (Opsional) --"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {packages.length === 0 ? (
+                      {packagesLoading ? (
+                        <div className="flex items-center justify-center gap-2 px-2 py-4 text-sm text-gray-500">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Memuat paket...
+                        </div>
+                      ) : packages.length === 0 ? (
                         <div className="px-2 py-4 text-sm text-gray-500 text-center">
                           Tidak ada paket aktif
                         </div>
                       ) : (
-                        packages.map((pkg: any) => (
+                        packages.map((pkg) => (
                           <SelectItem key={pkg.id} value={pkg.id.toString()}>
                             {/* ✅ FIX: title → name */}
                             {pkg.name} - Rp{" "}
-                            {parseFloat(pkg.price).toLocaleString("id-ID")}
+                            {Number(pkg.price).toLocaleString("id-ID")}
                           </SelectItem>
                         ))
                       )}
                     </SelectContent>
                   </Select>
-                  {/* ✅ DEBUG INFO */}
-                  <p className="text-xs text-gray-500">
-                    {packages.length > 0
-                      ? `${packages.length} paket tersedia`
-                      : "Loading paket..."}
-                  </p>
+                  {packagesLoading ? (
+                    <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Mengambil daftar paket aktif...
+                    </p>
+                  ) : packagesError ? (
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-red-600">
+                      <span>Daftar paket gagal dimuat.</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => refetchPackages()}
+                      >
+                        Coba lagi
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      {packages.length > 0
+                        ? `${packages.length} paket aktif tersedia`
+                        : "Belum ada paket aktif. Jamaah tetap dapat dibuat tanpa memilih paket."}
+                    </p>
+                  )}
                 </div>
               )}
 
