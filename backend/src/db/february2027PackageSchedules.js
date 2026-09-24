@@ -48,41 +48,59 @@ export const february2027PackageSchedules = [
     facilities("program pelataran dengan estimasi 3–5 menit jalan kaki dari hotel ke pelataran Masjid"),
   ),
   definition(
-    "PAKET COMFY I'TIKAF MEKKAH",
+    "PAKET COMFY I'TIKAF MEKKAH - OPSI MAYSAN",
     [
       ["2027-02-24", 9, "WY", "Maysan Al Mashaer / Azka Al Safa / setaraf", "ODST / Triple One / setaraf", 67.9, 76.9, 90.9],
+      ["2027-02-28", 9, "WY", "Maysan Al Mashaer / Azka Al Safa / setaraf", "ODST / Triple One / setaraf", 65.9, 74.9, 88.9],
+    ],
+    itikafFacilities,
+  ),
+  definition(
+    "PAKET COMFY I'TIKAF MEKKAH - OPSI SNOOD",
+    [
       ["2027-02-24", 9, "WY", "Snood / Grand Al Massa / setaraf", "ODST / Triple One / setaraf", 54.9, 61.9, 76.9],
       ["2027-02-25", 9, "WY", "Snood / Grand Al Massa / setaraf", "ODST / Triple One / setaraf", 54.9, 61.9, 76.9],
-      ["2027-02-28", 9, "WY", "Maysan Al Mashaer / Azka Al Safa / setaraf", "ODST / Triple One / setaraf", 65.9, 74.9, 88.9],
       ["2027-02-28", 17, "WY", "Snood / Grand Al Massa / Prestige / setaraf", "ODST / Triple One / setaraf", 56.9, 63.9, 78.9],
     ],
     itikafFacilities,
   ),
   definition(
-    "PAKET RAMADAN COMFY",
+    "PAKET RAMADAN COMFY - OPSI MAYSAN",
     [
       ["2027-02-03", 9, "GA", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 38.5, 41.5, 44],
-      ["2027-02-04", 9, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 42.5, 45.1, 49.1],
       ["2027-02-04", 9, "GA", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 38.5, 42.1, 44],
-      ["2027-02-06", 9, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 43.9, 46.5, 50.9],
       ["2027-02-06", 9, "GA", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 39.5, 41.5, 45],
-      ["2027-02-07", 9, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 44.9, 44.9, 51.9],
       ["2027-02-07", 9, "GA", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 39.5, 42.5, 45],
       ["2027-02-08", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 39.5, 42, 45],
     ],
     facilities("cek kesehatan dasar, cek tensi darah, cek gula darah, dan infus vitamin booster"),
   ),
   definition(
-    "PAKET RAMADAN SMART",
+    "PAKET RAMADAN COMFY - OPSI AZKA",
+    [
+      ["2027-02-04", 9, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 42.5, 45.1, 49.1],
+      ["2027-02-06", 9, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 43.9, 46.5, 50.9],
+      ["2027-02-07", 9, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 44.9, 44.9, 51.9],
+    ],
+    facilities("cek kesehatan dasar, cek tensi darah, cek gula darah, dan infus vitamin booster"),
+  ),
+  definition(
+    "PAKET RAMADAN SMART - OPSI WINNER INN",
     [
       ["2027-02-03", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 33.5, 36, 38],
-      ["2027-02-04", 9, "WY", "Al-Massa Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 36.5, 38.6, 41.5],
       ["2027-02-04", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 33.5, 36, 38],
-      ["2027-02-06", 9, "WY", "Al-Massa Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 37.9, 40.4, 43.4],
       ["2027-02-06", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 34.5, 37, 39],
       ["2027-02-07", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 34.5, 37, 39],
       ["2027-02-08", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 34.5, 37, 39],
       ["2027-02-21", 9, "GA", "Nada Ajyad / setaraf", "ODST / setaraf", 32.7, 34.6, 37.7],
+    ],
+    facilities("cek kesehatan dasar, cek tensi darah, cek gula darah, Ayam Al-Baik, perlengkapan umroh, bus executive, nasi Mandhi, Museum Al Moudi, transmitter, Thaif, dan manasik 2x"),
+  ),
+  definition(
+    "PAKET RAMADAN SMART - OPSI AL-MASSA",
+    [
+      ["2027-02-04", 9, "WY", "Al-Massa Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 36.5, 38.6, 41.5],
+      ["2027-02-06", 9, "WY", "Al-Massa Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 37.9, 40.4, 43.4],
     ],
     facilities("cek kesehatan dasar, cek tensi darah, cek gula darah, Ayam Al-Baik, perlengkapan umroh, bus executive, nasi Mandhi, Museum Al Moudi, transmitter, Thaif, dan manasik 2x"),
   ),
