@@ -47,7 +47,7 @@ export const createBank = async (req, res, next) => {
   try {
     const { bankName, accountNumber, accountName, branch } = req.body;
 
-    const [newBank] = await db
+    const [created] = await db
       .insert(masterBanks)
       .values({
         bankName,
@@ -56,7 +56,13 @@ export const createBank = async (req, res, next) => {
         branch: branch || null,
         isActive: true,
       })
-      .returning();
+      .$returningId();
+
+    const [newBank] = await db
+      .select()
+      .from(masterBanks)
+      .where(eq(masterBanks.id, created.id))
+      .limit(1);
 
     return createdResponse(res, newBank, "Rekening berhasil ditambahkan");
   } catch (error) {
@@ -79,11 +85,16 @@ export const updateBank = async (req, res, next) => {
     if (branch !== undefined) updateData.branch = branch;
     if (typeof isActive === "boolean") updateData.isActive = isActive;
 
-    const [updatedBank] = await db
+    await db
       .update(masterBanks)
       .set(updateData)
+      .where(eq(masterBanks.id, parseInt(id)));
+
+    const [updatedBank] = await db
+      .select()
+      .from(masterBanks)
       .where(eq(masterBanks.id, parseInt(id)))
-      .returning();
+      .limit(1);
 
     if (!updatedBank) {
       return errorResponse(res, "Rekening tidak ditemukan", 404);
@@ -110,14 +121,19 @@ export const toggleBankStatus = async (req, res, next) => {
       return errorResponse(res, "Rekening tidak ditemukan", 404);
     }
 
-    const [updated] = await db
+    await db
       .update(masterBanks)
       .set({
         isActive: !bank.isActive,
         updatedAt: new Date(),
       })
+      .where(eq(masterBanks.id, parseInt(id)));
+
+    const [updated] = await db
+      .select()
+      .from(masterBanks)
       .where(eq(masterBanks.id, parseInt(id)))
-      .returning();
+      .limit(1);
 
     return successResponse(
       res,
