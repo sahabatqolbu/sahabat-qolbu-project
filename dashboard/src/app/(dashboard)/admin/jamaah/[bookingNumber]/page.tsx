@@ -52,6 +52,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -175,6 +176,7 @@ interface PaymentItem {
   bank?: {
     bankName?: string;
   };
+  familyPaymentGroupId?: string | null;
 }
 
 interface JamaahRecord {
@@ -222,6 +224,17 @@ interface JamaahRecord {
     email?: string;
     phone?: string;
   };
+  familyMembers?: Array<{
+    id: number;
+    bookingNumber: string;
+    memberName?: string | null;
+    familyRelationship?: string | null;
+    isPrimaryMember?: boolean;
+    hargaFinal?: string | null;
+    totalPayment?: string | null;
+    outstanding?: string | null;
+    statusPayment?: string | null;
+  }>;
   package?: {
     name?: string;
     departureDate?: string;
@@ -309,6 +322,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
     amount: "",
     bankId: "",
     notes: "",
+    applyToFamily: false,
   });
 
   // =====================================================
@@ -380,6 +394,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
       amount: number;
       bankId?: number;
       notes?: string;
+      applyToFamily?: boolean;
     }) => jamaahService.addPayment(bookingNumber, data),
     onSuccess: () => {
       toast({
@@ -695,6 +710,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
       amount: "",
       bankId: "",
       notes: "",
+      applyToFamily: false,
     });
   };
 
@@ -2474,6 +2490,31 @@ export default function JamaahDetailPage({ params }: PageProps) {
                       </Select>
                     </div>
                     <div className="space-y-2">
+                      {Boolean(jamaah?.familyMembers && jamaah.familyMembers.length > 1) && (
+                        <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+                          <Checkbox
+                            id="applyToFamily"
+                            checked={paymentForm.applyToFamily}
+                            onCheckedChange={(checked) =>
+                              setPaymentForm({
+                                ...paymentForm,
+                                applyToFamily: checked === true,
+                              })
+                            }
+                          />
+                          <div className="space-y-1">
+                            <Label htmlFor="applyToFamily" className="cursor-pointer">
+                              Terapkan ke seluruh keluarga
+                            </Label>
+                            <p className="text-xs text-blue-700">
+                              Nominal akan dibagi otomatis ke {jamaah.familyMembers?.length ?? 0} anggota
+                              berdasarkan sisa tagihan masing-masing.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
                       <Label>Catatan</Label>
                       <Input
                         value={paymentForm.notes}
@@ -2513,6 +2554,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
                             ? parseInt(paymentForm.bankId)
                             : undefined,
                           notes: paymentForm.notes,
+                          applyToFamily: paymentForm.applyToFamily,
                         });
                       }}
                       disabled={addPaymentMutation.isPending}

@@ -368,6 +368,7 @@ export const jamaahAdminSchemas = {
   addPayment: z
     .object({
       amount: z.coerce.number().positive("Jumlah pembayaran harus positif"),
+      applyToFamily: z.boolean().optional().default(false),
       bankId: z.coerce.number().int().positive().optional().nullable(),
       paidBy: z.string().max(255).optional().nullable(),
       paymentDate: z.union([z.string(), z.date()]).optional().nullable(),

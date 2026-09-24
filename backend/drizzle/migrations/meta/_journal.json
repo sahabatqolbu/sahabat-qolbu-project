@@ -183,6 +183,13 @@
       "when": 1790225400000,
       "tag": "0025_add_family_jamaah_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790235000000,
+      "tag": "0026_add_family_payment_groups",
+      "breakpoints": true
     }
   ]
 }

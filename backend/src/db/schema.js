@@ -1216,6 +1216,7 @@ export const jamaahPayments = mysqlTable(
       .notNull(),
 
     paymentNumber: int("payment_number").default(1),
+    familyPaymentGroupId: varchar("family_payment_group_id", { length: 64 }),
     bankId: int("bank_id").references(() => masterBanks.id),
     paidBy: varchar("paid_by", { length: 255 }),
     paymentDate: datetime("payment_date"),
@@ -1242,6 +1243,9 @@ export const jamaahPayments = mysqlTable(
   },
   (table) => ({
     jamaahIdx: index("jp_jamaah_idx").on(table.jamaahId),
+    familyPaymentGroupIdx: index("jp_family_payment_group_idx").on(
+      table.familyPaymentGroupId,
+    ),
     proofStatusIdx: index("jp_proof_status_idx").on(table.proofStatus),
     jamaahPaymentNumberUnique: uniqueIndex("jp_jamaah_payment_number_uq").on(
       table.jamaahId,

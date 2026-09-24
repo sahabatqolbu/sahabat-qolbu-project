@@ -1,4 +1,5 @@
 // backend/src/controllers/jamaahController.js
+import { randomUUID } from "node:crypto";
 import { concurrentMutation } from "../utils/concurrentMutation.js";
 export const createJamaah = concurrentMutation(createJamaahHandler);
 export const addPayment = concurrentMutation(addPaymentHandler);
@@ -163,6 +164,51 @@ const createPaymentWithRetry = async (
   }
 
   throw new Error("Gagal membuat nomor pembayaran unik");
+};
+
+const getVerifiedPaymentTotals = async (jamaahIds) => {
+  const rows = await db
+    .select({ jamaahId: jamaahPayments.jamaahId, amount: jamaahPayments.amount })
+    .from(jamaahPayments)
+    .where(
+      and(
+        inArray(jamaahPayments.jamaahId, jamaahIds),
+        isNotNull(jamaahPayments.verifiedAt),
+      ),
+    );
+
+  return rows.reduce((totals, row) => {
+    totals.set(
+      row.jamaahId,
+      (totals.get(row.jamaahId) || 0) + Number(row.amount || 0),
+    );
+    return totals;
+  }, new Map());
+};
+
+const allocateFamilyPayment = (members, amount, verifiedTotals) => {
+  const outstanding = members.map((member) =>
+    Math.max(
+      Number(member.hargaFinal || 0) - (verifiedTotals.get(member.id) || 0),
+      0,
+    ),
+  );
+  const totalOutstanding = outstanding.reduce((sum, value) => sum + value, 0);
+  const weights = totalOutstanding > 0 ? outstanding : members.map(() => 1);
+  const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+  const amountInCents = Math.round(Number(amount) * 100);
+  let allocatedCents = 0;
+
+  return members
+    .map((member, index) => {
+      const cents =
+        index === members.length - 1
+          ? amountInCents - allocatedCents
+          : Math.floor((amountInCents * weights[index]) / weightTotal);
+      allocatedCents += cents;
+      return { member, amount: cents / 100 };
+    })
+    .filter((item) => item.amount > 0);
 };
 
 const syncJamaahPaymentAggregate = async ({ jamaahId, hargaFinal }) => {
@@ -569,10 +615,27 @@ export const getJamaahByBookingNumber = async (req, res, next) => {
       );
     }
 
+    const familyMembers = await db.query.jamaahData.findMany({
+      where: eq(jamaahData.userId, jamaah.userId),
+      columns: {
+        id: true,
+        bookingNumber: true,
+        memberName: true,
+        familyRelationship: true,
+        isPrimaryMember: true,
+        hargaFinal: true,
+        totalPayment: true,
+        outstanding: true,
+        statusPayment: true,
+      },
+      orderBy: [desc(jamaahData.isPrimaryMember), jamaahData.id],
+    });
+
     logger.info("Jamaah found", { bookingNumber: jamaah.bookingNumber });
 
     return successResponse(res, {
       ...jamaah,
+      familyMembers,
       accountOwnerName: jamaah.user?.fullName || null,
       user: jamaah.user
         ? {
@@ -993,7 +1056,15 @@ async function addPaymentHandler(req, res, next) {
   try {
     const { bookingNumber } = req.params;
     const payload = req.validatedBody || req.body;
-    const { amount, bankId, paidBy, paymentDate, proofUrl, notes } = payload;
+    const {
+      amount,
+      bankId,
+      paidBy,
+      paymentDate,
+      proofUrl,
+      notes,
+      applyToFamily = false,
+    } = payload;
 
     logger.debug("Add payment request", {
       bookingNumber,
@@ -1009,18 +1080,54 @@ async function addPaymentHandler(req, res, next) {
       return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
-    const { inserted: newPayment, paymentNumber } =
-      await createPaymentWithRetry(jamaah.id, (nextPaymentNumber) => ({
-        jamaahId: jamaah.id,
-        paymentNumber: nextPaymentNumber,
-        amount: amount.toString(),
-        bankId: bankId ? parseInt(bankId, 10) : null,
-        paidBy,
-        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
-        proofStatus: "UPLOADED",
-        proofUrl,
-        notes,
-      }));
+    let members = [jamaah];
+    if (applyToFamily) {
+      members = await db.query.jamaahData.findMany({
+        where: eq(jamaahData.userId, jamaah.userId),
+        orderBy: [desc(jamaahData.isPrimaryMember), jamaahData.id],
+      });
+      if (members.length < 2) {
+        return errorResponse(
+          res,
+          "Akun ini belum memiliki anggota keluarga lain",
+          400,
+        );
+      }
+    }
+
+    const familyPaymentGroupId = applyToFamily ? randomUUID() : null;
+    const verifiedTotals = applyToFamily
+      ? await getVerifiedPaymentTotals(members.map((member) => member.id))
+      : new Map();
+    const allocations = applyToFamily
+      ? allocateFamilyPayment(members, amount, verifiedTotals)
+      : [{ member: jamaah, amount: Number(amount) }];
+    const createdPayments = [];
+
+    for (const allocation of allocations) {
+      const { inserted, paymentNumber } = await createPaymentWithRetry(
+        allocation.member.id,
+        (nextPaymentNumber) => ({
+          jamaahId: allocation.member.id,
+          paymentNumber: nextPaymentNumber,
+          familyPaymentGroupId,
+          amount: allocation.amount.toString(),
+          bankId: bankId ? parseInt(bankId, 10) : null,
+          paidBy,
+          paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+          proofStatus: "UPLOADED",
+          proofUrl,
+          notes,
+        }),
+      );
+      createdPayments.push({
+        id: inserted.id,
+        bookingNumber: allocation.member.bookingNumber,
+        memberName: allocation.member.memberName,
+        amount: allocation.amount,
+        paymentNumber,
+      });
+    }
 
     logger.info("Payment added", {
       paymentId: newPayment.id,
@@ -1031,11 +1138,15 @@ async function addPaymentHandler(req, res, next) {
     return createdResponse(
       res,
       {
-        paymentId: newPayment.id,
-        paymentNumber,
-        verificationStatus: "UPLOADED",
+      paymentId: createdPayments[0]?.id,
+      paymentIds: createdPayments.map((payment) => payment.id),
+      familyApplied: Boolean(applyToFamily),
+      allocations: createdPayments,
+      verificationStatus: "UPLOADED",
       },
-      "Pembayaran berhasil dicatat dan menunggu verifikasi",
+      applyToFamily
+        ? "Pembayaran keluarga berhasil dicatat untuk seluruh anggota dan menunggu verifikasi"
+        : "Pembayaran berhasil dicatat dan menunggu verifikasi",
     );
   } catch (error) {
     logger.error("Add payment error", error, {
@@ -1105,6 +1216,7 @@ export const verifyPayment = async (req, res, next) => {
       where: eq(jamaahPayments.id, parsedPaymentId),
       columns: {
         id: true,
+        familyPaymentGroupId: true,
         proofStatus: true,
         verifiedBy: true,
         verifiedAt: true,
@@ -1174,6 +1286,24 @@ export const verifyPayment = async (req, res, next) => {
       );
     }
 
+    const verificationWhere = payment.familyPaymentGroupId
+      ? eq(jamaahPayments.familyPaymentGroupId, payment.familyPaymentGroupId)
+      : eq(jamaahPayments.id, parsedPaymentId);
+    const groupedPayments = payment.familyPaymentGroupId
+      ? await db.query.jamaahPayments.findMany({
+          where: eq(
+            jamaahPayments.familyPaymentGroupId,
+            payment.familyPaymentGroupId,
+          ),
+          columns: { jamaahId: true },
+          with: {
+            jamaah: {
+              columns: { id: true, hargaFinal: true },
+            },
+          },
+        })
+      : [{ jamaahId: payment.jamaah.id, jamaah: payment.jamaah }];
+
     await db
       .update(jamaahPayments)
       .set({
@@ -1185,12 +1315,15 @@ export const verifyPayment = async (req, res, next) => {
         rejectionReason: null,
         updatedAt: new Date(),
       })
-      .where(eq(jamaahPayments.id, parsedPaymentId));
+      .where(verificationWhere);
 
-    const paymentState = await syncJamaahPaymentAggregate({
-      jamaahId: payment.jamaah.id,
-      hargaFinal: payment.jamaah?.hargaFinal,
-    });
+    let paymentState = null;
+    for (const groupedPayment of groupedPayments) {
+      paymentState = await syncJamaahPaymentAggregate({
+        jamaahId: groupedPayment.jamaahId,
+        hargaFinal: groupedPayment.jamaah?.hargaFinal,
+      });
+    }
 
     try {
       await db.insert(auditLogs).values({
@@ -1241,6 +1374,7 @@ export const rejectPayment = async (req, res, next) => {
       where: eq(jamaahPayments.id, parsedPaymentId),
       columns: {
         id: true,
+        familyPaymentGroupId: true,
         proofStatus: true,
         verifiedBy: true,
         verifiedAt: true,
@@ -1290,6 +1424,25 @@ export const rejectPayment = async (req, res, next) => {
       );
     }
 
+    const rejectionWhere = payment.familyPaymentGroupId
+      ? eq(jamaahPayments.familyPaymentGroupId, payment.familyPaymentGroupId)
+      : eq(jamaahPayments.id, parsedPaymentId);
+
+    const groupedPayments = payment.familyPaymentGroupId
+      ? await db.query.jamaahPayments.findMany({
+          where: eq(
+            jamaahPayments.familyPaymentGroupId,
+            payment.familyPaymentGroupId,
+          ),
+          columns: { jamaahId: true },
+          with: {
+            jamaah: {
+              columns: { id: true, hargaFinal: true },
+            },
+          },
+        })
+      : [{ jamaahId: payment.jamaah.id, jamaah: payment.jamaah }];
+
     await db
       .update(jamaahPayments)
       .set({
@@ -1301,12 +1454,14 @@ export const rejectPayment = async (req, res, next) => {
         verifiedAt: null,
         updatedAt: new Date(),
       })
-      .where(eq(jamaahPayments.id, parsedPaymentId));
+      .where(rejectionWhere);
 
-    const paymentState = await syncJamaahPaymentAggregate({
-      jamaahId: payment.jamaah.id,
-      hargaFinal: payment.jamaah?.hargaFinal,
-    });
+    for (const groupedPayment of groupedPayments) {
+      await syncJamaahPaymentAggregate({
+        jamaahId: groupedPayment.jamaahId,
+        hargaFinal: groupedPayment.jamaah?.hargaFinal,
+      });
+    }
 
     try {
       await db.insert(auditLogs).values({
@@ -1330,9 +1485,7 @@ export const rejectPayment = async (req, res, next) => {
       bookingNumber: payment.jamaah?.bookingNumber,
       rejectedBy: req.user?.userId,
       reason,
-      totalPaid: paymentState.totalPayment,
-      outstanding: paymentState.outstanding,
-      statusPayment: paymentState.statusPayment,
+      familyPaymentGroupId: payment.familyPaymentGroupId,
     });
 
     return successResponse(res, null, "Bukti pembayaran berhasil ditolak");
