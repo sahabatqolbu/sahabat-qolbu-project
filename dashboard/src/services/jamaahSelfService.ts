@@ -182,6 +182,7 @@ export interface PaymentSummary {
     amount: string;
     paymentDate: string;
     proofUrl: string | null;
+    proofStatus?: "UPLOADED" | "VERIFIED" | "REJECTED" | string;
     verifiedAt: string | null;
     bank: {
       name: string;
@@ -351,6 +352,20 @@ export const jamaahSelfService = {
       headers: { "Content-Type": "multipart/form-data" },
       params: getSelectedMemberParams(),
     });
+    return response.data;
+  },
+
+  replacePaymentProof: async (paymentId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("proof", file);
+    const response = await api.post(
+      `/jamaah/payments/${paymentId}/proof`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        params: getSelectedMemberParams(),
+      },
+    );
     return response.data;
   },
 

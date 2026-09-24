@@ -24,6 +24,7 @@ import {
   searchMahram,
   getMyPayments,
   submitMyPayment,
+  replaceMyPaymentProof,
   getMyPackage,
   requestPackageConsultation,
 } from "../controllers/jamaahSelfController.js";
@@ -158,6 +159,14 @@ router.post(
   upload.single("proof"),
   optimizeImage("payments", { outputFormat: "webp", maxWidth: 1600, maxHeight: 1600 }),
   submitMyPayment,
+);
+router.post(
+  "/payments/:paymentId/proof",
+  authenticate,
+  authorize(["JAMAAH"]),
+  upload.single("proof"),
+  optimizeImage("payments", { outputFormat: "webp", maxWidth: 1600, maxHeight: 1600 }),
+  replaceMyPaymentProof,
 );
 router.get("/package", authenticate, authorize(["JAMAAH"]), getMyPackage);
 router.post(

@@ -805,6 +805,57 @@ export const submitMyPayment = async (req, res, next) => {
   }
 };
 
+export const replaceMyPaymentProof = async (req, res, next) => {
+  try {
+    const paymentId = Number.parseInt(req.params.paymentId, 10);
+    if (!Number.isInteger(paymentId) || paymentId <= 0) {
+      return errorResponse(res, "paymentId tidak valid", 400);
+    }
+    if (!req.uploadedFile?.path) {
+      return errorResponse(res, "Bukti transfer wajib diupload", 400);
+    }
+
+    const payment = await db.query.jamaahPayments.findFirst({
+      where: eq(jamaahPayments.id, paymentId),
+      with: { jamaah: { columns: { userId: true } } },
+    });
+    if (!payment || payment.jamaah?.userId !== req.user.userId) {
+      return notFoundResponse(res, "Pembayaran tidak ditemukan");
+    }
+    if (payment.proofStatus === "VERIFIED") {
+      return errorResponse(
+        res,
+        "Pembayaran yang sudah diverifikasi tidak dapat diganti",
+        400,
+      );
+    }
+
+    await db
+      .update(jamaahPayments)
+      .set({
+        proofUrl: req.uploadedFile.path,
+        proofStatus: "UPLOADED",
+        rejectedBy: null,
+        rejectedAt: null,
+        rejectionReason: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(jamaahPayments.id, paymentId));
+
+    return successResponse(
+      res,
+      { paymentId, proofUrl: req.uploadedFile.path },
+      "Bukti pembayaran berhasil diganti dan menunggu verifikasi admin",
+    );
+  } catch (error) {
+    logger.error("Replace jamaah payment proof error", error, {
+      userId: req.user?.userId,
+      paymentId: req.params?.paymentId,
+    });
+    next(error);
+  }
+};
+
 // =====================================================
 // GET MY PACKAGE
 // =====================================================

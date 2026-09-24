@@ -70,6 +70,14 @@ export default function JamaahPaymentsPage() {
     },
   });
 
+  const replaceProofMutation = useMutation({
+    mutationFn: (payload: { paymentId: number; file: File }) =>
+      jamaahSelfService.replacePaymentProof(payload.paymentId, payload.file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jamaah-payments"] });
+    },
+  });
+
   const summary = data?.data?.summary;
   const payments = data?.data?.payments || [];
 
@@ -353,6 +361,32 @@ export default function JamaahPaymentsPage() {
                         Rp {parseFloat(payment.amount).toLocaleString("id-ID")}
                       </span>
                     </div>
+                    {payment.proofStatus !== "VERIFIED" && (
+                      <label className="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-dashed px-3 py-2 text-xs text-blue-700 hover:bg-blue-50">
+                        {replaceProofMutation.isPending ? (
+                          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="mr-1 h-3.5 w-3.5" />
+                        )}
+                        {payment.proofUrl ? "Ganti Bukti Transfer" : "Upload Bukti Transfer"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          disabled={replaceProofMutation.isPending}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) {
+                              replaceProofMutation.mutate({
+                                paymentId: payment.id,
+                                file,
+                              });
+                            }
+                            event.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
+                    )}
                   </CardContent>
                 </Card>
               ))}
