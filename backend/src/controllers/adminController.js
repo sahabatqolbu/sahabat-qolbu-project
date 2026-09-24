@@ -1,7 +1,14 @@
 // backend/src/controllers/adminController.js
 
 import { db } from "../db/index.js";
-import { users, jamaahData, agenProfiles, transactions, jamaahPayments, agentData } from "../db/schema.js";
+import {
+  users,
+  jamaahData,
+  agenProfiles,
+  transactions,
+  jamaahPayments,
+  agentData,
+} from "../db/schema.js";
 import { eq, like, or, and, sql, inArray } from "drizzle-orm";
 import { sendCredentialsEmail } from "../utils/email.js";
 import {
@@ -13,7 +20,7 @@ import { hashPassword, generatePassword } from "../utils/password.js";
 import { logger } from "../utils/logger.js";
 
 // ✅ HELPER: Generate Booking Number
-const generateBookingNumber = async () => {
+const generateBookingNumber = async (executor = db) => {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -24,7 +31,7 @@ const generateBookingNumber = async () => {
   const prefix = `SQ-${datePrefix}`;
 
   // Cari booking number terakhir hari ini
-  const lastBooking = await db.query.jamaahData.findFirst({
+  const lastBooking = await executor.query.jamaahData.findFirst({
     where: like(jamaahData.bookingNumber, `${prefix}%`),
     orderBy: (jamaahData, { desc }) => [desc(jamaahData.bookingNumber)],
   });
@@ -49,12 +56,16 @@ const isBookingNumberDuplicateError = (error) => {
   return error?.code === "ER_DUP_ENTRY" && message.includes("booking_number");
 };
 
-const createJamaahDataWithRetry = async (buildValues, maxRetries = 5) => {
+const createJamaahDataWithRetry = async (
+  buildValues,
+  maxRetries = 5,
+  executor = db,
+) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const bookingNumber = await generateBookingNumber();
+    const bookingNumber = await generateBookingNumber(executor);
 
     try {
-      await db.insert(jamaahData).values(buildValues(bookingNumber));
+      await executor.insert(jamaahData).values(buildValues(bookingNumber));
       return bookingNumber;
     } catch (error) {
       if (isBookingNumberDuplicateError(error) && attempt < maxRetries) {
@@ -71,12 +82,22 @@ const createJamaahDataWithRetry = async (buildValues, maxRetries = 5) => {
 // ✅ UPDATED: Create User
 export const createUser = async (req, res, next) => {
   try {
-    const { fullName, email, phone, role, packageId } = req.validatedBody || req.body;
+    const {
+      fullName,
+      email,
+      phone,
+      role,
+      packageId,
+      familyMembers = [],
+    } = req.validatedBody || req.body;
     const requesterRole = req.user?.role;
 
     logger.info("Create user request", { role, requesterRole });
 
-    if (!requesterRole || (requesterRole !== "ADMIN" && requesterRole !== "STAFF")) {
+    if (
+      !requesterRole ||
+      (requesterRole !== "ADMIN" && requesterRole !== "STAFF")
+    ) {
       return errorResponse(res, "Akses ditolak", 403);
     }
 
@@ -84,7 +105,7 @@ export const createUser = async (req, res, next) => {
       return errorResponse(
         res,
         "Staff hanya bisa membuat user dengan role AGEN atau JAMAAH",
-        403
+        403,
       );
     }
 
@@ -93,7 +114,7 @@ export const createUser = async (req, res, next) => {
       return errorResponse(
         res,
         "Data tidak lengkap (fullName, email, phone, role wajib)",
-        400
+        400,
       );
     }
 
@@ -117,39 +138,69 @@ export const createUser = async (req, res, next) => {
     // ✅ HASH PASSWORD
     const hashedPassword = await hashPassword(tempPassword);
 
-    // ✅ INSERT USER
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        password: hashedPassword,
+    const jamaahMembers = [
+      {
         fullName,
-        phone,
-        role,
-        createdBy: req.user?.userId || null,
-        isActive: true,
-        isEmailVerified: false,
-      })
-      .$returningId();
+        relationship: "DIRI_SENDIRI",
+        isPrimaryMember: true,
+      },
+      ...(role === "JAMAAH" ? familyMembers : []).map((member) => ({
+        fullName: member.fullName.trim(),
+        relationship: member.relationship,
+        isPrimaryMember: false,
+      })),
+    ];
 
-    logger.security("User created", { userId: newUser.id, role, createdBy: req.user?.userId || null });
+    const { newUser, bookingNumbers } = await db.transaction(async (tx) => {
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          email: email.toLowerCase(),
+          password: hashedPassword,
+          fullName,
+          phone,
+          role,
+          createdBy: req.user?.userId || null,
+          isActive: true,
+          isEmailVerified: false,
+        })
+        .$returningId();
 
-    // ✅ JIKA ROLE JAMAAH → CREATE jamaahData
-    let bookingNumber = null;
+      const createdBookingNumbers = [];
+      if (role === "JAMAAH") {
+        for (const member of jamaahMembers) {
+          const memberBookingNumber = await createJamaahDataWithRetry(
+            (generatedBookingNumber) => ({
+              userId: createdUser.id,
+              bookingNumber: generatedBookingNumber,
+              memberName: member.fullName,
+              familyRelationship: member.relationship,
+              isPrimaryMember: member.isPrimaryMember,
+              dateOfBooking: new Date(),
+              packageId: packageId ? parseInt(packageId, 10) : null,
+              registrationStatus: "DRAFT",
+              isProfileComplete: false,
+              agenId: req.user?.role === "AGEN" ? req.user.userId : null,
+            }),
+            5,
+            tx,
+          );
+          createdBookingNumbers.push(memberBookingNumber);
+        }
+      }
 
-    if (role === "JAMAAH") {
-      bookingNumber = await createJamaahDataWithRetry((generatedBookingNumber) => ({
-        userId: newUser.id,
-        bookingNumber: generatedBookingNumber,
-        dateOfBooking: new Date(),
-        packageId: packageId ? parseInt(packageId) : null,
-        registrationStatus: "DRAFT",
-        isProfileComplete: false,
-        agenId: req.user?.role === "AGEN" ? req.user.userId : null,
-      }));
+      return {
+        newUser: createdUser,
+        bookingNumbers: createdBookingNumbers,
+      };
+    });
 
-      logger.info("Jamaah data created", { userId: newUser.id });
-    }
+    logger.security("User created", {
+      userId: newUser.id,
+      role,
+      jamaahCount: bookingNumbers.length,
+      createdBy: req.user?.userId || null,
+    });
 
     // ✅ KIRIM EMAIL (async, non-blocking)
     if (typeof sendCredentialsEmail === "function") {
@@ -175,10 +226,12 @@ export const createUser = async (req, res, next) => {
           fullName,
           email: email.toLowerCase(),
           role,
-          bookingNumber: bookingNumber, // ✅ Include booking number
+          bookingNumber: bookingNumbers[0] || null,
+          bookingNumbers,
+          jamaahCount: bookingNumbers.length,
         },
       },
-      "User berhasil dibuat"
+      "User berhasil dibuat",
     );
   } catch (error) {
     logger.error("Create user error", error);
@@ -199,8 +252,8 @@ export const getAllUsers = async (req, res, next) => {
       conditions.push(
         or(
           like(users.fullName, `%${search}%`),
-          like(users.email, `%${search}%`)
-        )
+          like(users.email, `%${search}%`),
+        ),
       );
     }
     if (requesterRole === "STAFF" || requesterRole === "FINANCE") {
@@ -225,7 +278,9 @@ export const getAllUsers = async (req, res, next) => {
       orderBy: (users, { desc }) => [desc(users.createdAt)],
     });
 
-    const creatorIds = [...new Set(allUsers.map((u) => u.createdBy).filter(Boolean))];
+    const creatorIds = [
+      ...new Set(allUsers.map((u) => u.createdBy).filter(Boolean)),
+    ];
 
     const creators = creatorIds.length
       ? await db.query.users.findMany({
@@ -346,7 +401,7 @@ export const toggleUserStatus = async (req, res, next) => {
     return successResponse(
       res,
       { isActive: !user.isActive },
-      "Status user berhasil diupdate"
+      "Status user berhasil diupdate",
     );
   } catch (error) {
     next(error);
@@ -396,7 +451,7 @@ export const deleteUser = async (req, res, next) => {
       return errorResponse(
         res,
         "User tidak dapat dihapus karena masih memiliki relasi data. Nonaktifkan akun sebagai alternatif.",
-        400
+        400,
       );
     }
 
@@ -424,7 +479,7 @@ export const importUsers = async (req, res, next) => {
     };
 
     // Kita proses satu per satu biar bisa kirim email masing-masing
-    // Untuk performa ribuan data, sebaiknya pake BullMQ/Queue, 
+    // Untuk performa ribuan data, sebaiknya pake BullMQ/Queue,
     // tapi untuk skala ratusan, loop async masih oke.
     for (const userData of userList) {
       try {
@@ -433,7 +488,10 @@ export const importUsers = async (req, res, next) => {
         // Validasi minimal
         if (!fullName || !email || !role) {
           results.failed++;
-          results.errors.push({ email: email || "unknown", reason: "Data tidak lengkap" });
+          results.errors.push({
+            email: email || "unknown",
+            reason: "Data tidak lengkap",
+          });
           continue;
         }
 
@@ -490,9 +548,11 @@ export const importUsers = async (req, res, next) => {
         }
 
         // Kirim Email (Non-blocking)
-        sendCredentialsEmail(email.toLowerCase(), fullName, tempPassword).catch((err) => {
-          logger.error("Failed to send import email", err);
-        });
+        sendCredentialsEmail(email.toLowerCase(), fullName, tempPassword).catch(
+          (err) => {
+            logger.error("Failed to send import email", err);
+          },
+        );
 
         results.success++;
       } catch (err) {
@@ -502,7 +562,11 @@ export const importUsers = async (req, res, next) => {
       }
     }
 
-    return successResponse(res, results, `Berhasil memproses ${userList.length} data`);
+    return successResponse(
+      res,
+      results,
+      `Berhasil memproses ${userList.length} data`,
+    );
   } catch (error) {
     next(error);
   }
@@ -565,12 +629,16 @@ export const bulkDeleteUsers = async (req, res, next) => {
     }
 
     const blockedIds = parsedIds.filter((id) => blockedUserIds.has(id));
-    return successResponse(res, {
-      requested: parsedIds.length,
-      deleted: deletableIds.length,
-      blocked: blockedIds.length,
-      blockedIds,
-    }, `${deletableIds.length} user berhasil dihapus`);
+    return successResponse(
+      res,
+      {
+        requested: parsedIds.length,
+        deleted: deletableIds.length,
+        blocked: blockedIds.length,
+        blockedIds,
+      },
+      `${deletableIds.length} user berhasil dihapus`,
+    );
   } catch (error) {
     next(error);
   }
@@ -593,7 +661,7 @@ export const bulkUpdateUserStatus = async (req, res, next) => {
     return successResponse(
       res,
       null,
-      `${ids.length} user berhasil ${isActive ? "diaktifkan" : "dinonaktifkan"}`
+      `${ids.length} user berhasil ${isActive ? "diaktifkan" : "dinonaktifkan"}`,
     );
   } catch (error) {
     next(error);

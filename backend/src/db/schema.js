@@ -483,7 +483,9 @@ export const packageScheduleLists = mysqlTable(
     note: text("note"),
     isActive: boolean("is_active").notNull().default(true),
     isPublished: boolean("is_published").notNull().default(false),
-    createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     updatedAt: timestamp("updated_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
@@ -516,7 +518,9 @@ export const packageScheduleItems = mysqlTable(
       .notNull()
       .references(() => masterAirports.id),
     hotelMakkahLabel: varchar("hotel_makkah_label", { length: 255 }).notNull(),
-    hotelMadinahLabel: varchar("hotel_madinah_label", { length: 255 }).notNull(),
+    hotelMadinahLabel: varchar("hotel_madinah_label", {
+      length: 255,
+    }).notNull(),
     hotelMakkahId: int("hotel_makkah_id").references(() => masterHotels.id),
     hotelMadinahId: int("hotel_madinah_id").references(() => masterHotels.id),
     priceQuad: decimal("price_quad", { precision: 15, scale: 2 }).notNull(),
@@ -527,7 +531,9 @@ export const packageScheduleItems = mysqlTable(
       .notNull()
       .default("CHECK_SEAT"),
     sortOrder: int("sort_order").notNull().default(0),
-    createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
     updatedAt: timestamp("updated_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
@@ -1053,6 +1059,9 @@ export const jamaahData = mysqlTable(
 
     // === BOOKING INFO ===
     bookingNumber: varchar("booking_number", { length: 50 }).unique().notNull(),
+    memberName: varchar("member_name", { length: 255 }),
+    familyRelationship: varchar("family_relationship", { length: 50 }),
+    isPrimaryMember: boolean("is_primary_member").notNull().default(true),
     dateOfBooking: datetime("date_of_booking")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

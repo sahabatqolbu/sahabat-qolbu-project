@@ -18,6 +18,16 @@ export const createUserSchema = z.object({
   role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"]),
 
   packageId: z.number().int().positive().optional(),
+
+  familyMembers: z
+    .array(
+      z.object({
+        fullName: z.string().min(2, "Nama anggota minimal 2 karakter").max(255),
+        relationship: z.string().min(2, "Hubungan wajib dipilih").max(50),
+      }),
+    )
+    .max(19, "Maksimal 20 jamaah dalam satu akun keluarga")
+    .optional(),
 });
 
 export const updateUserSchema = z.object({

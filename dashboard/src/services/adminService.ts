@@ -2,12 +2,7 @@
 import api from "@/lib/axios";
 
 type UserRole =
-  | "ADMIN"
-  | "FINANCE"
-  | "STAFF"
-  | "AGEN"
-  | "JAMAAH"
-  | "CALON_JAMAAH";
+  "ADMIN" | "FINANCE" | "STAFF" | "AGEN" | "JAMAAH" | "CALON_JAMAAH";
 
 export const adminService = {
   dashboard: {
@@ -53,7 +48,11 @@ export const adminService = {
       email: string;
       phone: string;
       role: UserRole;
-      packageId?: number | null; // ✅ TAMBAH INI (optional untuk JAMAAH)
+      packageId?: number | null;
+      familyMembers?: Array<{
+        fullName: string;
+        relationship: string;
+      }>;
     }) => {
       const response = await api.post("/admin/users", data);
       return response.data;
@@ -93,7 +92,10 @@ export const adminService = {
       return response.data;
     },
     bulkUpdateStatus: async (ids: number[], isActive: boolean) => {
-      const response = await api.patch("/admin/users/bulk-status", { ids, isActive });
+      const response = await api.patch("/admin/users/bulk-status", {
+        ids,
+        isActive,
+      });
       return response.data;
     },
   },
@@ -159,18 +161,25 @@ export const adminService = {
     },
 
     requestKtpReupload: async (id: number, note?: string) => {
-      const response = await api.post(`/agen/admin/${id}/request-ktp-reupload`, {
-        note,
-      });
+      const response = await api.post(
+        `/agen/admin/${id}/request-ktp-reupload`,
+        {
+          note,
+        },
+      );
       return response.data;
     },
 
     uploadCertificatePdf: async (id: number, file: File) => {
       const formData = new FormData();
       formData.append("certificate", file);
-      const response = await api.post(`/agen/admin/${id}/upload-certificate`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await api.post(
+        `/agen/admin/${id}/upload-certificate`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       return response.data;
     },
 
@@ -468,9 +477,13 @@ export const adminService = {
     uploadLandingLogo: async (file: File) => {
       const formData = new FormData();
       formData.append("logo", file);
-      const response = await api.post("/agen/profile/upload-landing-logo", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await api.post(
+        "/agen/profile/upload-landing-logo",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       return response.data;
     },
 
@@ -534,7 +547,10 @@ export const adminService = {
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/notifications/admin/reminders/send", data);
+      const response = await api.post(
+        "/notifications/admin/reminders/send",
+        data,
+      );
       return response.data;
     },
 
@@ -544,10 +560,12 @@ export const adminService = {
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/notifications/admin/reminders/send-bulk", data);
+      const response = await api.post(
+        "/notifications/admin/reminders/send-bulk",
+        data,
+      );
       return response.data;
     },
-
   },
 
   // Backward-compatible reminders alias
@@ -576,7 +594,10 @@ export const adminService = {
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/notifications/admin/reminders/send", data);
+      const response = await api.post(
+        "/notifications/admin/reminders/send",
+        data,
+      );
       return response.data;
     },
 
@@ -590,7 +611,10 @@ export const adminService = {
       title: string;
       message: string;
     }) => {
-      const response = await api.post("/notifications/admin/reminders/send-bulk", data);
+      const response = await api.post(
+        "/notifications/admin/reminders/send-bulk",
+        data,
+      );
       return response.data;
     },
   },
@@ -685,7 +709,11 @@ export const adminService = {
   // TRANSACTIONS
   // =====================================================
   transactions: {
-    getAll: async (params?: { search?: string; status?: string; packageId?: number }) => {
+    getAll: async (params?: {
+      search?: string;
+      status?: string;
+      packageId?: number;
+    }) => {
       const response = await api.get("/admin/transactions", { params });
       return response.data;
     },
@@ -694,7 +722,10 @@ export const adminService = {
       return response.data;
     },
     verify: async (id: number, data: { status: string; remarks?: string }) => {
-      const response = await api.patch(`/admin/transactions/${id}/verify`, data);
+      const response = await api.patch(
+        `/admin/transactions/${id}/verify`,
+        data,
+      );
       return response.data;
     },
   },

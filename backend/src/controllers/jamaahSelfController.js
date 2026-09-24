@@ -18,6 +18,78 @@ import {
   notFoundResponse,
 } from "../utils/response.js";
 
+const getSelectedJamaahWhere = (req, userId) => {
+  const bookingNumber =
+    typeof req.query?.bookingNumber === "string"
+      ? req.query.bookingNumber.trim()
+      : "";
+
+  return bookingNumber
+    ? and(
+        eq(jamaahData.userId, userId),
+        or(
+          eq(jamaahData.bookingNumber, bookingNumber),
+          eq(jamaahData.isPrimaryMember, true),
+        ),
+      )
+    : eq(jamaahData.userId, userId);
+};
+
+const getSelectedJamaahOrder = (req) => {
+  const bookingNumber =
+    typeof req.query?.bookingNumber === "string"
+      ? req.query.bookingNumber.trim()
+      : "";
+
+  return [
+    ...(bookingNumber
+      ? [desc(sql`${jamaahData.bookingNumber} = ${bookingNumber}`)]
+      : []),
+    desc(jamaahData.isPrimaryMember),
+    desc(jamaahData.updatedAt),
+  ];
+};
+
+export const getMyMembers = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const members = await db.query.jamaahData.findMany({
+      where: eq(jamaahData.userId, userId),
+      columns: {
+        id: true,
+        bookingNumber: true,
+        memberName: true,
+        familyRelationship: true,
+        isPrimaryMember: true,
+        registrationStatus: true,
+        isProfileComplete: true,
+      },
+      with: {
+        user: {
+          columns: { fullName: true },
+        },
+      },
+      orderBy: [desc(jamaahData.isPrimaryMember), desc(jamaahData.id)],
+    });
+
+    return successResponse(
+      res,
+      members.map((member) => ({
+        id: member.id,
+        bookingNumber: member.bookingNumber,
+        fullName: member.memberName || member.user?.fullName || "Jamaah",
+        relationship: member.familyRelationship || "DIRI_SENDIRI",
+        isPrimary: member.isPrimaryMember,
+        registrationStatus: member.registrationStatus,
+        isProfileComplete: member.isProfileComplete,
+      })),
+    );
+  } catch (error) {
+    logger.error("Get jamaah family members error", error);
+    next(error);
+  }
+};
+
 // =====================================================
 // GET PROFILE (Jamaah akses data sendiri)
 // =====================================================
@@ -29,8 +101,8 @@ export const getMyProfile = async (req, res, next) => {
 
     // Get jamaah_data dengan relasi
     const jamaah = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
       with: {
         user: {
           columns: {
@@ -68,7 +140,10 @@ export const getMyProfile = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return notFoundResponse(res, "Data jamaah tidak ditemukan. Hubungi admin.");
+      return notFoundResponse(
+        res,
+        "Data jamaah tidak ditemukan. Hubungi admin.",
+      );
     }
 
     // Calculate document completeness
@@ -114,32 +189,41 @@ export const getMyProfile = async (req, res, next) => {
     logger.debug("Jamaah profile loaded", { userId });
 
     return successResponse(res, {
-        ...jamaah,
-        completeness: {
-          biodata: biodataComplete,
-          requiredDocs,
-          optionalDocs,
-          requiredDocsComplete: requiredComplete,
-          overallComplete: biodataComplete && requiredComplete,
-        },
-        deadlines: {
-          h30: deadlineH30,
-          daysUntilH30,
-          h45: jamaah.package?.departureDate
-            ? new Date(
-                new Date(jamaah.package.departureDate).setDate(
-                  new Date(jamaah.package.departureDate).getDate() - 45,
-                ),
-              )
-            : null,
-        },
+      ...jamaah,
+      memberName: jamaah.memberName || jamaah.user?.fullName || "Jamaah",
+      accountOwnerName: jamaah.user?.fullName || null,
+      user: jamaah.user
+        ? {
+            ...jamaah.user,
+            fullName: jamaah.memberName || jamaah.user.fullName,
+          }
+        : null,
+      completeness: {
+        biodata: biodataComplete,
+        requiredDocs,
+        optionalDocs,
+        requiredDocsComplete: requiredComplete,
+        overallComplete: biodataComplete && requiredComplete,
+      },
+      deadlines: {
+        h30: deadlineH30,
+        daysUntilH30,
+        h45: jamaah.package?.departureDate
+          ? new Date(
+              new Date(jamaah.package.departureDate).setDate(
+                new Date(jamaah.package.departureDate).getDate() - 45,
+              ),
+            )
+          : null,
+      },
     });
   } catch (error) {
-    logger.error("Get jamaah profile error", error, { userId: req.user?.userId });
+    logger.error("Get jamaah profile error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
-
 
 // =====================================================
 // HELPER FUNCTIONS - Tambahkan di atas
@@ -196,8 +280,8 @@ export const updateMyBiodata = async (req, res, next) => {
     logger.debug("Jamaah update biodata", { userId });
 
     const existing = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
     });
 
     if (!existing) {
@@ -208,57 +292,57 @@ export const updateMyBiodata = async (req, res, next) => {
       return errorResponse(
         res,
         "Data sudah diapprove. Hubungi admin untuk perubahan.",
-        403
+        403,
       );
     }
 
     // Define field types for proper sanitization
     const fieldConfig = {
       // String fields
-      namaPaspor: 'string',
-      nik: 'string',
-      birthPlace: 'string',
-      address: 'string',
-      province: 'string',
-      city: 'string',
-      district: 'string',
-      postalCode: 'string',
-      passportNumber: 'string',
-      passportIssuePlace: 'string',
-      emergencyName: 'string',
-      emergencyPhone: 'string',
-      emergencyRelation: 'string',
-      mahramRelation: 'string',
-      
+      namaPaspor: "string",
+      nik: "string",
+      birthPlace: "string",
+      address: "string",
+      province: "string",
+      city: "string",
+      district: "string",
+      postalCode: "string",
+      passportNumber: "string",
+      passportIssuePlace: "string",
+      emergencyName: "string",
+      emergencyPhone: "string",
+      emergencyRelation: "string",
+      mahramRelation: "string",
+
       // Date fields - MUST be valid date or NULL
-      birthDate: 'date',
-      passportIssueDate: 'date',
-      passportExpiry: 'date',
-      
+      birthDate: "date",
+      passportIssueDate: "date",
+      passportExpiry: "date",
+
       // Enum fields - MUST be valid enum or NULL
-      gender: 'enum',
-      maritalStatus: 'enum',
-      
+      gender: "enum",
+      maritalStatus: "enum",
+
       // Integer/FK fields - MUST be valid int or NULL
-      mahramId: 'integer',
+      mahramId: "integer",
     };
 
     const filteredData = {};
-    
+
     for (const [key, type] of Object.entries(fieldConfig)) {
       if (updateData[key] !== undefined) {
         switch (type) {
-          case 'date':
+          case "date":
             filteredData[key] = parseDateOrNull(updateData[key]);
             break;
-          case 'integer':
+          case "integer":
             filteredData[key] = parseIntOrNull(updateData[key]);
             break;
-          case 'enum':
+          case "enum":
             // Enum harus valid value atau null
             filteredData[key] = emptyToNull(updateData[key]);
             break;
-          case 'string':
+          case "string":
           default:
             // String bisa empty string atau null, tergantung kebutuhan
             // Untuk konsistensi, convert empty string ke null juga
@@ -268,14 +352,17 @@ export const updateMyBiodata = async (req, res, next) => {
       }
     }
 
-    logger.debug("Jamaah biodata sanitized", { userId, fields: Object.keys(filteredData) });
+    logger.debug("Jamaah biodata sanitized", {
+      userId,
+      fields: Object.keys(filteredData),
+    });
 
     // Only update if there's data to update
     if (Object.keys(filteredData).length === 0) {
       return successResponse(
         res,
         { isProfileComplete: existing.isProfileComplete },
-        "Tidak ada data yang diupdate"
+        "Tidak ada data yang diupdate",
       );
     }
 
@@ -288,8 +375,8 @@ export const updateMyBiodata = async (req, res, next) => {
       .where(eq(jamaahData.id, existing.id));
 
     const updated = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
     });
 
     const isProfileComplete = !!(
@@ -317,10 +404,12 @@ export const updateMyBiodata = async (req, res, next) => {
       {
         isProfileComplete,
       },
-      "Biodata berhasil diupdate"
+      "Biodata berhasil diupdate",
     );
   } catch (error) {
-    logger.error("Update jamaah biodata error", error, { userId: req.user?.userId });
+    logger.error("Update jamaah biodata error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -356,8 +445,8 @@ export const uploadMyDocument = async (req, res, next) => {
     }
 
     const existing = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
     });
 
     if (!existing) {
@@ -388,7 +477,7 @@ export const uploadMyDocument = async (req, res, next) => {
       const oldPath = path.join(
         process.cwd(),
         "public",
-        String(oldUrl).replace(/^\/+/, "")
+        String(oldUrl).replace(/^\/+/, ""),
       );
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
@@ -410,10 +499,12 @@ export const uploadMyDocument = async (req, res, next) => {
       {
         url: fileUrl,
       },
-      `${documentType.toUpperCase()} berhasil diupload`
+      `${documentType.toUpperCase()} berhasil diupload`,
     );
   } catch (error) {
-    logger.error("Upload jamaah document error", error, { userId: req.user?.userId });
+    logger.error("Upload jamaah document error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -428,8 +519,8 @@ export const submitForApproval = async (req, res, next) => {
     logger.debug("Jamaah submit for approval", { userId });
 
     const existing = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
     });
 
     if (!existing) {
@@ -501,10 +592,12 @@ export const submitForApproval = async (req, res, next) => {
     return successResponse(
       res,
       null,
-      "Data berhasil disubmit. Menunggu approval admin."
+      "Data berhasil disubmit. Menunggu approval admin.",
     );
   } catch (error) {
-    logger.error("Submit jamaah for approval error", error, { userId: req.user?.userId });
+    logger.error("Submit jamaah for approval error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -517,22 +610,22 @@ export const searchMahram = async (req, res, next) => {
     const userId = req.user.userId; // ✅ FIX
     const { q } = req.query;
 
-    logger.debug("Jamaah search mahram", { userId, queryLength: String(q || "").length });
+    logger.debug("Jamaah search mahram", {
+      userId,
+      queryLength: String(q || "").length,
+    });
 
     if (!q || q.length < 3) {
       return successResponse(res, []);
     }
 
     const myJamaah = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
     });
 
     const results = await db.query.jamaahData.findMany({
-      where: and(
-        ne(jamaahData.userId, userId),
-        myJamaah ? ne(jamaahData.id, myJamaah.id) : undefined,
-      ),
+      where: myJamaah ? ne(jamaahData.id, myJamaah.id) : undefined,
       with: {
         user: {
           columns: {
@@ -549,12 +642,14 @@ export const searchMahram = async (req, res, next) => {
     const searchLower = q.toLowerCase();
     const filtered = results.filter((j) => {
       const namaUser = (j.user?.fullName || "").toLowerCase();
+      const namaAnggota = (j.memberName || "").toLowerCase();
       const namaPaspor = (j.namaPaspor || "").toLowerCase();
       const booking = (j.bookingNumber || "").toLowerCase();
       const phone = (j.user?.phone || "").toLowerCase();
 
       return (
         namaUser.includes(searchLower) ||
+        namaAnggota.includes(searchLower) ||
         namaPaspor.includes(searchLower) ||
         booking.includes(searchLower) ||
         phone.includes(searchLower)
@@ -564,7 +659,7 @@ export const searchMahram = async (req, res, next) => {
     const data = filtered.map((j) => ({
       id: j.id,
       bookingNumber: j.bookingNumber,
-      fullName: j.user?.fullName || j.namaPaspor || "-",
+      fullName: j.memberName || j.namaPaspor || j.user?.fullName || "-",
       phone: j.user?.phone || "-",
       gender: j.gender,
     }));
@@ -586,8 +681,8 @@ export const getMyPayments = async (req, res, next) => {
     logger.debug("Jamaah get payments", { userId });
 
     const jamaah = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
     });
 
     if (!jamaah) {
@@ -612,7 +707,9 @@ export const getMyPayments = async (req, res, next) => {
       payments,
     });
   } catch (error) {
-    logger.error("Get jamaah payments error", error, { userId: req.user?.userId });
+    logger.error("Get jamaah payments error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -627,8 +724,8 @@ export const getMyPackage = async (req, res, next) => {
     logger.debug("Jamaah get package", { userId });
 
     const jamaah = await db.query.jamaahData.findFirst({
-      where: eq(jamaahData.userId, userId),
-      orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+      where: getSelectedJamaahWhere(req, userId),
+      orderBy: getSelectedJamaahOrder(req),
       with: {
         package: {
           with: {
@@ -668,7 +765,9 @@ export const getMyPackage = async (req, res, next) => {
       },
     });
   } catch (error) {
-    logger.error("Get jamaah package error", error, { userId: req.user?.userId });
+    logger.error("Get jamaah package error", error, {
+      userId: req.user?.userId,
+    });
     next(error);
   }
 };
@@ -693,8 +792,8 @@ export const requestPackageConsultation = async (req, res, next) => {
 
     const [jamaah, pkg] = await Promise.all([
       db.query.jamaahData.findFirst({
-        where: eq(jamaahData.userId, userId),
-        orderBy: [desc(jamaahData.updatedAt), desc(jamaahData.id)],
+        where: getSelectedJamaahWhere(req, userId),
+        orderBy: getSelectedJamaahOrder(req),
       }),
       db.query.packages.findFirst({
         where: eq(packages.id, pkgId),
@@ -709,7 +808,8 @@ export const requestPackageConsultation = async (req, res, next) => {
       return notFoundResponse(res, "Paket tidak ditemukan");
     }
 
-    const requesterName = jamaah.namaPaspor || req.user.fullName || `Jamaah #${userId}`;
+    const requesterName =
+      jamaah.namaPaspor || req.user.fullName || `Jamaah #${userId}`;
     const notificationPayload = {
       type: "SYSTEM",
       title: "Minat Paket dari Jamaah",
@@ -770,7 +870,7 @@ export const requestPackageConsultation = async (req, res, next) => {
       { target },
       target === "AGEN"
         ? "Permintaan sudah dikirim ke agen Anda"
-        : "Permintaan sudah dikirim ke admin"
+        : "Permintaan sudah dikirim ke admin",
     );
   } catch (error) {
     logger.error("Request package consultation error", error, {

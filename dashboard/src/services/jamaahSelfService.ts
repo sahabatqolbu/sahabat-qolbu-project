@@ -7,6 +7,10 @@ export interface JamaahProfile {
   id: number;
   bookingNumber: string;
   userId: number;
+  memberName: string;
+  accountOwnerName?: string | null;
+  familyRelationship?: string | null;
+  isPrimaryMember?: boolean;
 
   // User info
   user: {
@@ -186,6 +190,24 @@ export interface PaymentSummary {
   }>;
 }
 
+export interface JamaahMember {
+  id: number;
+  bookingNumber: string;
+  fullName: string;
+  relationship: string;
+  isPrimary: boolean;
+  registrationStatus: JamaahProfile["registrationStatus"];
+  isProfileComplete: boolean;
+}
+
+export const SELECTED_JAMAAH_MEMBER_KEY = "selected-jamaah-booking";
+
+const getSelectedMemberParams = () => {
+  if (typeof window === "undefined") return {};
+  const bookingNumber = window.localStorage.getItem(SELECTED_JAMAAH_MEMBER_KEY);
+  return bookingNumber ? { bookingNumber } : {};
+};
+
 // Helper functions
 const emptyToNull = (value: any): any => {
   if (value === "" || value === undefined || value === "undefined") {
@@ -243,10 +265,18 @@ const sanitizeBiodataForAPI = (data: BiodataUpdate): BiodataUpdate => {
 };
 
 export const jamaahSelfService = {
-  // ✅ Get profile - hanya format dates, BUKAN document URLs
+  getMembers: async (): Promise<{
+    success: boolean;
+    data: JamaahMember[];
+  }> => {
+    const response = await api.get("/jamaah/members");
+    return response.data;
+  },
+
   getProfile: async (): Promise<{ success: boolean; data: JamaahProfile }> => {
-    console.log("📡 jamaahSelfService.getProfile");
-    const response = await api.get("/jamaah/profile");
+    const response = await api.get("/jamaah/profile", {
+      params: getSelectedMemberParams(),
+    });
 
     if (response.data.success && response.data.data) {
       response.data.data = formatProfileDates(response.data.data);
@@ -258,23 +288,21 @@ export const jamaahSelfService = {
 
   updateBiodata: async (data: BiodataUpdate) => {
     const sanitizedData = sanitizeBiodataForAPI(data);
-    console.log(
-      "📡 jamaahSelfService.updateBiodata (sanitized)",
-      sanitizedData,
-    );
-    const response = await api.put("/jamaah/biodata", sanitizedData);
+    const response = await api.put("/jamaah/biodata", sanitizedData, {
+      params: getSelectedMemberParams(),
+    });
     return response.data;
   },
 
   // ✅ Upload document - return raw URL dari backend
   uploadDocument: async (documentType: string, file: File) => {
-    console.log("📡 jamaahSelfService.uploadDocument", documentType);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("documentType", documentType);
 
     const response = await api.post("/jamaah/documents", formData, {
       headers: { "Content-Type": "multipart/form-data" },
+      params: getSelectedMemberParams(),
     });
 
     // ❌ REMOVE URL formatting di sini
@@ -283,28 +311,30 @@ export const jamaahSelfService = {
 
   // ... sisanya tetap sama
   submit: async () => {
-    console.log("📡 jamaahSelfService.submit");
-    const response = await api.post("/jamaah/submit");
+    const response = await api.post("/jamaah/submit", null, {
+      params: getSelectedMemberParams(),
+    });
     return response.data;
   },
 
   searchMahram: async (query: string) => {
-    console.log("📡 jamaahSelfService.searchMahram", query);
-    const response = await api.get(
-      `/jamaah/mahram/search?q=${encodeURIComponent(query)}`,
-    );
+    const response = await api.get("/jamaah/mahram/search", {
+      params: { q: query, ...getSelectedMemberParams() },
+    });
     return response.data;
   },
 
   getPayments: async () => {
-    console.log("📡 jamaahSelfService.getPayments");
-    const response = await api.get("/jamaah/payments");
+    const response = await api.get("/jamaah/payments", {
+      params: getSelectedMemberParams(),
+    });
     return response.data;
   },
 
   getPackage: async () => {
-    console.log("📡 jamaahSelfService.getPackage");
-    const response = await api.get("/jamaah/package");
+    const response = await api.get("/jamaah/package", {
+      params: getSelectedMemberParams(),
+    });
     return response.data;
   },
 
@@ -323,7 +353,11 @@ export const jamaahSelfService = {
   },
 
   requestPackageConsultation: async (packageId: number | string) => {
-    const response = await api.post("/jamaah/package/request", { packageId });
+    const response = await api.post(
+      "/jamaah/package/request",
+      { packageId },
+      { params: getSelectedMemberParams() },
+    );
     return response.data;
   },
 

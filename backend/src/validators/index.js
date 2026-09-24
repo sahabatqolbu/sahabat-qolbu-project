@@ -22,7 +22,8 @@ const messages = {
   password: {
     min: "Password minimal 8 karakter",
     max: "Password maksimal 128 karakter",
-    pattern: "Password harus mengandung huruf besar, huruf kecil, angka, dan karakter khusus",
+    pattern:
+      "Password harus mengandung huruf besar, huruf kecil, angka, dan karakter khusus",
     required: "Password wajib diisi",
   },
   otp: {
@@ -106,33 +107,40 @@ export const authSchemas = {
       .regex(patterns.password, messages.password.pattern),
   }),
 
-  registerCalonJamaah: z.object({
-    fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
-    email: z
-      .string()
-      .min(1, messages.email.required)
-      .email(messages.email.invalid)
-      .transform((val) => val.toLowerCase().trim()),
-    phone: z.string().regex(patterns.phone, "Format nomor WhatsApp tidak valid"),
-    password: z
-      .string()
-      .min(8, messages.password.min)
-      .max(128, messages.password.max)
-      .regex(patterns.password, messages.password.pattern),
-    confirmPassword: z.string(),
-    sourceType: z.enum(["GENERAL", "AGENT", "REFERRAL"]).optional().default("GENERAL"),
-    sourceSlug: z.string().max(150).optional().nullable(),
-    honeypot: z.string().max(0).optional().default(""),
-    formStartedAt: z.coerce.number().optional(),
-  }).superRefine((data, ctx) => {
-    if (data.password !== data.confirmPassword) {
-      ctx.addIssue({
-        path: ["confirmPassword"],
-        code: z.ZodIssueCode.custom,
-        message: "Konfirmasi password tidak sama",
-      });
-    }
-  }),
+  registerCalonJamaah: z
+    .object({
+      fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
+      email: z
+        .string()
+        .min(1, messages.email.required)
+        .email(messages.email.invalid)
+        .transform((val) => val.toLowerCase().trim()),
+      phone: z
+        .string()
+        .regex(patterns.phone, "Format nomor WhatsApp tidak valid"),
+      password: z
+        .string()
+        .min(8, messages.password.min)
+        .max(128, messages.password.max)
+        .regex(patterns.password, messages.password.pattern),
+      confirmPassword: z.string(),
+      sourceType: z
+        .enum(["GENERAL", "AGENT", "REFERRAL"])
+        .optional()
+        .default("GENERAL"),
+      sourceSlug: z.string().max(150).optional().nullable(),
+      honeypot: z.string().max(0).optional().default(""),
+      formStartedAt: z.coerce.number().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.password !== data.confirmPassword) {
+        ctx.addIssue({
+          path: ["confirmPassword"],
+          code: z.ZodIssueCode.custom,
+          message: "Konfirmasi password tidak sama",
+        });
+      }
+    }),
 };
 
 /**
@@ -150,7 +158,11 @@ export const userSchemas = {
       .max(128, messages.password.max)
       .regex(patterns.password, messages.password.pattern),
     fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
-    phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid").optional().nullable(),
+    phone: z
+      .string()
+      .regex(patterns.phone, "Format nomor telepon tidak valid")
+      .optional()
+      .nullable(),
     role: z
       .enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"])
       .default("JAMAAH"),
@@ -158,13 +170,21 @@ export const userSchemas = {
 
   update: z.object({
     fullName: z.string().min(2).max(255).optional(),
-    phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid").optional().nullable(),
+    phone: z
+      .string()
+      .regex(patterns.phone, "Format nomor telepon tidak valid")
+      .optional()
+      .nullable(),
     isActive: z.boolean().optional(),
   }),
 
   updateProfile: z.object({
     fullName: z.string().min(2, "Nama minimal 2 karakter").max(255).optional(),
-    phone: z.string().regex(patterns.phone, "Format telepon tidak valid").optional().nullable(),
+    phone: z
+      .string()
+      .regex(patterns.phone, "Format telepon tidak valid")
+      .optional()
+      .nullable(),
   }),
 };
 
@@ -177,12 +197,36 @@ export const adminUserSchemas = {
       .transform((val) => val.toLowerCase().trim()),
     fullName: z.string().min(2, "Nama lengkap minimal 2 karakter").max(255),
     phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid"),
-    role: z.enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"]),
+    role: z.enum([
+      "ADMIN",
+      "FINANCE",
+      "STAFF",
+      "AGEN",
+      "JAMAAH",
+      "CALON_JAMAAH",
+    ]),
     packageId: z.union([z.string(), z.number()]).optional(),
+    familyMembers: z
+      .array(
+        z.object({
+          fullName: z
+            .string()
+            .min(2, "Nama anggota minimal 2 karakter")
+            .max(255),
+          relationship: z.string().min(2).max(50),
+        }),
+      )
+      .max(19, "Maksimal 20 jamaah dalam satu akun keluarga")
+      .optional()
+      .default([]),
   }),
   update: z.object({
     fullName: z.string().min(2).max(255).optional(),
-    phone: z.string().regex(patterns.phone, "Format nomor telepon tidak valid").optional().nullable(),
+    phone: z
+      .string()
+      .regex(patterns.phone, "Format nomor telepon tidak valid")
+      .optional()
+      .nullable(),
     role: z
       .enum(["ADMIN", "FINANCE", "STAFF", "AGEN", "JAMAAH", "CALON_JAMAAH"])
       .optional(),
@@ -231,7 +275,10 @@ export const jamaahSchemas = {
 
   update: z.object({
     fullName: z.string().min(2).max(255).optional(),
-    phone: z.string().regex(patterns.phone, "Format telepon tidak valid").optional(),
+    phone: z
+      .string()
+      .regex(patterns.phone, "Format telepon tidak valid")
+      .optional(),
     packageId: z.number().int().positive().optional(),
   }),
 
@@ -268,10 +315,7 @@ export const jamaahAdminSchemas = {
     hargaPaket: z.union([z.string(), z.number()]).optional().nullable(),
     potonganFeeAgen: z.union([z.string(), z.number()]).optional().nullable(),
     potonganPoinAgen: z.union([z.string(), z.number()]).optional().nullable(),
-    potonganCashbackKK: z
-      .union([z.string(), z.number()])
-      .optional()
-      .nullable(),
+    potonganCashbackKK: z.union([z.string(), z.number()]).optional().nullable(),
   }),
 
   update: z.object({
@@ -305,10 +349,7 @@ export const jamaahAdminSchemas = {
     hargaPaket: z.union([z.string(), z.number()]).optional().nullable(),
     potonganFeeAgen: z.union([z.string(), z.number()]).optional().nullable(),
     potonganPoinAgen: z.union([z.string(), z.number()]).optional().nullable(),
-    potonganCashbackKK: z
-      .union([z.string(), z.number()])
-      .optional()
-      .nullable(),
+    potonganCashbackKK: z.union([z.string(), z.number()]).optional().nullable(),
     registrationStatus: z
       .enum([
         "DRAFT",
@@ -324,27 +365,32 @@ export const jamaahAdminSchemas = {
     notes: z.string().max(1000).optional().nullable(),
   }),
 
-  addPayment: z.object({
-    amount: z.coerce.number().positive("Jumlah pembayaran harus positif"),
-    bankId: z.coerce.number().int().positive().optional().nullable(),
-    paidBy: z.string().max(255).optional().nullable(),
-    paymentDate: z.union([z.string(), z.date()]).optional().nullable(),
-    proofUrl: z.string().max(500).optional().nullable(),
-    notes: z.string().max(1000).optional().nullable(),
-  }).superRefine((data, ctx) => {
-    if (data.proofUrl && !isPaymentProofPathValid(data.proofUrl)) {
-      ctx.addIssue({
-        path: ["proofUrl"],
-        code: z.ZodIssueCode.custom,
-        message:
-          "proofUrl tidak valid. Gunakan path bukti pembayaran dari folder /uploads/payments",
-      });
-    }
-  }),
+  addPayment: z
+    .object({
+      amount: z.coerce.number().positive("Jumlah pembayaran harus positif"),
+      bankId: z.coerce.number().int().positive().optional().nullable(),
+      paidBy: z.string().max(255).optional().nullable(),
+      paymentDate: z.union([z.string(), z.date()]).optional().nullable(),
+      proofUrl: z.string().max(500).optional().nullable(),
+      notes: z.string().max(1000).optional().nullable(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.proofUrl && !isPaymentProofPathValid(data.proofUrl)) {
+        ctx.addIssue({
+          path: ["proofUrl"],
+          code: z.ZodIssueCode.custom,
+          message:
+            "proofUrl tidak valid. Gunakan path bukti pembayaran dari folder /uploads/payments",
+        });
+      }
+    }),
 
-  approveRejectRevert: z.object({
-    reason: z.string().max(500).optional(),
-  }).optional().default({}),
+  approveRejectRevert: z
+    .object({
+      reason: z.string().max(500).optional(),
+    })
+    .optional()
+    .default({}),
 };
 
 /**
@@ -369,26 +415,31 @@ export const packageSchemas = {
 };
 
 export const transactionSchemas = {
-  verifyStatus: z.object({
-    status: z.enum([
-      "PENDING",
-      "PARTIAL",
-      "PAID",
-      "VERIFIED",
-      "CANCELLED",
-      "REFUNDED",
-    ]),
-    remarks: z.string().max(500).optional(),
-  }).superRefine((data, ctx) => {
-    const requiresReason = ["CANCELLED", "REFUNDED"];
-    if (requiresReason.includes(data.status) && (!data.remarks || data.remarks.trim() === "")) {
-      ctx.addIssue({
-        path: ["remarks"],
-        code: z.ZodIssueCode.custom,
-        message: `Alasan wajib diisi untuk status ${data.status}`,
-      });
-    }
-  }),
+  verifyStatus: z
+    .object({
+      status: z.enum([
+        "PENDING",
+        "PARTIAL",
+        "PAID",
+        "VERIFIED",
+        "CANCELLED",
+        "REFUNDED",
+      ]),
+      remarks: z.string().max(500).optional(),
+    })
+    .superRefine((data, ctx) => {
+      const requiresReason = ["CANCELLED", "REFUNDED"];
+      if (
+        requiresReason.includes(data.status) &&
+        (!data.remarks || data.remarks.trim() === "")
+      ) {
+        ctx.addIssue({
+          path: ["remarks"],
+          code: z.ZodIssueCode.custom,
+          message: `Alasan wajib diisi untuk status ${data.status}`,
+        });
+      }
+    }),
 };
 
 /**
@@ -405,7 +456,7 @@ export const paginationSchema = z.object({
 export const prospectSchemas = {
   interest: z.object({
     packageId: z.coerce.number().int().positive(),
-      packageOptionId: z.coerce.number().int().positive().optional().nullable(),
+    packageOptionId: z.coerce.number().int().positive().optional().nullable(),
     actionType: z.enum(["SAVED", "WHATSAPP_CONSULT", "CONVERT_REQUEST"]),
     sourcePath: z.string().max(500).optional().nullable(),
   }),
@@ -437,10 +488,10 @@ export const validate = (schema) => {
     try {
       // Parse and validate request body
       const validatedData = schema.parse(req.body);
-      
+
       // Store validated data
       req.validatedBody = validatedData;
-      
+
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -451,16 +502,16 @@ export const validate = (schema) => {
           message: err.message,
           code: err.code,
         }));
-        
+
         return errorResponse(
           res,
           "Validasi gagal. Periksa kembali input Anda.",
           400,
           errors,
-          "VALIDATION_FAILED"
+          "VALIDATION_FAILED",
         );
       }
-      
+
       // Unexpected error
       next(error);
     }
@@ -483,13 +534,13 @@ export const validateQuery = (schema) => {
           field: err.path.join("."),
           message: err.message,
         }));
-        
+
         return errorResponse(
           res,
           "Parameter query tidak valid",
           400,
           errors,
-          "VALIDATION_FAILED"
+          "VALIDATION_FAILED",
         );
       }
       next(error);
@@ -513,13 +564,13 @@ export const validateParams = (schema) => {
           field: err.path.join("."),
           message: err.message,
         }));
-        
+
         return errorResponse(
           res,
           "Parameter URL tidak valid",
           400,
           errors,
-          "VALIDATION_FAILED"
+          "VALIDATION_FAILED",
         );
       }
       next(error);

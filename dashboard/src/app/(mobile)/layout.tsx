@@ -16,6 +16,7 @@ import {
 import { AuthStoreHydrator } from "@/components/auth/AuthStoreHydrator";
 import { DEFAULT_ROUTES, getRoleRedirectPath } from "@/lib/routeAccess";
 import { sessionToAuthUser, validateSession } from "@/lib/validateSession";
+import { JamaahMemberSwitcher } from "@/components/jamaah/JamaahMemberSwitcher";
 
 const desktopAgenNav = [
   { href: "/agen", label: "Dashboard", icon: LayoutDashboard },
@@ -38,7 +39,11 @@ const desktopCalonJamaahNav = [
   { href: "/calon-jamaah", label: "Beranda", icon: LayoutDashboard },
   { href: "/calon-jamaah/packages", label: "Paket", icon: Package },
   { href: "/calon-jamaah/interests", label: "Diminati", icon: FileText },
-  { href: "/calon-jamaah/consultation", label: "Konsultasi", icon: MessageCircle },
+  {
+    href: "/calon-jamaah/consultation",
+    label: "Konsultasi",
+    icon: MessageCircle,
+  },
   { href: "/calon-jamaah/account", label: "Akun", icon: UserCircle },
 ];
 
@@ -66,7 +71,9 @@ function DesktopNav({ title, items }: DesktopNavProps) {
             </div>
             <div>
               <p className="text-xs text-gray-500">{title}</p>
-              <p className="text-sm font-semibold text-gray-900">Navigasi Desktop</p>
+              <p className="text-sm font-semibold text-gray-900">
+                Navigasi Desktop
+              </p>
             </div>
           </div>
 
@@ -101,7 +108,10 @@ export default async function MobileLayout({ children }: MobileLayoutProps) {
     redirect("/login");
   }
 
-  const redirectPath = getRoleRedirectPath(session.role, `/${session.role.toLowerCase()}`);
+  const redirectPath = getRoleRedirectPath(
+    session.role,
+    `/${session.role.toLowerCase()}`,
+  );
   if (!["AGEN", "JAMAAH", "CALON_JAMAAH"].includes(session.role)) {
     redirect(redirectPath ?? DEFAULT_ROUTES[session.role]);
   }
@@ -119,6 +129,7 @@ export default async function MobileLayout({ children }: MobileLayoutProps) {
         ) : (
           <DesktopNav title="Area Jamaah" items={desktopJamaahNav} />
         )}
+        {session.role === "JAMAAH" && <JamaahMemberSwitcher />}
         {children}
       </div>
     </>

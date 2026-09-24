@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useForm, useWatch } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { adminService } from "@/services/adminService";
 import { packageService, type Package } from "@/services/packageService";
@@ -32,13 +32,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, UserPlus, Copy } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  UserPlus,
+  Copy,
+  Trash2,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 
 interface CreatedUserResult {
   user: {
     fullName: string;
     email: string;
+    jamaahCount?: number;
+    bookingNumbers?: string[];
   };
 }
 
@@ -58,6 +67,7 @@ export default function CreateUserPage() {
   const [createdUser, setCreatedUser] = useState<CreatedUserResult | null>(
     null,
   );
+  const [isFamilyAccount, setIsFamilyAccount] = useState(false);
   const { user: authUser } = useAuthStore();
   const isStaff = authUser?.role === "STAFF";
   const isFinance = authUser?.role === "FINANCE";
@@ -71,9 +81,22 @@ export default function CreateUserPage() {
     reset,
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      familyMembers: [],
+    },
+  });
+
+  const {
+    fields: familyMemberFields,
+    append: appendFamilyMember,
+    remove: removeFamilyMember,
+  } = useFieldArray({
+    control,
+    name: "familyMembers",
   });
 
   const selectedRole = useWatch({ control, name: "role" });
+  const accountHolderName = useWatch({ control, name: "fullName" });
 
   // Fetch packages (only if role is JAMAAH)
   const {
@@ -142,6 +165,7 @@ export default function CreateUserPage() {
 
   const createAnother = () => {
     setCreatedUser(null);
+    setIsFamilyAccount(false);
     reset();
   };
 
@@ -333,6 +357,141 @@ export default function CreateUserPage() {
                   <p className="text-sm text-red-500">{errors.role.message}</p>
                 )}
               </div>
+
+              {selectedRole === "JAMAAH" && (
+                <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <div>
+                    <Label>Jenis Akun Jamaah</Label>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={!isFamilyAccount ? "default" : "outline"}
+                        onClick={() => {
+                          setIsFamilyAccount(false);
+                          setValue("familyMembers", []);
+                        }}
+                      >
+                        Perorangan
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={isFamilyAccount ? "default" : "outline"}
+                        onClick={() => {
+                          setIsFamilyAccount(true);
+                          if (familyMemberFields.length === 0) {
+                            appendFamilyMember({
+                              fullName: "",
+                              relationship: "PASANGAN",
+                            });
+                          }
+                        }}
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Keluarga/Rombongan
+                      </Button>
+                    </div>
+                  </div>
+
+                  {isFamilyAccount && (
+                    <div className="space-y-3">
+                      <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                        <strong>{accountHolderName || "Pemilik akun"}</strong>{" "}
+                        menjadi anggota utama. Semua anggota memakai satu email
+                        dan satu akun login, tetapi memiliki booking, biodata,
+                        dokumen, dan status masing-masing.
+                      </div>
+
+                      {familyMemberFields.map((field, index) => (
+                        <div
+                          key={field.id}
+                          className="grid gap-3 rounded-md border bg-white p-3 md:grid-cols-[1fr_180px_auto] md:items-start"
+                        >
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`familyMembers.${index}.fullName`}>
+                              Nama Anggota {index + 2}
+                            </Label>
+                            <Input
+                              id={`familyMembers.${index}.fullName`}
+                              placeholder="Nama lengkap anggota"
+                              {...register(`familyMembers.${index}.fullName`)}
+                            />
+                            {errors.familyMembers?.[index]?.fullName && (
+                              <p className="text-xs text-red-500">
+                                {errors.familyMembers[index]?.fullName?.message}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label>Hubungan</Label>
+                            <Select
+                              defaultValue={field.relationship || "PASANGAN"}
+                              onValueChange={(value) =>
+                                setValue(
+                                  `familyMembers.${index}.relationship`,
+                                  value,
+                                  { shouldValidate: true },
+                                )
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih hubungan" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="PASANGAN">
+                                  Pasangan
+                                </SelectItem>
+                                <SelectItem value="ANAK">Anak</SelectItem>
+                                <SelectItem value="ORANG_TUA">
+                                  Orang Tua
+                                </SelectItem>
+                                <SelectItem value="SAUDARA">Saudara</SelectItem>
+                                <SelectItem value="KERABAT">Kerabat</SelectItem>
+                                <SelectItem value="ROMBONGAN">
+                                  Rombongan
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="mt-6 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => removeFamilyMember(index)}
+                            aria-label={`Hapus anggota ${index + 2}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs text-gray-600">
+                          Total: {familyMemberFields.length + 1} jamaah /{" "}
+                          {familyMemberFields.length + 1} seat
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            appendFamilyMember({
+                              fullName: "",
+                              relationship: "ANAK",
+                            })
+                          }
+                          disabled={familyMemberFields.length >= 19}
+                        >
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Tambah Anggota
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Package (only for JAMAAH) */}
               {selectedRole === "JAMAAH" && (

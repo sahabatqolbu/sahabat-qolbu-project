@@ -11,7 +11,17 @@ import {
   agentData,
   auditLogs,
 } from "../db/schema.js";
-import { eq, like, or, and, desc, sql, count, inArray, isNotNull } from "drizzle-orm";
+import {
+  eq,
+  like,
+  or,
+  and,
+  desc,
+  sql,
+  count,
+  inArray,
+  isNotNull,
+} from "drizzle-orm";
 import { logger } from "../utils/logger.js";
 import {
   paginatedResponse,
@@ -124,7 +134,11 @@ const isPaymentNumberDuplicateError = (error) => {
   return error?.code === "ER_DUP_ENTRY" && message.includes("payment_number");
 };
 
-const createPaymentWithRetry = async (jamaahId, buildValues, maxRetries = 5) => {
+const createPaymentWithRetry = async (
+  jamaahId,
+  buildValues,
+  maxRetries = 5,
+) => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const latestPayment = await db.query.jamaahPayments.findFirst({
       where: eq(jamaahPayments.jamaahId, jamaahId),
@@ -160,8 +174,8 @@ const syncJamaahPaymentAggregate = async ({ jamaahId, hargaFinal }) => {
     .where(
       and(
         eq(jamaahPayments.jamaahId, jamaahId),
-        isNotNull(jamaahPayments.verifiedAt)
-      )
+        isNotNull(jamaahPayments.verifiedAt),
+      ),
     );
 
   const paymentState = deriveJamaahPaymentState({
@@ -204,10 +218,12 @@ export const syncJamaahFromUsers = async (req, res, next) => {
 
     // Filter user yang BELUM punya jamaah_data
     const usersWithoutJamaahData = jamaahUsers.filter(
-      (u) => !existingUserIds.includes(u.id)
+      (u) => !existingUserIds.includes(u.id),
     );
 
-    logger.debug("Users without jamaah", { count: usersWithoutJamaahData.length });
+    logger.debug("Users without jamaah", {
+      count: usersWithoutJamaahData.length,
+    });
 
     if (usersWithoutJamaahData.length === 0) {
       return successResponse(
@@ -216,7 +232,7 @@ export const syncJamaahFromUsers = async (req, res, next) => {
           synced: 0,
           total: jamaahUsers.length,
         },
-        "Semua user JAMAAH sudah punya data jamaah"
+        "Semua user JAMAAH sudah punya data jamaah",
       );
     }
 
@@ -240,7 +256,7 @@ export const syncJamaahFromUsers = async (req, res, next) => {
             hargaFinal: "0",
             totalPayment: "0",
             outstanding: "0",
-          })
+          }),
         );
 
         results.push({
@@ -279,7 +295,7 @@ export const syncJamaahFromUsers = async (req, res, next) => {
         total: jamaahUsers.length,
         details: results,
       },
-      `Berhasil sync ${successCount} dari ${usersWithoutJamaahData.length} user`
+      `Berhasil sync ${successCount} dari ${usersWithoutJamaahData.length} user`,
     );
   } catch (error) {
     logger.error("Sync jamaah from users error", error);
@@ -341,6 +357,7 @@ export const getAllJamaah = async (req, res, next) => {
         like(users.fullName, `%${normalizedSearch}%`),
         like(users.email, `%${normalizedSearch}%`),
         like(users.phone, `%${normalizedSearch}%`),
+        like(jamaahData.memberName, `%${normalizedSearch}%`),
         like(jamaahData.namaPaspor, `%${normalizedSearch}%`),
         like(jamaahData.bookingNumber, `%${normalizedSearch}%`),
         like(jamaahData.nik, `%${normalizedSearch}%`),
@@ -364,7 +381,6 @@ export const getAllJamaah = async (req, res, next) => {
           totalPages: 0,
         });
       }
-
     }
 
     const whereCondition = matchedJamaahIds
@@ -415,7 +431,10 @@ export const getAllJamaah = async (req, res, next) => {
 
       // ✅ USER INFO dari relasi
       userId: j.userId,
-      fullName: j.user?.fullName || "-",
+      fullName: j.memberName || j.user?.fullName || "-",
+      accountOwnerName: j.user?.fullName || "-",
+      familyRelationship: j.familyRelationship || "DIRI_SENDIRI",
+      isPrimaryMember: j.isPrimaryMember,
       email: j.user?.email || "-",
       phone: j.user?.phone || "-",
 
@@ -503,7 +522,7 @@ export const getJamaahByBookingNumber = async (req, res, next) => {
       req.user?.role === "AGEN"
         ? and(
             eq(jamaahData.bookingNumber, bookingNumber),
-            await getAgenOwnershipCondition(req.user.userId)
+            await getAgenOwnershipCondition(req.user.userId),
           )
         : eq(jamaahData.bookingNumber, bookingNumber);
 
@@ -544,12 +563,24 @@ export const getJamaahByBookingNumber = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return notFoundResponse(res, "Data jamaah tidak ditemukan atau bukan milik Anda");
+      return notFoundResponse(
+        res,
+        "Data jamaah tidak ditemukan atau bukan milik Anda",
+      );
     }
 
     logger.info("Jamaah found", { bookingNumber: jamaah.bookingNumber });
 
-    return successResponse(res, jamaah);
+    return successResponse(res, {
+      ...jamaah,
+      accountOwnerName: jamaah.user?.fullName || null,
+      user: jamaah.user
+        ? {
+            ...jamaah.user,
+            fullName: jamaah.memberName || jamaah.user.fullName,
+          }
+        : null,
+    });
   } catch (error) {
     logger.error("Get jamaah by booking error", error, {
       bookingNumber: req.params?.bookingNumber,
@@ -646,7 +677,7 @@ export const uploadAdminDocument = async (req, res, next) => {
         url: fileUrl,
         jamaah: updatedJamaah,
       },
-      `${normalizedDocumentType.toUpperCase()} berhasil diupload`
+      `${normalizedDocumentType.toUpperCase()} berhasil diupload`,
     );
   } catch (error) {
     logger.error("Admin upload jamaah document error", error, {
@@ -697,12 +728,9 @@ async function createJamaahHandler(req, res, next) {
         where: eq(jamaahData.userId, parseInt(userId)),
       });
       if (existingJamaah) {
-        return errorResponse(
-          res,
-          "User sudah memiliki data jamaah",
-          400,
-          { bookingNumber: existingJamaah.bookingNumber }
-        );
+        return errorResponse(res, "User sudah memiliki data jamaah", 400, {
+          bookingNumber: existingJamaah.bookingNumber,
+        });
       }
     }
 
@@ -734,17 +762,24 @@ async function createJamaahHandler(req, res, next) {
         statusPayment: "BELUM_BAYAR",
         registrationStatus: "DRAFT",
         isProfileComplete: false,
-      })
+      }),
     );
 
-    logger.info("Jamaah created", { bookingNumber, requestedBy: req.user?.userId });
+    logger.info("Jamaah created", {
+      bookingNumber,
+      requestedBy: req.user?.userId,
+    });
 
-    return createdResponse(res, { id: newJamaah.id, bookingNumber }, "Jamaah berhasil ditambahkan");
+    return createdResponse(
+      res,
+      { id: newJamaah.id, bookingNumber },
+      "Jamaah berhasil ditambahkan",
+    );
   } catch (error) {
     logger.error("Create jamaah error", error);
     next(error);
   }
-};
+}
 
 // backend/src/controllers/jamaahController.js
 
@@ -792,7 +827,7 @@ export const updateJamaah = async (req, res, next) => {
       "emergencyPhone",
       "emergencyRelation",
       "packageId",
-      "agenId",        // ✅ TAMBAH INI
+      "agenId", // ✅ TAMBAH INI
       "namaMitra",
       "notePaket",
       "roomTypeMakkah",
@@ -813,7 +848,11 @@ export const updateJamaah = async (req, res, next) => {
         // ✅ FIX: Handle null values untuk foreign keys
         if (key === "agenId" || key === "packageId" || key === "mahramId") {
           // Jika value adalah null, string kosong, atau "none", set ke null
-          if (updateData[key] === null || updateData[key] === "" || updateData[key] === "none") {
+          if (
+            updateData[key] === null ||
+            updateData[key] === "" ||
+            updateData[key] === "none"
+          ) {
             filteredData[key] = null;
           } else {
             // Parse ke integer
@@ -846,7 +885,7 @@ export const updateJamaah = async (req, res, next) => {
         0;
       const cashback =
         parseFloat(
-          updateData.potonganCashbackKK || existing.potonganCashbackKK
+          updateData.potonganCashbackKK || existing.potonganCashbackKK,
         ) || 0;
       const hargaFinal = harga - feeAgen - poinAgen - cashback;
       const totalPaid = parseFloat(existing.totalPayment) || 0;
@@ -925,7 +964,7 @@ export const deleteJamaah = async (req, res, next) => {
       return errorResponse(
         res,
         "Tidak dapat menghapus jamaah yang sudah memiliki riwayat pembayaran",
-        400
+        400,
       );
     }
 
@@ -933,7 +972,10 @@ export const deleteJamaah = async (req, res, next) => {
       .delete(jamaahData)
       .where(eq(jamaahData.bookingNumber, bookingNumber));
 
-    logger.info("Jamaah deleted", { bookingNumber, requestedBy: req.user?.userId });
+    logger.info("Jamaah deleted", {
+      bookingNumber,
+      requestedBy: req.user?.userId,
+    });
 
     return successResponse(res, null, "Data jamaah berhasil dihapus");
   } catch (error) {
@@ -967,10 +1009,8 @@ async function addPaymentHandler(req, res, next) {
       return notFoundResponse(res, "Data jamaah tidak ditemukan");
     }
 
-
-    const { inserted: newPayment, paymentNumber } = await createPaymentWithRetry(
-      jamaah.id,
-      (nextPaymentNumber) => ({
+    const { inserted: newPayment, paymentNumber } =
+      await createPaymentWithRetry(jamaah.id, (nextPaymentNumber) => ({
         jamaahId: jamaah.id,
         paymentNumber: nextPaymentNumber,
         amount: amount.toString(),
@@ -980,8 +1020,7 @@ async function addPaymentHandler(req, res, next) {
         proofStatus: "UPLOADED",
         proofUrl,
         notes,
-      })
-    );
+      }));
 
     logger.info("Payment added", {
       paymentId: newPayment.id,
@@ -996,7 +1035,7 @@ async function addPaymentHandler(req, res, next) {
         paymentNumber,
         verificationStatus: "UPLOADED",
       },
-      "Pembayaran berhasil dicatat dan menunggu verifikasi"
+      "Pembayaran berhasil dicatat dan menunggu verifikasi",
     );
   } catch (error) {
     logger.error("Add payment error", error, {
@@ -1004,7 +1043,7 @@ async function addPaymentHandler(req, res, next) {
     });
     next(error);
   }
-};
+}
 
 export const getPayments = async (req, res, next) => {
   try {
@@ -1014,7 +1053,7 @@ export const getPayments = async (req, res, next) => {
       req.user?.role === "AGEN"
         ? and(
             eq(jamaahData.bookingNumber, bookingNumber),
-            await getAgenOwnershipCondition(req.user.userId)
+            await getAgenOwnershipCondition(req.user.userId),
           )
         : eq(jamaahData.bookingNumber, bookingNumber);
 
@@ -1023,7 +1062,10 @@ export const getPayments = async (req, res, next) => {
     });
 
     if (!jamaah) {
-      return notFoundResponse(res, "Data jamaah tidak ditemukan atau bukan milik Anda");
+      return notFoundResponse(
+        res,
+        "Data jamaah tidak ditemukan atau bukan milik Anda",
+      );
     }
 
     const payments = await db.query.jamaahPayments.findMany({
@@ -1092,7 +1134,7 @@ export const verifyPayment = async (req, res, next) => {
         "Data jamaah untuk pembayaran ini tidak ditemukan",
         422,
         null,
-        "PAYMENT_JAMAAH_NOT_FOUND"
+        "PAYMENT_JAMAAH_NOT_FOUND",
       );
     }
 
@@ -1102,12 +1144,16 @@ export const verifyPayment = async (req, res, next) => {
         "Verifikasi pembayaran sendiri tidak diizinkan",
         403,
         null,
-        "PAYMENT_SELF_VERIFICATION_BLOCKED"
+        "PAYMENT_SELF_VERIFICATION_BLOCKED",
       );
     }
 
     if (payment.verifiedBy || payment.verifiedAt) {
-      return errorResponse(res, "Pembayaran sudah diverifikasi sebelumnya", 400);
+      return errorResponse(
+        res,
+        "Pembayaran sudah diverifikasi sebelumnya",
+        400,
+      );
     }
 
     if (payment.proofStatus === "REJECTED") {
@@ -1116,7 +1162,7 @@ export const verifyPayment = async (req, res, next) => {
         "Bukti pembayaran sudah ditolak. Minta upload ulang sebelum verifikasi.",
         400,
         null,
-        "PAYMENT_PROOF_REJECTED"
+        "PAYMENT_PROOF_REJECTED",
       );
     }
 
@@ -1220,7 +1266,7 @@ export const rejectPayment = async (req, res, next) => {
         "Data jamaah untuk pembayaran ini tidak ditemukan",
         422,
         null,
-        "PAYMENT_JAMAAH_NOT_FOUND"
+        "PAYMENT_JAMAAH_NOT_FOUND",
       );
     }
 
@@ -1230,7 +1276,7 @@ export const rejectPayment = async (req, res, next) => {
         "Pembayaran yang sudah diverifikasi tidak bisa ditolak",
         409,
         null,
-        "PAYMENT_ALREADY_VERIFIED"
+        "PAYMENT_ALREADY_VERIFIED",
       );
     }
 
@@ -1240,7 +1286,7 @@ export const rejectPayment = async (req, res, next) => {
         "Bukti pembayaran sudah ditolak sebelumnya",
         400,
         null,
-        "PAYMENT_ALREADY_REJECTED"
+        "PAYMENT_ALREADY_REJECTED",
       );
     }
 
@@ -1298,7 +1344,6 @@ export const rejectPayment = async (req, res, next) => {
   }
 };
 
-
 // =====================================================
 // APPROVE JAMAAH
 // =====================================================
@@ -1340,7 +1385,7 @@ export const approveJamaah = async (req, res, next) => {
         registrationStatus: "APPROVED",
         approvedAt: new Date(),
       },
-      "Jamaah berhasil di-approve"
+      "Jamaah berhasil di-approve",
     );
   } catch (error) {
     logger.error("Approve jamaah error", error, {
@@ -1394,7 +1439,7 @@ export const rejectJamaah = async (req, res, next) => {
         rejectedAt: new Date(),
         rejectionReason: reason,
       },
-      "Jamaah berhasil di-reject"
+      "Jamaah berhasil di-reject",
     );
   } catch (error) {
     logger.error("Reject jamaah error", error, {
