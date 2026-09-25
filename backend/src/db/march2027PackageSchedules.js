@@ -105,6 +105,17 @@ export const march2027PackageSchedules = [
     ["2027-03-17", 9, "GA", "Azka Al Safa / Maysan Al Mashaer / setaraf", "Mukhtara / ODST / setaraf", 37.5, 39, 42],
     ["2027-03-18", 9, "GA", "Azka Al Safa / Maysan Al Mashaer / setaraf", "Mukhtara / ODST / setaraf", 37.5, 39, 42],
   ]),
+  definition("PAKET SMART I'TIKAF MADINAH 12 HARI - OPSI OMAN AIR", [
+    ["2027-03-03", 12, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 40.9, 43.9, 48.9],
+    ["2027-03-04", 12, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 39.9, 42.9, 47.9],
+  ]),
+  definition("PAKET SMART I'TIKAF MADINAH 12 HARI - OPSI GARUDA AL MASSA", [
+    ["2027-03-04", 12, "GA", "Al Massa Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 40.5, 43, 47.5],
+    ["2027-03-06", 12, "GA", "Al Massa Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 40.5, 43, 47.5],
+  ]),
+  definition("PAKET SMART I'TIKAF MADINAH 12 HARI - OPSI GARUDA WINNER INN", [
+    ["2027-03-06", 12, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 39.9, 42.9, 47.9],
+  ]),
   definition("PAKET RUBY & DIAMOND SYAWAL MUBARAK PELATARAN", [
     ["2027-03-11", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44.4, 46.9],
     ["2027-03-13", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44, 46.9],
