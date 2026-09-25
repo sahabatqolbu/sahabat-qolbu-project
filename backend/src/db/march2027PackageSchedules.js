@@ -116,6 +116,30 @@ export const march2027PackageSchedules = [
   definition("PAKET SMART I'TIKAF MADINAH 12 HARI - OPSI GARUDA WINNER INN", [
     ["2027-03-06", 12, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 39.9, 42.9, 47.9],
   ]),
+  definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI GARUDA AL MASSA", [
+    ["2027-03-07", 12, "GA", "Al Massa Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 33.9, 40, 44.9],
+  ]),
+  definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI GARUDA MAYSAN", [
+    ["2027-03-07", 12, "GA", "Maysan Al Mashaer / Prestige / setaraf", "Mukhtara / ODST / setaraf", 42.9, 45.4, 50.9],
+    ["2027-03-08", 12, "GA", "Maysan Al Mashaer / Prestige / setaraf", "Mukhtara / ODST / setaraf", 42.9, 45.4, 50.9],
+  ]),
+  definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI GARUDA SAFWA", [
+    ["2027-03-08", 12, "GA", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / ODST / setaraf", 46.5, 49.5, 54.5],
+  ]),
+  definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI OMAN WINNER", [
+    ["2027-03-08", 12, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 36.9, 39.4, 42.9],
+    ["2027-03-09", 12, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 36.9, 39.4, 42.9],
+  ]),
+  definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI OMAN MAYSAN", [
+    ["2027-03-08", 12, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 41.5, 44.5, 47.5],
+    ["2027-03-09", 12, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 41.5, 44.5, 47.5],
+  ]),
+  definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI OMAN SAFWA MUKHTARA", [
+    ["2027-03-08", 12, "WY", "Safwa Tower / Mekkah Tower / setaraf", "Mukhtara / ODST / setaraf", 46.5, 49.5, 54.5],
+  ]),
+  definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI OMAN SAFWA ODST", [
+    ["2027-03-08", 12, "WY", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 43.9, 48.9, 50.5],
+  ]),
   definition("PAKET RUBY & DIAMOND SYAWAL MUBARAK PELATARAN", [
     ["2027-03-11", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44.4, 46.9],
     ["2027-03-13", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44, 46.9],
