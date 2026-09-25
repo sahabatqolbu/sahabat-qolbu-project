@@ -8,11 +8,12 @@ import {
   ChevronDown,
   ChevronUp,
   Clock3,
-  Filter,
   MapPin,
   MessageCircle,
   Plane,
+  Search,
   Sparkles,
+  SlidersHorizontal,
   Users,
 } from "lucide-react";
 import type { PackageFilters } from "@/components/marketing/PackageSearchBar";
@@ -63,6 +64,29 @@ const formatCompactMoney = (value: string) => {
 const entityHref = (name: string, id?: number | null) =>
   id ? `/hotel/${slugifyPackageName(name)}-${id}` : null;
 
+const categoryDefinitions = [
+  { id: "ALL", label: "Semua Program" },
+  { id: "TURKI", label: "Umroh Plus Turki" },
+  { id: "LEBARAN", label: "Lebaran" },
+  { id: "TAKBIRAN", label: "Takbiran" },
+  { id: "ITIKAF", label: "I'tikaf Madinah" },
+  { id: "SYAWAL", label: "Syawal Mubarak" },
+  { id: "PELATARAN", label: "Pelataran" },
+  { id: "SMART", label: "Smart" },
+] as const;
+
+const getProgramCategory = (name: string) => {
+  const normalized = name.toUpperCase();
+  if (normalized.includes("TURKI")) return "TURKI";
+  if (normalized.includes("LEBARAN")) return "LEBARAN";
+  if (normalized.includes("TAKBIRAN")) return "TAKBIRAN";
+  if (normalized.includes("ITIKAF")) return "ITIKAF";
+  if (normalized.includes("SYAWAL")) return "SYAWAL";
+  if (normalized.includes("PELATARAN")) return "PELATARAN";
+  if (normalized.includes("SMART")) return "SMART";
+  return "ALL";
+};
+
 // Extended item structure with parent list context
 interface FlattenedScheduleItem extends PublicPackageScheduleItem {
   listName: string;
@@ -100,6 +124,7 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
     if (nextMonth) {
       setSelectedMonth(nextMonth);
       setSelectedPackage("ALL");
+      setSelectedCategory("ALL");
       setSelectedAirline("ALL");
       setExpandedId(null);
       setShowAll(false);
@@ -108,6 +133,8 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
 
   // Level 2: Selected Package Type for the active month ("ALL" or specific name)
   const [selectedPackage, setSelectedPackage] = useState<string>("ALL");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Filter & Sort state
   const [selectedAirline, setSelectedAirline] = useState<string>("ALL");
@@ -124,6 +151,7 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
     setSelectedPackage("ALL");
+    setSelectedCategory("ALL");
     setSelectedAirline("ALL");
     setExpandedId(null);
     setShowAll(false);
@@ -136,8 +164,17 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
 
   // Available package names in current month
   const availablePackagesInMonth = useMemo(() => {
-    const names = Array.from(new Set(currentMonthLists.map((l) => l.name)));
+    const names = Array.from(new Set(
+      currentMonthLists
+        .filter((list) => selectedCategory === "ALL" || getProgramCategory(list.name) === selectedCategory)
+        .map((l) => l.name),
+    ));
     return names;
+  }, [currentMonthLists, selectedCategory]);
+
+  const availableCategoriesInMonth = useMemo(() => {
+    const present = new Set(currentMonthLists.map((list) => getProgramCategory(list.name)));
+    return categoryDefinitions.filter((category) => category.id === "ALL" || present.has(category.id));
   }, [currentMonthLists]);
 
   // Available airlines in current month
@@ -157,6 +194,9 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
 
     currentMonthLists.forEach((l) => {
       if (selectedPackage !== "ALL" && l.name !== selectedPackage) {
+        return;
+      }
+      if (selectedCategory !== "ALL" && getProgramCategory(l.name) !== selectedCategory) {
         return;
       }
       l.items.forEach((it) => {
@@ -182,6 +222,16 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
     if (filters.airline) {
       items = items.filter((it) => it.airline?.name === filters.airline);
     }
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      items = items.filter((it) => [
+        it.listName,
+        it.airline?.name,
+        it.hotelMakkahLabel,
+        it.hotelMadinahLabel,
+        it.route,
+      ].filter(Boolean).join(" ").toLowerCase().includes(query));
+    }
 
     // Sort items
     items.sort((a, b) => {
@@ -195,6 +245,8 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
   }, [
     currentMonthLists,
     selectedPackage,
+    selectedCategory,
+    searchQuery,
     selectedAirline,
     filters.duration,
     filters.airline,
@@ -314,91 +366,104 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
         </div>
       </div>
 
-      {/* LEVEL 2 NAVIGATION: TABS JENIS PAKET & QUICK FILTER */}
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 md:flex-row md:items-center md:justify-between">
-        {/* TABS PROGRAM PAKET */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedPackage("ALL");
-              setSelectedAirline("ALL");
+      {/* CONTROL BAR: SEARCH, CATEGORY, VARIANT, AIRLINE, SORT */}
+      <div className="sticky top-3 z-20 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-[0_12px_32px_rgba(7,26,51,0.08)] backdrop-blur md:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <label className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setShowAll(false);
+                setExpandedId(null);
+              }}
+              placeholder="Cari program, hotel, atau maskapai..."
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/15"
+              aria-label="Cari program, hotel, atau maskapai"
+            />
+          </label>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <SlidersHorizontal className="h-4 w-4 text-gold-dark" />
+            <span className="hidden xl:inline">Filter jadwal</span>
+          </div>
+          <select
+            value={selectedAirline}
+            onChange={(event) => {
+              setSelectedAirline(event.target.value);
               setShowAll(false);
               setExpandedId(null);
             }}
-            className={`rounded-full px-4 py-1.5 text-xs font-extrabold transition ${
-              selectedPackage === "ALL"
-                ? "bg-primary text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
+            className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-gold focus:ring-2 focus:ring-gold/15"
+            aria-label="Filter maskapai"
           >
-            Semua Program ({currentMonthLists.reduce((acc, curr) => acc + curr.items.length, 0)})
-          </button>
-
-          {availablePackagesInMonth.map((pkgName) => {
-            const isActive = selectedPackage === pkgName;
-            const count = currentMonthLists
-              .filter((l) => l.name === pkgName)
-              .reduce((acc, curr) => acc + curr.items.length, 0);
-            const cleanName = pkgName.replace(/^paket\s+/i, "");
-
-            return (
-              <button
-                key={pkgName}
-                type="button"
-                onClick={() => {
-                  setSelectedPackage(pkgName);
-                  setSelectedAirline("ALL");
-                  setShowAll(false);
-                  setExpandedId(null);
-                }}
-                className={`rounded-full px-4 py-1.5 text-xs font-extrabold transition ${
-                  isActive
-                    ? "bg-primary text-white shadow-sm"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {cleanName} ({count})
-              </button>
-            );
-          })}
-        </div>
-
-        {/* QUICK FILTERS & SORTER */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* FILTER MASKAPAI */}
-          {availableAirlinesInMonth.length > 1 && (
-            <div className="flex items-center gap-1.5 text-xs">
-              <Filter className="h-3.5 w-3.5 text-slate-400" />
-              <select
-                value={selectedAirline}
-                onChange={(e) => {
-                  setSelectedAirline(e.target.value);
-                  setExpandedId(null);
-                  setShowAll(false);
-                }}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm focus:border-primary focus:outline-none"
-              >
-                <option value="ALL">Semua Maskapai</option>
-                {availableAirlinesInMonth.map((airline) => (
-                  <option key={airline} value={airline}>
-                    {airline}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* URUTKAN */}
+            <option value="ALL">Semua Maskapai</option>
+            {availableAirlinesInMonth.map((airline) => <option key={airline} value={airline}>{airline}</option>)}
+          </select>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as "date_asc" | "price_asc")}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm focus:border-primary focus:outline-none"
+            onChange={(event) => setSortBy(event.target.value as "date_asc" | "price_asc")}
+            className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-gold focus:ring-2 focus:ring-gold/15"
+            aria-label="Urutkan jadwal"
           >
             <option value="date_asc">Tanggal Terdekat</option>
             <option value="price_asc">Harga Termurah</option>
           </select>
         </div>
+
+        <div className="mt-3 flex gap-2 overflow-x-auto border-t border-slate-100 pt-3 pb-1">
+          {availableCategoriesInMonth.map((category) => {
+            const count = currentMonthLists
+              .filter((list) => category.id === "ALL" || getProgramCategory(list.name) === category.id)
+              .reduce((total, list) => total + list.items.length, 0);
+            const isActive = selectedCategory === category.id;
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCategory(category.id);
+                  setSelectedPackage("ALL");
+                  setShowAll(false);
+                  setExpandedId(null);
+                }}
+                className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-extrabold transition ${isActive ? "border-primary bg-primary text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-gold/60 hover:text-primary"}`}
+              >
+                {category.label} <span className={isActive ? "text-gold" : "text-slate-400"}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {selectedCategory !== "ALL" && availablePackagesInMonth.length > 1 && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-slate-400">Varian</span>
+            <select
+              value={selectedPackage}
+              onChange={(event) => {
+                setSelectedPackage(event.target.value);
+                setShowAll(false);
+                setExpandedId(null);
+              }}
+              className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-gold"
+              aria-label="Pilih varian program"
+            >
+              <option value="ALL">Semua Varian ({availablePackagesInMonth.length})</option>
+              {availablePackagesInMonth.map((pkgName) => <option key={pkgName} value={pkgName}>{pkgName.replace(/^paket\s+/i, "")}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+          {processedItems.length} Jadwal Ditemukan
+        </p>
+        {selectedCategory !== "ALL" && (
+          <button type="button" onClick={() => { setSelectedCategory("ALL"); setSelectedPackage("ALL"); }} className="text-xs font-bold text-primary hover:text-gold-dark">
+            Reset kategori
+          </button>
+        )}
       </div>
 
       {/* COMPACT LIST ROWS */}
@@ -407,7 +472,7 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
           Tidak ada jadwal yang sesuai dengan filter yang dipilih. Silakan reset filter maskapai atau pilih program lain.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {visibleItems.map((item) => {
             const isExpanded = expandedId === item.id;
             const programName = item.listName.replace(/^paket\s+/i, "");
@@ -436,10 +501,10 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
                 {/* COMPACT MAIN ROW */}
                 <div
                   onClick={() => toggleExpand(item.id)}
-                  className="flex cursor-pointer flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex cursor-pointer flex-col gap-4 p-4"
                 >
                   {/* KIRI: TANGGAL & DURASI */}
-                  <div className="flex items-center gap-3.5 sm:w-36 sm:shrink-0">
+                  <div className="flex items-center justify-between gap-3.5">
                     <div className="flex h-12 w-12 flex-col items-center justify-center rounded-xl border border-slate-100 bg-slate-50 font-black text-primary group-hover:border-gold/30">
                       <span className="text-base leading-none">
                         {formatShortDate(item.departureDate).split(" ")[0]}
@@ -460,7 +525,7 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
                   </div>
 
                   {/* TENGAH: NAMA PAKET, AIRLINE, HOTEL SINGKAT */}
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 space-y-1">
                     {/* BARIS ATAS: PROGRAM, AIRLINE, ROUTE & SPECIAL BADGE */}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-md bg-primary px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white">
@@ -511,7 +576,7 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
                   </div>
 
                   {/* KANAN: HARGA MULAI & TOMBOL LIHAT DETAIL */}
-                  <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-2 sm:border-0 sm:pt-0 sm:shrink-0">
+                  <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-3">
                     <div className="text-left sm:text-right">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                         Mulai Dari
