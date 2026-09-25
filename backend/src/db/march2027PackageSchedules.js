@@ -61,6 +61,14 @@ export const march2027PackageSchedules = [
     ["2027-03-11", 12, "GA", "Winner Inn Ajyad / setaraf", "ODST / Triple One / setaraf", 32.9, 34.9, 37.9],
     ["2027-03-13", 12, "GA", "Winner Inn Ajyad / setaraf", "ODST / Triple One / setaraf", 32.9, 34.9, 37.9],
   ]),
+  definition("PAKET SYAWAL MUBARAK ZAMRUD & MUMTAZ 12 HARI - OPSI GARUDA", [
+    ["2027-03-11", 12, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 40.5, 43, 46.5],
+    ["2027-03-14", 12, "GA", "Azka Al Safa / Prestige / setaraf", "Mukhtara / Triple One / setaraf", 40.5, 43, 46.5],
+  ]),
+  definition("PAKET SYAWAL MUBARAK ZAMRUD & MUMTAZ 12 HARI - OPSI OMAN AIR", [
+    ["2027-03-11", 12, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 35.9, 38.5, 42.9],
+    ["2027-03-13", 12, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 35.9, 38.5, 42.9],
+  ]),
   definition("PAKET SYAWAL MUBARAK 9 HARI - OPSI WINNER INN", [
     ["2027-03-18", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
     ["2027-03-19", 9, "GA", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
