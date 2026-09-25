@@ -140,6 +140,22 @@ export const march2027PackageSchedules = [
   definition("PAKET TAKBIRAN DI MAKKAH 12 HARI - OPSI OMAN SAFWA ODST", [
     ["2027-03-08", 12, "WY", "Safwa Tower / Mekkah Tower / setaraf", "ODST / Triple One / setaraf", 43.9, 48.9, 50.5],
   ]),
+  definition("PAKET SYAWAL MUBARAK PRIMA & MAHABBAH 9 HARI - OPSI MAHABBAH WINNER", [
+    ["2027-03-11", 9, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
+    ["2027-03-12", 9, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 33.5, 32, 34.5],
+    ["2027-03-13", 9, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
+    ["2027-03-14", 9, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
+    ["2027-03-15", 9, "WY", "Winner Inn / Nada Ajyad / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
+  ]),
+  definition("PAKET SYAWAL MUBARAK PRIMA & MAHABBAH 9 HARI - OPSI MAHABBAH AL MAIDA", [
+    ["2027-03-16", 9, "WY", "Al-Maida Fayzeen / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
+    ["2027-03-17", 9, "WY", "Al-Maida Fayzeen / setaraf", "ODST / Triple One / setaraf", 30.9, 32.4, 34.4],
+  ]),
+  definition("PAKET SYAWAL MUBARAK PRIMA & MAHABBAH 9 HARI - OPSI PRIMA AL MAIDA", [
+    ["2027-03-12", 9, "GA", "Al-Maida Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 33.5, 35, 37.5],
+    ["2027-03-14", 9, "GA", "Al-Maida Fayzeen / setaraf", "Mukhtara / ODST / setaraf", 33.5, 35, 37.5],
+    ["2027-03-16", 9, "GA", "Al-Maida Fayzeen / setaraf", "ODST / Triple One / setaraf", 33.5, 35, 37.5],
+  ]),
   definition("PAKET RUBY & DIAMOND SYAWAL MUBARAK PELATARAN", [
     ["2027-03-11", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44.4, 46.9],
     ["2027-03-13", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44, 46.9],
