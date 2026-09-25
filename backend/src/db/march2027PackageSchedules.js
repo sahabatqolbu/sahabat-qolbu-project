@@ -93,6 +93,18 @@ export const march2027PackageSchedules = [
     ["2027-03-15", 9, "GA", "Azka Al Safa / Maysan Al Mashaer / setaraf", "Mukhtara / ODST / setaraf", 37.5, 39, 42],
     ["2027-03-16", 9, "GA", "Azka Al Safa / Maysan Al Mashaer / setaraf", "Mukhtara / ODST / setaraf", 37.5, 39, 42],
   ]),
+  definition("PAKET SYAWAL MUBARAK 9 HARI - OPSI OMAN AIR", [
+    ["2027-03-16", 9, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+    ["2027-03-17", 9, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+    ["2027-03-18", 9, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+    ["2027-03-19", 9, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+    ["2027-03-20", 9, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+    ["2027-03-21", 9, "WY", "Maysan Al Mashaer / Prestige / setaraf", "ODST / Triple One / setaraf", 33.9, 35.9, 37.9],
+  ]),
+  definition("PAKET SYAWAL MUBARAK 9 HARI - OPSI GARUDA AZKA", [
+    ["2027-03-17", 9, "GA", "Azka Al Safa / Maysan Al Mashaer / setaraf", "Mukhtara / ODST / setaraf", 37.5, 39, 42],
+    ["2027-03-18", 9, "GA", "Azka Al Safa / Maysan Al Mashaer / setaraf", "Mukhtara / ODST / setaraf", 37.5, 39, 42],
+  ]),
   definition("PAKET RUBY & DIAMOND SYAWAL MUBARAK PELATARAN", [
     ["2027-03-11", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44.4, 46.9],
     ["2027-03-13", 9, "GA", "Safwa Tower / Makkah Tower / setaraf", "Mukhtara / Triple One / setaraf", 41.9, 44, 46.9],
