@@ -12,6 +12,7 @@ import {
   packageScheduleLists,
 } from "./schema.js";
 import { february2027PackageSchedules } from "./february2027PackageSchedules.js";
+import { march2027PackageSchedules } from "./march2027PackageSchedules.js";
 
 const MILLION = 1_000_000;
 const sharedSubtitle = "Pilih Jadwal, Maskapai & Tipe Kamar Sesuai Kebutuhan Keluarga";
@@ -94,6 +95,7 @@ const run = async () => {
     ...turkeyPackageSchedules,
     ...dubaiPackageSchedules,
     ...february2027PackageSchedules,
+    ...march2027PackageSchedules,
   ]
     .filter((list) => !monthArgument || list.month === monthArgument);
   if (!definitions.length) throw new Error("Tidak ada definisi seed untuk bulan ini");
