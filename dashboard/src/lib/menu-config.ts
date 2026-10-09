@@ -79,6 +79,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       icon: Wallet,
     },
     {
+      label: "Invoice & Kwitansi",
+      href: "/admin/financial-documents",
+      icon: FileText,
+    },
+    {
       label: "Manajemen Aset",
       href: "/assets",
       icon: Laptop,
@@ -223,6 +228,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Transaksi",
       href: "/finance/transactions",
       icon: Wallet,
+    },
+    {
+      label: "Invoice & Kwitansi",
+      href: "/finance/financial-documents",
+      icon: FileText,
     },
     {
       label: "Laporan",

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
 import { useAuthStore } from "@/stores/authStore";
@@ -260,6 +261,17 @@ export default function TransactionsPage() {
                                     <span>Sisa Pelunasan:</span>
                                     <span>Rp {new Intl.NumberFormat("id-ID").format(selectedTx.remainingAmount)}</span>
                                 </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 border-t pt-4">
+                                <Link href={`/${user?.role === "FINANCE" ? "finance" : "admin"}/financial-documents?type=INVOICE&sourceType=TRANSACTION&sourceId=${selectedTx.id}`}>
+                                    <Button variant="outline">Buat Invoice PDF</Button>
+                                </Link>
+                                {["VERIFIED", "PAID"].includes(selectedTx.status) && (
+                                    <Link href={`/${user?.role === "FINANCE" ? "finance" : "admin"}/financial-documents?type=RECEIPT&sourceType=TRANSACTION&sourceId=${selectedTx.id}`}>
+                                        <Button variant="outline">Buat Kwitansi PDF</Button>
+                                    </Link>
+                                )}
                             </div>
 
                             {!isFinanceReadOnly && selectedTx.status === "PENDING" && (

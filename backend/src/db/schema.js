@@ -1254,6 +1254,40 @@ export const jamaahPayments = mysqlTable(
   }),
 );
 
+export const financialDocuments = mysqlTable(
+  "financial_documents",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    type: mysqlEnum("type", ["INVOICE", "RECEIPT"]).notNull(),
+    number: varchar("number", { length: 60 }).notNull().unique(),
+    status: mysqlEnum("status", ["ISSUED", "VOID"]).notNull().default("ISSUED"),
+    sourceType: varchar("source_type", { length: 30 }).notNull(),
+    sourceId: varchar("source_id", { length: 64 }),
+    activeSourceKey: varchar("active_source_key", { length: 160 }).unique(),
+    customerName: varchar("customer_name", { length: 255 }).notNull(),
+    totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
+    snapshot: json("snapshot").notNull(),
+    issuedBy: int("issued_by").notNull().references(() => users.id),
+    issuedAt: datetime("issued_at").notNull(),
+    voidBy: int("void_by").references(() => users.id),
+    voidAt: datetime("void_at"),
+    voidReason: text("void_reason"),
+  },
+  (table) => ({
+    sourceIdx: index("financial_document_source_idx").on(table.sourceType, table.sourceId),
+    issuedIdx: index("financial_document_issued_idx").on(table.issuedAt),
+  }),
+);
+
+export const financialDocumentSettings = mysqlTable("financial_document_settings", {
+  id: int("id").primaryKey(),
+  signerName: varchar("signer_name", { length: 255 }),
+  signaturePng: json("signature_png"),
+  stampPng: json("stamp_png"),
+  updatedBy: int("updated_by").references(() => users.id),
+  updatedAt: datetime("updated_at"),
+});
+
 // =====================================================
 // AGEN PROFILES TABLE
 // =====================================================

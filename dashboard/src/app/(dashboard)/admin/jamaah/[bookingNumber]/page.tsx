@@ -1352,6 +1352,11 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
               </Button>
             </Link>
           )}
+          {(user?.role === "ADMIN" || user?.role === "FINANCE") && jamaah.packageId && (
+            <Link href={`${roleBasePath}/financial-documents?type=INVOICE&sourceType=BOOKING&sourceId=${encodeURIComponent(bookingNumber)}`}>
+              <Button variant="outline"><FileText className="mr-2 h-4 w-4" /> Invoice</Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -2762,6 +2767,11 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
                                   <span className="text-xs text-red-600">Menunggu upload ulang</span>
                                 )}
                               </div>
+                            )}
+                            {(user?.role === "ADMIN" || user?.role === "FINANCE") && payment.proofStatus === "VERIFIED" && (
+                              <Link href={`${roleBasePath}/financial-documents?type=RECEIPT&sourceType=PAYMENT&sourceId=${payment.id}`}>
+                                <Button size="sm" variant="outline"><FileText className="mr-1 h-4 w-4" /> Kwitansi</Button>
+                              </Link>
                             )}
                           </TableCell>
                         </TableRow>
