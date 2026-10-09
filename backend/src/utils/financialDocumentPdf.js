@@ -77,6 +77,8 @@ export const renderFinancialDocument = async (snapshot, { voided = false } = {})
   page.drawImage(image, { x: 0, y: 0, width: A4[0], height: A4[1] });
 
   if (snapshot.type === "INVOICE") {
+    const tableFontSize = 9;
+    const summaryFontSize = 9.5;
     whiteout(page, 98, 248, 97, 15);
     put(page, font, snapshot.number, 99.8, 250.1, snapshot.number.length > 20 ? 7.5 : 9, 96);
     put(page, font, dateText(snapshot.issuedAt), 99.8, 265.6, 9, 96);
@@ -91,15 +93,15 @@ export const renderFinancialDocument = async (snapshot, { voided = false } = {})
       const rowTop = 380 + index * 22.6;
       whiteout(page, 331, rowTop - 4, 117, 18);
       whiteout(page, 453, rowTop - 4, 118, 18);
-      put(page, font, item.description, 69.8, rowTop, 9, 195);
-      put(page, font, item.qty, 293.1, rowTop, 9, 25);
-      put(page, font, rupiah(item.unitPrice), 352.5, rowTop, 9, 96);
-      put(page, font, rupiah(item.amount), 480, rowTop, 9, 90);
+      put(page, font, item.description, 69.8, rowTop, tableFontSize, 195);
+      put(page, font, item.qty, 293.1, rowTop, tableFontSize, 25);
+      put(page, font, rupiah(item.unitPrice), 352.5, rowTop, tableFontSize, 96);
+      put(page, font, rupiah(item.amount), 480, rowTop, tableFontSize, 90);
     }
-    put(page, font, nominal(snapshot.totalAmount), 173.6, 508.8, 9.5, 105);
-    put(page, font, nominal(snapshot.previousPaid), 173.6, 526.7, 9.5, 105);
-    put(page, font, nominal(snapshot.currentPayment || 0), 173.6, 544.5, 9.5, 105);
-    put(page, font, nominal(snapshot.remaining), 173.6, 562.2, 9.5, 105);
+    put(page, font, nominal(snapshot.totalAmount), 173.6, 508.8, summaryFontSize, 105);
+    put(page, font, nominal(snapshot.previousPaid), 173.6, 526.7, summaryFontSize, 105);
+    put(page, font, nominal(snapshot.currentPayment || 0), 173.6, 544.5, summaryFontSize, 105);
+    put(page, font, nominal(snapshot.remaining), 173.6, 562.2, summaryFontSize, 105);
     put(page, font, nominal(snapshot.previousPaid + (snapshot.currentPayment || 0)), 186.1, 595.2, 16, 93, gold);
     put(page, font, snapshot.bank?.bankName, 397.2, 546.4, 9.5, 145);
     put(page, font, snapshot.bank?.accountNumber, 397.2, 562.2, 9.5, 145);
@@ -129,9 +131,10 @@ export const renderFinancialDocument = async (snapshot, { voided = false } = {})
       [snapshot.previousPaid + snapshot.currentPayment, 569, rgb(0.98, 0.94, 0.83)],
       [snapshot.remaining, 591.4, rgb(0.87, 0.92, 0.95)],
     ];
+    const paymentSummaryFontSize = 10;
     for (const [value, rowTop, background] of paymentRows) {
       whiteout(page, 351, rowTop - 2, 25, 16, background);
-      put(page, font, nominal(value), 358, rowTop, 10, 192);
+      put(page, font, nominal(value), 358, rowTop, paymentSummaryFontSize, 192);
     }
     put(page, font, snapshot.createdByName, 223.2, 688.1, 9.5, 130);
     await drawSignature(pdf, page, snapshot, 420, 675, 115, 60);

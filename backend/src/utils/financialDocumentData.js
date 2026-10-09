@@ -19,6 +19,18 @@ const item = (description, unitPrice, qty = 1) => ({
   unitPrice: amount(unitPrice),
   amount: amount(unitPrice * qty),
 });
+const groupedItems = (members, packageName) => {
+  const groups = new Map();
+  for (const member of members) {
+    const unitPrice = amount(member.hargaFinal);
+    const key = String(unitPrice);
+    const current = groups.get(key) || { description: packageName, qty: 0, unitPrice };
+    current.qty += 1;
+    current.amount = amount(current.unitPrice * current.qty);
+    groups.set(key, current);
+  }
+  return [...groups.values()];
+};
 const fail = (message, status = 422) => Object.assign(new Error(message), { status });
 
 const customerForBooking = async (bookingNumber) => {
@@ -40,10 +52,8 @@ const customerForBooking = async (bookingNumber) => {
 
 const bookingBase = (data) => {
   const { booking, members, pkg, user } = data;
-  const items = members.map((member) => item(
-    `${pkg?.name || "Paket Umrah"} - ${member.memberName || member.bookingNumber}`,
-    member.hargaFinal,
-  ));
+  const packageName = pkg?.name || "Paket Umrah";
+  const items = groupedItems(members, packageName);
   return {
     customerName: booking.memberName || user?.fullName || "Jamaah",
     customerPhone: user?.phone || "-",
