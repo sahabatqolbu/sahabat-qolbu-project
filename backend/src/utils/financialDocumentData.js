@@ -75,8 +75,8 @@ export const resolveFinancialSource = async ({ type, sourceType, sourceId, input
     const items = input.items.map((line) => item(line.description.trim(), line.unitPrice, line.qty));
     const totalAmount = amount(items.reduce((sum, line) => sum + line.amount, 0));
     const previousPaid = amount(input.previousPaid);
-    const currentPayment = type === "RECEIPT" ? amount(input.currentPayment) : 0;
-    if (type === "RECEIPT" && input.confirmedReceived !== true) throw fail("Konfirmasi penerimaan pembayaran wajib dicentang");
+    const currentPayment = amount(input.currentPayment);
+    if ((type === "RECEIPT" || currentPayment > 0) && input.confirmedReceived !== true) throw fail("Konfirmasi penerimaan pembayaran wajib dicentang");
     if (previousPaid + currentPayment > totalAmount) throw fail("Pembayaran melebihi total tagihan");
     return {
       sourceType, sourceId: null,
@@ -86,8 +86,8 @@ export const resolveFinancialSource = async ({ type, sourceType, sourceId, input
       items, totalAmount, previousPaid, currentPayment,
       paidBy: input.paidBy?.trim() || input.customerName.trim(),
       paymentMethod: input.paymentMethod || "Transfer bank",
-      verifiedAt: type === "RECEIPT" ? new Date().toISOString() : null,
-      verifierName: type === "RECEIPT" ? input.actorName : null,
+      verifiedAt: currentPayment > 0 ? new Date().toISOString() : null,
+      verifierName: currentPayment > 0 ? input.actorName : null,
       paymentStatus: previousPaid + currentPayment >= totalAmount ? "Lunas" : previousPaid + currentPayment > 0 ? "Sebagian" : "Belum dibayar",
     };
   }
@@ -95,12 +95,21 @@ export const resolveFinancialSource = async ({ type, sourceType, sourceId, input
   if (sourceType === "BOOKING" && type === "INVOICE") {
     const data = await customerForBooking(sourceId);
     const base = bookingBase(data);
-    const previousPaid = amount(data.payments.reduce((sum, payment) => sum + amount(payment.amount), 0));
+    const latestPayment = [...data.payments].sort((a, b) => new Date(b.verifiedAt) - new Date(a.verifiedAt) || b.id - a.id)[0];
+    const latestGroup = latestPayment ? data.payments.filter((payment) => latestPayment.familyPaymentGroupId
+      ? payment.familyPaymentGroupId === latestPayment.familyPaymentGroupId
+      : payment.id === latestPayment.id) : [];
+    const latestIds = new Set(latestGroup.map((payment) => payment.id));
+    const previousPaid = amount(data.payments.filter((payment) => !latestIds.has(payment.id)).reduce((sum, payment) => sum + amount(payment.amount), 0));
+    const currentPayment = amount(latestGroup.reduce((sum, payment) => sum + amount(payment.amount), 0));
+    const received = amount(previousPaid + currentPayment);
+    if (received > base.totalAmount) throw fail("Pembayaran melebihi total tagihan; periksa data paket");
     return {
       ...base, sourceType: data.members.length > 1 ? "FAMILY_BOOKING" : sourceType,
       sourceId: data.members.length > 1 ? `${data.booking.userId}:${data.booking.packageId}` : sourceId,
-      previousPaid, currentPayment: 0,
-      paymentStatus: previousPaid >= base.totalAmount ? "Lunas" : previousPaid > 0 ? "Sebagian" : "Belum dibayar",
+      previousPaid, currentPayment,
+      verifiedAt: latestPayment?.verifiedAt || null,
+      paymentStatus: received >= base.totalAmount ? "Lunas" : received > 0 ? "Sebagian" : "Belum dibayar",
     };
   }
 
