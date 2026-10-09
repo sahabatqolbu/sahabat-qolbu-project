@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import multer from "multer";
 import { and, desc, eq, like } from "drizzle-orm";
@@ -7,6 +6,7 @@ import { db } from "../db/index.js";
 import { auditLogs, financialDocuments, financialDocumentSettings } from "../db/schema.js";
 import { errorResponse, notFoundResponse, successResponse } from "../utils/response.js";
 import { getFinancialBank, listFinancialBanks, resolveFinancialSource } from "../utils/financialDocumentData.js";
+import { financialNumberPrefix, nextFinancialNumber } from "../utils/financialDocumentNumber.js";
 import { renderFinancialDocument } from "../utils/financialDocumentPdf.js";
 
 const money = z.coerce.number().finite().min(0).max(1_000_000_000_000);
@@ -142,26 +142,35 @@ export const issueFinancialDocument = handle(async (req, res) => {
   const parsed = requestSchema.safeParse(req.body);
   if (!parsed.success) return errorResponse(res, "Periksa data dokumen", 400, z.treeifyError(parsed.error));
   const issuedAt = new Date();
-  const kind = parsed.data.type === "INVOICE" ? "INV" : "KWT";
-  const number = `${kind}/SQ/${issuedAt.getFullYear()}${String(issuedAt.getMonth() + 1).padStart(2, "0")}/${randomBytes(4).toString("hex").toUpperCase()}`;
-  const snapshot = await createSnapshot(parsed.data, req.user, number, issuedAt.toISOString());
-  const activeSourceKey = snapshot.sourceId ? `${parsed.data.type}:${snapshot.sourceType}:${snapshot.sourceId}` : null;
-  await renderFinancialDocument(snapshot);
-  try {
-    const inserted = await db.transaction(async (tx) => {
-      const [row] = await tx.insert(financialDocuments).values({
-        type: snapshot.type, number, status: "ISSUED", sourceType: snapshot.sourceType,
-        sourceId: snapshot.sourceId, activeSourceKey, customerName: snapshot.customerName,
-        totalAmount: String(snapshot.totalAmount), snapshot, issuedBy: req.user.userId, issuedAt,
-      }).$returningId();
-      await tx.insert(auditLogs).values({ userId: req.user.userId, action: "ISSUE_FINANCIAL_DOCUMENT", module: "FINANCE", description: number, ipAddress: req.ip, userAgent: req.get("user-agent") || null });
-      return row;
+  const base = await createSnapshot(parsed.data, req.user, "PRATINJAU", issuedAt.toISOString());
+  const prefix = financialNumberPrefix(parsed.data.type, issuedAt);
+  const activeSourceKey = base.sourceId ? `${parsed.data.type}:${base.sourceType}:${base.sourceId}` : null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const existing = await db.query.financialDocuments.findMany({
+      where: like(financialDocuments.number, `${prefix}%`),
+      columns: { number: true }, limit: 10000,
     });
-    return successResponse(res, { id: inserted.id, number }, "Dokumen berhasil diterbitkan", 201);
-  } catch (error) {
-    if (error.code === "ER_DUP_ENTRY") return errorResponse(res, "Dokumen aktif untuk sumber ini sudah ada", 409);
-    throw error;
+    const number = nextFinancialNumber(prefix, existing.map((row) => row.number));
+    const snapshot = { ...base, number };
+    await renderFinancialDocument(snapshot);
+    try {
+      const inserted = await db.transaction(async (tx) => {
+        const [row] = await tx.insert(financialDocuments).values({
+          type: snapshot.type, number, status: "ISSUED", sourceType: snapshot.sourceType,
+          sourceId: snapshot.sourceId, activeSourceKey, customerName: snapshot.customerName,
+          totalAmount: String(snapshot.totalAmount), snapshot, issuedBy: req.user.userId, issuedAt,
+        }).$returningId();
+        await tx.insert(auditLogs).values({ userId: req.user.userId, action: "ISSUE_FINANCIAL_DOCUMENT", module: "FINANCE", description: number, ipAddress: req.ip, userAgent: req.get("user-agent") || null });
+        return row;
+      });
+      return successResponse(res, { id: inserted.id, number }, "Dokumen berhasil diterbitkan", 201);
+    } catch (error) {
+      if (error.code !== "ER_DUP_ENTRY") throw error;
+      const collision = await db.query.financialDocuments.findFirst({ where: eq(financialDocuments.number, number), columns: { id: true } });
+      if (!collision) return errorResponse(res, "Dokumen aktif untuk sumber ini sudah ada", 409);
+    }
   }
+  return errorResponse(res, "Nomor dokumen sedang dipakai; coba lagi", 409);
 });
 
 export const listFinancialDocuments = handle(async (req, res) => {
