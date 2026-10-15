@@ -47,8 +47,15 @@ export const logger = {
    */
   error: (message, error = null, meta = {}) => {
     // Always log errors, even when regular logs are disabled.
-    const errorMeta = error ? { error: error.message, stack: error.stack } : {};
-    console.error(formatMessage("error", message, { ...sanitize(meta), ...errorMeta }));
+    const causeMeta = error?.cause
+      ? { cause: error.cause?.message || String(error.cause) }
+      : {};
+    const errorMeta = error
+      ? { error: error.message, ...causeMeta, stack: error.stack }
+      : {};
+    console.error(
+      formatMessage("error", message, { ...sanitize(meta), ...errorMeta }),
+    );
   },
 
   /**

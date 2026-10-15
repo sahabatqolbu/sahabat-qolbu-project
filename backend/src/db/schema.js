@@ -997,7 +997,7 @@ export const articles = mysqlTable(
   "articles",
   {
     id: int("id").primaryKey().autoincrement(),
-    title: varchar("title", { length: 255 }).notNull(),
+    title: varchar("title", { length: 500 }).notNull(),
     slug: varchar("slug", { length: 255 }).notNull().unique(),
     excerpt: text("excerpt"),
     content: text("content").notNull(),
@@ -1024,7 +1024,7 @@ export const articles = mysqlTable(
       .notNull()
       .default("NONE"),
     relatedId: int("related_id"),
-    seoTitle: varchar("seo_title", { length: 255 }),
+    seoTitle: varchar("seo_title", { length: 500 }),
     seoDescription: text("seo_description"),
     authorId: int("author_id").references(() => users.id),
     publishedAt: datetime("published_at"),

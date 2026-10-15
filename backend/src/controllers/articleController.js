@@ -28,7 +28,7 @@ const RELATED_TYPES = new Set([
   "SERVICE",
 ]);
 
-const slugify = (value = "") =>
+export const slugify = (value = "") =>
   String(value)
     .toLowerCase()
     .normalize("NFKD")
@@ -112,7 +112,16 @@ const ensureUniqueSlug = async (baseSlug, currentId = null) => {
   }
 };
 
-const buildArticlePayload = async (
+export const generateSlugBase = (title = "", requestedSlug = "") => {
+  const source = String(requestedSlug || title || "").trim();
+  let base = slugify(source);
+  if (base.length > 190) {
+    base = base.slice(0, 190).replace(/-+$/, "");
+  }
+  return base || `artikel-${Date.now()}`;
+};
+
+export const buildArticlePayload = async (
   body,
   uploadedPath,
   existing = null,
@@ -130,8 +139,14 @@ const buildArticlePayload = async (
   if (!title || title.length < 3) {
     return { error: "Judul artikel minimal 3 karakter" };
   }
+  if (title.length > 500) {
+    return { error: "Judul artikel maksimal 500 karakter" };
+  }
   if (!content || content.length < 10) {
     return { error: "Konten artikel minimal 10 karakter" };
+  }
+  if (body.seoTitle && String(body.seoTitle).trim().length > 500) {
+    return { error: "SEO Title maksimal 500 karakter" };
   }
 
   const status = normalizeStatus(body.status, existing?.status || "DRAFT");
@@ -147,8 +162,7 @@ const buildArticlePayload = async (
     return { error: "Relasi artikel wajib dipilih" };
   }
 
-  const requestedSlug = String(body.slug || "").trim();
-  const slugBase = slugify(requestedSlug || title);
+  const slugBase = generateSlugBase(title, body.slug);
   const slug = await ensureUniqueSlug(slugBase, existing?.id || null);
   const tags = parseTags(body.tags);
   const publishedAt =

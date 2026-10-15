@@ -86,7 +86,10 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   // Database errors
-  if (err.code === "ER_DUP_ENTRY") {
+  const dbCode = err.code || err.cause?.code;
+  const dbErrno = err.errno || err.cause?.errno;
+
+  if (dbCode === "ER_DUP_ENTRY") {
     return res.status(409).json({
       success: false,
       code: "RESOURCE_CONFLICT",
@@ -94,11 +97,24 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  if (err.code === "ER_NO_REFERENCED_ROW") {
+  if (dbCode === "ER_NO_REFERENCED_ROW" || dbCode === "ER_NO_REFERENCED_ROW_2") {
     return res.status(400).json({
       success: false,
       code: "VALIDATION_FAILED",
       message: "Data referensi tidak ditemukan",
+    });
+  }
+
+  if (
+    dbCode === "ER_DATA_TOO_LONG" ||
+    dbErrno === 1406 ||
+    err.message?.includes("ER_DATA_TOO_LONG") ||
+    err.message?.includes("Data too long for column")
+  ) {
+    return res.status(400).json({
+      success: false,
+      code: "VALIDATION_FAILED",
+      message: "Data yang dimasukkan melebihi batas panjang karakter yang diperbolehkan",
     });
   }
 

@@ -498,12 +498,20 @@ export default function ArticleFormPage({
           <CardContent className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Judul *</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Judul *</Label>
+                  {formData.title.length > 200 && (
+                    <span className="text-xs text-muted-foreground">
+                      {formData.title.length}/500
+                    </span>
+                  )}
+                </div>
                 <Input
                   value={formData.title}
                   onChange={(e) =>
                     updateFormData((p) => ({ ...p, title: e.target.value }))
                   }
+                  maxLength={500}
                   required
                 />
               </div>
@@ -514,6 +522,7 @@ export default function ArticleFormPage({
                   onChange={(e) =>
                     updateFormData((p) => ({ ...p, slug: e.target.value }))
                   }
+                  maxLength={200}
                   placeholder="otomatis dari judul jika kosong"
                 />
               </div>
@@ -770,6 +779,7 @@ export default function ArticleFormPage({
                 onChange={(e) =>
                   updateFormData((p) => ({ ...p, seoTitle: e.target.value }))
                 }
+                maxLength={500}
               />
             </div>
             <div className="space-y-2">
