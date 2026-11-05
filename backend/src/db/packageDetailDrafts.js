@@ -6,6 +6,40 @@ const healthFacilities = [
 
 export const packageDetailDrafts = [
   {
+    code: "SQ-RMD-KHALID-20270207",
+    name: "Umroh Awal Ramadhan Bersama Ustadz Khalid 9 Hari",
+    description: "Sambut awal Ramadhan dengan perjalanan umroh 9 hari bersama Sahabat Qolbu. Program ini menggunakan penerbangan Saudia Airlines menuju Madinah, dilanjutkan perjalanan ke Makkah dengan kereta ekonomi, serta city tour tanpa Thaif. Ustadz Khalid mendampingi khusus selama proses pelaksanaan umrah.",
+    departureDate: "2027-02-07",
+    returnDate: "2027-02-15",
+    duration: 9,
+    airlineCode: "SV",
+    arrivalAirportCode: "MED",
+    returnAirportCode: "JED",
+    facilities: [
+      "Hotel Madinah: Triple One",
+      "Hotel Makkah: Makarem Ajyad",
+      "Hotel Jeddah: Sedra Al Alami",
+      "Transportasi antarkota: kereta ekonomi",
+      "City tour tersedia, tanpa Thaif",
+      "Keberangkatan: SV 821, 7 Februari 2027, CGK-MED, 12.00-18.15",
+      "Kepulangan: SV 818, 15 Februari 2027, JED-CGK, 02.20-16.00",
+    ],
+    notes: [
+      "Ustadz Khalid mendampingi hanya selama proses pelaksanaan umrah, bukan sepanjang perjalanan.",
+      "Materi awal mencantumkan kepulangan 14 Februari 2027, sedangkan jadwal penerbangan pulang SV 818 berangkat 15 Februari 2027 pukul 02.20. Konfirmasi jadwal final sebelum paket dipublikasikan.",
+      "Kontak yang tercantum pada materi: 0851-2805-2678.",
+      "Draft paket: jumlah seat, itinerary harian, flyer, rincian fasilitas dan biaya di luar paket, serta syarat dan ketentuan perlu dilengkapi admin sebelum publikasi.",
+    ],
+    options: [
+      {
+        name: "Pilihan Utama - Triple One / Makarem Ajyad / Sedra Al Alami",
+        priceQuad: 44.95,
+        priceTriple: 49.7,
+        priceDouble: 55.55,
+      },
+    ],
+  },
+  {
     code: "SQ-DXB-MHB-20261114",
     name: "Umroh Plus Dubai Program Mahabbah 12 Hari",
     description: "Program Umroh Plus Dubai selama 12 hari dengan penerbangan Emirates, dua pilihan akomodasi Makkah, serta rangkaian pengalaman wisata Dubai setelah agenda ibadah.",

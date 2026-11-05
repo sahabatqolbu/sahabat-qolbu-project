@@ -12,6 +12,13 @@ const MILLION = 1_000_000;
 const money = (millions) => String(millions * MILLION);
 
 const run = async () => {
+  const selectedCode = process.env.PACKAGE_DRAFT_CODE;
+  const drafts = selectedCode
+    ? packageDetailDrafts.filter((draft) => draft.code === selectedCode)
+    : packageDetailDrafts;
+  if (selectedCode && drafts.length === 0) {
+    throw new Error(`Package detail draft not found: ${selectedCode}`);
+  }
   const [airlines, airports] = await Promise.all([
     db.select().from(masterAirlines),
     db.select().from(masterAirports),
@@ -19,7 +26,7 @@ const run = async () => {
   const airlineByCode = new Map(airlines.map((item) => [item.code, item.id]));
   const airportByCode = new Map(airports.map((item) => [item.code, item.id]));
 
-  for (const draft of packageDetailDrafts) {
+  for (const draft of drafts) {
     const airlineId = airlineByCode.get(draft.airlineCode);
     const arrivalAirportId = airportByCode.get(draft.arrivalAirportCode);
     const returnAirportId = airportByCode.get(draft.returnAirportCode);
@@ -86,7 +93,7 @@ const run = async () => {
     });
   }
 
-  console.log(`Processed ${packageDetailDrafts.length} package detail drafts.`);
+  console.log(`Processed ${drafts.length} package detail drafts.`);
   process.exit(0);
 };
 
