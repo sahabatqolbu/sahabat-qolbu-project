@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { safeJsonLd } from "@/lib/seo";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
@@ -47,7 +48,7 @@ const prepareArticleContent = (content: string, title: string) => {
   const normalized = content
     .replace(/(\S)[ \t]+\*\*(?=[\s,.;:!?]|$)/g, "$1**")
     .replace(/(\S)[ \t]+\*(?=[\s,.;:!?]|$)/g, "$1*")
-    .replace(/^•\s+/gm, "- ")
+    .replace(/^[\u2022\-]\s+/gm, "- ")
     .replace(/[ \t]+([,.;:!?])/g, "$1")
     .replace(/[ \t]+\n/g, "\n")
     .trim();
@@ -159,13 +160,26 @@ export async function generateMetadata({
   const { slug } = await params;
   const article = await getPublicArticleBySlug(slug);
   if (!article) return { title: "Artikel Tidak Ditemukan | Sahabat Qolbu" };
+  const title = article.seoTitle || `${article.title} | Sahabat Qolbu`;
+  const description = article.seoDescription || article.excerpt || undefined;
+
   return {
-    title: article.seoTitle || `${article.title} | Sahabat Qolbu`,
-    description: article.seoDescription || article.excerpt || undefined,
+    title,
+    description,
+    alternates: {
+      canonical: `/artikel/${slug}`,
+    },
     openGraph: {
       title: article.title,
-      description: article.excerpt || undefined,
+      description,
+      url: `https://sahabatqolbu.com/artikel/${slug}`,
       images: article.coverImage ? [{ url: article.coverImage }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description,
+      images: article.coverImage ? [article.coverImage] : undefined,
     },
   };
 }
@@ -191,144 +205,198 @@ export default async function ArticleDetailPage({
   );
   const readingTime = estimateReadingTime(preparedContent);
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.excerpt || article.seoDescription || undefined,
+    image: article.coverImage ? [article.coverImage] : undefined,
+    datePublished: article.publishedAt || article.createdAt,
+    dateModified: article.publishedAt || article.createdAt,
+    author: {
+      "@type": "Organization",
+      name: "Sahabat Qolbu",
+      url: "https://sahabatqolbu.com",
+    },
+    publisher: {
+      "@id": "https://sahabatqolbu.com/#organization",
+    },
+    mainEntityOfPage: `https://sahabatqolbu.com/artikel/${article.slug}`,
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Beranda",
+        item: "https://sahabatqolbu.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Artikel",
+        item: "https://sahabatqolbu.com/artikel",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: article.title,
+        item: `https://sahabatqolbu.com/artikel/${article.slug}`,
+      },
+    ],
+  };
+
   return (
-    <main className="min-h-screen bg-[#f8faf8] pt-24 text-neutral-800">
-      <article>
-        <header className="relative overflow-hidden border-b border-primary/10 bg-primary py-10 text-white md:py-16">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.28),transparent_34%)]" />
-          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <Link
-              href="/artikel"
-              className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-gold transition hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" /> Semua Artikel
-            </Link>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-                {article.category || "Artikel"}
-              </span>
-              <span className="inline-flex items-center gap-2 text-sm font-bold text-white/75">
-                <BookOpen className="h-4 w-4 text-gold" />
-                {readingTime} menit baca
-              </span>
-            </div>
-            <h1 className="mt-5 max-w-4xl text-3xl font-extrabold leading-tight md:text-5xl">
-              {article.title}
-            </h1>
-            {article.excerpt ? (
-              <p className="mt-5 max-w-3xl text-lg leading-8 text-white/80">
-                {article.excerpt}
-              </p>
-            ) : null}
-            <p className="mt-5 flex items-center gap-2 text-sm font-bold text-white/70">
-              <CalendarDays className="h-4 w-4" />
-              {formatDate(article.publishedAt || article.createdAt)}
-            </p>
-          </div>
-        </header>
-        {article.coverImage ? (
-          <div className="mx-auto max-w-5xl px-4 pt-10 sm:px-6 lg:px-8">
-            <img
-              src={article.coverImage}
-              alt={article.title}
-              className="h-auto w-full rounded-sm border border-neutral-200 object-contain shadow-lg shadow-primary/10"
-            />
-          </div>
-        ) : null}
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:py-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
-          <div className="space-y-8">
-            <div className="min-w-0 px-0 py-1 md:rounded-md md:border md:border-neutral-200 md:bg-white md:px-10 md:py-9 md:shadow-sm lg:px-12">
-              <div className="mx-auto max-w-[780px] text-base">
-                {renderContent(preparedContent)}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
+      />
+      <main className="min-h-screen bg-[#f8faf8] pt-24 text-neutral-800">
+        <article>
+          <header className="relative overflow-hidden border-b border-primary/10 bg-primary py-10 text-white md:py-16">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.28),transparent_34%)]" />
+            <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+              <Link
+                href="/artikel"
+                className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-gold transition hover:text-white"
+              >
+                <ArrowLeft className="h-4 w-4" /> Semua Artikel
+              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
+                  {article.category || "Artikel"}
+                </span>
+                <span className="inline-flex items-center gap-2 text-sm font-bold text-white/75">
+                  <BookOpen className="h-4 w-4 text-gold" />
+                  {readingTime} menit baca
+                </span>
               </div>
+              <h1 className="mt-5 max-w-4xl text-3xl font-extrabold leading-tight md:text-5xl">
+                {article.title}
+              </h1>
+              {article.excerpt ? (
+                <p className="mt-5 max-w-3xl text-lg leading-8 text-white/80">
+                  {article.excerpt}
+                </p>
+              ) : null}
+              <p className="mt-5 flex items-center gap-2 text-sm font-bold text-white/70">
+                <CalendarDays className="h-4 w-4" />
+                {formatDate(article.publishedAt || article.createdAt)}
+              </p>
             </div>
-
-            <ArticleEngagement slug={article.slug} title={article.title} />
-          </div>
-
-          <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
-            {relatedPackages.length ? (
-              <div className="rounded-sm border border-gold/30 bg-white p-5 shadow-sm">
-                <h2 className="text-lg font-extrabold text-primary">
-                  {getRelatedPackageTitle(article.relatedType)}
-                </h2>
-                <div className="mt-4 space-y-3">
-                  {relatedPackages.slice(0, 4).map((pkg) => (
-                    <Link
-                      key={pkg.id}
-                      href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
-                      className="block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
-                    >
-                      <h3 className="font-extrabold leading-6 text-primary">
-                        {pkg.name}
-                      </h3>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-neutral-500">
-                        {pkg.departureDate ? (
-                          <span>{formatDate(pkg.departureDate)}</span>
-                        ) : null}
-                        {formatPrice(pkg.price) ? (
-                          <span className="text-gold">
-                            {formatPrice(pkg.price)}
-                          </span>
-                        ) : null}
-                      </div>
-                    </Link>
-                  ))}
+          </header>
+          {article.coverImage ? (
+            <div className="mx-auto max-w-5xl px-4 pt-10 sm:px-6 lg:px-8">
+              <img
+                src={article.coverImage}
+                alt={article.title}
+                className="h-auto w-full rounded-sm border border-neutral-200 object-contain shadow-lg shadow-primary/10"
+              />
+            </div>
+          ) : null}
+          <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:py-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
+            <div className="space-y-8">
+              <div className="min-w-0 px-0 py-1 md:rounded-md md:border md:border-neutral-200 md:bg-white md:px-10 md:py-9 md:shadow-sm lg:px-12">
+                <div className="mx-auto max-w-[780px] text-base">
+                  {renderContent(preparedContent)}
                 </div>
               </div>
-            ) : null}
 
-            <div className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
-                <FileText className="h-5 w-5 text-gold" />
-                Artikel Lainnya
-              </h2>
-              <div className="mt-4 space-y-3">
-                {relatedArticles.length ? (
-                  relatedArticles.map((item) => (
-                    <Link
-                      key={item.id}
-                      href={`/artikel/${item.slug}`}
-                      className="group block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
-                    >
-                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-gold">
-                        {item.category || "Artikel"}
-                      </p>
-                      <h3 className="mt-2 line-clamp-2 font-extrabold leading-6 text-primary group-hover:text-gold">
-                        {item.title}
-                      </h3>
-                      <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary">
-                        Baca artikel
-                        <ChevronRight className="h-4 w-4" />
-                      </span>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-sm text-neutral-500">
-                    Belum ada artikel lain.
-                  </p>
-                )}
+              <ArticleEngagement slug={article.slug} title={article.title} />
+            </div>
+
+            <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
+              {relatedPackages.length ? (
+                <div className="rounded-sm border border-gold/30 bg-white p-5 shadow-sm">
+                  <h2 className="text-lg font-extrabold text-primary">
+                    {getRelatedPackageTitle(article.relatedType)}
+                  </h2>
+                  <div className="mt-4 space-y-3">
+                    {relatedPackages.slice(0, 4).map((pkg) => (
+                      <Link
+                        key={pkg.id}
+                        href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
+                        className="block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
+                      >
+                        <h3 className="font-extrabold leading-6 text-primary">
+                          {pkg.name}
+                        </h3>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-neutral-500">
+                          {pkg.departureDate ? (
+                            <span>{formatDate(pkg.departureDate)}</span>
+                          ) : null}
+                          {formatPrice(pkg.price) ? (
+                            <span className="text-gold">
+                              {formatPrice(pkg.price)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm">
+                <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
+                  <FileText className="h-5 w-5 text-gold" />
+                  Artikel Lainnya
+                </h2>
+                <div className="mt-4 space-y-3">
+                  {relatedArticles.length ? (
+                    relatedArticles.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={`/artikel/${item.slug}`}
+                        className="group block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
+                      >
+                        <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-gold">
+                          {item.category || "Artikel"}
+                        </p>
+                        <h3 className="mt-2 line-clamp-2 font-extrabold leading-6 text-primary group-hover:text-gold">
+                          {item.title}
+                        </h3>
+                        <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary">
+                          Baca artikel
+                          <ChevronRight className="h-4 w-4" />
+                        </span>
+                      </Link>
+                    ))
+                  ) : (
+                    <p className="text-sm text-neutral-500">
+                      Belum ada artikel lain.
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="rounded-sm bg-primary p-5 text-white shadow-sm">
-              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-gold">
-                Butuh rekomendasi?
-              </p>
-              <h2 className="mt-2 text-xl font-extrabold">
-                Konsultasikan pilihan paket dengan tim Sahabat Qolbu.
-              </h2>
-              <Link
-                href="/#paket"
-                className="mt-5 inline-flex items-center gap-2 rounded-sm bg-gold px-4 py-3 font-extrabold text-primary transition hover:bg-white"
-              >
-                Lihat Paket Umroh
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </aside>
-        </section>
-      </article>
-    </main>
+              <div className="rounded-sm bg-primary p-5 text-white shadow-sm">
+                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-gold">
+                  Butuh rekomendasi?
+                </p>
+                <h2 className="mt-2 text-xl font-extrabold">
+                  Konsultasikan pilihan paket dengan tim Sahabat Qolbu.
+                </h2>
+                <Link
+                  href="/#paket"
+                  className="mt-5 inline-flex items-center gap-2 rounded-sm bg-gold px-4 py-3 font-extrabold text-primary transition hover:bg-white"
+                >
+                  Lihat Paket Umroh
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </aside>
+          </section>
+        </article>
+      </main>
+    </>
   );
 }

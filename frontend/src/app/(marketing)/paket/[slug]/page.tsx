@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/seo";
 import Link from "next/link";
 import { Suspense } from "react";
 import type { ReactNode } from "react";
@@ -159,10 +160,20 @@ export async function generateMetadata({
   return {
     title: `${pkg.name} | Sahabat Qolbu`,
     description,
+    alternates: {
+      canonical: `/paket/${slug}`,
+    },
     openGraph: {
-      title: pkg.name,
+      title: `${pkg.name} | Sahabat Qolbu`,
       description,
+      url: `https://sahabatqolbu.com/paket/${slug}`,
       images: pkg.image ? [{ url: pkg.image }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${pkg.name} | Sahabat Qolbu`,
+      description,
+      images: pkg.image ? [pkg.image] : undefined,
     },
   };
 }
@@ -838,8 +849,49 @@ export default async function LandingPackageDetailPage({
     { id: "info", label: "Informasi Lebih Lanjut" },
   ];
 
+  const numericPrices = [
+    getNumericPrice(pkg.priceQuad),
+    getNumericPrice(pkg.priceTriple),
+    getNumericPrice(pkg.priceDouble),
+  ].filter((p) => p > 0);
+  const minPrice = numericPrices.length ? Math.min(...numericPrices) : undefined;
+  const maxPrice = numericPrices.length ? Math.max(...numericPrices) : undefined;
+
+  const packageSchema = {
+    "@context": "https://schema.org",
+    "@type": ["TouristTrip", "Product"],
+    "@id": `https://sahabatqolbu.com/paket/${encodeURIComponent(pkg.slug)}#trip`,
+    name: pkg.name,
+    description: pkg.description || `Paket perjalanan ibadah umroh ${pkg.name} dari Sahabat Qolbu.`,
+    image: pkg.image ? [pkg.image] : undefined,
+    touristType: "Jamaah Umroh",
+    provider: {
+      "@id": "https://sahabatqolbu.com/#organization",
+    },
+    ...(minPrice
+      ? {
+          offers: {
+            "@type": "AggregateOffer",
+            priceCurrency: "IDR",
+            lowPrice: minPrice,
+            highPrice: maxPrice || minPrice,
+            offerCount: pkg.options?.length || 1,
+            availability: seatsLeft > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+            url: `https://sahabatqolbu.com/paket/${encodeURIComponent(pkg.slug)}`,
+          },
+        }
+      : {}),
+    ...(pkg.departureDate ? { startDate: pkg.departureDate } : {}),
+    ...(pkg.returnDate ? { endDate: pkg.returnDate } : {}),
+  };
+
   return (
-    <div className="landing-detail min-h-screen bg-white font-[var(--font-inter)] text-neutral-800 antialiased">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(packageSchema) }}
+      />
+      <div className="landing-detail min-h-screen bg-white font-[var(--font-inter)] text-neutral-800 antialiased">
       <main className="bg-white pt-20">
         <section className="border-b border-neutral-200 bg-neutral-50 py-8 lg:py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -1121,5 +1173,6 @@ export default async function LandingPackageDetailPage({
 
       <VendorInfoDrawer vendors={vendors} />
     </div>
+    </>
   );
 }

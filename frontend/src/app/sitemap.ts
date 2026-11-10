@@ -1,5 +1,6 @@
-import type { MetadataRoute } from "next";
+﻿import type { MetadataRoute } from "next";
 import {
+  entitySlug,
   getAllPublicArticles,
   getMarketingPackages,
 } from "@/lib/public-api";
@@ -68,5 +69,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...packagePages, ...articlePages];
+  const hotelMap = new Map<string, MetadataRoute.Sitemap[number]>();
+  const airlineMap = new Map<string, MetadataRoute.Sitemap[number]>();
+
+  for (const pkg of packages) {
+    if (pkg.airline?.id && pkg.airline?.name) {
+      const slug = entitySlug(pkg.airline.name, pkg.airline.id);
+      airlineMap.set(slug, {
+        url: `${BASE_URL}/maskapai/${encodeURIComponent(slug)}`,
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
+    }
+    if (pkg.hotelMakkah?.id && pkg.hotelMakkah?.name) {
+      const slug = entitySlug(pkg.hotelMakkah.name, pkg.hotelMakkah.id);
+      hotelMap.set(slug, {
+        url: `${BASE_URL}/hotel/${encodeURIComponent(slug)}`,
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
+    }
+    if (pkg.hotelMadinah?.id && pkg.hotelMadinah?.name) {
+      const slug = entitySlug(pkg.hotelMadinah.name, pkg.hotelMadinah.id);
+      hotelMap.set(slug, {
+        url: `${BASE_URL}/hotel/${encodeURIComponent(slug)}`,
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
+    }
+  }
+
+  return [
+    ...staticPages,
+    ...packagePages,
+    ...articlePages,
+    ...Array.from(hotelMap.values()),
+    ...Array.from(airlineMap.values()),
+  ];
 }

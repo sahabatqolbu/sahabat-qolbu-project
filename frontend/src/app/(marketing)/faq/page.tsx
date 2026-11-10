@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import FaqPageClient from "./FaqPageClient";
 import { getPublicFaqs } from "@/lib/public-api";
+import { safeJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "FAQ Umroh Sahabat Qolbu",
@@ -28,7 +29,7 @@ export default async function FaqPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
       />
       <FaqPageClient initialFaqs={faqs} />
     </>

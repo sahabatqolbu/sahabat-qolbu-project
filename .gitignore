@@ -9,3 +9,10 @@ info.md
 **/.env
 **/.env.*
 !**/.env.example
+# Security & test credentials
+backend/test-login.js
+
+# Local tooling & test artifacts
+.commandcode/
+.playwright-cli/
+output/

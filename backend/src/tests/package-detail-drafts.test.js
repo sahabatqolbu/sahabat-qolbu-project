@@ -3,16 +3,16 @@ import assert from "node:assert/strict";
 import { packageDetailDrafts } from "../db/packageDetailDrafts.js";
 
 test("package detail drafts preserve source dates, facilities, and prices", () => {
-  assert.equal(packageDetailDrafts.length, 5);
+  assert.equal(packageDetailDrafts.length, 6);
   assert.deepEqual(
     packageDetailDrafts.map((draft) => draft.departureDate),
-    ["2026-11-14", "2026-10-30", "2026-11-04", "2026-11-06", "2026-11-27"],
+    ["2027-02-07", "2026-11-14", "2026-10-30", "2026-11-04", "2026-11-06", "2026-11-27"],
   );
 
   for (const draft of packageDetailDrafts) {
     assert.ok([9, 12].includes(draft.duration));
     assert.ok(["EK", "SV"].includes(draft.airlineCode));
-    assert.equal(draft.arrivalAirportCode, "JED");
+    assert.ok(["JED", "MED"].includes(draft.arrivalAirportCode));
     assert.equal(draft.returnAirportCode, "JED");
     assert.ok(draft.facilities.length >= 7);
     if (draft.airlineCode === "EK") {

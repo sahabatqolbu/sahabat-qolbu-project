@@ -1,5 +1,7 @@
-import Link from "next/link";
+import { safeJsonLd } from "@/lib/seo";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { ArrowLeft, FileText, Plane } from "lucide-react";
 import {
   getPublicAirlineDetail,
@@ -11,6 +13,42 @@ type Params = Promise<{ slug: string }>;
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const id = parseEntityIdFromSlug(slug);
+  if (!id) return { title: "Maskapai | Sahabat Qolbu" };
+
+  const detail = await getPublicAirlineDetail(id);
+  if (!detail) return { title: "Maskapai Tidak Ditemukan | Sahabat Qolbu" };
+
+  const { airline } = detail;
+  const title = `Penerbangan Umroh ${airline.name} | Sahabat Qolbu`;
+  const description = `Informasi maskapai ${airline.name} (${airline.code || "Penerbangan Umroh"}), armada, kenyamanan, dan daftar paket umroh resmi Sahabat Qolbu yang menggunakannya.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/maskapai/${slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      images: airline.logo ? [{ url: airline.logo }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: airline.logo ? [airline.logo] : undefined,
+    },
+  };
+}
 
 export default async function AirlineDetailPage({
   params,
@@ -25,133 +63,148 @@ export default async function AirlineDetailPage({
   const { airline, articles, packages } = detail;
   const gallery = airline.images || [];
 
-  return (
-    <main className="min-h-screen bg-white pt-24 text-neutral-800">
-      <section className="border-b border-neutral-200 bg-neutral-50 py-10 md:py-14">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-          <div>
-            <Link
-              href="/paket"
-              className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-primary transition hover:text-gold"
-            >
-              <ArrowLeft className="h-4 w-4" /> Kembali ke Paket
-            </Link>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-              Maskapai
-            </p>
-            <h1 className="mt-3 text-4xl font-extrabold text-primary md:text-5xl">
-              {airline.name}
-            </h1>
-            <div className="mt-5 flex flex-wrap gap-3">
-              {airline.code ? (
-                <span className="inline-flex rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
-                  Kode: {airline.code}
-                </span>
-              ) : null}
-              {airline.country ? (
-                <span className="inline-flex rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
-                  {airline.country}
-                </span>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex min-h-56 items-center justify-center rounded-sm border border-neutral-200 bg-white p-8 shadow-lg shadow-primary/10">
-            {airline.logo ? (
-              <img
-                src={airline.logo}
-                alt={airline.name || "Maskapai"}
-                className="max-h-40 w-full object-contain"
-              />
-            ) : (
-              <Plane className="h-16 w-16 text-gold" />
-            )}
-          </div>
-        </div>
-      </section>
+  const airlineSchema = {
+    "@context": "https://schema.org",
+    "@type": "Airline",
+    name: airline.name,
+    iataCode: airline.code || undefined,
+    logo: airline.logo || undefined,
+    description: `Maskapai ${airline.name}, mitra maskapai penerbangan resmi paket umroh Sahabat Qolbu.`,
+  };
 
-      <section className="py-14 md:py-20">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-          <article className="space-y-8">
-            {gallery.length ? (
-              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-                <h2 className="text-2xl font-extrabold text-primary">
-                  Galeri Maskapai
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-neutral-600">
-                  Lihat armada, kabin, kursi, dan pengalaman penerbangannya.
-                </p>
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {gallery.map((image, index) => (
-                    <div
-                      key={image.id}
-                      className={`${index === 0 ? "col-span-2 row-span-2 sm:col-span-2" : ""} aspect-[4/3] overflow-hidden rounded-sm bg-neutral-100`}
-                    >
-                      <img
-                        src={image.imageUrl}
-                        alt={`${airline.name} - foto ${index + 1}`}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-extrabold text-primary">
-              Artikel Terkait Maskapai
-            </h2>
-            {articles.length ? (
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {articles.map((article) => (
-                  <Link
-                    key={article.id}
-                    href={`/artikel/${article.slug}`}
-                    className="rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:shadow-sm"
-                  >
-                    <FileText className="h-5 w-5 text-gold" />
-                    <h3 className="mt-3 font-extrabold text-primary">
-                      {article.title}
-                    </h3>
-                    {article.excerpt ? (
-                      <p className="mt-2 line-clamp-2 text-sm text-neutral-600">
-                        {article.excerpt}
-                      </p>
-                    ) : null}
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-4 text-neutral-600">
-                Belum ada artikel terkait maskapai ini.
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(airlineSchema) }}
+      />
+      <main className="min-h-screen bg-white pt-24 text-neutral-800">
+        <section className="border-b border-neutral-200 bg-neutral-50 py-10 md:py-14">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
+            <div>
+              <Link
+                href="/paket"
+                className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-primary transition hover:text-gold"
+              >
+                <ArrowLeft className="h-4 w-4" /> Kembali ke Paket
+              </Link>
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
+                Maskapai
               </p>
-            )}
+              <h1 className="mt-3 text-4xl font-extrabold text-primary md:text-5xl">
+                {airline.name}
+              </h1>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {airline.code ? (
+                  <span className="inline-flex rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
+                    Kode: {airline.code}
+                  </span>
+                ) : null}
+                {airline.country ? (
+                  <span className="inline-flex rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
+                    {airline.country}
+                  </span>
+                ) : null}
+              </div>
             </div>
-          </article>
-          <aside className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm lg:self-start">
-            <h2 className="text-xl font-extrabold text-primary">
-              Paket dengan Maskapai Ini
-            </h2>
-            <div className="mt-5 space-y-3">
-              {packages.length ? (
-                packages.map((pkg) => (
-                  <Link
-                    key={pkg.id}
-                    href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
-                    className="block rounded-sm border border-neutral-200 p-4 font-bold text-primary transition hover:border-gold hover:text-gold"
-                  >
-                    {pkg.name}
-                  </Link>
-                ))
+            <div className="flex min-h-56 items-center justify-center rounded-sm border border-neutral-200 bg-white p-8 shadow-lg shadow-primary/10">
+              {airline.logo ? (
+                <img
+                  src={airline.logo}
+                  alt={airline.name || "Maskapai"}
+                  className="max-h-40 w-full object-contain"
+                />
               ) : (
-                <p className="text-neutral-600">
-                  Belum ada paket published yang memakai maskapai ini.
-                </p>
+                <Plane className="h-16 w-16 text-gold" />
               )}
             </div>
-          </aside>
-        </div>
-      </section>
-    </main>
+          </div>
+        </section>
+
+        <section className="py-14 md:py-20">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
+            <article className="space-y-8">
+              {gallery.length ? (
+                <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-2xl font-extrabold text-primary">
+                    Galeri Maskapai
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">
+                    Lihat armada, kabin, kursi, dan pengalaman penerbangannya.
+                  </p>
+                  <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {gallery.map((image, index) => (
+                      <div
+                        key={image.id}
+                        className={`${index === 0 ? "col-span-2 row-span-2 sm:col-span-2" : ""} aspect-[4/3] overflow-hidden rounded-sm bg-neutral-100`}
+                      >
+                        <img
+                          src={image.imageUrl}
+                          alt={`${airline.name} - foto ${index + 1}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-extrabold text-primary">
+                Artikel Terkait Maskapai
+              </h2>
+              {articles.length ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {articles.map((article) => (
+                    <Link
+                      key={article.id}
+                      href={`/artikel/${article.slug}`}
+                      className="rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:shadow-sm"
+                    >
+                      <FileText className="h-5 w-5 text-gold" />
+                      <h3 className="mt-3 font-extrabold text-primary">
+                        {article.title}
+                      </h3>
+                      {article.excerpt ? (
+                        <p className="mt-2 line-clamp-2 text-sm text-neutral-600">
+                          {article.excerpt}
+                        </p>
+                      ) : null}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 text-neutral-600">
+                  Belum ada artikel terkait maskapai ini.
+                </p>
+              )}
+              </div>
+            </article>
+            <aside className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm lg:self-start">
+              <h2 className="text-xl font-extrabold text-primary">
+                Paket dengan Maskapai Ini
+              </h2>
+              <div className="mt-5 space-y-3">
+                {packages.length ? (
+                  packages.map((pkg) => (
+                    <Link
+                      key={pkg.id}
+                      href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
+                      className="block rounded-sm border border-neutral-200 p-4 font-bold text-primary transition hover:border-gold hover:text-gold"
+                    >
+                      {pkg.name}
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-neutral-600">
+                    Belum ada paket published yang memakai maskapai ini.
+                  </p>
+                )}
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </>
   );
 }
