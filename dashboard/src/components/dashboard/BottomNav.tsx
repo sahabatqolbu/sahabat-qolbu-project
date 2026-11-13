@@ -13,7 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 
-// ✅ Bottom Nav Items (Custom per role - essentials only)
+// Bottom Nav Items (Custom per role - essentials only)
 const getBottomNavItems = (role: string) => {
   const items: Record<string, any[]> = {
     ADMIN: [

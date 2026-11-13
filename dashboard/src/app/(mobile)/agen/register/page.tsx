@@ -469,14 +469,14 @@ export default function AgenRegisterPage() {
         )}
 
         {/* Progress Card */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
+        <div className="bg-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium">Kelengkapan Data</span>
             <span className="text-2xl font-bold">{completionPercentage}%</span>
           </div>
           <div className="bg-white/20 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-secondary h-full transition-all duration-500 rounded-full"
+              className="bg-secondary h-full transition-[width] duration-500 rounded-full"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
@@ -819,7 +819,7 @@ export default function AgenRegisterPage() {
               {levels.map((level: any) => (
                 <div
                   key={level.id}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-colors ${
                     selectedLevelId === level.id
                       ? "border-primary bg-primary-50"
                       : "border-gray-100 hover:border-primary-200"
@@ -937,7 +937,7 @@ export default function AgenRegisterPage() {
             </div>
 
             <label
-              className={`flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all ${
+              className={`flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-colors ${
                 agreedToTerms
                   ? "border-primary bg-primary-50"
                   : "border-gray-200 hover:border-primary-200"

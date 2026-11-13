@@ -137,7 +137,7 @@ export default function EditAgentLevelPage({ params }: PageProps) {
       queryClient.invalidateQueries({ queryKey: ["agent-levels"] });
       queryClient.invalidateQueries({ queryKey: ["agent-level", id] });
       toast({
-        title: "✅ Level Berhasil Diupdate",
+        title: "Level Berhasil Diupdate",
         description: "Perubahan telah disimpan",
       });
       router.push("/admin/master/agent-levels");
@@ -145,7 +145,7 @@ export default function EditAgentLevelPage({ params }: PageProps) {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update Level",
+        title: "Gagal Update Level",
         description: getErrorMessage(error),
       });
     },

@@ -119,10 +119,9 @@ export default function AgenDashboardPage() {
   // ===== LOADING STATE =====
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="relative">
-            <div className="absolute inset-0 bg-[var(--color-secondary)]/20 rounded-full animate-ping" />
             <div className="relative bg-white p-4 rounded-full shadow-lg">
               <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
             </div>
@@ -147,8 +146,8 @@ export default function AgenDashboardPage() {
   // ===== WAITING APPROVAL SCREEN =====
   if (!isApproved && agentData?.status === "PENDING") {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full border-0 shadow-xl rounded-3xl overflow-hidden">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full border-0 shadow-md rounded-3xl overflow-hidden">
           <CardContent className="p-6 text-center">
             <div className="relative mx-auto mb-6">
               <div className="h-20 w-20 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
@@ -175,7 +174,7 @@ export default function AgenDashboardPage() {
                 </Badge>
               </div>
               <div className="h-1.5 bg-amber-200 rounded-full overflow-hidden">
-                <div className="h-full w-2/3 bg-amber-400 rounded-full animate-pulse" />
+                <div className="h-full w-2/3 bg-amber-400 rounded-full" />
               </div>
               <p className="text-[10px] text-amber-600 mt-2">
                 Estimasi: 1-2 hari kerja
@@ -206,13 +205,13 @@ export default function AgenDashboardPage() {
     !skipPayment
   ) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full border-0 shadow-xl rounded-3xl overflow-hidden">
-          <div className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-600)] p-6 text-white text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full border-0 shadow-md rounded-3xl overflow-hidden">
+          <div className="bg-[var(--color-primary)] p-6 text-white text-center">
             <div className="h-16 w-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
               <Award className="h-8 w-8" />
             </div>
-            <h1 className="text-xl font-bold mb-1">Selamat! 🎉</h1>
+            <h1 className="text-xl font-bold mb-1">Selamat!</h1>
             <p className="text-sm text-white/80">Akun Anda Diapprove</p>
             <div className="flex items-center justify-center gap-1 mt-3">
               {Array.from({ length: selectedLevel?.star || 0 }).map((_, i) => (
@@ -284,9 +283,9 @@ export default function AgenDashboardPage() {
   const remainingClosing = nextLevelClosing - totalClosing;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:pb-8 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-8 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 rounded-b-[2rem] md:rounded-b-[2.5rem] relative overflow-hidden">
+      <div className="bg-[var(--color-primary)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 rounded-b-[2rem] md:rounded-b-[2.5rem] relative overflow-hidden">
         {/* Decorative */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-8 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2" />
@@ -296,21 +295,21 @@ export default function AgenDashboardPage() {
             <div>
               <p className="text-xs md:text-sm text-white/60">Selamat datang,</p>
               <h1 className="text-lg md:text-3xl font-bold">
-                {profile?.fullName?.split(" ")[0] || "Agen"} 👋
+                {profile?.fullName?.split(" ")[0] || "Agen"}
               </h1>
             </div>
 
             {/* Di dalam header, ganti bagian ICON NOTIF & PROFIL */}
             <div className="flex items-center gap-2">
-              {/* ✅ TAMBAH ICON CALENDAR */}
+              {/* TAMBAH ICON CALENDAR */}
               <Link href="/agen/calendar">
-                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors">
                   <Calendar className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
               </Link>
 
               <Link href="/agen/website">
-                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors">
                   <Globe className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
               </Link>
@@ -318,7 +317,7 @@ export default function AgenDashboardPage() {
               <NotificationDropdownAgen />
 
               <Link href="/agen/profile">
-                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
+                <div className="h-10 w-10 md:h-11 md:w-11 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
                   <User className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
               </Link>
@@ -332,14 +331,14 @@ export default function AgenDashboardPage() {
         {/* Level Card */}
         <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-600)] text-white p-4">
+            <div className="bg-[var(--color-primary)] text-white p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl bg-white/10 flex items-center justify-center">
                     <Award className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-white/60 uppercase tracking-wider">
+                    <p className="text-[10px] text-white/60">
                       Level
                     </p>
                     <p className="text-sm font-bold">
@@ -377,7 +376,7 @@ export default function AgenDashboardPage() {
                   </div>
                   <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[var(--color-secondary)] rounded-full transition-all"
+                      className="h-full bg-[var(--color-secondary)] rounded-full transition-[width]"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -390,7 +389,7 @@ export default function AgenDashboardPage() {
                 <div className="bg-white/10 rounded-xl p-3 flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-[var(--color-secondary)]" />
                   <span className="text-xs font-medium">
-                    Level Tertinggi! 🎉
+                    Level Tertinggi!
                   </span>
                 </div>
               )}
@@ -441,7 +440,7 @@ export default function AgenDashboardPage() {
 
         {/* Quick Action - CTA */}
         <Link href="/agen/jamaah/create">
-          <Card className="border-0 shadow-lg rounded-2xl bg-gradient-to-r from-[var(--color-secondary)] to-[var(--color-secondary-600)] overflow-hidden">
+          <Card className="border-0 shadow-lg rounded-2xl bg-[var(--color-secondary)] overflow-hidden">
             <CardContent className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-xl bg-white/20 flex items-center justify-center">
@@ -538,7 +537,7 @@ export default function AgenDashboardPage() {
           {agentData?.referralCode && (
             <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
               <CardContent className="p-0">
-                <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-600)] p-4 md:p-5 text-white h-full">
+                <div className="bg-[var(--color-primary)] p-4 md:p-5 text-white h-full">
                   <div className="flex items-center gap-2 mb-3">
                     <Gift className="h-4 w-4 text-[var(--color-secondary)]" />
                     <p className="text-xs md:text-sm font-medium">Kode Referral</p>
@@ -568,7 +567,7 @@ export default function AgenDashboardPage() {
           )}
 
           {/* Tips Card */}
-          <Card className="border-0 shadow-sm rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50">
+          <Card className="border-0 shadow-sm rounded-2xl bg-amber-50">
             <CardContent className="p-4 md:p-5">
               <div className="flex items-start gap-3">
                 <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -580,7 +579,7 @@ export default function AgenDashboardPage() {
                   </p>
                   <p className="text-[11px] md:text-sm text-amber-700 leading-relaxed">
                     Follow up jamaah yang sudah terdaftar untuk meningkatkan
-                    closing rate! 🚀
+                    closing rate!
                   </p>
                 </div>
               </div>

@@ -37,7 +37,7 @@ export function OnboardingProgress({
       <div className="mt-2 md:hidden">
         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[var(--color-secondary)] rounded-full transition-all duration-300"
+            className="h-full bg-[var(--color-secondary)] rounded-full transition-[width] duration-300"
             style={{ width: `${(currentStep / steps.length) * 100}%` }}
           />
         </div>
@@ -56,7 +56,7 @@ export function OnboardingProgress({
               <div className="flex flex-col items-center">
                 <div
                   className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors",
                     isCompleted || isPast
                       ? "bg-green-500 border-green-500 text-white"
                       : isActive

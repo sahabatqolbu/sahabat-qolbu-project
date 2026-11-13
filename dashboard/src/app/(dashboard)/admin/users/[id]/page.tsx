@@ -36,13 +36,13 @@ export default function UserDetailPage({ params }: PageProps) {
   const { user: authUser } = useAuthStore();
   const isFinanceReadOnly = authUser?.role === "FINANCE";
 
-  // ✅ FIX: Tambah staleTime & cacheTime untuk percepat loading
+  // FIX: Tambah staleTime & cacheTime untuk percepat loading
   const { data, isLoading, error } = useQuery({
     queryKey: ["user", userId],
     queryFn: () => adminService.users.getUserById(Number(userId)),
     staleTime: 1000 * 60 * 5, // Cache 5 menit
     gcTime: 1000 * 60 * 10, // Garbage collection 10 menit
-    refetchOnWindowFocus: false, // ✅ Jangan refetch saat fokus window
+    refetchOnWindowFocus: false, // Jangan refetch saat fokus window
   });
 
   const user = data?.data;

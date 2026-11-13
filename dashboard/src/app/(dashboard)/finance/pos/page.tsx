@@ -50,7 +50,7 @@ export default function FinancePosPage() {
       }),
     onSuccess: () => {
       toast({
-        title: "✅ Berhasil",
+        title: "Berhasil",
         description: "Jamaah berhasil didaftarkan ke paket terpilih",
       });
       refetchJamaah();
@@ -58,7 +58,7 @@ export default function FinancePosPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description:
           error.response?.data?.message || "Gagal mendaftarkan jamaah ke paket",
       });
@@ -74,7 +74,7 @@ export default function FinancePosPage() {
       }),
     onSuccess: () => {
       toast({
-        title: "✅ Notifikasi Terkirim",
+        title: "Notifikasi Terkirim",
         description: "Pesan berhasil dikirim ke akun jamaah",
       });
       setNotifMessage("");
@@ -82,7 +82,7 @@ export default function FinancePosPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengirim notifikasi",
       });
     },

@@ -223,7 +223,7 @@ export default function JamaahPackagePage() {
             </div>
           ) : null}
 
-          <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-600)] p-5 text-white">
+          <div className="bg-[var(--color-primary)] p-5 text-white">
             <Badge className="bg-white/20 text-white border-0 mb-2">
               {bookingInfo?.notePaket || "FULLSERVICE"}
             </Badge>

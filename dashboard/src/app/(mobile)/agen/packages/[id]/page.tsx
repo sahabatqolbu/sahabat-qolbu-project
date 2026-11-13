@@ -301,7 +301,7 @@ export default function PackageDetailPage() {
                       <button
                         key={idx}
                         onClick={() => setCurrentImageIndex(idx)}
-                        className={`h-1.5 rounded-full transition-all ${
+                        className={`h-1.5 rounded-full transition-colors ${
                           idx === currentImageIndex
                             ? "w-6 bg-white"
                             : "w-1.5 bg-white/50"
@@ -313,7 +313,7 @@ export default function PackageDetailPage() {
               )}
             </>
           ) : (
-            <div className="flex h-64 w-full items-center justify-center bg-gradient-to-br from-[var(--color-primary-100)] to-[var(--color-primary-200)]">
+            <div className="flex h-64 w-full items-center justify-center bg-[var(--color-primary-100)]">
               <FileText className="h-16 w-16 text-[var(--color-primary-300)]" />
             </div>
           )}
@@ -395,7 +395,7 @@ export default function PackageDetailPage() {
               </div>
 
               {/* Price Section */}
-              <div className="bg-gradient-to-r from-[var(--color-primary-50)] to-[var(--color-secondary-50)] rounded-xl p-4">
+              <div className="bg-[var(--color-primary-50)] rounded-xl p-4">
                 <div className="flex items-end justify-between">
                   <div>
                     <p className="text-xs text-[var(--color-primary-400)] mb-1">
@@ -420,7 +420,7 @@ export default function PackageDetailPage() {
 
               {/* Room Occupancy Pricing */}
               <div className="border rounded-xl p-4 bg-white mt-3">
-                <p className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-gray-500 mb-3">
                   Harga berdasarkan Tipe Kamar (per Orang)
                 </p>
                 <div className="grid grid-cols-2 gap-3 text-xs">
@@ -473,7 +473,7 @@ export default function PackageDetailPage() {
                   </div>
                   <div className="h-2.5 bg-[var(--color-primary-100)] rounded-full overflow-hidden">
                     <div
-                      className={`h-full transition-all rounded-full ${
+                      className={`h-full transition-[width] rounded-full ${
                         seatsPercentage > 80
                           ? "bg-red-500"
                           : seatsPercentage > 50
@@ -485,7 +485,7 @@ export default function PackageDetailPage() {
                   </div>
                   {remainingSeats <= 5 && remainingSeats > 0 && (
                     <p className="text-xs text-red-500 mt-1 font-medium">
-                      ⚠️ Hampir habis! Segera booking sekarang
+                      Hampir habis! Segera booking sekarang
                     </p>
                   )}
                 </div>
@@ -586,7 +586,7 @@ export default function PackageDetailPage() {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-xs text-[var(--color-primary-400)] mb-1">
-                          🕋 Hotel Makkah
+                          Hotel Makkah
                         </p>
                         <p className="font-semibold text-[var(--color-primary)]">
                           {pkg.hotelMakkah.name}
@@ -605,7 +605,7 @@ export default function PackageDetailPage() {
                     </div>
                     {pkg.hotelMakkah.distanceToHaram && (
                       <p className="text-xs text-[var(--color-primary-400)] mt-2">
-                        📍 {pkg.hotelMakkah.distanceToHaram} dari Masjidil Haram
+                        {pkg.hotelMakkah.distanceToHaram} dari Masjidil Haram
                       </p>
                     )}
                   </div>
@@ -617,7 +617,7 @@ export default function PackageDetailPage() {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-xs text-[var(--color-primary-400)] mb-1">
-                          🕌 Hotel Madinah
+                          Hotel Madinah
                         </p>
                         <p className="font-semibold text-[var(--color-primary)]">
                           {pkg.hotelMadinah.name}
@@ -636,7 +636,7 @@ export default function PackageDetailPage() {
                     </div>
                     {pkg.hotelMadinah.distanceToNabawi && (
                       <p className="text-xs text-[var(--color-primary-400)] mt-2">
-                        📍 {pkg.hotelMadinah.distanceToNabawi} dari Masjid
+                        {pkg.hotelMadinah.distanceToNabawi} dari Masjid
                         Nabawi
                       </p>
                     )}
@@ -725,7 +725,7 @@ export default function PackageDetailPage() {
             <Card className="border-[var(--color-secondary-200)] bg-[var(--color-secondary-50)]">
               <CardContent className="p-4">
                 <p className="text-sm text-[var(--color-primary-600)] font-medium mb-1">
-                  📝 Catatan:
+                  Catatan:
                 </p>
                 <p className="text-sm text-[var(--color-primary-400)]">
                   {pkg.notes}
@@ -760,7 +760,7 @@ export default function PackageDetailPage() {
 
             {/* Main CTA */}
             <Button
-              className="flex-1 bg-gradient-to-r from-[var(--color-secondary-600)] to-[var(--color-secondary)] text-[var(--color-secondary-foreground)] hover:from-[var(--color-secondary-700)] hover:to-[var(--color-secondary-600)] font-semibold h-12"
+              className="flex-1 bg-[var(--color-secondary-600)] text-[var(--color-secondary-foreground)] hover:from-[var(--color-secondary-700)] hover:to-[var(--color-secondary-600)] font-semibold h-12"
               onClick={() =>
                 router.push(`/agen/jamaah/create?packageId=${pkg.id}`)
               }

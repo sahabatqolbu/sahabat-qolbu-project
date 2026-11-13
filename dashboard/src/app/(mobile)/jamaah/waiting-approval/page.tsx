@@ -55,18 +55,18 @@ export default function WaitingApprovalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 md:max-w-7xl md:px-6 mx-auto">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 md:max-w-7xl md:px-6 mx-auto">
       <div className="max-w-sm w-full">
-        <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
+        <Card className="border-0 shadow-md rounded-3xl overflow-hidden">
           <CardContent className="p-0">
             {/* Header */}
-            <div className="bg-gradient-to-br from-amber-400 to-amber-500 p-6 text-center text-white">
+            <div className="bg-amber-500 p-6 text-center text-white">
               <div className="relative mx-auto mb-4">
                 <div className="h-20 w-20 rounded-full bg-white/20 flex items-center justify-center mx-auto">
                   <Clock className="h-10 w-10" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 left-0 right-0 mx-auto w-6 h-6">
-                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center animate-pulse">
+                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
                     <div className="w-3 h-3 bg-amber-500 rounded-full" />
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export default function WaitingApprovalPage() {
                   </Badge>
                 </div>
                 <div className="h-1.5 bg-amber-200 rounded-full overflow-hidden">
-                  <div className="h-full w-2/3 bg-amber-400 rounded-full animate-pulse" />
+                  <div className="h-full w-2/3 bg-amber-400 rounded-full" />
                 </div>
                 <p className="text-[10px] text-amber-600 mt-2">
                   Estimasi: 1-2 hari kerja

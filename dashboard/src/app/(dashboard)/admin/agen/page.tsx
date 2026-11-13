@@ -129,7 +129,7 @@ export default function AdminAgenPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AdminAgent | null>(null);
 
-  // ✅ IMPORT STATE
+  // IMPORT STATE
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -168,14 +168,14 @@ export default function AdminAgenPage() {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
       setDeleteDialogOpen(false);
       toast({
-        title: "✅ Agen Dihapus",
+        title: "Agen Dihapus",
         description: "Agen berhasil dihapus dari sistem",
       });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Hapus Agen",
+        title: "Gagal Hapus Agen",
         description: getErrorMessage(error),
       });
     },
@@ -258,7 +258,7 @@ export default function AdminAgenPage() {
 
         if (response.success) {
           toast({
-            title: "✅ Import Selesai",
+            title: "Import Selesai",
             description: `Berhasil: ${response.data?.success || 0}, Gagal: ${response.data?.failed || 0}`,
           });
           queryClient.invalidateQueries({ queryKey: ["agents"] });
@@ -267,7 +267,7 @@ export default function AdminAgenPage() {
       } catch (error: unknown) {
         toast({
           variant: "destructive",
-          title: "❌ Gagal Import",
+          title: "Gagal Import",
           description: getErrorMessage(error),
         });
       } finally {
@@ -395,8 +395,8 @@ export default function AdminAgenPage() {
               <SelectContent>
                 <SelectItem value="all">Semua Bintang</SelectItem>
                 <SelectItem value="0">Pra-Agent</SelectItem>
-                <SelectItem value="1">Bintang 1 ⭐</SelectItem>
-                <SelectItem value="2">Bintang 2 ⭐⭐</SelectItem>
+                <SelectItem value="1">Bintang 1</SelectItem>
+                <SelectItem value="2">Bintang 2</SelectItem>
               </SelectContent>
             </Select>
 
@@ -685,7 +685,7 @@ export default function AdminAgenPage() {
           <div className="space-y-4 py-4">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>💡 Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (AGEN) terisi. Kolom `nik` opsional.
+                <strong>Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (AGEN) terisi. Kolom `nik` opsional.
               </p>
             </div>
 

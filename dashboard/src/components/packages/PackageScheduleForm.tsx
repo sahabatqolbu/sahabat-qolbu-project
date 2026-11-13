@@ -108,7 +108,7 @@ export default function PackageScheduleForm({ value, saving, onSubmit }: {
           </CardContent>
         </Card>
       ))}
-      <div className="sticky bottom-4 flex justify-end"><Button type="submit" size="lg" disabled={saving} className="bg-secondary text-primary hover:bg-secondary/90">{saving ? <CalendarPlus className="mr-2 h-5 w-5 animate-pulse" /> : <Save className="mr-2 h-5 w-5" />}{saving ? "Menyimpan..." : "Simpan Daftar Jadwal"}</Button></div>
+      <div className="sticky bottom-4 flex justify-end"><Button type="submit" size="lg" disabled={saving} className="bg-secondary text-primary hover:bg-secondary/90">{saving ? <CalendarPlus className="mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}{saving ? "Menyimpan..." : "Simpan Daftar Jadwal"}</Button></div>
     </form>
   );
 }

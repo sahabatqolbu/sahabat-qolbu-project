@@ -43,12 +43,12 @@ interface EventFormDialogProps {
 }
 
 const EVENT_TYPES = [
-  { value: "DEADLINE", label: "⏰ Deadline" },
-  { value: "MANASIK", label: "🤲 Manasik" },
-  { value: "MEETING", label: "👥 Meeting" },
-  { value: "EVENT", label: "🎉 Event" },
-  { value: "ANNOUNCEMENT", label: "📢 Pengumuman" },
-  { value: "OTHER", label: "📅 Lainnya" },
+  { value: "DEADLINE", label: "Deadline" },
+  { value: "MANASIK", label: "Manasik" },
+  { value: "MEETING", label: "Meeting" },
+  { value: "EVENT", label: "Event" },
+  { value: "ANNOUNCEMENT", label: "Pengumuman" },
+  { value: "OTHER", label: "Lainnya" },
 ];
 
 const VISIBILITY_OPTIONS = [
@@ -59,13 +59,13 @@ const VISIBILITY_OPTIONS = [
 ];
 
 const COLOR_OPTIONS = [
-  { value: "blue", label: "🔵 Biru" },
-  { value: "green", label: "🟢 Hijau" },
-  { value: "red", label: "🔴 Merah" },
-  { value: "yellow", label: "🟡 Kuning" },
-  { value: "purple", label: "🟣 Ungu" },
-  { value: "orange", label: "🟠 Oranye" },
-  { value: "pink", label: "🩷 Pink" },
+  { value: "blue", label: "Biru" },
+  { value: "green", label: "Hijau" },
+  { value: "red", label: "Merah" },
+  { value: "yellow", label: "Kuning" },
+  { value: "purple", label: "Ungu" },
+  { value: "orange", label: "Oranye" },
+  { value: "pink", label: "Pink" },
 ];
 
 export function EventFormDialog({
@@ -97,7 +97,7 @@ export function EventFormDialog({
       startTime: "",
       endTime: "",
       isAllDay: true,
-      packageId: "none", // ✅ Default "none" bukan ""
+      packageId: "none", // Default "none" bukan ""
       visibility: "ALL",
       color: "blue",
       icon: "📅",
@@ -342,7 +342,7 @@ export function EventFormDialog({
                   <FormLabel>Paket Terkait (Opsional)</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    value={field.value || "none"} // ✅ Default ke "none" bukan empty
+                    value={field.value || "none"} // Default ke "none" bukan empty
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -351,7 +351,7 @@ export function EventFormDialog({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">Tidak ada</SelectItem>{" "}
-                      {/* ✅ value="none" */}
+                      {/* value="none" */}
                       {packages.map((pkg: any) => (
                         <SelectItem key={pkg.id} value={pkg.id.toString()}>
                           {pkg.code} - {pkg.name}

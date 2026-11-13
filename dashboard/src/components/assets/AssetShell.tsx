@@ -31,8 +31,8 @@ export default function AssetShell({ user, children }: { user: SessionAuthUser; 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-slate-200 bg-slate-950 text-white lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b border-white/10 px-6 py-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Internal Workspace</div>
-            <div className="mt-3 text-2xl font-black tracking-tight">Asset Control</div>
+            <div className="text-xs font-semibold tracking-[0.22em] text-slate-400">Internal Workspace</div>
+            <div className="mt-3 text-2xl font-semibold tracking-tight">Asset Control</div>
             <div className="mt-2 text-sm leading-relaxed text-slate-300">Dashboard khusus pencatatan aset, pemegang, dan dokumen serah terima.</div>
           </div>
 
@@ -69,8 +69,8 @@ export default function AssetShell({ user, children }: { user: SessionAuthUser; 
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:px-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Sahabat Qolbu Internal</div>
-              <h1 className="mt-1 text-xl font-black tracking-tight text-slate-950 md:text-2xl">Asset Management Dashboard</h1>
+              <div className="text-xs font-semibold tracking-[0.2em] text-slate-500">Sahabat Qolbu Internal</div>
+              <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">Asset Management Dashboard</h1>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
               Login sebagai <span className="font-bold text-slate-950">{user.fullName}</span> ({user.role})

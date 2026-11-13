@@ -64,21 +64,21 @@ export default function EditUserPage({ params }: PageProps) {
 
   const user = data?.data;
 
-  // ✅ DEBUG: Log data dari API
+  // DEBUG: Log data dari API
   useEffect(() => {
     if (user) {
-      console.log("📦 User data dari API:", user);
-      console.log("🔑 Role value:", user.role);
-      console.log("🔑 Role type:", typeof user.role);
+      console.log("User data dari API:", user);
+      console.log("Role value:", user.role);
+      console.log("Role type:", typeof user.role);
     }
   }, [user]);
 
-  // ✅ FIX: Populate form dengan normalisasi role
+  // FIX: Populate form dengan normalisasi role
   useEffect(() => {
     if (user) {
-      const normalizedRole = user.role?.toUpperCase() || "JAMAAH"; // ✅ Force uppercase
+      const normalizedRole = user.role?.toUpperCase() || "JAMAAH"; // Force uppercase
 
-      console.log("🔄 Setting form values...");
+      console.log("Setting form values...");
       console.log("  - fullName:", user.fullName);
       console.log("  - phone:", user.phone);
       console.log("  - role (original):", user.role);
@@ -92,40 +92,40 @@ export default function EditUserPage({ params }: PageProps) {
         isActive: user.isActive ?? true,
       });
 
-      // ✅ DOUBLE SET untuk memastikan
+      // DOUBLE SET untuk memastikan
       setTimeout(() => {
         setValue("role", normalizedRole as any, { shouldValidate: true });
-        console.log("✅ Role set to:", normalizedRole);
+        console.log("Role set to:", normalizedRole);
       }, 100);
     }
   }, [user, reset, setValue]);
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateUserFormData) => {
-      console.log("📤 Sending update:", data);
+      console.log("Sending update:", data);
       return adminService.users.updateUser(Number(userId), data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["user", userId] });
       toast({
-        title: "✅ User Berhasil Diupdate",
+        title: "User Berhasil Diupdate",
         description: "Data user telah diperbarui",
       });
       router.push(`/admin/users/${userId}`);
     },
     onError: (error: any) => {
-      console.error("❌ Update error:", error);
+      console.error("Update error:", error);
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update User",
+        title: "Gagal Update User",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
   });
 
   const onSubmit = (data: UpdateUserFormData) => {
-    console.log("📤 Form submitted:", data);
+    console.log("Form submitted:", data);
     updateMutation.mutate(data);
   };
 
@@ -182,9 +182,9 @@ export default function EditUserPage({ params }: PageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* ✅ DEBUG RAW DATA (Hapus setelah fix) */}
+            {/* DEBUG RAW DATA (Hapus setelah fix) */}
             {/* <div className="text-xs text-gray-500 p-3 bg-yellow-50 rounded border border-yellow-200">
-              <p className="font-bold mb-2">🔍 Raw User Data dari API:</p>
+              <p className="font-bold mb-2">Raw User Data dari API:</p>
               <pre className="overflow-auto">
                 {JSON.stringify(user, null, 2)}
               </pre>
@@ -235,10 +235,10 @@ export default function EditUserPage({ params }: PageProps) {
                 Role <span className="text-red-500">*</span>
               </Label>
               <Select
-                value={watch("role") || ""} // ✅ Fallback ke empty string
+                value={watch("role") || ""} // Fallback ke empty string
                 onValueChange={(value) => {
                   console.log(
-                    "🔄 Role changed from",
+                    "Role changed from",
                     watch("role"),
                     "to",
                     value
@@ -281,9 +281,9 @@ export default function EditUserPage({ params }: PageProps) {
               />
             </div>
 
-            {/* ✅ DEBUG FORM VALUES */}
+            {/* DEBUG FORM VALUES */}
             {/* <div className="text-xs text-gray-500 p-3 bg-blue-50 rounded border border-blue-200">
-              <p className="font-bold mb-2">🔍 Current Form Values:</p>
+              <p className="font-bold mb-2">Current Form Values:</p>
               <pre>{JSON.stringify(watch(), null, 2)}</pre>
             </div> */}
 

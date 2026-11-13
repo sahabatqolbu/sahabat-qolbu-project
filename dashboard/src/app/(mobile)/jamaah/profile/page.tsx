@@ -55,7 +55,7 @@ export default function JamaahProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-600)] text-white p-5 pb-16">
+      <div className="bg-[var(--color-primary)] text-white p-5 pb-16">
         <div className="flex items-center justify-between mb-4">
           <Link href="/jamaah">
             <Button

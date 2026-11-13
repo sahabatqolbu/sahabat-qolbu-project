@@ -195,7 +195,7 @@ export function NotificationDropdownAgen() {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <button className="relative h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm">
+        <button className="relative h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
           <Bell className="h-5 w-5 text-white" />
           {totalBadge > 0 && (
             <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
@@ -232,7 +232,7 @@ export function NotificationDropdownAgen() {
           {/* Jamaah Reminder Banner */}
           {reminderStats.withAnyIssues > 0 && (
             <Link href="/agen/reminders" onClick={() => setIsOpen(false)}>
-              <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b">
+              <div className="p-4 bg-amber-50 border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">

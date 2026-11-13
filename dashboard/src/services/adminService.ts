@@ -12,7 +12,7 @@ export const adminService = {
     },
   },
 
-  // ✅ TAMBAH getUsers function langsung (untuk backward compatibility)
+  // TAMBAH getUsers function langsung (untuk backward compatibility)
   getUsers: async (params?: {
     search?: string;
     role?: string;
@@ -42,7 +42,7 @@ export const adminService = {
       return response.data;
     },
 
-    // ✅ FIX: Hapus password, tambah packageId
+    // FIX: Hapus password, tambah packageId
     createUser: async (data: {
       fullName: string;
       email: string;
@@ -410,7 +410,7 @@ export const adminService = {
       city?: string;
       postalCode?: string;
       instagram?: string;
-      facebook?: string; // ✅ TAMBAH INI
+      facebook?: string;
       tiktok?: string;
       youtube?: string;
       landingLogo?: string;
@@ -434,7 +434,7 @@ export const adminService = {
 
     uploadKtp: async (file: File, notificationId?: number) => {
       const formData = new FormData();
-      formData.append("ktp", file); // ✅ HARUS "ktp" (sesuai backend)
+      formData.append("ktp", file); // HARUS "ktp" (sesuai backend)
       if (notificationId) {
         formData.append("notificationId", notificationId.toString());
       }
@@ -461,7 +461,7 @@ export const adminService = {
     },
 
     uploadProfilePhoto: async (file: File) => {
-      console.log("📸 uploadProfilePhoto called", {
+      console.log("uploadProfilePhoto called", {
         name: file.name,
         size: file.size,
         type: file.type,

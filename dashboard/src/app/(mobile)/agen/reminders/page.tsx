@@ -135,14 +135,14 @@ export default function AgenRemindersPage() {
       setReminderTitle("");
       setReminderMessage("");
       toast({
-        title: "✅ Pengingat Terkirim",
+        title: "Pengingat Terkirim",
         description: "Notifikasi berhasil dikirim ke jamaah",
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },

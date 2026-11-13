@@ -215,7 +215,7 @@ export default function ArticleMarkdownEditor({
                     <p className="my-4 leading-8">{children}</p>
                   ),
                   strong: ({ children }) => (
-                    <strong className="font-extrabold text-primary">
+                    <strong className="font-semibold text-primary">
                       {children}
                     </strong>
                   ),

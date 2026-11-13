@@ -105,7 +105,7 @@ export default function AssetWorkspace() {
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-slate-200 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-xl font-black tracking-tight text-slate-950 md:text-2xl">Data Aset</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">Data Aset</h2>
             <p className="mt-1 text-sm text-slate-500">List dibuat ringkas. Detail teknis, dokumen, dan riwayat pindah ke halaman detail per aset.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

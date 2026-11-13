@@ -98,7 +98,7 @@ interface JamaahFormData {
 
   // Paket
   packageId: string;
-  agenId: string; // ✅ Ganti namaMitra jadi agenId
+  agenId: string; // Ganti namaMitra jadi agenId
   notePaket: string;
   roomTypeMakkah: string;
   roomTypeMadinah: string;
@@ -205,7 +205,7 @@ export default function EditJamaahPage() {
     queryKey: ["packages-dropdown"],
     queryFn: async () => {
       const response = await api.get("/packages");
-      console.log("📦 Packages API response:", response.data);
+      console.log("Packages API response:", response.data);
       return response.data;
     },
   });
@@ -215,20 +215,20 @@ export default function EditJamaahPage() {
     : [];
 
   // =====================================================
-  // FETCH AGEN LIST (for dropdown) ✅ NEW
+  // FETCH AGEN LIST (for dropdown) NEW
   // =====================================================
   const { data: agenResponse, isLoading: agenLoading } = useQuery({
     queryKey: ["agen-list-dropdown"],
     queryFn: async () => {
       const response = await adminService.agen.getAll({ status: "APPROVED" });
-      console.log("👤 Agen API response:", response);
+      console.log("Agen API response:", response);
       return response;
     },
   });
 
   // Extract agen list
   const agenList: AgenData[] = agenResponse?.data || [];
-  console.log("👤 Extracted agen list:", agenList);
+  console.log("Extracted agen list:", agenList);
 
   // Filter agen berdasarkan search
   const filteredAgen = agenList.filter((agen) => {
@@ -295,7 +295,7 @@ export default function EditJamaahPage() {
 
         // Paket
         packageId: jamaah.packageId?.toString() || "",
-        agenId: jamaah.agenId?.toString() || "", // ✅ Ganti namaMitra
+        agenId: jamaah.agenId?.toString() || "", // Ganti namaMitra
         notePaket: jamaah.notePaket || "FULLSERVICE",
         roomTypeMakkah: jamaah.roomTypeMakkah || "",
         roomTypeMadinah: jamaah.roomTypeMadinah || "",
@@ -337,7 +337,7 @@ export default function EditJamaahPage() {
       );
 
       if (selectedPackage) {
-        console.log("📦 Selected package for auto-fill:", selectedPackage);
+        console.log("Selected package for auto-fill:", selectedPackage);
 
         const harga = selectedPackage.discountPrice
           ? parseFloat(selectedPackage.discountPrice)
@@ -346,7 +346,7 @@ export default function EditJamaahPage() {
         setValue("hargaPaket", harga.toString(), { shouldDirty: true });
 
         toast({
-          title: "📦 Paket Dipilih",
+          title: "Paket Dipilih",
           description: `Harga paket: ${formatRupiah(harga)}`,
         });
       }
@@ -373,7 +373,7 @@ export default function EditJamaahPage() {
       jamaahService.update(bookingNumber, data),
     onSuccess: () => {
       toast({
-        title: "✅ Data Berhasil Diupdate",
+        title: "Data Berhasil Diupdate",
         description: "Perubahan telah disimpan",
       });
       queryClient.invalidateQueries({
@@ -385,7 +385,7 @@ export default function EditJamaahPage() {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menyimpan",
+        title: "Gagal Menyimpan",
         description: getErrorMessage(error),
       });
     },
@@ -422,7 +422,7 @@ export default function EditJamaahPage() {
       cleanData.agenId = parseInt(cleanData.agenId as string);
     }
 
-    console.log("📤 Submitting:", cleanData);
+    console.log("Submitting:", cleanData);
     updateMutation.mutate(cleanData);
   };
 
@@ -880,7 +880,7 @@ export default function EditJamaahPage() {
                       )}
                   </div>
 
-                  {/* ✅ AGEN SELECT - COMBOBOX dengan Search */}
+                  {/* AGEN SELECT - COMBOBOX dengan Search */}
                   <div className="space-y-2">
                     <Label>Pilih Agen</Label>
                     <Popover open={agenOpen} onOpenChange={setAgenOpen}>
@@ -958,7 +958,7 @@ export default function EditJamaahPage() {
                                     setAgenOpen(false);
                                     setAgenSearch("");
                                     toast({
-                                      title: "👤 Agen Dipilih",
+                                      title: "Agen Dipilih",
                                       description: agen.fullName,
                                     });
                                   }}

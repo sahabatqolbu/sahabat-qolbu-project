@@ -69,7 +69,7 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
-// ✅ HELPER: Format phone for WhatsApp
+// HELPER: Format phone for WhatsApp
 const formatPhoneForWA = (phone: string): string => {
   if (!phone || phone === "-") return "";
   // Remove all non-numeric characters
@@ -85,7 +85,7 @@ const formatPhoneForWA = (phone: string): string => {
   return cleaned;
 };
 
-// ✅ HELPER: Generate WhatsApp message based on issues
+// HELPER: Generate WhatsApp message based on issues
 const generateWAMessage = (item: any, type: "jamaah" | "agen"): string => {
   const allIssues = [
     ...(item.profileIssues || []),
@@ -117,7 +117,7 @@ const generateWAMessage = (item: any, type: "jamaah" | "agen"): string => {
   return encodeURIComponent(message);
 };
 
-// ✅ WhatsApp Button Component
+// WhatsApp Button Component
 const WhatsAppButton = ({
   phone,
   item,
@@ -294,14 +294,14 @@ export default function AdminRemindersPage() {
       setSelectedIds([]);
       resetForm();
       toast({
-        title: "✅ Pengingat Terkirim",
+        title: "Pengingat Terkirim",
         description: data.message || "Pengingat berhasil dikirim",
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Mengirim",
+        title: "Gagal Mengirim",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -368,12 +368,12 @@ export default function AdminRemindersPage() {
 
   // ===== RENDER DEADLINE (FIXED) =====
   const renderDeadline = (item: any) => {
-    // ✅ Cek dulu apakah deadline ada dan valid
+    // Cek dulu apakah deadline ada dan valid
     if (!item.deadline || item.daysUntilDeadline === null) {
       return <span className="text-xs text-gray-400">-</span>;
     }
 
-    // ✅ Validasi date object
+    // Validasi date object
     const deadlineDate = new Date(item.deadline);
     if (isNaN(deadlineDate.getTime())) {
       return <span className="text-xs text-gray-400">-</span>;
@@ -598,7 +598,7 @@ export default function AdminRemindersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua</SelectItem>
-                  <SelectItem value="urgent">🔴 Urgent (≤7 hari)</SelectItem>
+                  <SelectItem value="urgent">Urgent (≤7 hari)</SelectItem>
                   <SelectItem value="all-issues">Perlu Diingatkan</SelectItem>
                   <SelectItem value="document">
                     Dokumen Belum Lengkap
@@ -934,12 +934,12 @@ export default function AdminRemindersPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="REMINDER_DOCUMENT">📄 Dokumen</SelectItem>
+                  <SelectItem value="REMINDER_DOCUMENT">Dokumen</SelectItem>
                   <SelectItem value="REMINDER_PAYMENT">
-                    💳 Pembayaran
+                    Pembayaran
                   </SelectItem>
-                  <SelectItem value="REMINDER_PROFILE">👤 Profil</SelectItem>
-                  <SelectItem value="REMINDER_GENERAL">📢 Umum</SelectItem>
+                  <SelectItem value="REMINDER_PROFILE">Profil</SelectItem>
+                  <SelectItem value="REMINDER_GENERAL">Umum</SelectItem>
                 </SelectContent>
               </Select>
             </div>

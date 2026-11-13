@@ -6,6 +6,7 @@ import { format, parseISO, isSameDay, isAfter } from "date-fns";
 import { id } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { CalendarDays, Clock, MapPin } from "lucide-react";
 
 interface CalendarEvent {
   id: number;
@@ -136,7 +137,7 @@ export function EventList({
           {/* Date & Time */}
           <div className="mt-2 text-xs text-gray-600">
             <div className="flex items-center gap-2">
-              <span>📅</span>
+              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-gray-400" />
               <span>
                 {format(parseISO(event.startDate), "dd MMM yyyy", {
                   locale: id,
@@ -148,7 +149,7 @@ export function EventList({
             </div>
             {event.startTime && (
               <div className="flex items-center gap-2 mt-1">
-                <span>🕐</span>
+                <Clock className="h-3.5 w-3.5 shrink-0 text-gray-400" />
                 <span>
                   {event.startTime}
                   {event.endTime && ` - ${event.endTime}`}
@@ -157,7 +158,7 @@ export function EventList({
             )}
             {event.location && (
               <div className="flex items-center gap-2 mt-1">
-                <span>📍</span>
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" />
                 <span>{event.location}</span>
               </div>
             )}

@@ -73,14 +73,14 @@ export default function CreateBankPage() {
     mutationFn: (data: BankFormData) => masterService.banks.create(data),
     onSuccess: () => {
       toast({
-        title: "✅ Rekening Bank Berhasil Ditambahkan",
+        title: "Rekening Bank Berhasil Ditambahkan",
       });
       router.push("/admin/master/banks");
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menambahkan Rekening",
+        title: "Gagal Menambahkan Rekening",
         description: getErrorMessage(error),
       });
     },

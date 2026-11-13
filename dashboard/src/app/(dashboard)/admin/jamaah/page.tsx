@@ -161,13 +161,13 @@ export default function JamaahPage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // ✅ DELETE STATE
+  // DELETE STATE
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     jamaah: JamaahListItem | null;
   }>({ open: false, jamaah: null });
 
-  // ✅ IMPORT STATE
+  // IMPORT STATE
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -252,12 +252,12 @@ export default function JamaahPage() {
     ? (agentsResponse.data as AgentFilterOption[])
     : [];
 
-  // ✅ DELETE MUTATION
+  // DELETE MUTATION
   const deleteMutation = useMutation({
     mutationFn: (bookingNumber: string) => jamaahService.delete(bookingNumber),
     onSuccess: () => {
       toast({
-        title: "✅ Berhasil Dihapus",
+        title: "Berhasil Dihapus",
         description: "Data jamaah berhasil dihapus",
       });
       queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
@@ -266,7 +266,7 @@ export default function JamaahPage() {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menghapus",
+        title: "Gagal Menghapus",
         description: getErrorMessage(error),
       });
     },
@@ -314,7 +314,7 @@ export default function JamaahPage() {
 
         if (response.success) {
           toast({
-            title: "✅ Import Selesai",
+            title: "Import Selesai",
             description: `Berhasil: ${response.data.success}, Gagal: ${response.data.failed}`,
           });
           queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
@@ -323,7 +323,7 @@ export default function JamaahPage() {
       } catch (error: unknown) {
         toast({
           variant: "destructive",
-          title: "❌ Gagal Import",
+          title: "Gagal Import",
           description: getErrorMessage(error),
         });
       } finally {
@@ -569,7 +569,7 @@ export default function JamaahPage() {
     );
   };
 
-  // ✅ TAMBAHKAN INI
+  // TAMBAHKAN INI
   const getRegistrationBadge = (jamaah: JamaahListItem) => {
     const status = jamaah.registrationStatus;
 
@@ -636,7 +636,7 @@ export default function JamaahPage() {
     );
   };
 
-  // ✅ HANDLE DELETE
+  // HANDLE DELETE
   const handleDelete = (jamaah: JamaahListItem) => {
     setDeleteDialog({ open: true, jamaah });
   };
@@ -649,7 +649,7 @@ export default function JamaahPage() {
 
   return (
     <div className="space-y-6">
-      {/* ✅ DELETE CONFIRMATION DIALOG */}
+      {/* DELETE CONFIRMATION DIALOG */}
       <AlertDialog
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ open, jamaah: null })}
@@ -691,7 +691,7 @@ export default function JamaahPage() {
                 </div>
               )}
               <p className="text-red-600 font-medium text-sm">
-                ⚠️ Tindakan ini tidak dapat dibatalkan! Data pembayaran terkait
+                Tindakan ini tidak dapat dibatalkan! Data pembayaran terkait
                 juga akan dihapus.
               </p>
             </AlertDialogDescription>
@@ -896,9 +896,9 @@ export default function JamaahPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status Bayar</SelectItem>
-                <SelectItem value="LUNAS">✅ Lunas</SelectItem>
-                <SelectItem value="CICILAN">⏳ Cicilan</SelectItem>
-                <SelectItem value="BELUM_BAYAR">❌ Belum Bayar</SelectItem>
+                <SelectItem value="LUNAS">Lunas</SelectItem>
+                <SelectItem value="CICILAN">Cicilan</SelectItem>
+                <SelectItem value="BELUM_BAYAR">Belum Bayar</SelectItem>
               </SelectContent>
             </Select>
 
@@ -909,8 +909,8 @@ export default function JamaahPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Profil</SelectItem>
-                <SelectItem value="lengkap">✅ Lengkap</SelectItem>
-                <SelectItem value="belum">⚠️ Belum Lengkap</SelectItem>
+                <SelectItem value="lengkap">Lengkap</SelectItem>
+                <SelectItem value="belum">Belum Lengkap</SelectItem>
               </SelectContent>
             </Select>
 
@@ -1065,16 +1065,16 @@ export default function JamaahPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Registrasi</SelectItem>
-                    <SelectItem value="DRAFT">📝 Draft</SelectItem>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
                     <SelectItem value="PENDING_DOCUMENT">
-                      📄 Pending Dokumen
+                      Pending Dokumen
                     </SelectItem>
                     <SelectItem value="PENDING_PAYMENT">
-                      💳 Pending Bayar
+                      Pending Bayar
                     </SelectItem>
-                    <SelectItem value="VERIFIED">✅ Verified</SelectItem>
-                    <SelectItem value="APPROVED">🎉 Approved</SelectItem>
-                    <SelectItem value="REJECTED">❌ Rejected</SelectItem>
+                    <SelectItem value="VERIFIED">Verified</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1269,7 +1269,7 @@ export default function JamaahPage() {
                     <TableHead className="font-semibold">
                       Status Bayar
                     </TableHead>
-                    {/* ✅ TAMBAHKAN KOLOM INI */}
+                    {/* TAMBAHKAN KOLOM INI */}
                     <TableHead className="font-semibold">
                       Status Registrasi
                     </TableHead>{" "}
@@ -1382,7 +1382,7 @@ export default function JamaahPage() {
                         {getPaymentBadge(jamaah.statusPayment)}
                       </TableCell>
 
-                      {/* ✅ TAMBAHKAN CELL INI */}
+                      {/* TAMBAHKAN CELL INI */}
                       <TableCell>{getRegistrationBadge(jamaah)}</TableCell>
 
                       <TableCell className="text-right">
@@ -1398,7 +1398,7 @@ export default function JamaahPage() {
 
                       <TableCell>{getProfileStatus(jamaah)}</TableCell>
 
-                      {/* ✅ UPDATED ACTION COLUMN WITH DROPDOWN */}
+                      {/* UPDATED ACTION COLUMN WITH DROPDOWN */}
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center">
                           <DropdownMenu>
@@ -1471,7 +1471,7 @@ export default function JamaahPage() {
             <div className="space-y-4 py-4">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>💡 Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (JAMAAH) terisi. Kolom `packageId` opsional tapi disarankan.
+                  <strong>Info Format:</strong> Pastikan kolom `fullName`, `email`, dan `role` (JAMAAH) terisi. Kolom `packageId` opsional tapi disarankan.
                 </p>
               </div>
 

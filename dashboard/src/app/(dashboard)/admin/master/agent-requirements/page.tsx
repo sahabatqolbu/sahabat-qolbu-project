@@ -104,12 +104,12 @@ export default function AgentRequirementsPage() {
       queryClient.invalidateQueries({ queryKey: ["agent-requirements"] });
       setCreateDialogOpen(false);
       setFormData({ title: "", order: 0, isActive: true });
-      toast({ title: "✅ Persyaratan berhasil ditambahkan" });
+      toast({ title: "Persyaratan berhasil ditambahkan" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: getErrorMessage(error),
       });
     },
@@ -122,12 +122,12 @@ export default function AgentRequirementsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-requirements"] });
       setEditDialogOpen(false);
-      toast({ title: "✅ Persyaratan berhasil diupdate" });
+      toast({ title: "Persyaratan berhasil diupdate" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: getErrorMessage(error),
       });
     },
@@ -139,12 +139,12 @@ export default function AgentRequirementsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-requirements"] });
       setDeleteDialogOpen(false);
-      toast({ title: "✅ Persyaratan berhasil dihapus" });
+      toast({ title: "Persyaratan berhasil dihapus" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: getErrorMessage(error),
       });
     },

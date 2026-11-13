@@ -132,14 +132,14 @@ export default function CreateUserPage() {
     onSuccess: (data) => {
       setCreatedUser(data.data);
       toast({
-        title: "✅ User Berhasil Dibuat!",
+        title: "User Berhasil Dibuat",
         description: `Akun ${data.data.user.fullName} telah dibuat.`,
       });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Membuat User",
+        title: "Gagal Membuat User",
         description: getErrorMessage(error),
       });
     },
@@ -170,7 +170,7 @@ export default function CreateUserPage() {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "✅ Berhasil Disalin",
+      title: "Berhasil Disalin",
       description: `${label} telah disalin ke clipboard`,
     });
   };
@@ -203,7 +203,7 @@ export default function CreateUserPage() {
         <Card className="border-green-200 bg-green-50">
           <CardHeader>
             <CardTitle className="text-green-800">
-              ✅ User Berhasil Dibuat!
+              User Berhasil Dibuat!
             </CardTitle>
             <CardDescription className="text-green-700">
               Email berisi instruksi login telah dikirim ke{" "}
@@ -211,10 +211,10 @@ export default function CreateUserPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* ✅ INFO BOX (DI DALAM CONDITIONAL!) */}
+            {/* INFO BOX (DI DALAM CONDITIONAL!) */}
             <Alert className="border-blue-200 bg-blue-50">
               <AlertDescription className="text-blue-800">
-                💌 <strong>Email Telah Dikirim!</strong>
+                <strong>Email Telah Dikirim!</strong>
                 <br />
                 Informasi login telah dikirim ke{" "}
                 <strong>{createdUser.user.email}</strong>. Jika jamaah tidak
@@ -541,7 +541,7 @@ export default function CreateUserPage() {
                       ) : (
                         packages.map((pkg) => (
                           <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                            {/* ✅ FIX: title → name */}
+                            {/* FIX: title → name */}
                             {pkg.name} - Rp{" "}
                             {Number(pkg.price).toLocaleString("id-ID")}
                           </SelectItem>
@@ -605,8 +605,8 @@ export default function CreateUserPage() {
       <Alert>
         <AlertDescription>
           {isStaff
-            ? "💡 Staff hanya bisa membuat akun Agen dan Jamaah."
-            : "💡 Password akan di-generate otomatis dan dikirim via email"}
+            ? "Staff hanya bisa membuat akun Agen dan Jamaah."
+            : "Password akan di-generate otomatis dan dikirim via email"}
         </AlertDescription>
       </Alert>
     </div>

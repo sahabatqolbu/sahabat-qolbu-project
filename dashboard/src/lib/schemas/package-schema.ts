@@ -93,7 +93,7 @@ export const createPackageSchema = z.object({
   isPinned: z.boolean().optional(),
   pinnedOrder: optionalNumber,
 
-  // ✅ MEDIA (tidak di form validation, karena file upload)
+  // MEDIA (tidak di form validation, karena file upload)
   // itinerary_pdf: handled separately
   // images: handled separately
 });
@@ -148,7 +148,7 @@ export const updatePackageSchema = z.object({
   airlineIssuedDate: z.string().optional().nullable(),
 
   // ===== AIRLINE PAYMENT =====
-  // ✅ optionalNumber handles NaN from valueAsNumber on empty inputs
+  // optionalNumber handles NaN from valueAsNumber on empty inputs
   airlineTermin1Amount: optionalNumber,
   airlineTermin1Date: z.string().optional().nullable(),
   airlineTermin1Status: z.enum(["UNPAID", "PAID"]).optional(),
@@ -159,7 +159,7 @@ export const updatePackageSchema = z.object({
   // ===== HOTEL MAKKAH =====
   hotelMakkahId: z.number().optional().nullable(),
   hotelMakkahStatus: z.enum(["PLANNING", "CONFIRMED"]).optional(),
-  // ✅ optionalNumber handles NaN from valueAsNumber on empty inputs
+  // optionalNumber handles NaN from valueAsNumber on empty inputs
   hotelMakkahDouble: optionalNumber,
   hotelMakkahTriple: optionalNumber,
   hotelMakkahQuad: optionalNumber,
@@ -168,7 +168,7 @@ export const updatePackageSchema = z.object({
   // ===== HOTEL MADINAH =====
   hotelMadinahId: z.number().optional().nullable(),
   hotelMadinahStatus: z.enum(["PLANNING", "CONFIRMED"]).optional(),
-  // ✅ optionalNumber handles NaN from valueAsNumber on empty inputs
+  // optionalNumber handles NaN from valueAsNumber on empty inputs
   hotelMadinahDouble: optionalNumber,
   hotelMadinahTriple: optionalNumber,
   hotelMadinahQuad: optionalNumber,

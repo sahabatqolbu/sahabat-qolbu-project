@@ -138,14 +138,14 @@ export default function DetailAgenPage({ params }: PageProps) {
       queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
       setApproveDialogOpen(false);
       toast({
-        title: "✅ Agen Diapprove",
+        title: "Agen Diapprove",
         description: "Agen telah disetujui dan aktif",
       });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Approve",
+        title: "Gagal Approve",
         description: getErrorMessage(error),
       });
     },
@@ -160,14 +160,14 @@ export default function DetailAgenPage({ params }: PageProps) {
       setRejectDialogOpen(false);
       setRejectionNote("");
       toast({
-        title: "✅ Agen Direject",
+        title: "Agen Direject",
         description: "Agen telah ditolak",
       });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Reject",
+        title: "Gagal Reject",
         description: getErrorMessage(error),
       });
     },
@@ -183,14 +183,14 @@ export default function DetailAgenPage({ params }: PageProps) {
       setReuploadDialogOpen(false);
       setReuploadNote("");
       toast({
-        title: "✅ Permintaan Terkirim",
+        title: "Permintaan Terkirim",
         description: "Agen sudah menerima notifikasi upload ulang KTP",
       });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Mengirim",
+        title: "Gagal Mengirim",
         description: getErrorMessage(error),
       });
     },
@@ -202,7 +202,7 @@ export default function DetailAgenPage({ params }: PageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
       toast({
-        title: "✅ Sertifikat Terupload",
+        title: "Sertifikat Terupload",
         description: "Sertifikat PDF berhasil diupload",
       });
       setCertificateFile(null);
@@ -210,7 +210,7 @@ export default function DetailAgenPage({ params }: PageProps) {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Upload",
+        title: "Gagal Upload",
         description: getErrorMessage(error),
       });
     },
@@ -222,7 +222,7 @@ export default function DetailAgenPage({ params }: PageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
       toast({
-        title: "✅ Desain ID Card Terupload",
+        title: "Desain ID Card Terupload",
         description: "Desain ID card PDF berhasil diupload",
       });
       setIdCardDesignFile(null);
@@ -230,7 +230,7 @@ export default function DetailAgenPage({ params }: PageProps) {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Upload",
+        title: "Gagal Upload",
         description: getErrorMessage(error),
       });
     },
@@ -932,7 +932,7 @@ export default function DetailAgenPage({ params }: PageProps) {
               {agreedRequirements.length === requirements.length && (
                 <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm text-green-800 font-medium">
-                    ✅ Semua persyaratan telah disetujui
+                    Semua persyaratan telah disetujui
                   </p>
                 </div>
               )}
@@ -1053,7 +1053,7 @@ export default function DetailAgenPage({ params }: PageProps) {
               <DialogTitle>Preview Dokumen</DialogTitle>
             </DialogHeader>
             <div className="relative w-full">
-              {/* ✅ Ganti Image ke img */}
+              {/* Ganti Image ke img */}
               <img
                 src={previewImage}
                 alt="Preview"

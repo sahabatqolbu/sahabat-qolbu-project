@@ -48,7 +48,7 @@ export default function JamaahListPage() {
       }),
   });
 
-  // ✅ DEBUG - TAMBAHKAN INI
+  // DEBUG - TAMBAHKAN INI
   console.log("========= DEBUG =========");
   console.log("isLoading:", isLoading);
   console.log("error:", data);
@@ -130,7 +130,7 @@ export default function JamaahListPage() {
     <ProfileGuard requireComplete={true}>
       <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-7xl lg:mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl sticky top-0 z-10">
+        <div className="bg-blue-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-md sticky top-0 z-10">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -143,7 +143,7 @@ export default function JamaahListPage() {
               </p>
             </div>
             <Link href="/agen/jamaah/create">
-              <Button className="bg-white/20 hover:bg-white/30 backdrop-blur-lg border border-white/40">
+              <Button className="bg-white/20 hover:bg-white/30 border border-white/40">
                 <Plus className="h-5 w-5 mr-2" />
                 Tambah
               </Button>
@@ -155,7 +155,7 @@ export default function JamaahListPage() {
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Cari nama atau booking number..."
-              className="pl-10 bg-white/20 backdrop-blur-lg border-white/40 text-white placeholder:text-white/60"
+              className="pl-10 bg-white/20 border-white/40 text-white placeholder:text-white/60"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -224,7 +224,7 @@ export default function JamaahListPage() {
                 return (
                   <Card
                     key={jamaah.id}
-                    className="cursor-pointer hover:shadow-md transition-all active:scale-[0.99]"
+                    className="cursor-pointer hover:shadow-md transition-colors active:scale-[0.99]"
                     onClick={() => router.push(`/agen/jamaah/${jamaah.id}`)}
                   >
                     <CardContent>

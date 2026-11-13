@@ -96,14 +96,14 @@ export default function EditAirportPage() {
       masterService.airports.update(parseInt(id), data),
     onSuccess: () => {
       toast({
-        title: "✅ Bandara Berhasil Diupdate",
+        title: "Bandara Berhasil Diupdate",
       });
       router.push("/admin/master/airports");
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update Bandara",
+        title: "Gagal Update Bandara",
         description: getErrorMessage(error),
       });
     },

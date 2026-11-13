@@ -99,7 +99,7 @@ export default function EditAirlinePage() {
         isActive: airline.isActive ?? true,
       });
 
-      // ✅ PAKAI getImageUrl() untuk preview
+      // PAKAI getImageUrl() untuk preview
       if (airline.logo) {
         setLogoPreview(getImageUrl(airline.logo));
       }
@@ -127,9 +127,9 @@ export default function EditAirlinePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["airlines"] });
 
-      // ✅ TOAST SUCCESS
+      // TOAST SUCCESS
       toast({
-        title: "✅ Berhasil",
+        title: "Berhasil",
         description: "Maskapai berhasil diupdate",
         variant: "default",
         duration: 3000,
@@ -141,9 +141,9 @@ export default function EditAirlinePage() {
       }, 1000);
     },
     onError: (error: unknown) => {
-      // ✅ TOAST ERROR
+      // TOAST ERROR
       toast({
-        title: "❌ Gagal Update",
+        title: "Gagal Update",
         description: getErrorMessage(error),
         variant: "destructive",
         duration: 5000,

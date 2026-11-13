@@ -36,18 +36,18 @@ export function ProfileGuard({
       const isComplete = agentData?.isComplete;
       const isApproved = agentData?.status === "APPROVED";
 
-      // ✅ PAKSA KE PROFILE KALAU BELUM LENGKAP
+      // PAKSA KE PROFILE KALAU BELUM LENGKAP
       if (requireComplete && !isComplete && !isProfilePage) {
         console.log(
-          "🚫 BLOCKED: Profil belum lengkap, redirect ke /agen/profile"
+          "BLOCKED: Profil belum lengkap, redirect ke /agen/profile"
         );
         router.replace("/agen/profile");
         return;
       }
 
-      // ✅ PAKSA NUNGGU APPROVAL KALAU DIPERLUKAN
+      // PAKSA NUNGGU APPROVAL KALAU DIPERLUKAN
       if (requireApproved && !isApproved && pathname !== "/agen") {
-        console.log("🚫 BLOCKED: Belum approved, redirect ke /agen");
+        console.log("BLOCKED: Belum approved, redirect ke /agen");
         router.replace("/agen");
         return;
       }
@@ -73,7 +73,7 @@ export function ProfileGuard({
     );
   }
 
-  // ✅ SHOW WARNING KALAU BELUM COMPLETE TAPI MASIH DI PROFILE PAGE
+  // SHOW WARNING KALAU BELUM COMPLETE TAPI MASIH DI PROFILE PAGE
   if (
     requireComplete &&
     !agentData?.isComplete &&
@@ -85,7 +85,7 @@ export function ProfileGuard({
           <div className="flex items-start gap-3 max-w-md mx-auto">
             <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-red-900">
-              <strong>⚠️ Profil Wajib Dilengkapi</strong>
+              <strong>Profil Wajib Dilengkapi</strong>
               <p className="mt-1">
                 Anda tidak bisa mengakses fitur lain sebelum profil lengkap dan
                 disubmit.

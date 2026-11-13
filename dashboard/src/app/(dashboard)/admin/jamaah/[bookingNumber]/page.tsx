@@ -399,7 +399,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     }) => jamaahService.addPayment(bookingNumber, data),
     onSuccess: () => {
       toast({
-        title: "✅ Pembayaran Ditambahkan",
+        title: "Pembayaran Ditambahkan",
         description: "Data pembayaran berhasil disimpan",
       });
       queryClient.invalidateQueries({
@@ -415,7 +415,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: getErrorMessage(error),
       });
     },
@@ -424,7 +424,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
   const verifyPaymentMutation = useMutation({
     mutationFn: (paymentId: number) => jamaahService.verifyPayment(paymentId),
     onSuccess: () => {
-      toast({ title: "✅ Pembayaran Terverifikasi" });
+      toast({ title: "Pembayaran Terverifikasi" });
       queryClient.invalidateQueries({
         queryKey: ["jamaah-payments", bookingNumber],
       });
@@ -432,7 +432,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Verifikasi",
+        title: "Gagal Verifikasi",
         description: getErrorMessage(error),
       });
     },
@@ -442,7 +442,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     mutationFn: (payload: { paymentId: number; file: File }) =>
       jamaahService.uploadPaymentProof(payload.paymentId, payload.file),
     onSuccess: () => {
-      toast({ title: "✅ Bukti pembayaran berhasil diupload" });
+      toast({ title: "Bukti pembayaran berhasil diupload" });
       queryClient.invalidateQueries({
         queryKey: ["jamaah-payments", bookingNumber],
       });
@@ -450,7 +450,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Upload bukti gagal",
+        title: "Upload bukti gagal",
         description: getErrorMessage(error),
       });
     },
@@ -460,7 +460,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     mutationFn: (payload: { documentType: string; file: File }) =>
       jamaahService.uploadDocument(bookingNumber, payload.documentType, payload.file),
     onSuccess: () => {
-      toast({ title: "✅ Dokumen berhasil diupload" });
+      toast({ title: "Dokumen berhasil diupload" });
       queryClient.invalidateQueries({
         queryKey: ["jamaah-detail", bookingNumber],
       });
@@ -468,7 +468,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Upload dokumen gagal",
+        title: "Upload dokumen gagal",
         description: getErrorMessage(error),
       });
     },
@@ -479,7 +479,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
       jamaahService.rejectPayment(payload.paymentId, payload.reason),
     onSuccess: () => {
       toast({
-        title: "⚠️ Bukti Pembayaran Ditolak",
+        title: "Bukti Pembayaran Ditolak",
         description: "Status bukti pembayaran berhasil diubah menjadi REJECTED",
       });
       queryClient.invalidateQueries({
@@ -493,18 +493,18 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menolak Bukti",
+        title: "Gagal Menolak Bukti",
         description: getErrorMessage(error),
       });
     },
   });
 
-  // ✅ APPROVE MUTATION
+  // APPROVE MUTATION
   const approveMutation = useMutation({
     mutationFn: () => jamaahService.approve(bookingNumber),
     onSuccess: () => {
       toast({
-        title: "✅ Jamaah Disetujui",
+        title: "Jamaah Disetujui",
         description: "Status jamaah berhasil diubah menjadi APPROVED",
       });
       queryClient.invalidateQueries({
@@ -516,18 +516,18 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Approve",
+        title: "Gagal Approve",
         description: getErrorMessage(error),
       });
     },
   });
 
-  // ✅ REJECT MUTATION
+  // REJECT MUTATION
   const rejectMutation = useMutation({
     mutationFn: (reason: string) => jamaahService.reject(bookingNumber, reason),
     onSuccess: () => {
       toast({
-        title: "❌ Jamaah Ditolak",
+        title: "Jamaah Ditolak",
         description: "Status jamaah berhasil diubah menjadi REJECTED",
       });
       queryClient.invalidateQueries({
@@ -540,18 +540,18 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Reject",
+        title: "Gagal Reject",
         description: getErrorMessage(error),
       });
     },
   });
 
-  // ✅ REVERT MUTATION
+  // REVERT MUTATION
   const revertMutation = useMutation({
     mutationFn: () => jamaahService.revert(bookingNumber),
     onSuccess: () => {
       toast({
-        title: "↩️ Status Dikembalikan",
+        title: "Status Dikembalikan",
         description: "Status jamaah berhasil dikembalikan ke VERIFIED",
       });
       queryClient.invalidateQueries({
@@ -563,7 +563,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Revert",
+        title: "Gagal Revert",
         description: getErrorMessage(error),
       });
     },
@@ -573,7 +573,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     mutationFn: (payload: any) =>
       jamaahService.update(bookingNumber, payload),
     onSuccess: () => {
-      toast({ title: "✅ Data jamaah berhasil diupdate" });
+      toast({ title: "Data jamaah berhasil diupdate" });
       queryClient.invalidateQueries({ queryKey: ["jamaah-detail", bookingNumber] });
       queryClient.invalidateQueries({ queryKey: ["jamaah-list"] });
       setEditingSection(null);
@@ -581,7 +581,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal update data",
+        title: "Gagal update data",
         description: getErrorMessage(error),
       });
     },
@@ -725,7 +725,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
     }));
 
     toast({
-      title: "📦 Paket dipilih",
+      title: "Paket dipilih",
       description: `Default data paket sudah diisi otomatis (harga, note, tipe kamar).`,
     });
   };
@@ -953,7 +953,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
   const profileStatus = jamaah ? checkProfileCompleteness() : null;
 
-  // ✅ TAMBAHKAN INI (setelah line 351)
+  // TAMBAHKAN INI (setelah line 351)
   const canApprove = !isReadOnlyRole && jamaah?.registrationStatus === "VERIFIED";
   const canRevert =
     !isReadOnlyRole &&
@@ -1041,7 +1041,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
                 </div>
               </div>
               <p className="text-green-700 text-sm">
-                ✅ Setelah di-approve, jamaah akan menerima notifikasi dan data
+                Setelah di-approve, jamaah akan menerima notifikasi dan data
                 akan dikunci.
               </p>
             </AlertDialogDescription>
@@ -1297,7 +1297,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
               </h1>
               {jamaah.gender && (
                 <Badge variant="outline">
-                  {jamaah.gender === "PRIA" ? "👨 Pria" : "👩 Wanita"}
+                  {jamaah.gender === "PRIA" ? "Pria" : "Wanita"}
                 </Badge>
               )}
             </div>
@@ -1362,7 +1362,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
       {/* ===== APPROVAL STATUS CARD ===== */}
       {jamaah.registrationStatus === "VERIFIED" && (
-        <Card className="border-2 border-cyan-200 bg-gradient-to-r from-cyan-50 to-blue-50">
+        <Card className="border-2 border-cyan-200 bg-cyan-50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -1400,7 +1400,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
       )}
 
       {jamaah.registrationStatus === "APPROVED" && (
-        <Card className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+        <Card className="border-2 border-green-200 bg-green-50">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -1409,7 +1409,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
                 </div>
                 <div>
                   <p className="font-semibold text-green-800">
-                    ✅ Jamaah Disetujui
+                    Jamaah Disetujui
                   </p>
                   <p className="text-sm text-green-600">
                     Disetujui pada: {formatDate(jamaah.approvedAt)}
@@ -1429,7 +1429,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
       )}
 
       {jamaah.registrationStatus === "REJECTED" && (
-        <Card className="border-2 border-red-200 bg-gradient-to-r from-red-50 to-orange-50">
+        <Card className="border-2 border-red-200 bg-red-50">
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
@@ -1438,7 +1438,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
                 </div>
                 <div>
                   <p className="font-semibold text-red-800">
-                    ❌ Jamaah Ditolak
+                    Jamaah Ditolak
                   </p>
                   <p className="text-sm text-red-600">
                     Ditolak pada: {formatDate(jamaah.rejectedAt)}
@@ -1472,7 +1472,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
       {/* ===== SUMMARY CARDS ===== */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
+        <Card className="bg-primary/5">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500 font-medium">Harga Final</p>
             <p className="text-xl font-bold text-primary mt-1">

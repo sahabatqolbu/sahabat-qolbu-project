@@ -103,7 +103,7 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
-logger.debug("🌐 API baseURL:", resolvedApiUrl);
+logger.debug("API baseURL:", resolvedApiUrl);
 
 // Map to track in-flight mutating requests and prevent duplicate submissions from rapid clicks
 const inFlightMutations = new Map<string, Promise<AxiosResponse>>();
@@ -148,7 +148,7 @@ const deduplicatedRequest = (config: AxiosRequestConfig): Promise<AxiosResponse>
     const signature = getMutationSignature(config);
     if (inFlightMutations.has(signature)) {
       logger.warn(
-        "🛑 Anti-duplikat: Request identik sedang berjalan. Menggunakan in-flight promise:",
+        "Anti-duplikat: Request identik sedang berjalan. Menggunakan in-flight promise:",
         method,
         config.url,
       );
@@ -192,7 +192,7 @@ const wrappedApi = new Proxy(api, {
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    logger.debug("🚀 API REQUEST:", config.method?.toUpperCase(), config.url);
+    logger.debug("API REQUEST:", config.method?.toUpperCase(), config.url);
 
     // Attach request ID for tracing
     if (!config.headers["X-Request-ID"]) {
@@ -202,13 +202,13 @@ api.interceptors.request.use(
     // Handle FormData
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
-      logger.debug("📦 FormData detected - auto Content-Type");
+      logger.debug("FormData detected - auto Content-Type");
     }
 
     return config;
   },
   (error: AxiosError) => {
-    logger.error("❌ Request error:", error.message);
+    logger.error("Request error:", error.message);
     return Promise.reject(error);
   }
 );
@@ -216,7 +216,7 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
-    logger.debug("✅ SUCCESS:", response.status, response.config.url);
+    logger.debug("SUCCESS:", response.status, response.config.url);
     return response;
   },
   (error: AxiosError) => {
@@ -227,12 +227,12 @@ api.interceptors.response.use(
     // Use warn for HTTP errors to avoid Next dev overlay noise.
     // The UI layer (toast/forms) should present the error to the user.
     if (status) {
-      logger.warn("❌ API ERROR:", status, url);
-      logger.warn("📦 Message:", readableMessage);
+      logger.warn("API ERROR:", status, url);
+      logger.warn("Message:", readableMessage);
     } else {
       // Network / unexpected errors
-      logger.error("❌ API ERROR:", status, url);
-      logger.error("📦 Message:", readableMessage);
+      logger.error("API ERROR:", status, url);
+      logger.error("Message:", readableMessage);
     }
 
     // Handle 401 Unauthorized
@@ -246,7 +246,7 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      logger.warn("🚫 UNAUTHORIZED! Redirecting to login...");
+      logger.warn("UNAUTHORIZED! Redirecting to login...");
       
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth-storage");
@@ -261,12 +261,12 @@ api.interceptors.response.use(
 
     // Handle 403 Forbidden
     if (status === 403) {
-      logger.warn("🚫 FORBIDDEN - Insufficient permissions");
+      logger.warn("FORBIDDEN - Insufficient permissions");
     }
 
     // Handle 429 Rate Limit
     if (status === 429) {
-      logger.warn("⏰ RATE LIMITED - Too many requests");
+      logger.warn("Rate limited: too many requests");
       const retryAfter = error.response?.headers["retry-after"];
       if (retryAfter) {
         logger.debug(`Retry after: ${retryAfter} seconds`);
@@ -275,12 +275,12 @@ api.interceptors.response.use(
 
     // Handle network errors
     if (!status && error.message === "Network Error") {
-      logger.warn("📡 Network error - check connection");
+      logger.warn("Network error - check connection");
     }
 
     // Handle timeout
     if (error.code === "ECONNABORTED") {
-      logger.warn("⏱️ Request timeout");
+      logger.warn("Request timeout");
     }
 
     return Promise.reject(error);

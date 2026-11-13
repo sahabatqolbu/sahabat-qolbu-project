@@ -34,7 +34,7 @@ export default function PackageItineraryPage({ params }: PageProps) {
   useEffect(() => {
     if (!isLoading && pkg) {
       if (pkg.itineraryPdf) {
-        // ✅ LANGSUNG BUKA PDF DI TAB BARU
+        // LANGSUNG BUKA PDF DI TAB BARU
         const pdfUrl = getImageUrl(pkg.itineraryPdf);
         window.open(pdfUrl, "_blank");
 
@@ -44,7 +44,7 @@ export default function PackageItineraryPage({ params }: PageProps) {
         // Kalo belum ada PDF, kasih toast warning
         toast({
           variant: "destructive",
-          title: "❌ PDF Itinerary Belum Ada",
+          title: "PDF Itinerary Belum Ada",
           description: "Silakan upload PDF terlebih dahulu",
         });
 

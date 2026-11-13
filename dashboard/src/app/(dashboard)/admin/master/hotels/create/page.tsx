@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// ✅ VALIDATION SCHEMA: Proper TypeScript types for useForm
+// VALIDATION SCHEMA: Proper TypeScript types for useForm
 const hotelSchema = z.object({
   name: z.string().min(3, "Nama hotel minimal 3 karakter"),
   city: z.enum(["MAKKAH", "MADINAH"]),
@@ -90,7 +90,7 @@ export default function CreateHotelPage() {
     },
     onSuccess: (response) => {
       toast({
-        title: "✅ Hotel Berhasil Ditambahkan",
+        title: "Hotel Berhasil Ditambahkan",
         description: "Data tersimpan. Tambahkan foto kamar dan fasilitas di galeri.",
       });
       const createdId = response?.data?.id;
@@ -103,7 +103,7 @@ export default function CreateHotelPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menambahkan Hotel",
+        title: "Gagal Menambahkan Hotel",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },

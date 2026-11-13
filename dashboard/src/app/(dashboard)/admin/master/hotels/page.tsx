@@ -78,7 +78,7 @@ export default function HotelsPage() {
     hotel.name.toLowerCase().includes(search.toLowerCase()),
   );
 
-  // ✅ DELETE MUTATION
+  // DELETE MUTATION
   const deleteMutation = useMutation({
     mutationFn: (id: number) => masterService.hotels.delete(id),
     onSuccess: () => {
@@ -86,14 +86,14 @@ export default function HotelsPage() {
       setDeleteDialogOpen(false);
       setSelectedHotel(null);
       toast({
-        title: "✅ Hotel Dihapus",
+        title: "Hotel Dihapus",
         description: "Hotel berhasil dihapus dari sistem",
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Hapus Hotel",
+        title: "Gagal Hapus Hotel",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -198,7 +198,7 @@ export default function HotelsPage() {
                               alt={hotel.name}
                               onError={(e) => {
                                 console.error(
-                                  "❌ Image load error:",
+                                  "Image load error:",
                                   hotel.imageUrl,
                                 );
                                 e.currentTarget.src =
@@ -296,7 +296,7 @@ export default function HotelsPage() {
         </CardContent>
       </Card>
 
-      {/* ✅ DELETE CONFIRMATION DIALOG */}
+      {/* DELETE CONFIRMATION DIALOG */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

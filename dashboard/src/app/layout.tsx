@@ -31,7 +31,7 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased`}
-        suppressHydrationWarning // ✅ TAMBAH INI
+        suppressHydrationWarning
       >
         <Providers>{children}</Providers>
       </body>

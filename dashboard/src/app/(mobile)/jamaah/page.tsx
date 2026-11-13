@@ -115,9 +115,9 @@ export default function JamaahDashboardPage() {
   ).filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:pb-8 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-8 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 rounded-b-[2rem] md:rounded-b-[2.5rem] relative overflow-hidden">
+      <div className="bg-[var(--color-primary)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 rounded-b-[2rem] md:rounded-b-[2.5rem] relative overflow-hidden">
         {/* Decorative */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-8 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2" />
@@ -127,15 +127,15 @@ export default function JamaahDashboardPage() {
             <div>
               <p className="text-xs md:text-sm text-white/60">Assalamu'alaikum,</p>
               <h1 className="text-lg md:text-3xl font-bold">
-                {profile.user?.fullName?.split(" ")[0] || "Jamaah"} 👋
+                {profile.user?.fullName?.split(" ")[0] || "Jamaah"}
               </h1>
             </div>
 
             {/* Di dalam header, ganti bagian ICON NOTIF & PROFIL */}
             <div className="flex items-center gap-2">
-              {/* ✅ TAMBAH ICON CALENDAR */}
+              {/* TAMBAH ICON CALENDAR */}
               <Link href="/jamaah/calendar">
-                <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-colors">
+                <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors">
                   <Calendar className="h-5 w-5" />
                 </div>
               </Link>
@@ -151,8 +151,8 @@ export default function JamaahDashboardPage() {
           </div>
 
           {/* Booking Number */}
-          <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-            <p className="text-[10px] text-white/60 uppercase tracking-wider">
+          <div className="bg-white/10 rounded-xl p-3">
+            <p className="text-[10px] text-white/60">
               No. Booking
             </p>
             <p className="text-lg font-bold tracking-wider">
@@ -167,7 +167,7 @@ export default function JamaahDashboardPage() {
         {/* Package Card */}
         {packageData ? (
           <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-[var(--color-secondary)] to-[var(--color-secondary-600)] p-4 text-[var(--color-secondary-foreground)]">
+            <div className="bg-[var(--color-secondary)] p-4 text-[var(--color-secondary-foreground)]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
@@ -249,7 +249,7 @@ export default function JamaahDashboardPage() {
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
+                  className={`h-full rounded-full transition-[width] ${
                     paymentProgress >= 100
                       ? "bg-green-500"
                       : paymentProgress > 0
@@ -273,7 +273,7 @@ export default function JamaahDashboardPage() {
           daysUntilDeparture !== null &&
           daysUntilDeparture > 0 && (
             <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white">
+              <div className="bg-blue-600 p-4 text-white">
                 <div className="flex items-center gap-3">
                   <div className="h-14 w-14 rounded-xl bg-white/20 flex items-center justify-center">
                     <CalendarDays className="h-7 w-7" />

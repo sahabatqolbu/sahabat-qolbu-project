@@ -132,7 +132,7 @@ export default function EditAgenPage({ params }: PageProps) {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
       queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
       toast({
-        title: "✅ Data Agen Berhasil Diupdate",
+        title: "Data Agen Berhasil Diupdate",
         description: "Perubahan telah disimpan",
       });
       router.push(`/admin/agen/${agentId}`);
@@ -140,7 +140,7 @@ export default function EditAgenPage({ params }: PageProps) {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update Data",
+        title: "Gagal Update Data",
         description: getErrorMessage(error),
       });
     },

@@ -51,7 +51,7 @@ export interface JamaahListResponse {
 // =====================================================
 
 export const agenService = {
-  // ✅ FIX: Ambil data.packages (bukan data langsung)
+  // FIX: Ambil data.packages (bukan data langsung)
   getPackages: async () => {
     const response = await api.get("/agen/packages", {
       params: {
@@ -59,10 +59,10 @@ export const agenService = {
       },
     });
 
-    // ✅ DEBUG
-    console.log("📦 PACKAGES RESPONSE:", response.data);
+    // DEBUG
+    console.log("PACKAGES RESPONSE:", response.data);
 
-    // ✅ FIX: Response backend format { success, data: { packages, pagination } }
+    // FIX: Response backend format { success, data: { packages, pagination } }
     return response.data; // Return full response
   },
 

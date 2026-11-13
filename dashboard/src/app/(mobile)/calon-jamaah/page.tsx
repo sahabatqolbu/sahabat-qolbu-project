@@ -56,7 +56,7 @@ export default function CalonJamaahDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-8">
-      <section className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-700)] px-5 pb-16 pt-6 text-white md:px-8 md:pt-10">
+      <section className="bg-[var(--color-primary)] px-5 pb-16 pt-6 text-white md:px-8 md:pt-10">
         <div className="mx-auto max-w-7xl">
           <div className="flex items-start justify-between gap-4">
             <div>

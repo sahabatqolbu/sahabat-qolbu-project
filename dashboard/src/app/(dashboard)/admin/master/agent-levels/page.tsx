@@ -103,14 +103,14 @@ export default function AgentLevelsPage() {
       queryClient.invalidateQueries({ queryKey: ["agent-levels"] });
       setDeleteDialogOpen(false);
       toast({
-        title: "✅ Level Dihapus",
+        title: "Level Dihapus",
         description: "Level agen berhasil dihapus",
       });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Hapus Level",
+        title: "Gagal Hapus Level",
         description: getErrorMessage(error),
       });
     },

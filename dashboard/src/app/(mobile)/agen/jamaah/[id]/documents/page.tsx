@@ -111,14 +111,14 @@ export default function DocumentsPage() {
     try {
       await agenService.uploadJamaahDocument(id, selectedType, file);
       toast({
-        title: "✅ Berhasil",
+        title: "Berhasil",
         description: "Dokumen berhasil diupload",
       });
       queryClient.invalidateQueries({ queryKey: ["jamaah-detail", id] });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "❌ Gagal upload",
+        title: "Gagal upload",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     } finally {
@@ -166,7 +166,7 @@ export default function DocumentsPage() {
       />
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sticky top-0 z-10">
+      <div className="bg-blue-600 text-white p-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"

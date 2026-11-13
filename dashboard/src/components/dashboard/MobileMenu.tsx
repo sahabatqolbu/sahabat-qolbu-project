@@ -18,7 +18,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
-  // ✅ State untuk collapse submenu
+  // State untuk collapse submenu
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   // Close on route change
@@ -42,7 +42,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
   const menuItems = getMenuByRole(user.role);
 
-  // ✅ Toggle collapse
+  // Toggle collapse
   const toggleCollapse = (label: string) => {
     setCollapsed((prev) => ({
       ...prev,
@@ -50,7 +50,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
     }));
   };
 
-  // ✅ Check active dengan exact match
+  // Check active dengan exact match
   const isActive = (href?: string, exact?: boolean) => {
     if (!href) return false;
 
@@ -61,7 +61,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
     return pathname === href || pathname.startsWith(href + "/");
   };
 
-  // ✅ Check if any child is active
+  // Check if any child is active
   const isParentActive = (children?: any[]) => {
     if (!children) return false;
     return children.some((child) => isActive(child.href, child.exact));
@@ -108,7 +108,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         </div>
 
         {/* User Info */}
-        <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-gray-200 flex-shrink-0">
+        <div className="p-4 bg-primary/5 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center">
               <span className="text-xl font-bold text-primary">
@@ -140,7 +140,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             {menuItems.map((item, index) => {
               const Icon = item.icon;
 
-              // ✅ Menu dengan children (collapsible)
+              // Menu dengan children (collapsible)
               if (item.children && item.children.length > 0) {
                 const isExpanded = collapsed[item.label];
                 const hasActiveChild = isParentActive(item.children);
@@ -201,7 +201,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                 );
               }
 
-              // ✅ Menu biasa (tanpa children)
+              // Menu biasa (tanpa children)
               const itemActive = isActive(item.href, item.exact);
 
               return (

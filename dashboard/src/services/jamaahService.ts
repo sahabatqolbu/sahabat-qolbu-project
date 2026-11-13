@@ -68,9 +68,9 @@ export interface JamaahDetail {
 }
 
 export const jamaahService = {
-  // ✅ ENDPOINT: /jamaah/admin
+  // ENDPOINT: /jamaah/admin
   getAll: async (filters?: JamaahFilters) => {
-    console.log("📡 jamaahService.getAll - Filters:", filters);
+    console.log("jamaahService.getAll - Filters:", filters);
 
     const params = new URLSearchParams();
     if (filters?.search) params.append("search", filters.search);
@@ -87,16 +87,16 @@ export const jamaahService = {
     const url = `/jamaah/admin${
       params.toString() ? `?${params.toString()}` : ""
     }`;
-    console.log("📡 Request URL:", url);
+    console.log("Request URL:", url);
 
     const response = await api.get(url);
-    console.log("✅ jamaahService.getAll - Response:", response.data);
+    console.log("jamaahService.getAll - Response:", response.data);
     return response.data;
   },
 
   // Get jamaah by booking number
   getByBookingNumber: async (bookingNumber: string) => {
-    console.log("📡 jamaahService.getByBookingNumber:", bookingNumber);
+    console.log("jamaahService.getByBookingNumber:", bookingNumber);
     const response = await api.get(`/jamaah/admin/${bookingNumber}`);
     return response.data;
   },
@@ -109,7 +109,7 @@ export const jamaahService = {
 
   // Update jamaah
   update: async (bookingNumber: string, data: any) => {
-    console.log("📤 jamaahService.update:", bookingNumber, data);
+    console.log("jamaahService.update:", bookingNumber, data);
     const response = await api.put(`/jamaah/admin/${bookingNumber}`, data);
     return response.data;
   },
@@ -182,14 +182,14 @@ export const jamaahService = {
 
   // Approve jamaah
   approve: async (bookingNumber: string) => {
-    console.log("📡 jamaahService.approve", bookingNumber);
+    console.log("jamaahService.approve", bookingNumber);
     const response = await api.post(`/jamaah/${bookingNumber}/approve`);
     return response.data;
   },
 
   // Reject jamaah
   reject: async (bookingNumber: string, reason: string) => {
-    console.log("📡 jamaahService.reject", bookingNumber);
+    console.log("jamaahService.reject", bookingNumber);
     const response = await api.post(`/jamaah/${bookingNumber}/reject`, {
       reason,
     });
@@ -198,12 +198,12 @@ export const jamaahService = {
 
   // Revert to verified
   revert: async (bookingNumber: string) => {
-    console.log("📡 jamaahService.revert", bookingNumber);
+    console.log("jamaahService.revert", bookingNumber);
     const response = await api.post(`/jamaah/${bookingNumber}/revert`);
     return response.data;
   },
 
-  // ✅ TAMBAHKAN INI
+  // TAMBAHKAN INI
   getCalendarEvents: async (startDate: string, endDate: string) => {
     const response = await api.get("/calendar/events", {
       params: { startDate, endDate },

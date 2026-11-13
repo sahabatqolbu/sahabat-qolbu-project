@@ -133,12 +133,12 @@ export default function FAQsPage() {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "✅ FAQ berhasil ditambahkan" });
+      toast({ title: "FAQ berhasil ditambahkan" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal menambah FAQ",
+        title: "Gagal menambah FAQ",
         description: getErrorMessage(error),
       });
     },
@@ -152,12 +152,12 @@ export default function FAQsPage() {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "✅ FAQ berhasil diupdate" });
+      toast({ title: "FAQ berhasil diupdate" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal update FAQ",
+        title: "Gagal update FAQ",
         description: getErrorMessage(error),
       });
     },
@@ -169,12 +169,12 @@ export default function FAQsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faqs"] });
       setDeleteDialogOpen(false);
-      toast({ title: "✅ FAQ berhasil dihapus" });
+      toast({ title: "FAQ berhasil dihapus" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal menghapus FAQ",
+        title: "Gagal menghapus FAQ",
         description: getErrorMessage(error),
       });
     },

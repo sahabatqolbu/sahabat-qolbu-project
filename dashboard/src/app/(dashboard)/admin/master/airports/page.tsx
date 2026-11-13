@@ -66,7 +66,7 @@ export default function AirportsPage() {
 
   const [search, setSearch] = useState("");
 
-  // ✅ TAMBAH STATE INI
+  // TAMBAH STATE INI
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAirport, setSelectedAirport] = useState<AirportItem | null>(null);
 
@@ -86,7 +86,7 @@ export default function AirportsPage() {
       airport.city.toLowerCase().includes(search.toLowerCase()),
   );
 
-  // ✅ DELETE MUTATION
+  // DELETE MUTATION
   const deleteMutation = useMutation({
     mutationFn: (id: number) => masterService.airports.delete(id),
     onSuccess: () => {
@@ -94,14 +94,14 @@ export default function AirportsPage() {
       setDeleteDialogOpen(false);
       setSelectedAirport(null);
       toast({
-        title: "✅ Bandara Dihapus",
+        title: "Bandara Dihapus",
         description: "Bandara berhasil dihapus dari sistem",
       });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Hapus Bandara",
+        title: "Gagal Hapus Bandara",
         description: getErrorMessage(error),
       });
     },
@@ -247,7 +247,7 @@ export default function AirportsPage() {
         </CardContent>
       </Card>
 
-      {/* ✅ DELETE CONFIRMATION DIALOG */}
+      {/* DELETE CONFIRMATION DIALOG */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

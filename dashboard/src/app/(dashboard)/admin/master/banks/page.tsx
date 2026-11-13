@@ -66,7 +66,7 @@ export default function BanksPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
 
-  // ✅ Missing state variables added
+  // Missing state variables added
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBank, setSelectedBank] = useState<BankItem | null>(null);
 
@@ -75,18 +75,18 @@ export default function BanksPage() {
     queryFn: () => masterService.banks.getAll(),
   });
 
-  // ✅ Delete mutation added
+  // Delete mutation added
   const deleteMutation = useMutation({
     mutationFn: (id: number) => masterService.banks.delete(id),
     onSuccess: () => {
-      toast({ title: "✅ Bank berhasil dihapus" });
+      toast({ title: "Bank berhasil dihapus" });
       queryClient.invalidateQueries({ queryKey: ["banks"] });
       setDeleteDialogOpen(false);
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal menghapus bank",
+        title: "Gagal menghapus bank",
         description: getErrorMessage(error),
       });
     },
@@ -226,7 +226,7 @@ export default function BanksPage() {
         </CardContent>
       </Card>
 
-      {/* ✅ Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

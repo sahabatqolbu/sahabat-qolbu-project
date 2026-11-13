@@ -82,7 +82,7 @@ export default function PinnedPackagesDialog({
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["packages-for-pinned-dialog"] });
       toast({
-        title: "✅ Urutan Paket Pinned Disimpan",
+        title: "Urutan Paket Pinned Disimpan",
         description: "Paket-paket ini akan muncul di urutan teratas sesuai prioritas.",
       });
       onOpenChange(false);
@@ -90,7 +90,7 @@ export default function PinnedPackagesDialog({
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menyimpan Urutan",
+        title: "Gagal Menyimpan Urutan",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -104,7 +104,7 @@ export default function PinnedPackagesDialog({
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["packages-for-pinned-dialog"] });
       toast({
-        title: variables.isPinned ? "✅ Paket Disematkan" : "✅ Sematan Dilepas",
+        title: variables.isPinned ? "Paket Disematkan" : "Sematan Dilepas",
         description: variables.isPinned
           ? "Paket berhasil ditambahkan ke daftar pinned."
           : "Paket berhasil dikeluarkan dari daftar pinned.",
@@ -114,7 +114,7 @@ export default function PinnedPackagesDialog({
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Mengubah Status Sematan",
+        title: "Gagal Mengubah Status Sematan",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },

@@ -36,7 +36,7 @@ export function Sidebar() {
     }));
   };
 
-  // ✅ UPDATED: Check active dengan exact match
+  // UPDATED: Check active dengan exact match
   const isActive = (href?: string, exact?: boolean) => {
     if (!href) return false;
 

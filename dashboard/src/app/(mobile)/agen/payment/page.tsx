@@ -53,7 +53,7 @@ export default function PaymentPage() {
       queryClient.invalidateQueries({ queryKey: ["agen-profile"] });
       setPaymentProofPreview(data.data.url);
       toast({
-        title: "✅ Bukti pembayaran berhasil diupload!",
+        title: "Bukti pembayaran berhasil diupload",
         description: "Menunggu verifikasi admin",
       });
       setTimeout(() => {
@@ -94,7 +94,7 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-28 w-full md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl sticky top-0 z-10">
+      <div className="bg-green-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-md sticky top-0 z-10">
         <div className="flex items-center gap-4 mb-4">
           <Link href="/agen">
             <Button
@@ -140,7 +140,7 @@ export default function PaymentPage() {
                         navigator.clipboard.writeText(
                           selectedLevel?.price || ""
                         );
-                        toast({ title: "✅ Nominal dicopy!" });
+                        toast({ title: "Nominal dicopy" });
                       }}
                     >
                       <Copy className="h-3 w-3" />
@@ -160,7 +160,7 @@ export default function PaymentPage() {
                       variant="ghost"
                       onClick={() => {
                         navigator.clipboard.writeText("1234567890");
-                        toast({ title: "✅ No. rekening dicopy!" });
+                        toast({ title: "No. rekening dicopy" });
                       }}
                     >
                       <Copy className="h-3 w-3" />
@@ -213,7 +213,7 @@ export default function PaymentPage() {
         {/* Submit Button */}
         <div className="sticky bottom-20">
           <Button
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg h-14 text-lg"
+            className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg h-14 text-lg"
             onClick={handleUpload}
             disabled={!paymentProofFile || uploadMutation.isPending}
           >

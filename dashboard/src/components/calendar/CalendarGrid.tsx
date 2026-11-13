@@ -13,8 +13,8 @@ import {
   isSameDay,
   isWithinInterval,
   parseISO,
-  addMonths, // ✅ ADD
-  subMonths, // ✅ ADD
+  addMonths,
+  subMonths,
 } from "date-fns";
 import { id } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -96,7 +96,7 @@ export function CalendarGrid({
     });
   };
 
-  // ✅ FIX: Navigation dengan addMonths/subMonths
+  // FIX: Navigation dengan addMonths/subMonths
   const goToPreviousMonth = () => {
     onDateChange(subMonths(currentDate, 1));
   };

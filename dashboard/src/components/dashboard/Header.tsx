@@ -52,7 +52,7 @@ export function Header() {
 
           {/* Logo (Mobile) */}
           <div className="md:hidden flex items-center gap-2">
-            <span className="text-2xl">🕌</span>
+            <img src="/images/icon.png" alt="" className="h-7 w-7 object-contain" />
             <span className="font-serif font-bold text-primary">
               Sahabat Qolbu
             </span>
@@ -67,7 +67,7 @@ export function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            {/* ✅ Calendar Icon */}
+            {/* Calendar Icon */}
             <Link href={calendarHref}>
               <Button
                 variant="ghost"

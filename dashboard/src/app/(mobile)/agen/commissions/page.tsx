@@ -67,7 +67,7 @@ export default function CommissionsPage() {
     <ProfileGuard requireComplete={true}>
       <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl">
+        <div className="bg-green-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-md">
           <div className="text-center mb-6">
             <Wallet className="h-12 w-12 mx-auto mb-3 opacity-90" />
             <h1 className="text-2xl font-bold">Komisi Saya</h1>
@@ -77,7 +77,7 @@ export default function CommissionsPage() {
           </div>
 
           {/* Total Balance Card */}
-          <Card className="bg-white/10 backdrop-blur-lg border-white/20">
+          <Card className="bg-white/10 border-white/20">
             <CardContent className="p-6 text-center">
               <p className="text-sm opacity-90 mb-2">Total Komisi</p>
               <p className="text-4xl font-bold mb-1">
@@ -178,7 +178,7 @@ export default function CommissionsPage() {
                     return (
                       <div
                         key={item.id}
-                        className="border rounded-lg p-4 hover:shadow-md transition-all"
+                        className="border rounded-lg p-4 hover:shadow-md transition-colors"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
@@ -232,7 +232,7 @@ export default function CommissionsPage() {
                       Rp {commissionData.paid.toLocaleString("id-ID")}
                     </p>
                   </div>
-                  <Button className="bg-gradient-to-r from-green-500 to-emerald-600">
+                  <Button className="bg-green-600">
                     <Download className="mr-2 h-4 w-4" />
                     Tarik Saldo
                   </Button>

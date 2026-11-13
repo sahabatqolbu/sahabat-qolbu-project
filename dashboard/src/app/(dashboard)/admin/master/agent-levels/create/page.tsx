@@ -107,7 +107,7 @@ export default function CreateAgentLevelPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-levels"] });
       toast({
-        title: "✅ Level Berhasil Dibuat",
+        title: "Level Berhasil Dibuat",
         description: "Level agen telah ditambahkan",
       });
       router.push("/admin/master/agent-levels");
@@ -115,7 +115,7 @@ export default function CreateAgentLevelPage() {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Membuat Level",
+        title: "Gagal Membuat Level",
         description: getErrorMessage(error),
       });
     },

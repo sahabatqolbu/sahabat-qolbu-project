@@ -46,13 +46,13 @@ interface PackageData {
 const getTypeBadgeStyle = (type: string) => {
   switch (type?.toUpperCase()) {
     case "EXTREME":
-      return "bg-gradient-to-r from-red-500 to-orange-500 text-white";
+      return "bg-red-500 text-white";
     case "PREMIUM":
-      return "bg-gradient-to-r from-amber-500 to-yellow-500 text-white";
+      return "bg-amber-500 text-white";
     case "VIP":
-      return "bg-gradient-to-r from-purple-500 to-pink-500 text-white";
+      return "bg-purple-500 text-white";
     case "REGULAR":
-      return "bg-gradient-to-r from-blue-500 to-cyan-500 text-white";
+      return "bg-blue-500 text-white";
     default:
       return "bg-[var(--color-secondary)] text-[var(--color-secondary-foreground)]";
   }
@@ -76,10 +76,10 @@ export default function PackagesPage() {
 
   return (
     <ProfileGuard requireComplete={true}>
-      {/* ✅ FIX: Tambah overflow-x-hidden di root container */}
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:max-w-7xl md:px-6 mx-auto overflow-x-hidden">
+      {/* FIX: Tambah overflow-x-hidden di root container */}
+      <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto overflow-x-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-6 pb-10 rounded-b-[2.5rem] shadow-xl sticky top-0 z-10 overflow-hidden">
+        <div className="bg-[var(--color-primary)] text-white p-6 pb-10 rounded-b-[2.5rem] shadow-md sticky top-0 z-10 overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-4 left-4 w-20 h-20 bg-white/5 rounded-full" />
@@ -87,7 +87,7 @@ export default function PackagesPage() {
           <div className="relative z-10">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-1">
-                <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
+                <div className="p-2 bg-white/10 rounded-xl">
                   <Package className="h-6 w-6" />
                 </div>
                 <div>
@@ -104,7 +104,7 @@ export default function PackagesPage() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50" />
               <Input
                 placeholder="Cari paket..."
-                className="pl-12 h-12 bg-white/15 backdrop-blur-md border-white/20 text-white placeholder:text-white/50 rounded-2xl focus:bg-white/20 focus:border-white/40 transition-all"
+                className="pl-12 h-12 bg-white/15 border-white/20 text-white placeholder:text-white/50 rounded-2xl focus:bg-white/20 focus:border-white/40 transition-colors"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -112,13 +112,12 @@ export default function PackagesPage() {
           </div>
         </div>
 
-        {/* ✅ FIX: Content wrapper dengan overflow hidden */}
+        {/* FIX: Content wrapper dengan overflow hidden */}
         <div className="px-3 -mt-5 relative z-10 overflow-hidden">
           {/* Loading */}
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="relative">
-                <div className="absolute inset-0 bg-[var(--color-secondary)]/20 rounded-full animate-ping" />
                 <div className="relative bg-white p-4 rounded-full shadow-lg">
                   <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
                 </div>
@@ -128,7 +127,7 @@ export default function PackagesPage() {
               </p>
             </div>
           ) : filteredPackages.length === 0 ? (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white/80">
               <CardContent className="p-12 text-center">
                 <div className="w-20 h-20 bg-[var(--color-primary-100)] rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package className="h-10 w-10 text-[var(--color-primary-300)]" />
@@ -144,7 +143,7 @@ export default function PackagesPage() {
               </CardContent>
             </Card>
           ) : (
-            /* ✅ FIX: Grid dengan width constraint */
+            /* FIX: Grid dengan width constraint */
             <div className="grid grid-cols-2 gap-2 w-full">
               {filteredPackages.map((pkg: PackageData, index: number) => {
                 if (!pkg || !pkg.name) return null;
@@ -189,10 +188,10 @@ export default function PackagesPage() {
                 const isSoldOut = remainingSeats === 0;
 
                 return (
-                  /* ✅ FIX: Card dengan min-w-0 untuk prevent overflow */
+                  /* FIX: Card dengan min-w-0 untuk prevent overflow */
                   <Card
                     key={pkg.id}
-                    className={`overflow-hidden border-0 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-0 ${
+                    className={`overflow-hidden border-0 shadow-md hover:shadow-lg transition-colors duration-300 cursor-pointer group min-w-0 ${
                       isSoldOut ? "opacity-75" : ""
                     }`}
                     onClick={() => router.push(`/agen/packages/${pkg.id}`)}
@@ -211,7 +210,7 @@ export default function PackagesPage() {
                           unoptimized
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary-200)] via-[var(--color-primary-100)] to-[var(--color-secondary-100)] flex items-center justify-center">
+                        <div className="w-full h-full bg-[var(--color-primary-200)] flex items-center justify-center">
                           <Package className="h-8 w-8 text-[var(--color-primary-300)]" />
                         </div>
                       )}

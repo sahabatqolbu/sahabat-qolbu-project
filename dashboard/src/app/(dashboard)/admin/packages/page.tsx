@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getImageUrl } from "@/lib/utils"; // ✅ HARUS ADA INI
+import { getImageUrl } from "@/lib/utils";
 import { PACKAGE_TYPE_LABELS, getTypeBadge } from "@/lib/utils";
 import {
   Table,
@@ -130,12 +130,12 @@ export default function PackagesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       setDeleteId(null);
-      toast({ title: "✅ Paket Berhasil Dihapus" });
+      toast({ title: "Paket Berhasil Dihapus" });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menghapus",
+        title: "Gagal Menghapus",
         description: error.response?.data?.message,
       });
     },
@@ -147,14 +147,14 @@ export default function PackagesPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       toast({
-        title: "✅ Import Berhasil",
+        title: "Import Berhasil",
         description: `${data.data.success} paket berhasil diimport`,
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Import Gagal",
+        title: "Import Gagal",
         description: error.response?.data?.message,
       });
     },
@@ -179,12 +179,12 @@ export default function PackagesPage() {
             : variables.status === "CLOSED"
               ? "Paket ditutup"
               : "Status ketersediaan diatur ke Otomatis";
-      toast({ title: "✅ Status Paket Diperbarui", description: label });
+      toast({ title: "Status Paket Diperbarui", description: label });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Memperbarui Status",
+        title: "Gagal Memperbarui Status",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -205,7 +205,7 @@ export default function PackagesPage() {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["packages-for-pinned-dialog"] });
       toast({
-        title: variables.isPinned ? "📌 Paket Disematkan" : "Sematan Paket Dilepas",
+        title: variables.isPinned ? "Paket Disematkan" : "Sematan Paket Dilepas",
         description: variables.isPinned
           ? "Paket sekarang berada di posisi paling atas."
           : "Paket kembali ke urutan reguler.",
@@ -214,7 +214,7 @@ export default function PackagesPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Mengubah Sematan",
+        title: "Gagal Mengubah Sematan",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -224,9 +224,9 @@ export default function PackagesPage() {
   const handleExport = async () => {
     try {
       await packageService.exportExcel();
-      toast({ title: "✅ Export Berhasil" });
+      toast({ title: "Export Berhasil" });
     } catch (error) {
-      toast({ variant: "destructive", title: "❌ Export Gagal" });
+      toast({ variant: "destructive", title: "Export Gagal" });
     }
   };
 
@@ -635,11 +635,11 @@ export default function PackagesPage() {
                                       <img
                                         src={getImageUrl(
                                           pkg.images[0].imageUrl,
-                                        )} // ✅ TAMBAHIN getImageUrl()
+                                        )} // TAMBAHIN getImageUrl()
                                         alt={pkg.name}
                                         className="w-full h-full object-contain"
                                         onError={(e) => {
-                                          // ✅ FALLBACK kalo image error
+                                          // FALLBACK kalo image error
                                           e.currentTarget.src =
                                             "https://via.placeholder.com/40?text=No+Img";
                                         }}

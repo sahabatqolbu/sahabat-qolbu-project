@@ -90,9 +90,9 @@ export default function CreateAirlinePage() {
       if (logoFile) {
         payload.append("logo", logoFile);
       } else {
-        // ✅ ALERT jika tidak ada logo
+        // ALERT jika tidak ada logo
         toast({
-          title: "⚠️ Perhatian",
+          title: "Perhatian",
           description: "Logo tidak diupload, maskapai akan dibuat tanpa logo",
           variant: "default",
         });
@@ -101,9 +101,9 @@ export default function CreateAirlinePage() {
       return masterService.airlines.create(payload);
     },
     onSuccess: (response) => {
-      // ✅ TOAST SUCCESS
+      // TOAST SUCCESS
       toast({
-        title: "✅ Berhasil",
+        title: "Berhasil",
         description: "Maskapai tersimpan. Tambahkan foto pesawat dan kabin di galeri.",
         variant: "default",
         duration: 3000,
@@ -119,9 +119,9 @@ export default function CreateAirlinePage() {
       }, 1000);
     },
     onError: (error: unknown) => {
-      // ✅ TOAST ERROR
+      // TOAST ERROR
       toast({
-        title: "❌ Gagal Menambahkan",
+        title: "Gagal Menambahkan",
         description: getErrorMessage(error),
         variant: "destructive",
         duration: 5000,

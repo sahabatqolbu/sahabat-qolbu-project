@@ -67,7 +67,7 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       href: "/admin/prospects",
       icon: UserCheck,
     },
-    // ✅ NEW: Tab Agen (terpisah dari users)
+    // NEW: Tab Agen (terpisah dari users)
     {
       label: "Kelola Agen",
       href: "/admin/agen",
@@ -112,7 +112,7 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
           href: "/admin/master/banks",
           icon: Landmark,
         },
-        // ✅ NEW: Master Data Agen
+        // NEW: Master Data Agen
         {
           label: "Level Agen",
           href: "/admin/master/agent-levels",
@@ -251,7 +251,7 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       icon: LayoutDashboard,
       exact: true,
     },
-    // ✅ NEW: Profile Agen (untuk lengkapi data)
+    // NEW: Profile Agen (untuk lengkapi data)
     {
       label: "Profil Saya",
       href: "/agen/profile",

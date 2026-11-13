@@ -160,7 +160,7 @@ export default function AgenWebsitePage() {
   return (
     <ProfileGuard requireComplete={true}>
       <div className="min-h-screen bg-slate-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 text-white p-6 pb-10 rounded-b-[2rem] shadow-xl">
+        <div className="bg-slate-900 text-white p-6 pb-10 rounded-b-[2rem] shadow-md">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Link href="/agen">

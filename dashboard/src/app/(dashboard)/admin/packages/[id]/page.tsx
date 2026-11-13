@@ -71,7 +71,7 @@ export default function PackageDetailPage({ params }: PageProps) {
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       toast({
-        title: variables.isPinned ? "📌 Paket Disematkan" : "Sematan Paket Dilepas",
+        title: variables.isPinned ? "Paket Disematkan" : "Sematan Paket Dilepas",
         description: variables.isPinned
           ? "Paket sekarang berada di posisi paling atas."
           : "Paket kembali ke urutan reguler.",
@@ -80,7 +80,7 @@ export default function PackageDetailPage({ params }: PageProps) {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Mengubah Sematan",
+        title: "Gagal Mengubah Sematan",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -498,7 +498,7 @@ export default function PackageDetailPage({ params }: PageProps) {
                       {getStatusBadge(pkg.hotelMakkahStatus)}
                     </div>
                     <p className="text-sm text-yellow-500">
-                      {"⭐".repeat(Math.max(0, Math.min(5, Math.floor(Number(pkg.hotelMakkah?.starRating) || 0))))}
+                      {"★".repeat(Math.max(0, Math.min(5, Math.floor(Number(pkg.hotelMakkah?.starRating) || 0))))}
                     </p>
                   </div>
                 ) : (
@@ -523,7 +523,7 @@ export default function PackageDetailPage({ params }: PageProps) {
                       {getStatusBadge(pkg.hotelMadinahStatus)}
                     </div>
                     <p className="text-sm text-yellow-500">
-                      {"⭐".repeat(Math.max(0, Math.min(5, Math.floor(Number(pkg.hotelMadinah?.starRating) || 0))))}
+                      {"★".repeat(Math.max(0, Math.min(5, Math.floor(Number(pkg.hotelMadinah?.starRating) || 0))))}
                     </p>
                   </div>
                 ) : (
@@ -595,12 +595,12 @@ export default function PackageDetailPage({ params }: PageProps) {
                   {pkg.images.map((image: any, index: number) => (
                     <div key={image.id} className="relative">
                       <img
-                        src={getImageUrl(image.imageUrl)} // ✅ TAMBAHIN getImageUrl()
+                        src={getImageUrl(image.imageUrl)} // TAMBAHIN getImageUrl()
                         alt={`Brosur ${index + 1}`}
                         className="w-full max-h-[78vh] object-contain rounded-lg bg-gray-50"
                         onError={(e) => {
-                          // ✅ FALLBACK kalo error
-                          console.error("❌ Image load error:", image.imageUrl);
+                          // FALLBACK kalo error
+                          console.error("Image load error:", image.imageUrl);
                           e.currentTarget.src =
                             "https://via.placeholder.com/400x200?text=Image+Not+Found";
                         }}

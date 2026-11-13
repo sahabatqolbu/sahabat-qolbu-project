@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // ✅ TAMBAHKAN INI
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminService } from "@/services/adminService";
 import { useAuthStore } from "@/stores/authStore";
@@ -64,7 +64,7 @@ import {
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import Link from "next/link";
-import * as XLSX from "xlsx"; // ✅ TAMBAH INI
+import * as XLSX from "xlsx";
 
 // Role Badge Color
 const getRoleBadge = (role: string) => {
@@ -80,7 +80,7 @@ const getRoleBadge = (role: string) => {
 };
 
 export default function UsersPage() {
-  const router = useRouter(); // ✅ TAMBAHKAN INI
+  const router = useRouter();
   const { user: authUser } = useAuthStore();
   const isStaff = authUser?.role === "STAFF";
   const isFinance = authUser?.role === "FINANCE";
@@ -151,7 +151,7 @@ export default function UsersPage() {
 
         if (response.success) {
           toast({
-            title: "✅ Import Berhasil",
+            title: "Import Berhasil",
             description: `Berhasil: ${response.data.success}, Gagal: ${response.data.failed}`,
           });
           queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -160,7 +160,7 @@ export default function UsersPage() {
       } catch (error: any) {
         toast({
           variant: "destructive",
-          title: "❌ Gagal Import",
+          title: "Gagal Import",
           description: error.response?.data?.message || "Format file tidak didukung",
         });
       } finally {
@@ -198,7 +198,7 @@ export default function UsersPage() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       const user = users.find((u: any) => u.id === userId);
       toast({
-        title: "✅ Status Diupdate",
+        title: "Status Diupdate",
         description: `User ${user?.fullName} ${user?.isActive ? "dinonaktifkan" : "diaktifkan"
           }`,
       });
@@ -206,7 +206,7 @@ export default function UsersPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update Status",
+        title: "Gagal Update Status",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -214,19 +214,19 @@ export default function UsersPage() {
 
   // ===== DELETE USER =====
   const deleteMutation = useMutation({
-    mutationFn: (userId: number) => adminService.users.deleteUser(userId), // ✅ UBAH INI
+    mutationFn: (userId: number) => adminService.users.deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setDeleteDialogOpen(false);
       toast({
-        title: "✅ User Dihapus",
+        title: "User Dihapus",
         description: "User berhasil dihapus dari sistem",
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Hapus User",
+        title: "Gagal Hapus User",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -244,10 +244,10 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setSelectedIds([]);
-      toast({ title: "✅ Berhasil", description: "User terpilih berhasil dihapus" });
+      toast({ title: "Berhasil", description: "User terpilih berhasil dihapus" });
     },
     onError: (error: any) => {
-      toast({ variant: "destructive", title: "❌ Gagal", description: error.response?.data?.message || "Terjadi kesalahan" });
+      toast({ variant: "destructive", title: "Gagal", description: error.response?.data?.message || "Terjadi kesalahan" });
     },
   });
 
@@ -257,10 +257,10 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setSelectedIds([]);
-      toast({ title: "✅ Berhasil", description: "Status user terpilih berhasil diperbarui" });
+      toast({ title: "Berhasil", description: "Status user terpilih berhasil diperbarui" });
     },
     onError: (error: any) => {
-      toast({ variant: "destructive", title: "❌ Gagal", description: error.response?.data?.message || "Terjadi kesalahan" });
+      toast({ variant: "destructive", title: "Gagal", description: error.response?.data?.message || "Terjadi kesalahan" });
     },
   });
 
@@ -548,7 +548,7 @@ export default function UsersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {/* ✅ LIHAT DETAIL */}
+                            {/* LIHAT DETAIL */}
                             <DropdownMenuItem
                               onClick={() =>
                                 router.push(`/admin/users/${user.id}`)
@@ -659,7 +659,7 @@ export default function UsersPage() {
           <div className="space-y-4 py-4">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>💡 Info Format:</strong> Kolom wajib adalah `fullName`, `email`, dan `role`
+                <strong>Info Format:</strong> Kolom wajib adalah `fullName`, `email`, dan `role`
                 {isStaff ? " (AGEN, JAMAAH)." : " (ADMIN, FINANCE, STAFF, AGEN, JAMAAH, CALON_JAMAAH)."}
               </p>
             </div>

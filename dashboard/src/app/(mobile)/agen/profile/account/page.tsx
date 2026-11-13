@@ -91,14 +91,14 @@ export default function AgenAccountPage() {
       setCountdown(60);
       startCountdown();
       toast({
-        title: "✅ OTP Terkirim",
+        title: "OTP Terkirim",
         description: `Kode OTP telah dikirim ke ${data.data?.email || "email Anda"}`,
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengirim OTP",
       });
     },
@@ -115,7 +115,7 @@ export default function AgenAccountPage() {
       setLogoutCountdown(3);
 
       toast({
-        title: "✅ Password Berhasil Diubah",
+        title: "Password Berhasil Diubah",
         description: "Silakan login kembali dengan password baru",
         duration: 5000,
       });
@@ -123,7 +123,7 @@ export default function AgenAccountPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengubah password",
       });
     },
@@ -187,7 +187,7 @@ export default function AgenAccountPage() {
       {/* LOGOUT COUNTDOWN OVERLAY */}
       {logoutCountdown !== null && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full shadow-lg animate-in fade-in zoom-in duration-300">
             <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
@@ -223,7 +223,7 @@ export default function AgenAccountPage() {
       <div className="p-4 space-y-4">
         {/* Profile Card */}
         <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-primary to-primary-600 p-6 text-white">
+          <div className="bg-primary p-6 text-white">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center">
                 <span className="text-2xl font-bold">

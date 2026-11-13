@@ -96,14 +96,14 @@ export default function EditBankPage() {
       masterService.banks.update(parseInt(id), data),
     onSuccess: () => {
       toast({
-        title: "✅ Rekening Bank Berhasil Diupdate",
+        title: "Rekening Bank Berhasil Diupdate",
       });
       router.push("/admin/master/banks");
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update Rekening",
+        title: "Gagal Update Rekening",
         description: getErrorMessage(error),
       });
     },

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { masterService } from "@/services/masterService";
 import { useToast } from "@/hooks/use-toast";
-import { getImageUrl } from "@/lib/utils"; // ✅ TAMBAH IMPORT
+import { getImageUrl } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -81,9 +81,9 @@ const deleteMutation = useMutation({
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ["airlines"] });
 
-    // ✅ TOAST SUCCESS
+    // TOAST SUCCESS
     toast({
-      title: "✅ Berhasil",
+      title: "Berhasil",
       description: "Maskapai berhasil dihapus",
       variant: "default",
     });
@@ -91,9 +91,9 @@ const deleteMutation = useMutation({
     setDeleteDialogOpen(false);
   },
   onError: (error: unknown) => {
-    // ✅ TOAST ERROR
+    // TOAST ERROR
     toast({
-      title: "❌ Gagal Menghapus",
+      title: "Gagal Menghapus",
       description:
         getErrorMessage(error),
       variant: "destructive",
@@ -120,7 +120,7 @@ const deleteMutation = useMutation({
           </h1>
           <p className="text-gray-600 mt-1">Kelola data maskapai penerbangan</p>
         </div>
-        {/* ✅ FIX: Tambah onClick */}
+        {/* FIX: Tambah onClick */}
         <Button
           className="bg-secondary hover:bg-secondary/90"
           onClick={() => router.push("/admin/master/airlines/create")}
@@ -180,12 +180,12 @@ const deleteMutation = useMutation({
                       {airline.logo ? (
                         <div className="w-12 h-12 relative rounded-md overflow-hidden border bg-white">
                           <img
-                            src={getImageUrl(airline.logo)} // ✅ PAKAI getImageUrl()
+                            src={getImageUrl(airline.logo)} // PAKAI getImageUrl()
                             alt={airline.name}
                             className="w-full h-full object-contain p-1"
                             onError={(e) => {
                               console.error(
-                                "❌ Logo load error:",
+                                "Logo load error:",
                                 airline.logo
                               );
                               e.currentTarget.src =

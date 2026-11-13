@@ -94,16 +94,16 @@ export default function JamaahCalendarPage() {
     };
   }, [currentDate]);
 
-  // ✅ Fetch events dengan proper error handling
+  // Fetch events dengan proper error handling
   const { data, isLoading, error } = useQuery({
     queryKey: ["jamaah-calendar", dateRange.startDate, dateRange.endDate],
     queryFn: async () => {
-      console.log("📅 Fetching calendar events:", dateRange);
+      console.log("Fetching calendar events:", dateRange);
       const result = await jamaahSelfService.getCalendarEvents(
         dateRange.startDate,
         dateRange.endDate,
       );
-      console.log("📅 Calendar events result:", result);
+      console.log("Calendar events result:", result);
       return result;
     },
     staleTime: 5 * 60 * 1000,
@@ -221,7 +221,7 @@ export default function JamaahCalendarPage() {
               ))}
             </div>
 
-            {/* ✅ Days Grid - IMPROVED VISIBILITY */}
+            {/* Days Grid - IMPROVED VISIBILITY */}
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((day, index) => {
                 const dayEvents = getEventsForDay(day);
@@ -236,7 +236,7 @@ export default function JamaahCalendarPage() {
                     key={index}
                     onClick={() => setSelectedDate(day)}
                     className={`
-                      relative aspect-square p-1 rounded-xl transition-all flex flex-col items-center justify-center
+                      relative aspect-square p-1 rounded-xl transition-colors flex flex-col items-center justify-center
                       ${!isCurrentMonth ? "text-gray-300" : ""}
                       ${isToday && !isSelected ? "ring-2 ring-[var(--color-primary)]" : ""}
                       ${
@@ -478,12 +478,7 @@ export default function JamaahCalendarPage() {
 
               {selectedEvent.city && (
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-lg">
-                    {selectedEvent.city === "MAKKAH" && "🕋"}
-                    {selectedEvent.city === "MADINAH" && "🕌"}
-                    {selectedEvent.city === "JEDDAH" && "✈️"}
-                    {selectedEvent.city === "JAKARTA" && "🇮🇩"}
-                  </span>
+                  <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
                   <span className="font-medium">{selectedEvent.city}</span>
                 </div>
               )}

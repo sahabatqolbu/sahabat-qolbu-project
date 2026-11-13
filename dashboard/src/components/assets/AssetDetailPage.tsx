@@ -20,7 +20,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 function InfoItem({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{label}</div>
+      <div className="text-xs font-bold tracking-[0.16em] text-slate-400">{label}</div>
       <div className="mt-2 text-sm font-semibold text-slate-900">{value || <span className="font-normal text-slate-400">-</span>}</div>
     </div>
   );
@@ -88,8 +88,8 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
         <Button asChild variant="ghost" className="mb-3 -ml-3 text-slate-600"><Link href="/assets"><ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke list</Link></Button>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-slate-400">{asset.assetCode}</div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">{asset.name}</h2>
+            <div className="font-mono text-xs font-bold tracking-[0.2em] text-slate-400">{asset.assetCode}</div>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">{asset.name}</h2>
             <p className="mt-2 text-sm text-slate-500">{identity || "Detail identitas belum dilengkapi"}</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -103,7 +103,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
 
       {assignOpen && (
         <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-black text-slate-950">Form Serah Terima</h3>
+          <h3 className="text-lg font-semibold text-slate-950">Form Serah Terima</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <FormRow label="Pemegang">
               <Select value={assignForm.holderUserId} onValueChange={(value) => setAssignForm({ ...assignForm, holderUserId: value })}>
@@ -123,7 +123,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
 
       {returnOpen && (
         <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-black text-slate-950">Form Pengembalian</h3>
+          <h3 className="text-lg font-semibold text-slate-950">Form Pengembalian</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <FormRow label="Tanggal Kembali"><Input type="date" value={returnForm.returnedAt} onChange={(e) => setReturnForm({ ...returnForm, returnedAt: e.target.value })} className="bg-white" /></FormRow>
             <FormRow label="Status Setelah Kembali">
@@ -149,7 +149,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
 
       <section className="grid gap-4 xl:grid-cols-[1fr_420px]">
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-black text-slate-950">Riwayat Pemegang</h3>
+          <h3 className="text-lg font-semibold text-slate-950">Riwayat Pemegang</h3>
           <div className="mt-4 space-y-3">
             {(asset.assignments || []).length === 0 ? <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">Belum ada riwayat serah terima.</p> : (asset.assignments || []).map((assignment) => (
               <div key={assignment.id} className="rounded-lg border border-slate-200 p-3">
@@ -161,7 +161,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
           </div>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-black text-slate-950">Dokumen</h3>
+          <h3 className="text-lg font-semibold text-slate-950">Dokumen</h3>
           <div className="mt-4 space-y-3">
             {(asset.documents || []).length === 0 ? <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500">Belum ada dokumen untuk aset ini.</p> : (asset.documents || []).map((document) => {
               const selectedSignedFile = signedFiles[document.id];
@@ -172,7 +172,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2 font-semibold text-slate-900"><FileText className="h-4 w-4" />{document.documentNumber}</div>
-                      <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{document.type}</div>
+                      <div className="mt-1 text-xs font-semibold tracking-[0.16em] text-slate-400">{document.type}</div>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => assetService.downloadDocument(document.assetId, document.id, document.fileName)}><Download className="mr-2 h-4 w-4" />Template PDF</Button>
                   </div>
@@ -216,7 +216,7 @@ export default function AssetDetailPage({ assetId }: { assetId: number }) {
         </div>
       </section>
 
-      {(asset.notes || asset.accountNotes) && <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"><h3 className="text-lg font-black text-slate-950">Catatan</h3><p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{asset.notes || asset.accountNotes}</p></section>}
+      {(asset.notes || asset.accountNotes) && <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold text-slate-950">Catatan</h3><p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{asset.notes || asset.accountNotes}</p></section>}
     </div>
   );
 }

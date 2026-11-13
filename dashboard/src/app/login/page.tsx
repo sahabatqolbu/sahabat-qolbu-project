@@ -288,7 +288,7 @@ function LoginContent() {
   };
 
   const renderShell = (children: ReactNode) => (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-primary-900 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
@@ -307,7 +307,7 @@ function LoginContent() {
 
   if (viewMode === "forgot-request") {
     return renderShell(
-      <Card className="shadow-2xl">
+      <Card className="shadow-lg">
         <CardHeader>
           <button
             type="button"
@@ -346,7 +346,7 @@ function LoginContent() {
 
   if (viewMode === "forgot-reset") {
     return renderShell(
-      <Card className="shadow-2xl">
+      <Card className="shadow-lg">
         <CardHeader>
           <button
             type="button"
@@ -397,7 +397,7 @@ function LoginContent() {
   }
 
   return renderShell(
-    <Card className="shadow-2xl">
+    <Card className="shadow-lg">
       <CardHeader>
         <div className="grid grid-cols-2 rounded-xl bg-gray-100 p-1">
           <button

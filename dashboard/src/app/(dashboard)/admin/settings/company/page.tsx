@@ -56,7 +56,7 @@ export default function CompanyProfilePage() {
     },
   });
 
-  // ✅ SET FORM DATA & LOGO PREVIEW
+  // SET FORM DATA & LOGO PREVIEW
   useEffect(() => {
     if (data?.data) {
       setFormData(data.data);
@@ -80,14 +80,14 @@ export default function CompanyProfilePage() {
       setTimeout(() => setShowSuccessAlert(false), 5000);
 
       toast({
-        title: "✅ Profil Berhasil Disimpan",
+        title: "Profil Berhasil Disimpan",
         description: "Perubahan telah tersimpan ke database",
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update Profil",
+        title: "Gagal Update Profil",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -115,14 +115,14 @@ export default function CompanyProfilePage() {
       setTimeout(() => setShowSuccessAlert(false), 5000);
 
       toast({
-        title: "✅ Logo Berhasil Diupload",
+        title: "Logo Berhasil Diupload",
         description: "Logo perusahaan telah diperbarui",
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Upload Logo",
+        title: "Gagal Upload Logo",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -249,7 +249,7 @@ export default function CompanyProfilePage() {
         </p>
       </div>
 
-      {/* ✅ SUCCESS ALERT */}
+      {/* SUCCESS ALERT */}
       {showSuccessAlert && (
         <Alert className="bg-green-50 border-green-200">
           <CheckCircle className="h-4 w-4 text-green-600" />
@@ -291,10 +291,10 @@ export default function CompanyProfilePage() {
                               alt="Logo Perusahaan"
                               className="w-full h-full object-contain p-2"
                             //   onLoad={() =>
-                            //     console.log("✅ Image loaded successfully")
+                            //     console.log("Image loaded successfully")
                             //   }
                             //   onError={(e) => {
-                            //     console.error("❌ Image failed to load");
+                            //     console.error("Image failed to load");
                             //     console.error("Image src:", logoPreview);
                             //   }}
                             />

@@ -223,7 +223,7 @@ export function NotificationDropdown() {
         {canUseAdminNotifFeatures && pendingApprovals > 0 && (
           <>
             <Link href={`${rolePrefix}/agen`} onClick={() => setIsOpen(false)}>
-              <div className="px-4 py-3 bg-gradient-to-r from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 transition-colors cursor-pointer border-b">
+              <div className="px-4 py-3 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
@@ -251,11 +251,11 @@ export function NotificationDropdown() {
           </>
         )}
 
-        {/* ✅ REMINDER SHORTCUT - BAGIAN PALING ATAS */}
+        {/* REMINDER SHORTCUT - BAGIAN PALING ATAS */}
         {canUseAdminNotifFeatures && totalReminders > 0 && (
           <>
             <Link href={`${rolePrefix}/reminders`} onClick={() => setIsOpen(false)}>
-              <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 transition-colors cursor-pointer">
+              <div className="px-4 py-3 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">

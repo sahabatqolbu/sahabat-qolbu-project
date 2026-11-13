@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Check, Loader2, FileImage, Eye } from "lucide-react";
-import { cn, getImageUrl } from "@/lib/utils"; // ✅ Import getImageUrl
+import { cn, getImageUrl } from "@/lib/utils"; // Import getImageUrl
 
 interface DocumentUploaderProps {
   type: string;
@@ -38,7 +38,7 @@ export function DocumentUploader({
     mutationFn: (file: File) => jamaahSelfService.uploadDocument(type, file),
     onSuccess: (data) => {
       toast({
-        title: "✅ Berhasil",
+        title: "Berhasil",
         description: `${label} berhasil diupload`,
       });
       onUploadSuccess(data.data.url);
@@ -78,7 +78,7 @@ export function DocumentUploader({
     uploadMutation.mutate(file);
   };
 
-  // ✅ FIX: Gunakan getImageUrl helper
+  // FIX: Gunakan getImageUrl helper
   const imageUrl = getImageUrl(currentUrl);
 
   return (
@@ -112,7 +112,7 @@ export function DocumentUploader({
                 />
               ) : currentUrl ? (
                 <img
-                  src={imageUrl} // ✅ Sudah full URL
+                  src={imageUrl} // Sudah full URL
                   alt={label}
                   className="w-full h-full object-cover cursor-pointer"
                   onClick={() => setShowPreview(true)}
@@ -218,7 +218,7 @@ export function DocumentUploader({
               Tutup
             </Button>
             <img
-              src={imageUrl} // ✅ Sudah full URL
+              src={imageUrl} // Sudah full URL
               alt={label}
               className="max-w-full max-h-[80vh] object-contain rounded-lg"
               onError={(e) => {

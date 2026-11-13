@@ -25,6 +25,8 @@ import {
   List,
   Grid,
   Package,
+  Clock,
+  CalendarDays,
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, addDays, subDays } from "date-fns";
 
@@ -224,7 +226,7 @@ export default function AdminCalendarPage() {
                   {stats.packages}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-green-200" />
+              <Package className="h-8 w-8 text-gray-300" />
             </div>
           </CardContent>
         </Card>
@@ -241,7 +243,7 @@ export default function AdminCalendarPage() {
                   {stats.deadlines}
                 </p>
               </div>
-              <div className="text-3xl">⏰</div>
+              <Clock className="h-8 w-8 text-gray-300" />
             </div>
           </CardContent>
         </Card>
@@ -258,7 +260,7 @@ export default function AdminCalendarPage() {
                   {stats.events}
                 </p>
               </div>
-              <div className="text-3xl">🎉</div>
+              <CalendarDays className="h-8 w-8 text-gray-300" />
             </div>
           </CardContent>
         </Card>
@@ -274,13 +276,13 @@ export default function AdminCalendarPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Tipe</SelectItem>
-              <SelectItem value="PACKAGE">🕋 Paket</SelectItem>
-              <SelectItem value="ITINERARY">📋 Jadwal Paket</SelectItem>
-              <SelectItem value="DEADLINE">⏰ Deadline</SelectItem>
-              <SelectItem value="MANASIK">🤲 Manasik</SelectItem>
-              <SelectItem value="MEETING">👥 Meeting</SelectItem>
-              <SelectItem value="EVENT">🎉 Event</SelectItem>
-              <SelectItem value="ANNOUNCEMENT">📢 Pengumuman</SelectItem>
+              <SelectItem value="PACKAGE">Paket</SelectItem>
+              <SelectItem value="ITINERARY">Jadwal Paket</SelectItem>
+              <SelectItem value="DEADLINE">Deadline</SelectItem>
+              <SelectItem value="MANASIK">Manasik</SelectItem>
+              <SelectItem value="MEETING">Meeting</SelectItem>
+              <SelectItem value="EVENT">Event</SelectItem>
+              <SelectItem value="ANNOUNCEMENT">Pengumuman</SelectItem>
             </SelectContent>
           </Select>
         </div>

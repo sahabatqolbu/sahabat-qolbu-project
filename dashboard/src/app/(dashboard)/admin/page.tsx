@@ -28,7 +28,7 @@ export default function AdminDashboardPage() {
   const { user } = useAuthStore();
   const isFinanceReadOnly = user?.role === "FINANCE";
 
-  // ✅ Single query untuk semua stats
+  // Single query untuk semua stats
   const { data: statsData, isLoading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: () => adminService.dashboard.getStats(),
@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
           Dashboard Admin
         </h1>
         <p className="text-gray-600 mt-1">
-          Selamat datang kembali, {user?.fullName}! 👋
+          Selamat datang kembali, {user?.fullName}!
         </p>
       </div>
 

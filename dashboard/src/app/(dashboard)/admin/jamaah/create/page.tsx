@@ -189,7 +189,7 @@ export default function CreateJamaahPage() {
     },
     onSuccess: (response) => {
       toast({
-        title: "✅ Booking Berhasil Dibuat",
+        title: "Booking Berhasil Dibuat",
         description: `Booking Number: ${response.data.bookingNumber}`,
       });
       router.push(`${jamaahBasePath}/${response.data.bookingNumber}`);
@@ -197,7 +197,7 @@ export default function CreateJamaahPage() {
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Membuat Booking",
+        title: "Gagal Membuat Booking",
         description: getErrorMessage(error),
       });
     },

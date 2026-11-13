@@ -1,6 +1,6 @@
 // dashboard/src/services/jamaahSelfService.ts
 import api from "@/lib/axios";
-import { getImageUrl } from "@/lib/utils"; // ✅ Import helper
+import { getImageUrl } from "@/lib/utils"; // Import helper
 
 // ===== TYPES =====
 export interface JamaahProfile {
@@ -281,7 +281,7 @@ export const jamaahSelfService = {
 
     if (response.data.success && response.data.data) {
       response.data.data = formatProfileDates(response.data.data);
-      // ❌ REMOVE: response.data.data = formatDocumentUrls(response.data.data);
+      // REMOVE: response.data.data = formatDocumentUrls(response.data.data);
     }
 
     return response.data;
@@ -295,7 +295,7 @@ export const jamaahSelfService = {
     return response.data;
   },
 
-  // ✅ Upload document - return raw URL dari backend
+  // Upload document - return raw URL dari backend
   uploadDocument: async (documentType: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -306,7 +306,7 @@ export const jamaahSelfService = {
       params: getSelectedMemberParams(),
     });
 
-    // ❌ REMOVE URL formatting di sini
+    // REMOVE URL formatting di sini
     return response.data;
   },
 
@@ -399,7 +399,7 @@ export const jamaahSelfService = {
     return response.data;
   },
 
-  // ✅ PASTIKAN INI ADA
+  // PASTIKAN INI ADA
   getCalendarEvents: async (startDate: string, endDate: string) => {
     const response = await api.get("/calendar/events", {
       params: { startDate, endDate },

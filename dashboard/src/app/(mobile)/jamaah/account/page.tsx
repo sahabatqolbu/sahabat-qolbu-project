@@ -54,10 +54,10 @@ export default function AccountInfoPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  // ✅ Logout countdown state
+  // Logout countdown state
   const [logoutCountdown, setLogoutCountdown] = useState<number | null>(null);
 
-  // ✅ Auto logout effect
+  // Auto logout effect
   useEffect(() => {
     if (logoutCountdown === null) return;
 
@@ -89,31 +89,31 @@ export default function AccountInfoPage() {
       setCountdown(60);
       startCountdown();
       toast({
-        title: "✅ OTP Terkirim",
+        title: "OTP Terkirim",
         description: `Kode OTP telah dikirim ke ${data.data?.email}`,
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengirim OTP",
       });
     },
   });
 
-  // ✅ Change Password Mutation dengan auto logout
+  // Change Password Mutation dengan auto logout
   const changePasswordMutation = useMutation({
     mutationFn: () => accountService.changePassword(otp, newPassword),
     onSuccess: () => {
       setPasswordDialogOpen(false);
       resetForm();
 
-      // ✅ Mulai countdown logout (3 detik)
+      // Mulai countdown logout (3 detik)
       setLogoutCountdown(3);
 
       toast({
-        title: "✅ Password Berhasil Diubah",
+        title: "Password Berhasil Diubah",
         description: "Silakan login kembali dengan password baru",
         duration: 5000,
       });
@@ -121,7 +121,7 @@ export default function AccountInfoPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengubah password",
       });
     },
@@ -182,10 +182,10 @@ export default function AccountInfoPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
-      {/* ✅ LOGOUT COUNTDOWN OVERLAY */}
+      {/* LOGOUT COUNTDOWN OVERLAY */}
       {logoutCountdown !== null && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full shadow-lg animate-in fade-in zoom-in duration-300">
             <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
@@ -221,7 +221,7 @@ export default function AccountInfoPage() {
       <div className="p-4 space-y-4">
         {/* Profile Card */}
         <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-600)] p-6 text-white">
+          <div className="bg-[var(--color-primary)] p-6 text-white">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center">
                 {profile?.fotoUrl ? (

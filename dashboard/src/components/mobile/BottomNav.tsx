@@ -39,15 +39,15 @@ const calonJamaahNav = [
   { href: "/calon-jamaah/account", label: "Akun", icon: UserCircle },
 ];
 
-// ✅ PATHS DI MANA BOTTOM NAV DISEMBUNYIKAN
+// PATHS DI MANA BOTTOM NAV DISEMBUNYIKAN
 const HIDE_BOTTOM_NAV_PATHS = [
   "/agen/profile",
   "/agen/payment",
   "/agen/jamaah/create",
   "/agen/register",
   "/jamaah/profile",
-  "/jamaah/onboarding", // ✅ TAMBAH
-  "/jamaah/waiting-approval", // ✅ TAMBAH
+  "/jamaah/onboarding",
+  "/jamaah/waiting-approval",
 ];
 
 interface NavItem {
@@ -62,7 +62,7 @@ export function BottomNav({ role }: { role: "AGEN" | "JAMAAH" | "CALON_JAMAAH" }
   const navItems: NavItem[] =
     role === "AGEN" ? agenNav : role === "CALON_JAMAAH" ? calonJamaahNav : jamaahNav;
 
-  // ✅ CHECK: Hide bottom nav kalau di form pages
+  // CHECK: Hide bottom nav kalau di form pages
   const shouldHide = HIDE_BOTTOM_NAV_PATHS.some((path) =>
     pathname?.startsWith(path),
   );
@@ -71,7 +71,7 @@ export function BottomNav({ role }: { role: "AGEN" | "JAMAAH" | "CALON_JAMAAH" }
     return null;
   }
 
-  // ✅ FIX: Improved isActive logic
+  // FIX: Improved isActive logic
   const checkIsActive = (item: NavItem): boolean => {
     if (!pathname) return false;
 
@@ -85,7 +85,7 @@ export function BottomNav({ role }: { role: "AGEN" | "JAMAAH" | "CALON_JAMAAH" }
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl md:hidden z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden z-50">
       <div className="flex items-center justify-around px-2 py-3 max-w-2xl mx-auto">
         {navItems.map((item) => {
           const isActive = checkIsActive(item);

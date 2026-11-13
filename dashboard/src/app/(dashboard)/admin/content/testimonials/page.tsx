@@ -130,12 +130,12 @@ export default function TestimonialsPage() {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "✅ Testimonial berhasil ditambahkan" });
+      toast({ title: "Testimonial berhasil ditambahkan" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal menambahkan testimonial",
+        title: "Gagal menambahkan testimonial",
         description: getErrorMessage(error),
       });
     },
@@ -149,12 +149,12 @@ export default function TestimonialsPage() {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: "✅ Testimonial berhasil diupdate" });
+      toast({ title: "Testimonial berhasil diupdate" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal update testimonial",
+        title: "Gagal update testimonial",
         description: getErrorMessage(error),
       });
     },
@@ -166,12 +166,12 @@ export default function TestimonialsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDeleteDialogOpen(false);
-      toast({ title: "✅ Testimonial berhasil dihapus" });
+      toast({ title: "Testimonial berhasil dihapus" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal menghapus testimonial",
+        title: "Gagal menghapus testimonial",
         description: getErrorMessage(error),
       });
     },

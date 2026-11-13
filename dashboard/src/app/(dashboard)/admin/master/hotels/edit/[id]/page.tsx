@@ -28,7 +28,7 @@ import Link from "next/link";
 import { getImageUrl } from "@/lib/utils";
 import MasterImageGallery from "@/components/master/MasterImageGallery";
 
-// ✅ VALIDATION SCHEMA: Use z.coerce for numeric fields to avoid TypeScript unknown type issue
+// VALIDATION SCHEMA: Use z.coerce for numeric fields to avoid TypeScript unknown type issue
 const hotelSchema = z.object({
   name: z.string().min(3, "Nama hotel minimal 3 karakter"),
   city: z.string().min(1, "Kota wajib dipilih"),
@@ -141,7 +141,7 @@ export default function EditHotelPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["hotels"] });
       queryClient.invalidateQueries({ queryKey: ["hotel", id] });
-      toast({ title: "✅ Hotel berhasil diupdate" });
+      toast({ title: "Hotel berhasil diupdate" });
       router.push("/admin/master/hotels");
     },
     onError: (error: any) => {
@@ -326,7 +326,7 @@ export default function EditHotelPage() {
                     <SelectContent>
                       {[1, 2, 3, 4, 5].map((n) => (
                         <SelectItem key={n} value={n.toString()}>
-                          {n} Bintang {"⭐".repeat(n)}
+                          {n} Bintang {"★".repeat(n)}
                         </SelectItem>
                       ))}
                     </SelectContent>

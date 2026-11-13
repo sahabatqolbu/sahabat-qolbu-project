@@ -13,7 +13,7 @@ import {
   UpdatePackageFormData,
 } from "@/lib/schemas/package-schema";
 import { useToast } from "@/hooks/use-toast";
-import { getImageUrl } from "@/lib/utils"; // ← TAMBAHKAN INI
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -331,7 +331,7 @@ export default function EditPackagePage({ params }: PageProps) {
       queryClient.invalidateQueries({ queryKey: ["packages"] });
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       toast({
-        title: "✅ Paket Berhasil Diupdate",
+        title: "Paket Berhasil Diupdate",
         description: "Perubahan telah disimpan",
       });
       router.push(`/admin/packages/${packageId}`);
@@ -339,7 +339,7 @@ export default function EditPackagePage({ params }: PageProps) {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Update Paket",
+        title: "Gagal Update Paket",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -351,67 +351,67 @@ export default function EditPackagePage({ params }: PageProps) {
   //     packageService.uploadImage(parseInt(packageId), file),
   //   onSuccess: () => {
   //     queryClient.invalidateQueries({ queryKey: ["package", packageId] });
-  //     toast({ title: "✅ Gambar berhasil diupload" });
+  //     toast({ title: "Gambar berhasil diupload" });
   //     setUploadingImage(false);
   //   },
   //   onError: (error: any) => {
   //     toast({
   //       variant: "destructive",
-  //       title: "❌ Gagal upload gambar",
+  //       title: "Gagal upload gambar",
   //       description: error.response?.data?.message,
   //     });
   //     setUploadingImage(false);
   //   },
   // });
 
-  // ✅ TAMBAHKAN MUTATION UPLOAD PDF
+  // TAMBAHKAN MUTATION UPLOAD PDF
   const uploadPdfMutation = useMutation({
     mutationFn: (file: File) =>
       packageService.uploadItineraryPdf(parseInt(packageId), file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
-      toast({ title: "✅ PDF Itinerary berhasil diupload" });
+      toast({ title: "PDF Itinerary berhasil diupload" });
       setUploadingPdf(false);
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal upload PDF",
+        title: "Gagal upload PDF",
         description: error?.response?.data?.message || error.message,
       });
       setUploadingPdf(false);
     },
   });
 
-  // ✅ TAMBAHKAN MUTATION DELETE PDF
+  // TAMBAHKAN MUTATION DELETE PDF
   const deletePdfMutation = useMutation({
     mutationFn: () => packageService.deleteItineraryPdf(parseInt(packageId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
-      toast({ title: "✅ PDF Itinerary berhasil dihapus" });
+      toast({ title: "PDF Itinerary berhasil dihapus" });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal hapus PDF",
+        title: "Gagal hapus PDF",
         description: error?.response?.data?.message,
       });
     },
   });
 
-  // ✅ HANDLER UPLOAD PDF
+  // HANDLER UPLOAD PDF
   const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validasi
       if (file.type !== "application/pdf") {
-        toast({ variant: "destructive", title: "❌ File harus PDF" });
+        toast({ variant: "destructive", title: "File harus PDF" });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
         toast({
           variant: "destructive",
-          title: "❌ File terlalu besar",
+          title: "File terlalu besar",
           description: "Maksimal 10MB",
         });
         return;
@@ -428,12 +428,12 @@ export default function EditPackagePage({ params }: PageProps) {
     mutationFn: packageService.deleteImage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
-      toast({ title: "✅ Gambar berhasil dihapus" });
+      toast({ title: "Gambar berhasil dihapus" });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal hapus gambar",
+        title: "Gagal hapus gambar",
         description: error.response?.data?.message,
       });
     },
@@ -452,13 +452,13 @@ export default function EditPackagePage({ params }: PageProps) {
       packageService.uploadImage(parseInt(packageId), file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
-      toast({ title: "✅ Gambar berhasil diupload" });
+      toast({ title: "Gambar berhasil diupload" });
       setUploadingImage(false);
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal upload gambar",
+        title: "Gagal upload gambar",
         description: error?.response?.data?.message || error.message,
       });
       setUploadingImage(false);
@@ -484,7 +484,7 @@ export default function EditPackagePage({ params }: PageProps) {
       }
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
       toast({
-        title: "✅ Flyer opsi tersimpan otomatis",
+        title: "Flyer opsi tersimpan otomatis",
         description: "Preview flyer sudah diperbarui.",
       });
       setUploadingOptionId(null);
@@ -492,7 +492,7 @@ export default function EditPackagePage({ params }: PageProps) {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal upload flyer opsi",
+        title: "Gagal upload flyer opsi",
         description: error?.response?.data?.message || error.message,
       });
       setUploadingOptionId(null);
@@ -510,12 +510,12 @@ export default function EditPackagePage({ params }: PageProps) {
         })),
       );
       queryClient.invalidateQueries({ queryKey: ["package", packageId] });
-      toast({ title: "✅ Flyer opsi berhasil dihapus" });
+      toast({ title: "Flyer opsi berhasil dihapus" });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal hapus flyer opsi",
+        title: "Gagal hapus flyer opsi",
         description: error?.response?.data?.message || error.message,
       });
     },
@@ -594,7 +594,7 @@ export default function EditPackagePage({ params }: PageProps) {
           </div>
         </div>
         {isDirty && (
-          <Badge variant="secondary" className="animate-pulse">
+          <Badge variant="secondary">
             Ada perubahan belum disimpan
           </Badge>
         )}
@@ -1103,16 +1103,16 @@ export default function EditPackagePage({ params }: PageProps) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="AUTO">
-                            🔄 Otomatis (Sesuai Kuota & Tanggal)
+                            Otomatis (Sesuai Kuota & Tanggal)
                           </SelectItem>
                           <SelectItem value="SOLD_OUT">
-                            ⛔ Habis / Sold Out (Manual)
+                            Habis / Sold Out (Manual)
                           </SelectItem>
                           <SelectItem value="CLOSED">
-                            🔒 Ditutup / Closed (Manual)
+                            Ditutup / Closed (Manual)
                           </SelectItem>
                           <SelectItem value="OPEN">
-                            ✅ Buka Pendaftaran (Manual)
+                            Buka Pendaftaran (Manual)
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -1225,7 +1225,7 @@ export default function EditPackagePage({ params }: PageProps) {
                                   value={hotel.id.toString()}
                                 >
                                   {hotel.name}{" "}
-                                  {"⭐".repeat(
+                                  {"★".repeat(
                                     Math.max(
                                       0,
                                       Math.min(
@@ -1299,7 +1299,7 @@ export default function EditPackagePage({ params }: PageProps) {
                                   value={hotel.id.toString()}
                                 >
                                   {hotel.name}{" "}
-                                  {"⭐".repeat(
+                                  {"★".repeat(
                                     Math.max(
                                       0,
                                       Math.min(
@@ -1411,7 +1411,7 @@ export default function EditPackagePage({ params }: PageProps) {
                     {pkg.images.map((image: any) => (
                       <div key={image.id} className="relative group">
                         <img
-                          src={getImageUrl(image.imageUrl)} // ✅ PAKAI getImageUrl()
+                          src={getImageUrl(image.imageUrl)} // PAKAI getImageUrl()
                           alt={image.caption || "Package image"}
                           className="w-full h-48 object-contain rounded-lg border bg-gray-50"
                           onError={(event) => {

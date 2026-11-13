@@ -84,15 +84,15 @@ export default function CreateJamaahPage() {
     queryFn: () => agenService.getPackages(),
   });
 
-  // ✅ FIX: Safely extract packages array
+  // FIX: Safely extract packages array
   const packages = packagesData?.data?.packages || [];
 
-  // ✅ FIX: Find selected package with correct field
+  // FIX: Find selected package with correct field
   const selectedPackage = packages.find(
     (p: any) => p.id.toString() === selectedPackageId,
   );
 
-  // ✅ Helper: Format currency
+  // Helper: Format currency
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
     return new Intl.NumberFormat("id-ID", {
@@ -102,7 +102,7 @@ export default function CreateJamaahPage() {
     }).format(num || 0);
   };
 
-  // ✅ Helper: Format date
+  // Helper: Format date
   const formatDate = (date: string) => {
     return format(new Date(date), "dd MMM yyyy", { locale: localeId });
   };
@@ -113,7 +113,7 @@ export default function CreateJamaahPage() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["my-jamaah"] });
       toast({
-        title: "✅ Jamaah Berhasil Didaftarkan!",
+        title: "Jamaah Berhasil Didaftarkan",
         description: `Booking: ${response.data.bookingNumber}`,
       });
 
@@ -124,7 +124,7 @@ export default function CreateJamaahPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Mendaftarkan",
+        title: "Gagal Mendaftarkan",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -145,7 +145,7 @@ export default function CreateJamaahPage() {
     <ProfileGuard requireComplete={true}>
       <div className="min-h-screen bg-gray-50 pb-28 w-full md:max-w-7xl md:px-6 mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-xl sticky top-0 z-10">
+        <div className="bg-blue-600 text-white p-6 pb-8 rounded-b-[2rem] shadow-md sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <Link href="/agen/jamaah">
               <Button
@@ -291,7 +291,7 @@ export default function CreateJamaahPage() {
                       <SelectContent>
                         {packages.map((pkg: any) => (
                           <SelectItem key={pkg.id} value={pkg.id.toString()}>
-                            {/* ✅ FIX: Use correct field names */}
+                            {/* FIX: Use correct field names */}
                             {pkg.name} -{" "}
                             {formatCurrency(pkg.discountPrice || pkg.price)}
                           </SelectItem>
@@ -324,7 +324,7 @@ export default function CreateJamaahPage() {
                     </div>
                   )}
 
-                  {/* ✅ FIX: Selected Package Preview with correct fields */}
+                  {/* FIX: Selected Package Preview with correct fields */}
                   {selectedPackage && (
                     <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                       <p className="font-semibold text-gray-900 mb-3">
@@ -387,7 +387,7 @@ export default function CreateJamaahPage() {
           <div className="sticky bottom-20">
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg h-14 text-lg"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg h-14 text-lg"
               disabled={createMutation.isPending}
             >
               {createMutation.isPending ? (

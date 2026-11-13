@@ -66,7 +66,7 @@ export default function VerifyOTPPage() {
       clearOTPData();
 
       toast({
-        title: "✅ Login Berhasil",
+        title: "Login Berhasil",
         description: `Selamat datang, ${data.data.user.fullName}!`,
       });
 
@@ -94,7 +94,7 @@ export default function VerifyOTPPage() {
       }, 300);
     },
     onError: (error: any) => {
-      console.error("❌ OTP Verification Error:", error);
+      console.error("OTP Verification Error:", error);
 
       const errorMessage =
         error.response?.data?.message || "Verifikasi OTP gagal";
@@ -102,7 +102,7 @@ export default function VerifyOTPPage() {
 
       toast({
         variant: "destructive",
-        title: "❌ Verifikasi Gagal",
+        title: "Verifikasi Gagal",
         description: errorMessage,
       });
 
@@ -115,7 +115,7 @@ export default function VerifyOTPPage() {
     mutationFn: authService.requestOTP,
     onSuccess: (data) => {
       toast({
-        title: "✅ OTP Terkirim",
+        title: "OTP Terkirim",
         description: "Kode OTP baru telah dikirim ke email Anda",
       });
 
@@ -128,7 +128,7 @@ export default function VerifyOTPPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Mengirim OTP",
+        title: "Gagal Mengirim OTP",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -166,7 +166,7 @@ export default function VerifyOTPPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-primary-900 p-4">
       <div className="w-full max-w-md">
         {/* Back Button */}
         <button
@@ -178,7 +178,7 @@ export default function VerifyOTPPage() {
         </button>
 
         {/* OTP Card */}
-        <Card className="shadow-2xl">
+        <Card className="shadow-lg">
           <CardHeader className="text-center">
             <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
               <Mail className="h-8 w-8 text-secondary" />
@@ -208,7 +208,7 @@ export default function VerifyOTPPage() {
                 renderInput={(props) => (
                   <input
                     {...props}
-                    className="w-12 h-14 text-2xl font-bold text-center border-2 border-gray-300 rounded-lg focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all mx-1"
+                    className="w-12 h-14 text-2xl font-bold text-center border-2 border-gray-300 rounded-lg focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-colors mx-1"
                     disabled={verifyMutation.isPending}
                   />
                 )}

@@ -269,7 +269,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-7xl lg:px-6 lg:mx-auto">
       {/* ===== HEADER ===== */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 pb-20 rounded-b-[2rem]">
+      <div className="bg-blue-600 text-white p-4 pb-20 rounded-b-[2rem]">
         <div className="flex items-center gap-3 mb-3">
           <Button
             variant="ghost"
@@ -306,7 +306,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
               variant="outline"
               className="bg-white/20 text-white border-white/40"
             >
-              {jamaah.gender === "PRIA" ? "👨 Pria" : "👩 Wanita"}
+              {jamaah.gender === "PRIA" ? "Pria" : "Wanita"}
             </Badge>
           )}
         </div>
@@ -471,7 +471,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
 
         {/* ===== SUMMARY CARDS ===== */}
         <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
+          <Card className="bg-primary/5">
             <CardContent className="p-3">
               <p className="text-xs text-gray-500">Harga Final</p>
               <p className="text-lg font-bold text-primary">
@@ -1016,7 +1016,7 @@ export default function JamaahDetailPage({ params }: PageProps) {
                                 href={getImageUrl(url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all"
+                                className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-colors"
                               >
                                 <Eye className="h-6 w-6 text-white" />
                               </a>

@@ -251,7 +251,7 @@ export default function EditProfilePage() {
                 <Button
                   type="button"
                   onClick={() => {
-                    console.log("🟦 Upload Foto clicked", {
+                    console.log("Upload Foto clicked", {
                       hasFile: Boolean(profilePhotoFile),
                       fileName: profilePhotoFile?.name,
                     });

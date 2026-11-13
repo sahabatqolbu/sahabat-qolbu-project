@@ -73,14 +73,14 @@ export default function CreateAirportPage() {
     mutationFn: (data: AirportFormData) => masterService.airports.create(data),
     onSuccess: () => {
       toast({
-        title: "✅ Bandara Berhasil Ditambahkan",
+        title: "Bandara Berhasil Ditambahkan",
       });
       router.push("/admin/master/airports");
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Menambahkan Bandara",
+        title: "Gagal Menambahkan Bandara",
         description: getErrorMessage(error),
       });
     },

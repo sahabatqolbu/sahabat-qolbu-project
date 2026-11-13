@@ -35,7 +35,7 @@ export function AssetAssignmentListPage({ mode }: { mode: "handover" | "returns"
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-4">
-        <h2 className="text-xl font-black tracking-tight text-slate-950 md:text-2xl">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">{title}</h2>
         <p className="text-sm text-slate-500">{description}</p>
       </div>
       <div className="overflow-x-auto">
@@ -105,7 +105,7 @@ export function AssetDocumentListPage() {
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-4">
-        <h2 className="text-xl font-black tracking-tight text-slate-950 md:text-2xl">List Dokumen Aset</h2>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">List Dokumen Aset</h2>
         <p className="text-sm text-slate-500">Semua PDF surat serah terima dan pengembalian aset.</p>
       </div>
       <div className="overflow-x-auto">

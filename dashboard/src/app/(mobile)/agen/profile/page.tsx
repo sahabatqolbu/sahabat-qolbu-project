@@ -257,7 +257,7 @@ export default function AgenProfilePage() {
         {/* Informasi Kontak */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            <CardTitle className="text-sm font-semibold text-gray-500">
               Informasi Kontak
             </CardTitle>
           </CardHeader>
@@ -288,7 +288,7 @@ export default function AgenProfilePage() {
         {/* Data KTP */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            <CardTitle className="text-sm font-semibold text-gray-500">
               Data Pribadi
             </CardTitle>
           </CardHeader>
@@ -342,7 +342,7 @@ export default function AgenProfilePage() {
         {/* Alamat */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            <CardTitle className="text-sm font-semibold text-gray-500">
               Alamat
             </CardTitle>
           </CardHeader>
@@ -374,7 +374,7 @@ export default function AgenProfilePage() {
         {/* Sosial Media */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            <CardTitle className="text-sm font-semibold text-gray-500">
               Sosial Media
             </CardTitle>
           </CardHeader>
@@ -411,7 +411,7 @@ export default function AgenProfilePage() {
         {/* Rekening Bank */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            <CardTitle className="text-sm font-semibold text-gray-500">
               Rekening Bank
             </CardTitle>
           </CardHeader>
@@ -435,9 +435,9 @@ export default function AgenProfilePage() {
         </Card>
 
         {/* Level & Bintang (Read Only) */}
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-primary-50 to-secondary-50">
+        <Card className="border-0 shadow-sm bg-primary-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold text-gray-500 flex items-center gap-2">
               <Award className="h-4 w-4" />
               Level Agen
             </CardTitle>
@@ -476,7 +476,7 @@ export default function AgenProfilePage() {
         {selectedPurposes.length > 0 && (
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold text-gray-500 flex items-center gap-2">
                 <Target className="h-4 w-4" />
                 Tujuan Bergabung
               </CardTitle>
@@ -506,7 +506,7 @@ export default function AgenProfilePage() {
         {agentData?.ktpPhoto && (
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+              <CardTitle className="text-sm font-semibold text-gray-500">
                 Dokumen KTP
               </CardTitle>
             </CardHeader>
@@ -538,7 +538,7 @@ export default function AgenProfilePage() {
         {/* Sertifikat & Desain ID Card */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold text-gray-500 flex items-center gap-2">
               <Award className="h-4 w-4" />
               Sertifikat & ID Card
             </CardTitle>
@@ -600,7 +600,7 @@ export default function AgenProfilePage() {
         {(agentData?.recruiterCode || agentData?.referralCode) && (
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold text-gray-500 flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Referral
               </CardTitle>
@@ -631,7 +631,7 @@ export default function AgenProfilePage() {
         {/* Account & Settings */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold text-gray-500 flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Pengaturan Akun
             </CardTitle>

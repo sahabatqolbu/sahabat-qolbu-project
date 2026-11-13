@@ -102,12 +102,12 @@ export default function PeriodsPage() {
         duration: 30,
         isActive: true,
       });
-      toast({ title: "✅ Periode berhasil ditambahkan" });
+      toast({ title: "Periode berhasil ditambahkan" });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message,
       });
     },
@@ -119,12 +119,12 @@ export default function PeriodsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["periods"] });
       setEditDialogOpen(false);
-      toast({ title: "✅ Periode berhasil diupdate" });
+      toast({ title: "Periode berhasil diupdate" });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message,
       });
     },
@@ -136,12 +136,12 @@ export default function PeriodsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["periods"] });
       setDeleteDialogOpen(false);
-      toast({ title: "✅ Periode berhasil dihapus" });
+      toast({ title: "Periode berhasil dihapus" });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message,
       });
     },

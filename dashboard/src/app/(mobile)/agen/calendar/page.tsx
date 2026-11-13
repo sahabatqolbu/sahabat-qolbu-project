@@ -92,7 +92,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function AgenCalendarPage() {
-  // ✅ SEMUA HOOKS HARUS DI DALAM COMPONENT FUNCTION
+  // SEMUA HOOKS HARUS DI DALAM COMPONENT FUNCTION
   const [currentDate, setCurrentDate] = useState(() =>
     startOfMonth(new Date()),
   );
@@ -154,7 +154,7 @@ export default function AgenCalendarPage() {
   // Events for selected date
   const selectedDateEvents = selectedDate ? getEventsForDay(selectedDate) : [];
 
-  // ✅ FIX: Navigation dengan addMonths/subMonths
+  // FIX: Navigation dengan addMonths/subMonths
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => subMonths(prev, 1));
   };
@@ -200,11 +200,11 @@ export default function AgenCalendarPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Tipe</SelectItem>
-              <SelectItem value="PACKAGE">🕋 Paket</SelectItem>
-              <SelectItem value="DEADLINE">⏰ Deadline</SelectItem>
-              <SelectItem value="MANASIK">🤲 Manasik</SelectItem>
-              <SelectItem value="MEETING">👥 Meeting</SelectItem>
-              <SelectItem value="EVENT">🎉 Event</SelectItem>
+              <SelectItem value="PACKAGE">Paket</SelectItem>
+              <SelectItem value="DEADLINE">Deadline</SelectItem>
+              <SelectItem value="MANASIK">Manasik</SelectItem>
+              <SelectItem value="MEETING">Meeting</SelectItem>
+              <SelectItem value="EVENT">Event</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -244,7 +244,7 @@ export default function AgenCalendarPage() {
               ))}
             </div>
 
-            {/* ✅ Days Grid - IMPROVED VISIBILITY */}
+            {/* Days Grid - IMPROVED VISIBILITY */}
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((day, index) => {
                 const dayEvents = getEventsForDay(day);
@@ -259,7 +259,7 @@ export default function AgenCalendarPage() {
                     key={index}
                     onClick={() => setSelectedDate(day)}
                     className={`
-          relative aspect-square p-1 rounded-xl transition-all flex flex-col items-center justify-center
+          relative aspect-square p-1 rounded-xl transition-colors flex flex-col items-center justify-center
           ${!isCurrentMonth ? "text-gray-300" : ""}
           ${isToday && !isSelected ? "ring-2 ring-[var(--color-primary)]" : ""}
           ${

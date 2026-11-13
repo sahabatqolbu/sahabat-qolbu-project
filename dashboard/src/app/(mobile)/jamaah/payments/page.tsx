@@ -116,10 +116,10 @@ export default function JamaahPaymentsPage() {
           <div
             className={`p-5 text-white ${
               summary?.statusPayment === "LUNAS"
-                ? "bg-gradient-to-r from-green-500 to-green-600"
+                ? "bg-green-600"
                 : summary?.statusPayment === "CICILAN"
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600"
-                  : "bg-gradient-to-r from-red-500 to-red-600"
+                  ? "bg-amber-600"
+                  : "bg-red-600"
             }`}
           >
             <div className="flex items-center gap-2 mb-3">
@@ -155,7 +155,7 @@ export default function JamaahPaymentsPage() {
               </div>
               <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
+                  className={`h-full rounded-full transition-[width] ${
                     progress >= 100
                       ? "bg-green-500"
                       : progress > 0
@@ -288,7 +288,7 @@ export default function JamaahPaymentsPage() {
               rekening yang ditentukan.
             </p>
             <p className="text-xs text-gray-500">
-              ⚠️ Pelunasan wajib dilakukan H-45 sebelum keberangkatan
+              Pelunasan wajib dilakukan H-45 sebelum keberangkatan
             </p>
           </CardContent>
         </Card>

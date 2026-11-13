@@ -178,7 +178,7 @@ export default function JamaahOnboardingPage() {
     mutationFn: () => jamaahSelfService.submit(),
     onSuccess: () => {
       toast({
-        title: "✅ Data Tersubmit",
+        title: "Data Tersubmit",
         description: "Menunggu approval dari admin",
       });
       router.push("/jamaah/waiting-approval");
@@ -266,7 +266,7 @@ export default function JamaahOnboardingPage() {
   const isRejected = profile?.registrationStatus === "REJECTED";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pb-24 md:max-w-7xl md:px-6 mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-24 md:max-w-7xl md:px-6 mx-auto">
       {/* Header */}
       <div className="bg-[var(--color-primary)] text-white p-4 pb-6">
         <div className="max-w-lg mx-auto">
@@ -934,7 +934,7 @@ function ReviewStep({
         {canSubmit ? (
           <>
             <CheckCircle className="h-4 w-4" />
-            <AlertTitle>Data Lengkap ✅</AlertTitle>
+            <AlertTitle>Data Lengkap</AlertTitle>
             <AlertDescription>
               Anda dapat submit data untuk direview admin.
             </AlertDescription>

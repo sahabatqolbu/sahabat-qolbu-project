@@ -43,7 +43,7 @@ export default function JamaahDocumentsPage() {
     queryClient.invalidateQueries({ queryKey: ["jamaah-profile"] });
   };
 
-  // ✅ Handle preview dengan error handling
+  // Handle preview dengan error handling
   const handlePreview = (url: string | null) => {
     if (url) {
       setImageError(null);
@@ -251,7 +251,7 @@ export default function JamaahDocumentsPage() {
         </div>
       </div>
 
-      {/* ✅ FIXED: Preview Modal dengan error handling */}
+      {/* FIXED: Preview Modal dengan error handling */}
       {previewUrl && (
         <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
@@ -306,7 +306,7 @@ export default function JamaahDocumentsPage() {
   );
 }
 
-// ✅ FIXED: DocumentCard dengan proper URL handling
+// FIXED: DocumentCard dengan proper URL handling
 function DocumentCard({
   doc,
   onPreview,
@@ -322,7 +322,7 @@ function DocumentCard({
 }) {
   const [imgError, setImgError] = useState(false);
 
-  // ✅ Gunakan helper function (null-safe)
+  // Gunakan helper function (null-safe)
   const imageUrl = doc.url ? getImageUrl(doc.url) : null;
 
   return (

@@ -45,7 +45,7 @@ export default function CalonJamaahConsultationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-8">
-      <header className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-700)] px-5 py-8 text-white md:px-8">
+      <header className="bg-[var(--color-primary)] px-5 py-8 text-white md:px-8">
         <div className="mx-auto max-w-5xl">
           <MessageCircle className="h-10 w-10" />
           <h1 className="mt-4 text-2xl font-bold">Konsultasi Paket</h1>

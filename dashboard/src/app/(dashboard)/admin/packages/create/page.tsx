@@ -75,7 +75,7 @@ export default function CreatePackagePage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("basic");
 
-  // ✅ State untuk Media
+  // State untuk Media
   const [uploadImages, setUploadImages] = useState<File[]>([]);
   const [uploadPdf, setUploadPdf] = useState<File | null>(null);
   const [packageOptions, setPackageOptions] = useState<PackageOptionDraft[]>(
@@ -95,7 +95,7 @@ export default function CreatePackagePage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createPackageSchema) as any,
     defaultValues: {
-      type: "FULL_SERVICE", // ✅ FIXED
+      type: "FULL_SERVICE",
       totalSeats: 45,
       isActive: true,
       isPublished: false,
@@ -236,7 +236,7 @@ export default function CreatePackagePage() {
   const hotelsMakkah = hotels.filter((h: any) => h?.city === "MAKKAH");
   const hotelsMadinah = hotels.filter((h: any) => h?.city === "MADINAH");
 
-  // ✅ CREATE MUTATION
+  // CREATE MUTATION
   const createMutation = useMutation({
     mutationFn: (data: CreatePackageFormData) => {
       return packageService.create({
@@ -276,7 +276,7 @@ export default function CreatePackagePage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Membuat Paket",
+        title: "Gagal Membuat Paket",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -933,16 +933,16 @@ export default function CreatePackagePage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="AUTO">
-                            🔄 Otomatis (Sesuai Kuota & Tanggal)
+                            Otomatis (Sesuai Kuota & Tanggal)
                           </SelectItem>
                           <SelectItem value="SOLD_OUT">
-                            ⛔ Habis / Sold Out (Manual)
+                            Habis / Sold Out (Manual)
                           </SelectItem>
                           <SelectItem value="CLOSED">
-                            🔒 Ditutup / Closed (Manual)
+                            Ditutup / Closed (Manual)
                           </SelectItem>
                           <SelectItem value="OPEN">
-                            ✅ Buka Pendaftaran (Manual)
+                            Buka Pendaftaran (Manual)
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -1089,7 +1089,7 @@ export default function CreatePackagePage() {
                                     <Building2 className="h-4 w-4" />
                                     {hotel.name}
                                     <span className="text-yellow-500">
-                                      {"⭐".repeat(
+                                      {"★".repeat(
                                         Math.max(
                                           0,
                                           Math.min(
@@ -1183,7 +1183,7 @@ export default function CreatePackagePage() {
                                     <Building2 className="h-4 w-4" />
                                     {hotel.name}
                                     <span className="text-yellow-500">
-                                      {"⭐".repeat(
+                                      {"★".repeat(
                                         Math.max(
                                           0,
                                           Math.min(
@@ -1277,7 +1277,7 @@ export default function CreatePackagePage() {
             />
           </TabsContent>
 
-          {/* ✅ TAB: MEDIA (BARU) */}
+          {/* TAB: MEDIA (BARU) */}
           <TabsContent value="media">
             <MediaUpload
               selectedImages={uploadImages}

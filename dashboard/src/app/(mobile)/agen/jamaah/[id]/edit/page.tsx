@@ -125,7 +125,7 @@ const { data: packagesData } = useQuery({
   queryFn: () => agenService.getPackages(),
 });
 
-// ✅ FIX: Handle different response structures
+// FIX: Handle different response structures
 const packages = Array.isArray(packagesData?.data)
   ? packagesData.data
   : packagesData?.data?.packages || packagesData?.data?.data || [];
@@ -173,7 +173,7 @@ const packages = Array.isArray(packagesData?.data)
     mutationFn: (data: JamaahFormData) => agenService.updateJamaah(id, data),
     onSuccess: () => {
       toast({
-        title: "✅ Berhasil",
+        title: "Berhasil",
         description: "Data jamaah berhasil diupdate",
       });
       queryClient.invalidateQueries({ queryKey: ["jamaah-detail", id] });
@@ -183,7 +183,7 @@ const packages = Array.isArray(packagesData?.data)
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -257,7 +257,7 @@ const packages = Array.isArray(packagesData?.data)
   return (
     <div className="min-h-screen bg-gray-50 pb-24 lg:max-w-7xl lg:px-6 lg:mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sticky top-0 z-10">
+      <div className="bg-blue-600 text-white p-4 sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"

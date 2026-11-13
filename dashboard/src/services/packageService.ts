@@ -95,7 +95,7 @@ export const packageService = {
     page?: number;
     limit?: number;
   }) => {
-    const response = await api.get("/admin/packages", { params }); // ✅ api
+    const response = await api.get("/admin/packages", { params }); // api
     return response.data;
   },
 
@@ -132,20 +132,20 @@ export const packageService = {
   }) => {
     const formData = new FormData();
 
-    // ✅ Append package data as JSON string
+    // Append package data as JSON string
     Object.entries(data.packageData).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
         formData.append(key, value.toString());
       }
     });
 
-    // ✅ Append PDF if exists
+    // Append PDF if exists
     if (data.itineraryPdf) {
       formData.append("itinerary_pdf", data.itineraryPdf);
     }
 
     const response = await api.post("/admin/packages", formData, {
-      // ✅ api
+      // api
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -171,10 +171,10 @@ export const packageService = {
 
   // ===== UPDATE PACKAGE =====
   update: async (id: number, data: any) => {
-    // ✅ Langsung terima flat data
+    // Langsung terima flat data
     const formData = new FormData();
 
-    // ✅ KONVERSI DECIMAL KE STRING (MySQL requirement)
+    // KONVERSI DECIMAL KE STRING (MySQL requirement)
     const sanitizedData = {
       ...data,
       price: data.price?.toString() || "0",
@@ -183,7 +183,7 @@ export const packageService = {
       airlineTermin2Amount: data.airlineTermin2Amount?.toString() || "0",
     };
 
-    // ✅ APPEND SEMUA FIELD KE FORMDATA
+    // APPEND SEMUA FIELD KE FORMDATA
     const clearableTextFields = new Set([
       "description",
       "facilities",
@@ -215,7 +215,7 @@ export const packageService = {
 
   // ===== DELETE PACKAGE =====
   delete: async (id: number) => {
-    const response = await api.delete(`/admin/packages/${id}`); // ✅ api
+    const response = await api.delete(`/admin/packages/${id}`); // api
     return response.data;
   },
 
@@ -254,7 +254,7 @@ export const packageService = {
     });
 
     const response = await api.post(
-      // ✅ api
+      // api
       `/admin/packages/${packageId}/images/bulk`,
       formData,
       {
@@ -287,7 +287,7 @@ export const packageService = {
 
   // ===== DELETE IMAGE =====
   deleteImage: async (imageId: number) => {
-    const response = await api.delete(`/admin/packages/images/${imageId}`); // ✅ api
+    const response = await api.delete(`/admin/packages/images/${imageId}`); // api
     return response.data;
   },
 
@@ -318,7 +318,7 @@ export const packageService = {
   // ===== EXPORT EXCEL =====
   exportExcel: async () => {
     const response = await api.get("/admin/packages/export", {
-      // ✅ api
+      // api
       responseType: "blob",
     });
 
@@ -338,7 +338,7 @@ export const packageService = {
     formData.append("file", file);
 
     const response = await api.post("/admin/packages/import", formData, {
-      // ✅ api
+      // api
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -361,7 +361,7 @@ export const create = async ({
 }: CreatePackagePayload) => {
   const formData = new FormData();
 
-  // ✅ CONVERT SEMUA NUMBER JADI STRING UNTUK DECIMAL
+  // CONVERT SEMUA NUMBER JADI STRING UNTUK DECIMAL
   const sanitizedData = {
     ...packageData,
     price: packageData.price.toString(),

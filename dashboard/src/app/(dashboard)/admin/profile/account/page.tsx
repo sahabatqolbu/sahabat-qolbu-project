@@ -42,12 +42,12 @@ export default function AdminAccountPage() {
 
   // States
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [emailDialogOpen, setEmailDialogOpen] = useState(false); // ✅ GANTI EMAIL
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [newEmail, setNewEmail] = useState(""); // ✅ GANTI EMAIL
+  const [newEmail, setNewEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
@@ -59,7 +59,7 @@ export default function AdminAccountPage() {
 
   // Logout countdown state
   const [logoutCountdown, setLogoutCountdown] = useState<number | null>(null);
-  const [logoutMessage, setLogoutMessage] = useState({ title: "", description: "" }); // ✅ GANTI EMAIL MESSAGES
+  const [logoutMessage, setLogoutMessage] = useState({ title: "", description: "" }); // GANTI EMAIL MESSAGES
 
   // Auto logout effect
   useEffect(() => {
@@ -85,20 +85,20 @@ export default function AdminAccountPage() {
       setCountdown(60);
       startCountdown();
       toast({
-        title: "✅ OTP Terkirim",
+        title: "OTP Terkirim",
         description: `Kode OTP telah dikirim ke ${data.data?.email || "email Anda"}`,
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengirim OTP",
       });
     },
   });
 
-  // ✅ Request OTP Email Mutation
+  // Request OTP Email Mutation
   const requestEmailOTPMutation = useMutation({
     mutationFn: () => accountService.requestEmailOTP(),
     onSuccess: (data) => {
@@ -106,14 +106,14 @@ export default function AdminAccountPage() {
       setCountdown(60);
       startCountdown();
       toast({
-        title: "✅ OTP Terkirim",
+        title: "OTP Terkirim",
         description: `Kode OTP telah dikirim ke ${data.data?.email || "email Anda"}`,
       });
     },
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengirim OTP",
       });
     },
@@ -132,7 +132,7 @@ export default function AdminAccountPage() {
       setLogoutCountdown(3);
 
       toast({
-        title: "✅ Password Berhasil Diubah",
+        title: "Password Berhasil Diubah",
         description: "Silakan login kembali dengan password baru",
         duration: 5000,
       });
@@ -141,7 +141,7 @@ export default function AdminAccountPage() {
       const firstValidationError = error.response?.data?.errors?.[0]?.message;
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description:
           firstValidationError ||
           error.response?.data?.message ||
@@ -150,7 +150,7 @@ export default function AdminAccountPage() {
     },
   });
 
-  // ✅ Change Email Mutation
+  // Change Email Mutation
   const changeEmailMutation = useMutation({
     mutationFn: () => accountService.changeEmail(otp, newEmail),
     onSuccess: () => {
@@ -163,7 +163,7 @@ export default function AdminAccountPage() {
       setLogoutCountdown(3);
 
       toast({
-        title: "✅ Email Berhasil Diubah",
+        title: "Email Berhasil Diubah",
         description: "Silakan login kembali dengan email baru",
         duration: 5000,
       });
@@ -171,7 +171,7 @@ export default function AdminAccountPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: error.response?.data?.message || "Gagal mengubah email",
       });
     },
@@ -196,7 +196,7 @@ export default function AdminAccountPage() {
     setOtp("");
     setNewPassword("");
     setConfirmPassword("");
-    setNewEmail(""); // ✅ GANTI EMAIL
+    setNewEmail("");
     setShowPassword(false);
     setCountdown(0);
   };
@@ -230,7 +230,7 @@ export default function AdminAccountPage() {
     changePasswordMutation.mutate();
   };
 
-  // ✅ Validate & Submit Change Email
+  // Validate & Submit Change Email
   const handleChangeEmail = () => {
     if (!otp || otp.length !== 6) {
       toast({ variant: "destructive", title: "Masukkan 6 digit OTP" });
@@ -254,7 +254,7 @@ export default function AdminAccountPage() {
       {/* LOGOUT COUNTDOWN OVERLAY */}
       {logoutCountdown !== null && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className="bg-white rounded-2xl p-8 text-center max-w-sm w-full shadow-lg animate-in fade-in zoom-in duration-300">
             <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
@@ -596,7 +596,7 @@ export default function AdminAccountPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ EMAIL CHANGE DIALOG */}
+      {/* EMAIL CHANGE DIALOG */}
       <Dialog
         open={emailDialogOpen}
         onOpenChange={(open) => {

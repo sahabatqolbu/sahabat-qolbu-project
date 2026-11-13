@@ -9,7 +9,7 @@ export const masterService = {
       return response.data;
     },
     getById: async (id: number) => {
-      // ✅ TAMBAHKAN
+      // TAMBAHKAN
       const response = await api.get(`/master/hotels/${id}`);
       return response.data;
     },
@@ -44,7 +44,7 @@ export const masterService = {
       return response.data;
     },
     getById: async (id: number) => {
-      // ✅ TAMBAHKAN
+      // TAMBAHKAN
       const response = await api.get(`/master/airlines/${id}`);
       return response.data;
     },
@@ -79,7 +79,7 @@ export const masterService = {
       return response.data;
     },
     getById: async (id: number) => {
-      // ✅ TAMBAHKAN
+      // TAMBAHKAN
       const response = await api.get(`/master/airports/${id}`);
       return response.data;
     },
@@ -108,7 +108,7 @@ export const masterService = {
       return response.data;
     },
     getById: async (id: number) => {
-      // ✅ TAMBAHKAN
+      // TAMBAHKAN
       const response = await api.get(`/master/banks/${id}`);
       return response.data;
     },

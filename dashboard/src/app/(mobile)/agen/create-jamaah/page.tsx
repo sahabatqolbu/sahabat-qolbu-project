@@ -74,7 +74,7 @@ export default function CreateJamaahPage() {
       setCreatedAccount(data.data);
 
       toast({
-        title: "✅ Akun Jamaah Berhasil Dibuat!",
+        title: "Akun Jamaah Berhasil Dibuat",
         description: `Akun untuk ${data.data.user.fullName} telah dibuat.`,
       });
 
@@ -88,7 +88,7 @@ export default function CreateJamaahPage() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal Membuat Akun",
+        title: "Gagal Membuat Akun",
         description: error.response?.data?.message || "Terjadi kesalahan",
       });
     },
@@ -104,7 +104,7 @@ export default function CreateJamaahPage() {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "✅ Berhasil Disalin",
+      title: "Berhasil Disalin",
       description: `${label} telah disalin ke clipboard`,
     });
   };
@@ -172,7 +172,7 @@ export default function CreateJamaahPage() {
             {/* Info */}
             <Alert>
               <AlertDescription className="text-sm">
-                📧 Email berisi kredensial login telah dikirim ke{" "}
+                Email berisi kredensial login telah dikirim ke{" "}
                 <strong>{createdAccount.user.email}</strong>. Password tidak
                 ditampilkan di dashboard demi keamanan.
               </AlertDescription>
@@ -319,7 +319,7 @@ export default function CreateJamaahPage() {
                         <div className="space-y-1">
                           <p className="font-semibold">{selected.title}</p>
                           <p className="text-sm">
-                            📅{" "}
+                            {" "}
                             {new Date(
                               selected.departureDate
                             ).toLocaleDateString("id-ID")}{" "}
@@ -329,7 +329,7 @@ export default function CreateJamaahPage() {
                             )}
                           </p>
                           <p className="text-sm">
-                            💰 Harga:{" "}
+                            Harga:{" "}
                             <strong>
                               Rp {selected.price.toLocaleString("id-ID")}
                             </strong>

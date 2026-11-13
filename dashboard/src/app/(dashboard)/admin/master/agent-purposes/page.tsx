@@ -116,12 +116,12 @@ export default function AgentPurposesPage() {
       queryClient.invalidateQueries({ queryKey: ["agent-purposes"] });
       setCreateDialogOpen(false);
       setFormData({ title: "", slug: "", order: 0, isActive: true });
-      toast({ title: "✅ Tujuan berhasil ditambahkan" });
+      toast({ title: "Tujuan berhasil ditambahkan" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: getErrorMessage(error),
       });
     },
@@ -134,12 +134,12 @@ export default function AgentPurposesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-purposes"] });
       setEditDialogOpen(false);
-      toast({ title: "✅ Tujuan berhasil diupdate" });
+      toast({ title: "Tujuan berhasil diupdate" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: getErrorMessage(error),
       });
     },
@@ -151,12 +151,12 @@ export default function AgentPurposesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agent-purposes"] });
       setDeleteDialogOpen(false);
-      toast({ title: "✅ Tujuan berhasil dihapus" });
+      toast({ title: "Tujuan berhasil dihapus" });
     },
     onError: (error: unknown) => {
       toast({
         variant: "destructive",
-        title: "❌ Gagal",
+        title: "Gagal",
         description: getErrorMessage(error),
       });
     },
