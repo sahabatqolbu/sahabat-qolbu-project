@@ -52,7 +52,16 @@ const trackAttempt = (identifier) => {
   
   validAttempts.push(now);
   otpAttempts.set(key, validAttempts);
-  
+
+  // Keys are per issued code, so drop stale ones before the map grows unbounded.
+  if (otpAttempts.size > 5000) {
+    for (const [staleKey, times] of otpAttempts) {
+      if (!times.some((time) => now - time < 15 * 60 * 1000)) {
+        otpAttempts.delete(staleKey);
+      }
+    }
+  }
+
   return true;
 };
 
@@ -79,8 +88,10 @@ export const verifyOTP = (storedOTP, inputOTP, expiryTime, identifier = null) =>
     return { valid: false, message: "OTP tidak ditemukan. Silakan minta OTP baru." };
   }
 
-  // Check attempts if identifier provided
-  if (identifier && !trackAttempt(identifier)) {
+  // Count guesses per account and per issued code, so a new OTP gets a fresh budget.
+  const attemptKey = identifier ? `${identifier}:${hashOTP(String(storedOTP))}` : null;
+
+  if (attemptKey && !trackAttempt(attemptKey)) {
     logger.security("Too many OTP attempts", { identifier });
     return {
       valid: false,
@@ -103,9 +114,8 @@ export const verifyOTP = (storedOTP, inputOTP, expiryTime, identifier = null) =>
     return { valid: false, message: "OTP tidak valid" };
   }
 
-  // Clear attempts on success
-  if (identifier) {
-    clearAttempts(identifier);
+  if (attemptKey) {
+    clearAttempts(attemptKey);
   }
 
   return { valid: true, message: "OTP valid" };

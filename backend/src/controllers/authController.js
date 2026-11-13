@@ -604,7 +604,7 @@ export const verifyOTPLogin = async (req, res, next) => {
     }
 
     // Verify OTP
-    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
+    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry, `user:${user.id}`);
     if (!otpValidation.valid) {
       logger.security("OTP verification failed - invalid OTP", {
         userId: user.id,
@@ -837,7 +837,7 @@ export const changePasswordWithOTP = async (req, res, next) => {
     }
 
     // Verify OTP
-    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
+    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry, `user:${user.id}`);
     if (!otpValidation.valid) {
       logger.security("Password change failed - invalid OTP", { userId });
       return errorResponse(res, otpValidation.message, 400);
@@ -851,6 +851,7 @@ export const changePasswordWithOTP = async (req, res, next) => {
       .update(users)
       .set({
         password: hashedPassword,
+        passwordChangedAt: new Date(),
         otp: null,
         otpExpiry: null,
         updatedAt: new Date(),
@@ -961,7 +962,7 @@ export const changeEmailWithOTP = async (req, res, next) => {
     }
 
     // Verify OTP
-    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
+    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry, `user:${user.id}`);
     if (!otpValidation.valid) {
       logger.security("Email change failed - invalid OTP", { userId });
       return errorResponse(res, otpValidation.message, 400);
@@ -1120,7 +1121,7 @@ export const resetPasswordWithOTP = async (req, res, next) => {
       );
     }
 
-    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry);
+    const otpValidation = verifyOTP(user.otp, otp, user.otpExpiry, `user:${user.id}`);
     if (!otpValidation.valid) {
       logger.security("Forgot password reset failed - invalid OTP", {
         userId: user.id,
@@ -1140,6 +1141,7 @@ export const resetPasswordWithOTP = async (req, res, next) => {
       .update(users)
       .set({
         password: hashedPassword,
+        passwordChangedAt: new Date(),
         otp: null,
         otpExpiry: null,
         updatedAt: new Date(),

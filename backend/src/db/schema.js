@@ -52,6 +52,8 @@ export const users = mysqlTable(
 
     // Metadata
     lastLogin: timestamp("last_login"),
+    // Tokens issued before this moment are rejected (set on password reset/change).
+    passwordChangedAt: timestamp("password_changed_at"),
     createdAt: timestamp("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

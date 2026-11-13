@@ -83,18 +83,9 @@ const hasOwnedFileAccess = async ({ folder, relativePath, userId, role }) => {
 
   let agentManagedJamaahRows = [];
   if (role === "AGEN") {
-    const agentRow = await db.query.agentData.findFirst({
-      where: eq(agentData.userId, userId),
-      columns: { id: true },
-    });
-
-    const agenIds = [userId];
-    if (agentRow?.id) {
-      agenIds.push(Number(agentRow.id));
-    }
-
+    // jamaah_data.agen_id references users.id, so match on the agent's user id only.
     agentManagedJamaahRows = await db.query.jamaahData.findMany({
-      where: inArray(jamaahData.agenId, agenIds),
+      where: eq(jamaahData.agenId, userId),
       columns: {
         id: true,
         fotoUrl: true,

@@ -653,43 +653,37 @@ export const searchMahram = async (req, res, next) => {
       orderBy: getSelectedJamaahOrder(req),
     });
 
-    const results = await db.query.jamaahData.findMany({
-      where: myJamaah ? ne(jamaahData.id, myJamaah.id) : undefined,
-      with: {
-        user: {
-          columns: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-          },
-        },
-      },
-      limit: 10,
-    });
+    // Filter in SQL so the limit applies to matches, and return only what the picker shows:
+    // other customers' phone numbers must not leak through this search.
+    const pattern = `%${String(q).trim().replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+    const results = await db
+      .select({
+        id: jamaahData.id,
+        bookingNumber: jamaahData.bookingNumber,
+        memberName: jamaahData.memberName,
+        namaPaspor: jamaahData.namaPaspor,
+        gender: jamaahData.gender,
+        userFullName: users.fullName,
+      })
+      .from(jamaahData)
+      .leftJoin(users, eq(users.id, jamaahData.userId))
+      .where(
+        and(
+          myJamaah ? ne(jamaahData.id, myJamaah.id) : undefined,
+          or(
+            like(jamaahData.memberName, pattern),
+            like(jamaahData.namaPaspor, pattern),
+            like(jamaahData.bookingNumber, pattern),
+            like(users.fullName, pattern),
+          ),
+        ),
+      )
+      .limit(10);
 
-    const searchLower = q.toLowerCase();
-    const filtered = results.filter((j) => {
-      const namaUser = (j.user?.fullName || "").toLowerCase();
-      const namaAnggota = (j.memberName || "").toLowerCase();
-      const namaPaspor = (j.namaPaspor || "").toLowerCase();
-      const booking = (j.bookingNumber || "").toLowerCase();
-      const phone = (j.user?.phone || "").toLowerCase();
-
-      return (
-        namaUser.includes(searchLower) ||
-        namaAnggota.includes(searchLower) ||
-        namaPaspor.includes(searchLower) ||
-        booking.includes(searchLower) ||
-        phone.includes(searchLower)
-      );
-    });
-
-    const data = filtered.map((j) => ({
+    const data = results.map((j) => ({
       id: j.id,
       bookingNumber: j.bookingNumber,
-      fullName: j.memberName || j.namaPaspor || j.user?.fullName || "-",
-      phone: j.user?.phone || "-",
+      fullName: j.memberName || j.namaPaspor || j.userFullName || "-",
       gender: j.gender,
     }));
 

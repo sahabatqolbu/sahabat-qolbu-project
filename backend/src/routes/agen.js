@@ -195,7 +195,7 @@ router.post(
       const jamaah = await db.query.jamaahData.findFirst({
         where: and(
           eq(jamaahData.id, parsedJamaahId),
-          or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id))
+          eq(jamaahData.agenId, agenUserId)
         ),
       });
 

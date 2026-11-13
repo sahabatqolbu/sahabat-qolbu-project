@@ -364,6 +364,7 @@ export const resetStaffPassword = async (req, res, next) => {
       .update(users)
       .set({
         password: hashedPassword,
+        passwordChangedAt: new Date(),
         otp: null,
         otpExpiry: null,
         updatedAt: new Date(),

@@ -1171,10 +1171,7 @@ export const getCommission = async (req, res, next) => {
     }
 
     const ownedJamaah = await db.query.jamaahData.findMany({
-      where: or(
-        eq(jamaahData.agenId, userId),
-        eq(jamaahData.agenId, agent.id),
-      ),
+      where: eq(jamaahData.agenId, userId),
       columns: {
         id: true,
       },

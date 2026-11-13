@@ -149,24 +149,9 @@ export const getMyJamaah = async (req, res, next) => {
 
     logger.debug("Agen get my jamaah", { userId });
 
-    // ❌ HAPUS LOOKUP agent_data - tidak perlu lagi!
-    // const agent = await db.query.agentData.findFirst({
-    //   where: eq(agentData.userId, agenUserId),
-    // });
-    // if (!agent) { ... }
-    // NOTE:
-    // Sebagian data lama masih menyimpan agen_id = agent_data.id,
-    // sedangkan data baru menyimpan agen_id = users.id.
-    // Jadi untuk backward compatibility, query harus membaca keduanya.
-    const agent = await db.query.agentData.findFirst({
-      where: eq(agentData.userId, userId),
-      columns: { id: true },
-    });
-
+    // jamaah_data.agen_id references users.id.
     const conditions = [
-      agent
-        ? or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id))
-        : eq(jamaahData.agenId, userId),
+      eq(jamaahData.agenId, userId),
     ];
 
     if (status && status !== "all") {
@@ -305,17 +290,7 @@ export const getJamaahById = async (req, res, next) => {
 
     logger.debug("Agen get jamaah by id", { userId, id });
 
-    // ❌ HAPUS lookup agent_data
-    // const agent = await db.query.agentData.findFirst({...});
-
-    const agent = await db.query.agentData.findFirst({
-      where: eq(agentData.userId, userId),
-      columns: { id: true },
-    });
-
-    const ownershipCondition = agent
-      ? or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id))
-      : eq(jamaahData.agenId, userId);
+    const ownershipCondition = eq(jamaahData.agenId, userId);
 
     const jamaah = await db.query.jamaahData.findFirst({
       where: and(
@@ -535,7 +510,7 @@ export const updateJamaah = async (req, res, next) => {
     const existing = await db.query.jamaahData.findFirst({
       where: and(
         eq(jamaahData.id, parsedId),
-        or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id)),
+        eq(jamaahData.agenId, agenUserId),
       ),
     });
 
@@ -626,14 +601,7 @@ export const getJamaahCompleteness = async (req, res, next) => {
       return errorResponse(res, "ID jamaah tidak valid", 400);
     }
 
-    const agent = await db.query.agentData.findFirst({
-      where: eq(agentData.userId, userId),
-      columns: { id: true },
-    });
-
-    const ownershipCondition = agent
-      ? or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id))
-      : eq(jamaahData.agenId, userId);
+    const ownershipCondition = eq(jamaahData.agenId, userId);
 
     const jamaah = await db.query.jamaahData.findFirst({
       where: and(eq(jamaahData.id, jamaahId), ownershipCondition),
@@ -763,7 +731,7 @@ export const getDashboardStats = async (req, res, next) => {
     }
 
     const jamaahList = await db.query.jamaahData.findMany({
-      where: or(eq(jamaahData.agenId, userId), eq(jamaahData.agenId, agent.id)),
+      where: eq(jamaahData.agenId, userId),
       columns: {
         id: true,
         statusPayment: true,

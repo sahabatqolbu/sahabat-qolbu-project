@@ -9,7 +9,6 @@ import {
   users,
   packages,
   jamaahPayments,
-  agentData,
   auditLogs,
 } from "../db/schema.js";
 import {
@@ -47,16 +46,9 @@ const SAFE_USER_COLUMNS = {
   updatedAt: true,
 };
 
-const getAgenOwnershipCondition = async (agenUserId) => {
-  const agent = await db.query.agentData.findFirst({
-    where: eq(agentData.userId, agenUserId),
-    columns: { id: true },
-  });
-
-  return agent
-    ? or(eq(jamaahData.agenId, agenUserId), eq(jamaahData.agenId, agent.id))
-    : eq(jamaahData.agenId, agenUserId);
-};
+// jamaah_data.agen_id references users.id.
+const getAgenOwnershipCondition = async (agenUserId) =>
+  eq(jamaahData.agenId, agenUserId);
 
 const ADMIN_UPLOAD_DOCUMENT_MAP = {
   foto: "fotoUrl",

@@ -5,6 +5,13 @@ import { users } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../utils/logger.js";
 
+// Tokens issued before the last password change are revoked (iat has 1s resolution).
+export const isTokenRevokedByPasswordChange = (decoded, user) => {
+  if (!user?.passwordChangedAt || !decoded?.iat) return false;
+  const changedAtSeconds = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000);
+  return decoded.iat < changedAtSeconds;
+};
+
 /**
  * JWT Authentication Middleware
  * Validates JWT token and attaches user to request
@@ -46,6 +53,7 @@ export const authenticate = async (req, res, next) => {
         fullName: true,
         phone: true,
         isActive: true,
+        passwordChangedAt: true,
         isEmailVerified: true,
       },
     });
@@ -56,6 +64,14 @@ export const authenticate = async (req, res, next) => {
         ip: req.ip,
       });
       return unauthorizedResponse(res, "User tidak ditemukan");
+    }
+
+    if (isTokenRevokedByPasswordChange(decoded, user)) {
+      logger.security("Authentication failed - token issued before password change", {
+        userId: user.id,
+        ip: req.ip,
+      });
+      return unauthorizedResponse(res, "Sesi berakhir karena password diubah. Silakan login kembali.");
     }
 
     if (!user.isActive) {
@@ -109,10 +125,11 @@ export const optionalAuth = async (req, res, next) => {
         role: true,
         fullName: true,
         isActive: true,
+        passwordChangedAt: true,
       },
     });
 
-    if (user && user.isActive) {
+    if (user && user.isActive && !isTokenRevokedByPasswordChange(decoded, user)) {
       req.user = {
         userId: user.id,
         email: user.email,
