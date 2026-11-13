@@ -33,7 +33,26 @@ const FINANCE_BLOCKED_PATTERNS = [
 const matchesPrefix = (pathname: string, prefix: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`);
 
-export const getRoleRedirectPath = (role: DashboardRole, pathname: string) => {
+// Shared admin pages link to /admin/...; send STAFF/FINANCE to their rewrite alias (next.config.ts) instead of home.
+const ROLE_ADMIN_ALIASES: Partial<Record<DashboardRole, string[]>> = {
+  STAFF: ["users", "packages", "jamaah", "agen", "master", "content", "profile"],
+  FINANCE: ["users", "packages", "jamaah", "agen", "transactions", "reports"],
+};
+
+const toRoleAlias = (role: DashboardRole, pathname: string) => {
+  const sections = ROLE_ADMIN_ALIASES[role];
+  if (!sections) return null;
+  const match = pathname.match(/^\/admin\/([^/]+)(\/.*)?$/);
+  if (!match || !sections.includes(match[1])) return null;
+  return `${DEFAULT_ROUTES[role]}/${match[1]}${match[2] ?? ""}`;
+};
+
+export const getRoleRedirectPath = (role: DashboardRole, pathname: string): string | null => {
+  const alias = toRoleAlias(role, pathname);
+  if (alias) {
+    return getRoleRedirectPath(role, alias) ?? alias;
+  }
+
   if (role === "STAFF" && STAFF_BLOCKED_PREFIXES.some((prefix) => matchesPrefix(pathname, prefix))) {
     return DEFAULT_ROUTES.STAFF;
   }

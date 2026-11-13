@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRoleRedirectPath } from "@/lib/routeAccess";
+import { DEFAULT_ROUTES, getRoleRedirectPath } from "@/lib/routeAccess";
 import { validateSession } from "@/lib/validateSession";
 
-const PROTECTED_PREFIXES = ["/admin", "/finance", "/staff", "/agen", "/jamaah"];
+const PROTECTED_PREFIXES = [
+  "/admin",
+  "/finance",
+  "/staff",
+  "/agen",
+  "/jamaah",
+  "/calon-jamaah",
+];
 
 const safeInternalPath = (pathname: string) => {
   if (!pathname.startsWith("/")) return "/";
@@ -38,12 +45,24 @@ export async function proxy(request: NextRequest) {
 
   const redirectPath = getRoleRedirectPath(session.role, pathname);
   if (redirectPath) {
-    return NextResponse.redirect(new URL(redirectPath, request.url));
+    const target = new URL(redirectPath, request.url);
+    // Keep filters/pagination when translating an /admin link to the role alias.
+    if (redirectPath !== DEFAULT_ROUTES[session.role]) {
+      target.search = request.nextUrl.search;
+    }
+    return NextResponse.redirect(target);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/finance/:path*", "/staff/:path*", "/agen/:path*", "/jamaah/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/finance/:path*",
+    "/staff/:path*",
+    "/agen/:path*",
+    "/jamaah/:path*",
+    "/calon-jamaah/:path*",
+  ],
 };

@@ -411,11 +411,6 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
         },
         {
           label: "Artikel",
-          href: "/admin/content/articles",
-          icon: FileText,
-        },
-        {
-          label: "Artikel",
           href: "/staff/content/articles",
           icon: FileText,
         },

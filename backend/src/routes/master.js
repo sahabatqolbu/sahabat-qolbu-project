@@ -38,6 +38,7 @@ import {
 import {
   getAllBanks,
   getActiveBanks,
+  getBankById,
   createBank,
   updateBank,
   toggleBankStatus,
@@ -100,7 +101,7 @@ router.get("/hotels", getAllHotels);
 router.post(
   "/hotels",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.single("image"),
   optimizeImage("hotels", { outputFormat: "webp" }),
   createHotel,
@@ -109,16 +110,16 @@ router.get("/hotels/:id", getHotelById);
 router.put(
   "/hotels/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.single("image"),
   optimizeImage("hotels", { outputFormat: "webp" }),
   updateHotel,
 );
-router.delete("/hotels/:id", authenticate, authorize(["ADMIN"]), deleteHotel);
+router.delete("/hotels/:id", authenticate, authorize(["ADMIN", "STAFF"]), deleteHotel);
 router.post(
   "/hotels/:id/images",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.array("images", 10),
   optimizeMultipleImages("hotels", { outputFormat: "webp" }),
   uploadMasterImages("hotel"),
@@ -126,13 +127,13 @@ router.post(
 router.delete(
   "/hotels/images/:imageId",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   deleteMasterImage("hotel"),
 );
 router.post(
   "/import/hotels",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.single("file"),
   importHotels,
 );
@@ -144,7 +145,7 @@ router.get("/airlines", getAllAirlines);
 router.post(
   "/airlines",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.single("logo"),
   optimizeImage("airlines", { outputFormat: "webp" }),
   createAirline,
@@ -153,7 +154,7 @@ router.get("/airlines/:id", getAirlineById);
 router.put(
   "/airlines/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.single("logo"),
   optimizeImage("airlines", { outputFormat: "webp" }),
   updateAirline,
@@ -161,13 +162,13 @@ router.put(
 router.delete(
   "/airlines/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   deleteAirline,
 );
 router.post(
   "/airlines/:id/images",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.array("images", 10),
   optimizeMultipleImages("airlines", { outputFormat: "webp" }),
   uploadMasterImages("airline"),
@@ -175,7 +176,7 @@ router.post(
 router.delete(
   "/airlines/images/:imageId",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   deleteMasterImage("airline"),
 );
 
@@ -183,13 +184,13 @@ router.delete(
 // AIRPORTS
 // =====================================================
 router.get("/airports", getAllAirports);
-router.post("/airports", authenticate, authorize(["ADMIN"]), createAirport);
+router.post("/airports", authenticate, authorize(["ADMIN", "STAFF"]), createAirport);
 router.get("/airports/:id", getAirportById);
-router.put("/airports/:id", authenticate, authorize(["ADMIN"]), updateAirport);
+router.put("/airports/:id", authenticate, authorize(["ADMIN", "STAFF"]), updateAirport);
 router.delete(
   "/airports/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   deleteAirport,
 );
 
@@ -203,15 +204,21 @@ router.get(
   getAllBanks,
 );
 router.get("/banks/active", getActiveBanks);
-router.post("/banks", authenticate, authorize(["ADMIN"]), createBank);
-router.put("/banks/:id", authenticate, authorize(["ADMIN"]), updateBank);
+router.get(
+  "/banks/:id",
+  authenticate,
+  authorize(["ADMIN", "FINANCE", "STAFF"]),
+  getBankById,
+);
+router.post("/banks", authenticate, authorize(["ADMIN", "STAFF"]), createBank);
+router.put("/banks/:id", authenticate, authorize(["ADMIN", "STAFF"]), updateBank);
 router.patch(
   "/banks/:id/toggle",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   toggleBankStatus,
 );
-router.delete("/banks/:id", authenticate, authorize(["ADMIN"]), deleteBank);
+router.delete("/banks/:id", authenticate, authorize(["ADMIN", "STAFF"]), deleteBank);
 
 // =====================================================
 // TESTIMONIALS
@@ -220,19 +227,19 @@ router.get("/testimonials", getAllTestimonials);
 router.post(
   "/testimonials",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   createTestimonial,
 );
 router.put(
   "/testimonials/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   updateTestimonial,
 );
 router.delete(
   "/testimonials/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   deleteTestimonial,
 );
 
@@ -240,9 +247,9 @@ router.delete(
 // FAQ
 // =====================================================
 router.get("/faqs", getAllFAQs);
-router.post("/faqs", authenticate, authorize(["ADMIN"]), createFAQ);
-router.put("/faqs/:id", authenticate, authorize(["ADMIN"]), updateFAQ);
-router.delete("/faqs/:id", authenticate, authorize(["ADMIN"]), deleteFAQ);
+router.post("/faqs", authenticate, authorize(["ADMIN", "STAFF"]), createFAQ);
+router.put("/faqs/:id", authenticate, authorize(["ADMIN", "STAFF"]), updateFAQ);
+router.delete("/faqs/:id", authenticate, authorize(["ADMIN", "STAFF"]), deleteFAQ);
 
 // =====================================================
 // GALLERY
@@ -251,7 +258,7 @@ router.get("/gallery", getAllGallery);
 router.post(
   "/gallery",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.single("image"),
   optimizeImage("gallery", { outputFormat: "webp" }),
   createGallery,
@@ -259,7 +266,7 @@ router.post(
 router.put(
   "/gallery/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   upload.single("image"),
   optimizeImage("gallery", { outputFormat: "webp" }),
   updateGallery,
@@ -267,7 +274,7 @@ router.put(
 router.delete(
   "/gallery/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   deleteGallery,
 );
 
@@ -421,7 +428,7 @@ router.get(
 router.post(
   "/agent-levels",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentLevelController.create,
 );
 router.get(
@@ -433,13 +440,13 @@ router.get(
 router.put(
   "/agent-levels/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentLevelController.update,
 );
 router.delete(
   "/agent-levels/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentLevelController.deleteLevel,
 );
 
@@ -455,19 +462,19 @@ router.get(
 router.post(
   "/agent-requirements",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentRequirementController.create,
 );
 router.put(
   "/agent-requirements/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentRequirementController.update,
 );
 router.delete(
   "/agent-requirements/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentRequirementController.deleteRequirement,
 );
 
@@ -483,19 +490,19 @@ router.get(
 router.post(
   "/agent-purposes",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentPurposeController.create,
 );
 router.put(
   "/agent-purposes/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentPurposeController.update,
 );
 router.delete(
   "/agent-purposes/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   agentPurposeController.deletePurpose,
 );
 
@@ -511,7 +518,7 @@ router.get(
 router.post(
   "/periods",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   periodController.create,
 );
 router.get(
@@ -523,13 +530,13 @@ router.get(
 router.put(
   "/periods/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   periodController.update,
 );
 router.delete(
   "/periods/:id",
   authenticate,
-  authorize(["ADMIN"]),
+  authorize(["ADMIN", "STAFF"]),
   periodController.deletePeriod,
 );
 

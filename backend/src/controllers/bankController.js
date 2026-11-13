@@ -40,6 +40,30 @@ export const getActiveBanks = async (req, res, next) => {
   }
 };
 
+// Used by the dashboard bank edit page.
+export const getBankById = async (req, res, next) => {
+  try {
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(id) || id <= 0) {
+      return errorResponse(res, "ID bank tidak valid", 400);
+    }
+
+    const [bank] = await db
+      .select()
+      .from(masterBanks)
+      .where(eq(masterBanks.id, id))
+      .limit(1);
+
+    if (!bank) {
+      return errorResponse(res, "Bank tidak ditemukan", 404);
+    }
+
+    return successResponse(res, bank);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // =====================================================
 // CREATE BANK
 // =====================================================

@@ -54,12 +54,24 @@ interface CreatedUserResult {
 function getErrorMessage(error: unknown) {
   const apiError = error as {
     message?: string;
-    response?: { data?: { message?: string } };
+    response?: {
+      data?: {
+        message?: string;
+        errors?: { field?: string; message?: string }[] | null;
+      };
+    };
   };
 
-  return (
-    apiError.response?.data?.message || apiError.message || "Terjadi kesalahan"
-  );
+  const data = apiError.response?.data;
+  // Validation failures carry per-field details; show them instead of the generic message.
+  const fieldErrors = Array.isArray(data?.errors)
+    ? data.errors
+        .filter((item) => item?.message)
+        .map((item) => (item.field ? `${item.field}: ${item.message}` : item.message))
+    : [];
+  if (fieldErrors.length > 0) return fieldErrors.join("; ");
+
+  return data?.message || apiError.message || "Terjadi kesalahan";
 }
 
 export default function CreateUserPage() {

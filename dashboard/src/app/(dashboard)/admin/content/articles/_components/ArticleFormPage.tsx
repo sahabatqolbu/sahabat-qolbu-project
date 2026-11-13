@@ -373,6 +373,9 @@ export default function ArticleFormPage({
     onSuccess: () => {
       isDirtyRef.current = false;
       queryClient.invalidateQueries({ queryKey: ["articles"] });
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ["article", articleId] });
+      }
       toast({
         title: isEdit
           ? "Artikel berhasil diupdate"

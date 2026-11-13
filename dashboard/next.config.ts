@@ -95,6 +95,7 @@ const nextConfig = {
       { source: "/staff/agen/:path*", destination: "/admin/agen/:path*" },
       { source: "/staff/master/:path*", destination: "/admin/master/:path*" },
       { source: "/staff/content/:path*", destination: "/admin/content/:path*" },
+      { source: "/staff/profile/:path*", destination: "/admin/profile/:path*" },
 
       // FINANCE alias -> finance-visible admin pages
       { source: "/finance/users/:path*", destination: "/admin/users/:path*" },

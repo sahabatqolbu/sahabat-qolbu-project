@@ -116,7 +116,7 @@ export default function TestimonialsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["testimonials"],
     queryFn: async () => {
-      const res = await api.get("/testimonials");
+      const res = await api.get("/master/testimonials");
       return res.data;
     },
   });
@@ -125,7 +125,7 @@ export default function TestimonialsPage() {
 
   // ===== CREATE MUTATION =====
   const createMutation = useMutation({
-    mutationFn: (payload: TestimonialFormData) => api.post("/testimonials", payload),
+    mutationFn: (payload: TestimonialFormData) => api.post("/master/testimonials", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDialogOpen(false);
@@ -144,7 +144,7 @@ export default function TestimonialsPage() {
   // ===== UPDATE MUTATION =====
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: TestimonialFormData }) =>
-      api.put(`/testimonials/${id}`, data),
+      api.put(`/master/testimonials/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDialogOpen(false);
@@ -162,7 +162,7 @@ export default function TestimonialsPage() {
 
   // ===== DELETE MUTATION =====
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/testimonials/${id}`),
+    mutationFn: (id: number) => api.delete(`/master/testimonials/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["testimonials"] });
       setDeleteDialogOpen(false);
