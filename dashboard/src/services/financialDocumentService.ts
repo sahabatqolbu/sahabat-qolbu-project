@@ -17,6 +17,7 @@ export interface FinancialPayload {
   items?: FinancialLine[];
   previousPaid?: number;
   currentPayment?: number;
+  amountDue?: number;
   paymentMethod?: string;
   paidBy?: string;
   targetStar?: number;
@@ -30,6 +31,9 @@ export interface FinancialPreview extends FinancialPayload {
   previousPaid: number;
   currentPayment: number;
   remaining: number;
+  amountDue?: number;
+  outstanding?: number;
+  invoiceStatus?: string;
   items: FinancialLine[];
 }
 export interface FinancialDocument {

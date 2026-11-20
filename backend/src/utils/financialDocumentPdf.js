@@ -27,6 +27,33 @@ const whiteout = (page, left, top, width, height, color = rgb(1, 1, 1)) => {
   page.drawRectangle({ x: left, y: A4[1] - top - height, width, height, color });
 };
 
+// Draw text with letter spacing; pdf-lib has no tracking option.
+const putSpaced = (page, font, value, left, top, size, spacing, color) => {
+  let x = left;
+  for (const char of value) {
+    page.drawText(char, { x, y: A4[1] - top - size * 0.8, size, font, color });
+    x += font.widthOfTextAtSize(char, size) + spacing;
+  }
+};
+
+// The invoice artwork prints receipt wording ("Pembayaran Saat Ini", "TOTAL DITERIMA");
+// cover those labels so a bill reads as a bill. Coordinates measured on invoice.png.
+const relabelInvoiceSummary = (page, font) => {
+  const cardBg = rgb(254 / 255, 253 / 255, 252 / 255);
+  const boxBg = rgb(5 / 255, 39 / 255, 65 / 255);
+  const rows = [
+    ["Sudah Dibayar", 526.5],
+    ["Tagihan Saat Ini", 544.6],
+    ["Sisa Setelah Dibayar", 561.9],
+  ];
+  for (const [label, top] of rows) {
+    whiteout(page, 25, top, 120, 13, cardBg);
+    put(page, font, label, 26.8, top + 1, 10.3, 118);
+  }
+  whiteout(page, 59, 599.5, 101, 13.5, boxBg);
+  putSpaced(page, font, "TOTAL TAGIHAN :", 61.9, 601.2, 9.8, 1, rgb(0.93, 0.94, 0.95));
+};
+
 const drawSignature = async (pdf, page, snapshot, left, top, width, height) => {
   if (snapshot.signaturePng) {
     const signature = await pdf.embedPng(Buffer.from(snapshot.signaturePng, "base64"));
@@ -79,10 +106,12 @@ export const renderFinancialDocument = async (snapshot, { voided = false } = {})
   if (snapshot.type === "INVOICE") {
     const tableFontSize = 9;
     const summaryFontSize = 9.5;
+    // Invoices issued before amountDue existed keep their original layout.
+    const isBill = snapshot.amountDue !== undefined;
     whiteout(page, 98, 248, 97, 15);
     put(page, font, snapshot.number, 99.8, 250.1, snapshot.number.length > 20 ? 7.5 : 9, 96);
     put(page, font, dateText(snapshot.issuedAt), 99.8, 265.6, 9, 96);
-    put(page, font, snapshot.paymentStatus === "Sebagian" ? "DOWN PAYMENT (DP)" : snapshot.paymentStatus, 99.8, 280.9, 8, 96);
+    put(page, font, isBill ? snapshot.invoiceStatus : snapshot.paymentStatus === "Sebagian" ? "DOWN PAYMENT (DP)" : snapshot.paymentStatus, 99.8, 280.9, 8, 96);
     put(page, font, snapshot.customerName, 294.2, 250.3, 8.5, 85);
     put(page, font, snapshot.customerPhone, 294.2, 266.4, 8.5, 85);
     put(page, font, `${snapshot.memberCount} PAX`, 294.2, 281.7, 9, 85);
@@ -100,9 +129,16 @@ export const renderFinancialDocument = async (snapshot, { voided = false } = {})
     }
     put(page, font, nominal(snapshot.totalAmount), 173.6, 508.8, summaryFontSize, 105);
     put(page, font, nominal(snapshot.previousPaid), 173.6, 526.7, summaryFontSize, 105);
-    put(page, font, nominal(snapshot.currentPayment || 0), 173.6, 544.5, summaryFontSize, 105);
-    put(page, font, nominal(snapshot.remaining), 173.6, 562.2, summaryFontSize, 105);
-    put(page, font, nominal(snapshot.previousPaid + (snapshot.currentPayment || 0)), 186.1, 595.2, 16, 93, gold);
+    if (isBill) {
+      relabelInvoiceSummary(page, font);
+      put(page, font, nominal(snapshot.amountDue), 173.6, 544.5, summaryFontSize, 105);
+      put(page, font, nominal(snapshot.remaining), 173.6, 562.2, summaryFontSize, 105);
+      put(page, font, nominal(snapshot.amountDue), 186.1, 595.2, 16, 93, gold);
+    } else {
+      put(page, font, nominal(snapshot.currentPayment || 0), 173.6, 544.5, summaryFontSize, 105);
+      put(page, font, nominal(snapshot.remaining), 173.6, 562.2, summaryFontSize, 105);
+      put(page, font, nominal(snapshot.previousPaid + (snapshot.currentPayment || 0)), 186.1, 595.2, 16, 93, gold);
+    }
     put(page, font, snapshot.bank?.bankName, 397.2, 546.4, 9.5, 145);
     put(page, font, snapshot.bank?.accountNumber, 397.2, 562.2, 9.5, 145);
     put(page, font, snapshot.createdByName, 133.5, 682, 9.5, 132);

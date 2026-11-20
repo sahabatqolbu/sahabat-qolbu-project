@@ -75,9 +75,10 @@ export const resolveFinancialSource = async ({ type, sourceType, sourceId, input
     const items = input.items.map((line) => item(line.description.trim(), line.unitPrice, line.qty));
     const totalAmount = amount(items.reduce((sum, line) => sum + line.amount, 0));
     const previousPaid = amount(input.previousPaid);
-    const currentPayment = amount(input.currentPayment);
-    if ((type === "RECEIPT" || currentPayment > 0) && input.confirmedReceived !== true) throw fail("Konfirmasi penerimaan pembayaran wajib dicentang");
-    if (previousPaid + currentPayment > totalAmount) throw fail("Pembayaran melebihi total tagihan");
+    // Invoices bill money; only receipts record money received now.
+    const currentPayment = type === "RECEIPT" ? amount(input.currentPayment) : 0;
+    if (type === "RECEIPT" && input.confirmedReceived !== true) throw fail("Konfirmasi penerimaan pembayaran wajib dicentang");
+    if (previousPaid + currentPayment > totalAmount) throw fail("Pembayaran melebihi total paket");
     return {
       sourceType, sourceId: null,
       customerName: input.customerName.trim(), customerPhone: input.customerPhone?.trim() || "-",

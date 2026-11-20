@@ -28,6 +28,7 @@ const requestSchema = z.object({
   })).min(1).max(40).optional(),
   previousPaid: money.optional(),
   currentPayment: money.optional(),
+  amountDue: money.optional(),
   paymentMethod: z.string().trim().max(100).optional(),
   paidBy: z.string().trim().max(255).optional(),
   targetStar: z.coerce.number().int().min(1).max(2).optional(),
@@ -51,6 +52,23 @@ const spell = (number) => {
 };
 const amountWords = (value) => `${spell(Math.floor(Number(value || 0))).replace(/\s+/g, " ").trim()} rupiah`;
 
+const round2 = (value) => Math.round(Number(value || 0) * 100) / 100;
+
+// An invoice asks for money: everything verified so far counts as already paid,
+// nothing is "received" on the document, and amountDue is what is billed now.
+export const invoiceBilling = (source, requestedDue) => {
+  const previousPaid = round2(source.previousPaid + source.currentPayment);
+  const outstanding = round2(source.totalAmount - previousPaid);
+  if (outstanding <= 0) throw Object.assign(new Error("Tagihan ini sudah lunas, tidak ada yang perlu ditagih"), { status: 422 });
+  const amountDue = requestedDue ? round2(requestedDue) : outstanding;
+  if (amountDue <= 0) throw Object.assign(new Error("Nominal yang ditagih harus lebih dari 0"), { status: 400 });
+  if (amountDue > outstanding) throw Object.assign(new Error(`Nominal yang ditagih melebihi sisa tagihan (${outstanding})`), { status: 400 });
+  const invoiceStatus = amountDue === outstanding
+    ? (previousPaid > 0 ? "PELUNASAN" : "PEMBAYARAN PENUH")
+    : (previousPaid > 0 ? "CICILAN" : "DOWN PAYMENT (DP)");
+  return { previousPaid, currentPayment: 0, amountDue, outstanding, remaining: round2(outstanding - amountDue), invoiceStatus };
+};
+
 const createSnapshot = async (payload, actor, number, issuedAt) => {
   if (payload.sourceType !== "MANUAL" && !payload.sourceId) throw Object.assign(new Error("ID sumber wajib diisi"), { status: 400 });
   if (payload.sourceType === "MANUAL" && (!payload.customerName || !payload.items?.length)) {
@@ -66,9 +84,11 @@ const createSnapshot = async (payload, actor, number, issuedAt) => {
   const settings = await db.query.financialDocumentSettings.findFirst({ where: eq(financialDocumentSettings.id, 1) });
   const bank = await getFinancialBank(payload.bankId ?? source.bankId);
   if (payload.type === "INVOICE" && !bank) throw Object.assign(new Error("Pilih rekening resmi untuk invoice"), { status: 400 });
+  const billing = payload.type === "INVOICE" ? invoiceBilling(source, payload.amountDue) : {};
   const remaining = Math.max(0, Math.round((source.totalAmount - source.previousPaid - source.currentPayment) * 100) / 100);
   return {
-    ...source, bank, number, type: payload.type, issuedAt, remaining,
+    ...source, ...billing, bank, number, type: payload.type, issuedAt,
+    remaining: billing.remaining ?? remaining,
     amountWords: amountWords(source.currentPayment),
     createdByName: actor.fullName,
     signerName: settings?.signerName || actor.fullName,

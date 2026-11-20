@@ -8,18 +8,18 @@ const manualInput = {
   previousPaid: 0, currentPayment: 15000000, confirmedReceived: true, actorName: "Finance",
 };
 
-test("manual invoice preserves received payment and computes a fully paid balance", async () => {
+test("manual invoice bills money and ignores any received-now amount", async () => {
   const result = await resolveFinancialSource({ type: "INVOICE", sourceType: "MANUAL", input: manualInput });
   assert.equal(result.previousPaid, 0);
-  assert.equal(result.currentPayment, 15000000);
-  assert.equal(result.totalAmount - result.previousPaid - result.currentPayment, 0);
-  assert.equal(result.paymentStatus, "Lunas");
-  assert.equal(result.verifierName, "Finance");
+  assert.equal(result.currentPayment, 0);
+  assert.equal(result.paymentStatus, "Belum dibayar");
+  assert.equal(result.verifierName, null);
 });
 
-test("manual invoice requires confirmation and rejects payments above the package total", async () => {
-  await assert.rejects(resolveFinancialSource({ type: "INVOICE", sourceType: "MANUAL", input: { ...manualInput, confirmedReceived: false } }), /Konfirmasi/);
-  await assert.rejects(resolveFinancialSource({ type: "INVOICE", sourceType: "MANUAL", input: { ...manualInput, previousPaid: 1 } }), /melebihi/);
+test("manual invoice needs no receipt confirmation but rejects prior payments above the package total", async () => {
+  const result = await resolveFinancialSource({ type: "INVOICE", sourceType: "MANUAL", input: { ...manualInput, confirmedReceived: false } });
+  assert.equal(result.currentPayment, 0);
+  await assert.rejects(resolveFinancialSource({ type: "INVOICE", sourceType: "MANUAL", input: { ...manualInput, previousPaid: manualInput.items.reduce((sum, line) => sum + line.qty * line.unitPrice, 0) + 1 } }), /melebihi/);
 });
 
 test("booking invoice splits the latest family payment from previous receipts", async () => {
