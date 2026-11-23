@@ -142,8 +142,19 @@ export const renderFinancialDocument = async (snapshot, { voided = false } = {})
     put(page, font, snapshot.bank?.bankName, 397.2, 546.4, 9.5, 145);
     put(page, font, snapshot.bank?.accountNumber, 397.2, 562.2, 9.5, 145);
     put(page, font, snapshot.createdByName, 133.5, 682, 9.5, 132);
-    put(page, font, snapshot.verifierName || "Belum ada", 133.5, 697.3, 9.5, 132);
-    put(page, font, shortDate(snapshot.verifiedAt), 133.5, 712.5, 9.5, 132);
+    if (isBill) {
+      // A bill has no payment to verify yet: show who approved it and when it was issued.
+      const cardBg = rgb(253 / 255, 252 / 255, 249 / 255);
+      for (const [label, top] of [["Disetujui oleh", 698.2], ["Tanggal Terbit", 712.6]]) {
+        whiteout(page, 43, top, 79, 12, cardBg);
+        put(page, font, label, 45, top + 0.6, 9.6, 77);
+      }
+      put(page, font, snapshot.signerName || snapshot.createdByName, 133.5, 697.3, 9.5, 132);
+      put(page, font, shortDate(snapshot.issuedAt), 133.5, 712.5, 9.5, 132);
+    } else {
+      put(page, font, snapshot.verifierName || "Belum ada", 133.5, 697.3, 9.5, 132);
+      put(page, font, shortDate(snapshot.verifiedAt), 133.5, 712.5, 9.5, 132);
+    }
     await drawSignature(pdf, page, snapshot, 193, 713, 77, 34);
   } else {
     whiteout(page, 331, 190, 185, 17);
