@@ -180,8 +180,14 @@ export const renderFinancialDocument = async (snapshot, { voided = false } = {})
     ];
     const paymentSummaryFontSize = 10;
     for (const [value, rowTop, background] of paymentRows) {
-      whiteout(page, 351, rowTop - 2, 25, 16, background);
-      put(page, font, nominal(value), 358, rowTop, paymentSummaryFontSize, 192);
+      // Start after the printed "Rp" (ends near x=352) so it is not clipped.
+      whiteout(page, 354, rowTop - 2, 22, 16, background);
+      put(page, font, nominal(value), 358, rowTop + 2.5, paymentSummaryFontSize, 192);
+    }
+    // The artwork says "Pelunasan Diterima"; only a payment that settles the bill is a pelunasan.
+    if (Number(snapshot.remaining) > 0) {
+      whiteout(page, 32, 547.5, 92, 11, rgb(253 / 255, 252 / 255, 251 / 255));
+      put(page, font, "Pembayaran Diterima", 33.4, 548.6, 10.9, 160);
     }
     put(page, font, snapshot.createdByName, 223.2, 688.1, 9.5, 130);
     await drawSignature(pdf, page, snapshot, 420, 675, 115, 60);

@@ -1,7 +1,7 @@
 import api from "@/lib/axios";
 
 export type FinancialDocumentType = "INVOICE" | "RECEIPT";
-export type FinancialSourceType = "MANUAL" | "BOOKING" | "PAYMENT" | "TRANSACTION" | "AGENT" | "AGENT_PAYMENT";
+export type FinancialSourceType = "MANUAL" | "BOOKING" | "PAYMENT" | "TRANSACTION" | "AGENT" | "AGENT_PAYMENT" | "INVOICE";
 export interface FinancialLine { description: string; qty: number; unitPrice: number; amount?: number }
 export interface FinancialPayload {
   type: FinancialDocumentType;

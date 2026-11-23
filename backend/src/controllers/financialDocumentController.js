@@ -12,7 +12,7 @@ import { renderFinancialDocument } from "../utils/financialDocumentPdf.js";
 const money = z.coerce.number().finite().min(0).max(1_000_000_000_000);
 const requestSchema = z.object({
   type: z.enum(["INVOICE", "RECEIPT"]),
-  sourceType: z.enum(["MANUAL", "BOOKING", "PAYMENT", "TRANSACTION", "AGENT", "AGENT_PAYMENT"]),
+  sourceType: z.enum(["MANUAL", "BOOKING", "PAYMENT", "TRANSACTION", "AGENT", "AGENT_PAYMENT", "INVOICE"]),
   sourceId: z.string().trim().max(64).optional(),
   bankId: z.coerce.number().int().positive().optional().nullable(),
   customerName: z.string().trim().min(2).max(255).optional(),

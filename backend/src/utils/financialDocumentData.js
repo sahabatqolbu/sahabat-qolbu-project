@@ -4,6 +4,7 @@ import {
   agentData,
   agentLevels,
   agentPaymentTransactions,
+  financialDocuments,
   jamaahData,
   jamaahPayments,
   masterBanks,
@@ -141,6 +142,38 @@ export const resolveFinancialSource = async ({ type, sourceType, sourceId, input
       bankId: payment.bankId, verifiedAt: payment.verifiedAt,
       verifierName: verifier?.fullName || "Admin/Finance",
       paymentStatus: previousPaid + currentPayment >= base.totalAmount ? "Lunas" : "Sebagian",
+    };
+  }
+
+  if (sourceType === "INVOICE" && type === "RECEIPT") {
+    const reference = String(sourceId || "").trim();
+    const invoice = await db.query.financialDocuments.findFirst({
+      where: and(eq(financialDocuments.type, "INVOICE"), /^\d+$/.test(reference)
+        ? eq(financialDocuments.id, Number(reference))
+        : eq(financialDocuments.number, reference)),
+    });
+    if (!invoice) throw fail("Invoice tidak ditemukan", 404);
+    if (invoice.status !== "ISSUED") throw fail("Invoice sudah dibatalkan, tidak bisa dibuatkan kwitansi");
+    if (input.confirmedReceived !== true) throw fail("Konfirmasi penerimaan pembayaran wajib dicentang");
+    const bill = invoice.snapshot || {};
+    const totalAmount = amount(bill.totalAmount);
+    // Old-model invoices counted "received now" separately; both count as already paid.
+    const previousPaid = amount(Number(bill.previousPaid || 0) + (bill.amountDue === undefined ? Number(bill.currentPayment || 0) : 0));
+    const outstanding = amount(totalAmount - previousPaid);
+    const currentPayment = amount(input.currentPayment > 0 ? input.currentPayment : bill.amountDue ?? outstanding);
+    if (currentPayment <= 0) throw fail("Nominal pembayaran diterima wajib diisi", 400);
+    if (currentPayment > outstanding) throw fail(`Pembayaran melebihi sisa tagihan invoice (${outstanding})`);
+    return {
+      sourceType, sourceId: invoice.number,
+      customerName: bill.customerName, customerPhone: bill.customerPhone || "-",
+      memberCount: bill.memberCount || 1, programName: bill.programName,
+      departureDate: bill.departureDate || null, roomType: bill.roomType || "-",
+      items: bill.items || [], totalAmount, previousPaid, currentPayment,
+      paidBy: input.paidBy?.trim() || bill.customerName,
+      paymentMethod: input.paymentMethod?.trim() || "Transfer bank",
+      verifiedAt: new Date().toISOString(), verifierName: input.actorName,
+      invoiceNumber: invoice.number,
+      paymentStatus: previousPaid + currentPayment >= totalAmount ? "Lunas" : "Sebagian",
     };
   }
 
