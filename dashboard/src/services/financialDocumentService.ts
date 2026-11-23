@@ -48,6 +48,16 @@ export interface FinancialDocument {
   issuedAt: string;
   voidReason: string | null;
 }
+const MANUAL_ONLY_FIELDS = ["customerName", "customerPhone", "memberCount", "programName", "departureDate", "roomType", "items"] as const;
+
+// Manual fields only apply to manual documents; other sources read their data from the server.
+const toRequest = (payload: FinancialPayload) => {
+  if (payload.sourceType === "MANUAL") return payload;
+  const request: Partial<FinancialPayload> = { ...payload };
+  for (const field of MANUAL_ONLY_FIELDS) delete request[field];
+  return request;
+};
+
 export interface BankOption { id: number; bankName: string; accountNumber: string; accountName: string }
 
 export const financialDocumentService = {
@@ -62,12 +72,12 @@ export const financialDocumentService = {
     return (await api.post(`/financial-documents/settings/${kind}`, data)).data;
   },
   prepare: async (payload: FinancialPayload) =>
-    (await api.post<{ data: FinancialPreview }>("/financial-documents/prepare", payload)).data.data,
+    (await api.post<{ data: FinancialPreview }>("/financial-documents/prepare", toRequest(payload))).data.data,
   issue: async (payload: FinancialPayload) =>
-    (await api.post<{ data: { id: number; number: string } }>("/financial-documents", payload)).data.data,
+    (await api.post<{ data: { id: number; number: string } }>("/financial-documents", toRequest(payload))).data.data,
   void: async (id: number, reason: string) => (await api.post(`/financial-documents/${id}/void`, { reason })).data,
   previewPdf: async (payload: FinancialPayload) =>
-    (await api.post("/financial-documents/preview", payload, { responseType: "blob" })).data as Blob,
+    (await api.post("/financial-documents/preview", toRequest(payload), { responseType: "blob" })).data as Blob,
   pdf: async (id: number) =>
     (await api.get(`/financial-documents/${id}/pdf`, { responseType: "blob" })).data as Blob,
 };

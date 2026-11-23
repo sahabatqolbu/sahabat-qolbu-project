@@ -10,7 +10,7 @@ import { financialNumberPrefix, nextFinancialNumber } from "../utils/financialDo
 import { renderFinancialDocument } from "../utils/financialDocumentPdf.js";
 
 const money = z.coerce.number().finite().min(0).max(1_000_000_000_000);
-const requestSchema = z.object({
+export const requestSchema = z.object({
   type: z.enum(["INVOICE", "RECEIPT"]),
   sourceType: z.enum(["MANUAL", "BOOKING", "PAYMENT", "TRANSACTION", "AGENT", "AGENT_PAYMENT", "INVOICE"]),
   sourceId: z.string().trim().max(64).optional(),
@@ -34,6 +34,17 @@ const requestSchema = z.object({
   targetStar: z.coerce.number().int().min(1).max(2).optional(),
   confirmedReceived: z.boolean().optional(),
 });
+
+const MANUAL_ONLY_FIELDS = ["customerName", "customerPhone", "memberCount", "programName", "departureDate", "roomType", "items"];
+
+// The form always sends its manual fields; for other sources they are blank and must not fail validation.
+export const normalizeRequest = (body) => {
+  const request = Object.fromEntries(Object.entries(body || {}).filter(([, value]) => value !== "" && value !== null));
+  if (request.sourceType !== "MANUAL") {
+    for (const field of MANUAL_ONLY_FIELDS) delete request[field];
+  }
+  return request;
+};
 
 const words = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan"];
 const spell = (number) => {
@@ -141,7 +152,7 @@ export const updateFinancialSigner = handle(async (req, res) => {
 export const getFinancialBanks = handle(async (_req, res) => successResponse(res, await listFinancialBanks()));
 
 export const prepareFinancialDocument = handle(async (req, res) => {
-  const parsed = requestSchema.safeParse(req.body);
+  const parsed = requestSchema.safeParse(normalizeRequest(req.body));
   if (!parsed.success) return errorResponse(res, "Periksa data dokumen", 400, z.treeifyError(parsed.error));
   const snapshot = await createSnapshot(parsed.data, req.user, "PRATINJAU", new Date().toISOString());
   const { signaturePng, stampPng, ...preview } = snapshot;
@@ -149,7 +160,7 @@ export const prepareFinancialDocument = handle(async (req, res) => {
 });
 
 export const previewFinancialPdf = handle(async (req, res) => {
-  const parsed = requestSchema.safeParse(req.body);
+  const parsed = requestSchema.safeParse(normalizeRequest(req.body));
   if (!parsed.success) return errorResponse(res, "Periksa data dokumen", 400, z.treeifyError(parsed.error));
   const snapshot = await createSnapshot(parsed.data, req.user, "PRATINJAU", new Date().toISOString());
   const pdf = await renderFinancialDocument(snapshot);
@@ -159,7 +170,7 @@ export const previewFinancialPdf = handle(async (req, res) => {
 });
 
 export const issueFinancialDocument = handle(async (req, res) => {
-  const parsed = requestSchema.safeParse(req.body);
+  const parsed = requestSchema.safeParse(normalizeRequest(req.body));
   if (!parsed.success) return errorResponse(res, "Periksa data dokumen", 400, z.treeifyError(parsed.error));
   const issuedAt = new Date();
   const base = await createSnapshot(parsed.data, req.user, "PRATINJAU", issuedAt.toISOString());
