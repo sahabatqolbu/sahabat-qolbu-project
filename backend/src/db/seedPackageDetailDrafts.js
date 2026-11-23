@@ -4,6 +4,7 @@ import { packageDetailDrafts } from "./packageDetailDrafts.js";
 import {
   masterAirlines,
   masterAirports,
+  masterHotels,
   packageOptions,
   packages,
 } from "./schema.js";
@@ -19,9 +20,10 @@ const run = async () => {
   if (selectedCode && drafts.length === 0) {
     throw new Error(`Package detail draft not found: ${selectedCode}`);
   }
-  const [airlines, airports] = await Promise.all([
+  const [airlines, airports, hotels] = await Promise.all([
     db.select().from(masterAirlines),
     db.select().from(masterAirports),
+    db.select().from(masterHotels),
   ]);
   const airlineByCode = new Map(airlines.map((item) => [item.code, item.id]));
   const airportByCode = new Map(airports.map((item) => [item.code, item.id]));
@@ -33,6 +35,14 @@ const run = async () => {
     if (!airlineId || !arrivalAirportId || !returnAirportId) {
       throw new Error(`Master maskapai/bandara belum lengkap untuk ${draft.code}`);
     }
+    const hotelId = (name, city) => {
+      if (!name) return null;
+      const found = hotels.find((hotel) => hotel.city === city && hotel.name.trim().toLowerCase() === name.trim().toLowerCase());
+      if (!found) throw new Error(`Hotel ${name} (${city}) belum ada di master untuk ${draft.code}`);
+      return found.id;
+    };
+    const hotelMakkahId = hotelId(draft.hotelMakkahName, "MAKKAH");
+    const hotelMadinahId = hotelId(draft.hotelMadinahName, "MADINAH");
 
     await db.transaction(async (tx) => {
       const [existing] = await tx
@@ -54,8 +64,8 @@ const run = async () => {
         departureDate: draft.departureDate,
         returnDate: draft.returnDate,
         duration: draft.duration,
-        price: money(defaultOption.priceQuad),
-        discountPrice: null,
+        price: money(draft.normalPrice ?? defaultOption.priceQuad),
+        discountPrice: draft.normalPrice ? money(defaultOption.priceQuad) : null,
         priceDouble: money(defaultOption.priceDouble),
         priceTriple: money(defaultOption.priceTriple),
         priceQuad: money(defaultOption.priceQuad),
@@ -67,6 +77,8 @@ const run = async () => {
         termsConditions: draft.termsConditions?.join("\n") || null,
         registrationSteps: draft.registrationSteps?.join("\n") || null,
         airlineId,
+        hotelMakkahId,
+        hotelMadinahId,
         airlineStatus: "PLANNING",
         hotelMakkahStatus: "PLANNING",
         hotelMadinahStatus: "PLANNING",
@@ -84,6 +96,8 @@ const run = async () => {
         priceTriple: money(option.priceTriple),
         priceQuad: money(option.priceQuad),
         priceQuint: "0",
+        hotelMakkahId,
+        hotelMadinahId,
         isDefault: index === 0,
         isActive: true,
         sortOrder: index,
