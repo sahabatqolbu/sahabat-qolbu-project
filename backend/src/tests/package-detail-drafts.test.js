@@ -74,6 +74,8 @@ test("Lailatul Qadar plus Lebaran draft keeps the early bird price and hotels", 
   assert.equal(draft.airlineCode, "QR");
   assert.equal(draft.normalPrice, 49.9);
   assert.equal(draft.options[0].priceQuad, 48.9);
+  assert.equal(draft.options[0].priceTriple, 54.6);
+  assert.equal(draft.options[0].priceDouble, 65.3);
   assert.equal(draft.hotelMakkahName, "Nada Ajyad");
   assert.equal(draft.hotelMadinahName, "ABRAJ TABA");
   assert.match(draft.facilities.join(" "), /Kereta Cepat Haramain/);

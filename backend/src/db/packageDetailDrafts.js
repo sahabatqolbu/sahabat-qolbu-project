@@ -30,7 +30,7 @@ export const packageDetailDrafts = [
       "Penerbangan Qatar Airways",
     ],
     notes: [
-      "Harga early bird Rp48,9 juta/pax (harga normal Rp49,9 juta), all in sesuai ketentuan paket. Materi tidak menyebut tipe kamar: harga dimasukkan sebagai Quad, harga Triple dan Double belum ada dan perlu diisi admin.",
+      "Harga early bird Quad Rp48,9 juta/pax (harga normal Rp49,9 juta), Triple Rp54,6 juta, Double Rp65,3 juta; all in sesuai ketentuan paket.",
       "Rute diasumsikan tiba di Jeddah (ke Makkah lebih dulu) dan pulang dari Madinah karena perjalanan Makkah-Madinah memakai Kereta Cepat Haramain. Konfirmasi rute dan nomor penerbangan Qatar Airways sebelum publikasi.",
       "Materi menyebut Qatar Airways sebagai maskapai terbaik dunia 2026 versi AirlineRatings.com; pastikan klaim ini masih berlaku sebelum dipakai di materi publik.",
       "Tanggal Idul Fitri 1448 H mengikuti ketetapan resmi; jadwal program menyesuaikan.",
@@ -61,8 +61,8 @@ export const packageDetailDrafts = [
       {
         name: "Pilihan Utama - Nada Ajyad / Abraj Taba",
         priceQuad: 48.9,
-        priceTriple: 0,
-        priceDouble: 0,
+        priceTriple: 54.6,
+        priceDouble: 65.3,
       },
     ],
   },
