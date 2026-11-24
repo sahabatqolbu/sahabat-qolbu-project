@@ -80,3 +80,13 @@ test("Lailatul Qadar plus Lebaran draft keeps the early bird price and hotels", 
   assert.equal(draft.hotelMadinahName, "ABRAJ TABA");
   assert.match(draft.facilities.join(" "), /Kereta Cepat Haramain/);
 });
+
+test("public draft notes never carry internal admin instructions", () => {
+  // `notes` is rendered publicly as "Keunggulan Paket"; admin reminders belong in adminNotes.
+  const internal = /draft|admin|konfirmasi|diasumsikan|sebelum publikasi|materi|perlu diisi|perlu dilengkapi|pastikan/i;
+  for (const draft of packageDetailDrafts) {
+    for (const line of draft.notes) {
+      assert.doesNotMatch(line, internal, `${draft.code}: "${line}"`);
+    }
+  }
+});

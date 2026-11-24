@@ -1023,7 +1023,7 @@ export default async function LandingPackageDetailPage({
               <DetailSection id="tidak-termasuk" title="Tidak Termasuk">
                 <SimpleList
                   items={pkg.excluded}
-                  fallback="Informasi tidak termasuk belum diisi di dashboard."
+                  fallback="Rincian biaya di luar paket akan dijelaskan oleh admin Sahabat Qolbu saat konsultasi."
                   icon={XCircle}
                 />
               </DetailSection>
@@ -1031,7 +1031,7 @@ export default async function LandingPackageDetailPage({
               <DetailSection id="keunggulan" title="Keunggulan Paket">
                 <SimpleList
                   items={packageAdvantages}
-                  fallback="Keunggulan paket belum diisi di dashboard."
+                  fallback="Informasi keunggulan paket dapat ditanyakan langsung kepada admin Sahabat Qolbu."
                   icon={CheckCircle2}
                 />
               </DetailSection>

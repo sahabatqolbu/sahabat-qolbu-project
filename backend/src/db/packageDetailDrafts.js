@@ -30,6 +30,16 @@ export const packageDetailDrafts = [
       "Penerbangan Qatar Airways",
     ],
     notes: [
+      "Full I'tikaf 10 Malam Terakhir — memburu Lailatul Qadar di Masjidil Haram",
+      "Lebaran di Makkah — merayakan Idul Fitri 1448 H di Tanah Suci",
+      "Terbang dengan Qatar Airways — perjalanan 17 hari yang nyaman",
+      "Hotel Dekat Masjid — Makkah: Nada Ajyad dekat Masjidil Haram, Madinah: Abraj Taba ±190 meter dari Masjid Nabawi",
+      "Gratis Kereta Cepat Haramain — perjalanan Makkah ke Madinah lebih cepat dan nyaman",
+      "Sahur, Iftar & Tim Medis — sahur dan iftar selama program, didampingi tim medis pribadi",
+      "Travel Resmi & Berizin — PT Sahabat Qolbu Cahaya Baitullah, Izin PPIU No. 12112100038690008",
+    ],
+    // Internal notes for admins; never stored in a public field.
+    adminNotes: [
       "Harga early bird Quad Rp48,9 juta/pax (harga normal Rp49,9 juta), Triple Rp54,6 juta, Double Rp65,3 juta; all in sesuai ketentuan paket.",
       "Rute diasumsikan tiba di Jeddah (ke Makkah lebih dulu) dan pulang dari Madinah karena perjalanan Makkah-Madinah memakai Kereta Cepat Haramain. Konfirmasi rute dan nomor penerbangan Qatar Airways sebelum publikasi.",
       "Materi menyebut Qatar Airways sebagai maskapai terbaik dunia 2026 versi AirlineRatings.com; pastikan klaim ini masih berlaku sebelum dipakai di materi publik.",
@@ -86,6 +96,15 @@ export const packageDetailDrafts = [
       "Kepulangan: SV 818, 15 Februari 2027, JED-CGK, 02.20-16.00",
     ],
     notes: [
+      "Awal Ramadhan di Tanah Suci — menyambut bulan suci dengan ibadah umroh",
+      "Bersama Ustadz Khalid — didampingi Ustadz Khalid selama pelaksanaan umrah",
+      "Langsung ke Madinah — penerbangan Saudia Airlines CGK-MED, lanjut ke Makkah dengan kereta",
+      "Hotel Pilihan — Madinah: Triple One, Makkah: Makarem Ajyad, Jeddah: Sedra Al Alami",
+      "City Tour Makkah dan Madinah — mengunjungi tempat bersejarah di dua kota suci",
+      "Travel Resmi & Berizin — PT Sahabat Qolbu Cahaya Baitullah, Izin PPIU No. 12112100038690008",
+    ],
+    // Internal notes for admins; never stored in a public field.
+    adminNotes: [
       "Ustadz Khalid mendampingi hanya selama proses pelaksanaan umrah, bukan sepanjang perjalanan.",
       "Materi awal mencantumkan kepulangan 14 Februari 2027, sedangkan jadwal penerbangan pulang SV 818 berangkat 15 Februari 2027 pukul 02.20. Konfirmasi jadwal final sebelum paket dipublikasikan.",
       "Kontak yang tercantum pada materi: 0851-2805-2678.",
@@ -118,6 +137,15 @@ export const packageDetailDrafts = [
       "Desert experience: Desert Safari, Dune Bashing, Camel Ride, dan BBQ Dinner",
     ],
     notes: [
+      "Umroh Plus Dubai 12 Hari — ibadah di Makkah dan Madinah, lalu menikmati Dubai dalam satu perjalanan",
+      "Terbang dengan Emirates — penerbangan nyaman untuk perjalanan panjang",
+      "Program Dubai Lengkap — Dubai Frame, Museum of the Future, Burj Khalifa, Burj Al Arab, Jumeirah Beach, dan Atlantis",
+      "Desert Safari — dune bashing, camel ride, dan BBQ dinner di gurun Dubai",
+      "Cek Kesehatan & Infus Vitamin — pemeriksaan tensi dan gula darah serta infus vitamin booster",
+      "Travel Resmi & Berizin — PT Sahabat Qolbu Cahaya Baitullah, Izin PPIU No. 12112100038690008",
+    ],
+    // Internal notes for admins; never stored in a public field.
+    adminNotes: [
       "Draft paket: jumlah seat, itinerary harian, gambar, syarat pendaftaran, biaya di luar paket, dan ketentuan final perlu dilengkapi admin sebelum publikasi",
       "Harga dan susunan program mengikuti materi awal dan dapat berubah setelah konfirmasi operasional",
     ],
@@ -154,6 +182,15 @@ export const packageDetailDrafts = [
       "Program Turki: Hagia Sophia, Emirgan Park Tulip, Masjid Abu Ayub, Bosphorus Private Cruise, Masjid Ulucami, Tophane Garden, Blue Mosque, Hippodrome Area, Topkapi Palace Museum, dan Grand Bazaar",
     ],
     notes: [
+      "Umroh Plus Turki 12 Hari — ibadah di Makkah dan Madinah, dilanjutkan wisata sejarah Islam di Istanbul",
+      "Terbang dengan Emirates — penerbangan nyaman untuk perjalanan panjang",
+      "Jejak Kejayaan Islam — Hagia Sophia, Blue Mosque, Topkapi Palace Museum, dan Masjid Abu Ayub",
+      "Bosphorus Private Cruise — menyusuri selat Bosphorus, plus Grand Bazaar dan Emirgan Park",
+      "Cek Kesehatan & Infus Vitamin — pemeriksaan tensi dan gula darah serta infus vitamin booster",
+      "Travel Resmi & Berizin — PT Sahabat Qolbu Cahaya Baitullah, Izin PPIU No. 12112100038690008",
+    ],
+    // Internal notes for admins; never stored in a public field.
+    adminNotes: [
       "Draft paket: jumlah seat, itinerary harian, gambar, syarat pendaftaran, biaya di luar paket, dan ketentuan final perlu dilengkapi admin sebelum publikasi",
       "Harga dan susunan program mengikuti materi awal dan dapat berubah setelah konfirmasi operasional",
     ],
@@ -188,6 +225,15 @@ export const packageDetailDrafts = [
       "Program flash sale dengan seat terbatas",
     ],
     notes: [
+      "Harga Flash Sale — seat promo terbatas untuk keberangkatan awal November",
+      "Plus City Tour Thaif — ditambah city tour Makkah dan Madinah",
+      "Bonus Perjalanan — 2x Ayam Al-Baik, Air Zamzam 5 liter, dan transmitter untuk 1x umrah",
+      "Hotel Pilihan — Makkah: Al Massa Fayzeen, Madinah: Mukhtara / ODST (atau setaraf)",
+      "Cocok untuk Keluarga — program 9 hari yang praktis dengan pendampingan perjalanan",
+      "Travel Resmi & Berizin — PT Sahabat Qolbu Cahaya Baitullah, Izin PPIU No. 12112100038690008",
+    ],
+    // Internal notes for admins; never stored in a public field.
+    adminNotes: [
       "Harga spesial berlaku selama seat promo masih tersedia.",
       "Perlengkapan Umrah** mengikuti ketentuan dan detail final dari admin.",
       "Harga, ketersediaan seat, susunan hotel, dan fasilitas dapat berubah setelah konfirmasi operasional.",
@@ -243,6 +289,15 @@ export const packageDetailDrafts = [
       "Program flash sale dengan seat terbatas",
     ],
     notes: [
+      "Harga Flash Sale — seat promo terbatas untuk keberangkatan awal November",
+      "Plus City Tour Thaif — ditambah city tour Makkah dan Madinah",
+      "Bonus Perjalanan — 2x Ayam Al-Baik, Air Zamzam 5 liter, dan transmitter untuk 1x umrah",
+      "Hotel Strategis — Makkah: Winner Inn / Nada Ajyad, Madinah: ODST / Triple One (atau setaraf)",
+      "Cocok untuk Keluarga — program 9 hari yang praktis dengan pendampingan perjalanan",
+      "Travel Resmi & Berizin — PT Sahabat Qolbu Cahaya Baitullah, Izin PPIU No. 12112100038690008",
+    ],
+    // Internal notes for admins; never stored in a public field.
+    adminNotes: [
       "Harga spesial berlaku selama seat promo masih tersedia.",
       "Perlengkapan Umrah** mengikuti ketentuan dan detail final dari admin.",
       "Harga, ketersediaan seat, susunan hotel, dan fasilitas dapat berubah setelah konfirmasi operasional.",
@@ -298,6 +353,15 @@ export const packageDetailDrafts = [
       "Program flash sale dengan seat terbatas",
     ],
     notes: [
+      "Harga Flash Sale — seat promo terbatas untuk keberangkatan akhir November",
+      "Plus City Tour Thaif — ditambah city tour Makkah dan Madinah",
+      "Bonus Perjalanan — 2x Ayam Al-Baik, Air Zamzam 5 liter, dan transmitter untuk 1x umrah",
+      "Hotel Strategis — Makkah: Winner Inn / Nada Ajyad, Madinah: ODST / Triple One (atau setaraf)",
+      "Cocok untuk Keluarga — program 9 hari yang praktis dengan pendampingan perjalanan",
+      "Travel Resmi & Berizin — PT Sahabat Qolbu Cahaya Baitullah, Izin PPIU No. 12112100038690008",
+    ],
+    // Internal notes for admins; never stored in a public field.
+    adminNotes: [
       "Harga spesial berlaku selama seat promo masih tersedia.",
       "Perlengkapan Umrah** mengikuti ketentuan dan detail final dari admin.",
       "Harga, ketersediaan seat, susunan hotel, dan fasilitas dapat berubah setelah konfirmasi operasional.",
