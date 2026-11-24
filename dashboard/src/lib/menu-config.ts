@@ -25,6 +25,7 @@ import {
   Briefcase,
   Globe,
   Laptop,
+  ClipboardCheck,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -61,6 +62,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Kelola Jamaah",
       href: "/admin/jamaah",
       icon: UserCheck,
+    },
+    {
+      label: "Pendataan Jamaah",
+      href: "/admin/pendataan",
+      icon: ClipboardCheck,
     },
     {
       label: "Calon Jamaah",
@@ -338,6 +344,11 @@ export const MENU_CONFIG: Record<string, MenuItem[]> = {
       label: "Kelola Jamaah",
       href: "/staff/jamaah",
       icon: UserCheck,
+    },
+    {
+      label: "Pendataan Jamaah",
+      href: "/staff/pendataan",
+      icon: ClipboardCheck,
     },
     {
       label: "Calon Jamaah",

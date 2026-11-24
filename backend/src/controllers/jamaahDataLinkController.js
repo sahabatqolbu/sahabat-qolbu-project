@@ -146,3 +146,75 @@ export const exchangeDataLink = async (req, res, next) => {
     next(error);
   }
 };
+
+// Same requirements as submitting for approval (jamaahSelfController.submitForApproval).
+const REQUIRED_FIELDS = ["namaPaspor", "nik", "birthDate", "birthPlace", "gender", "address", "province", "city", "emergencyName", "emergencyPhone"];
+const REQUIRED_DOCS = ["fotoUrl", "ktpUrl", "kkUrl"];
+
+const memberProgress = (member) => {
+  const filled = [...REQUIRED_FIELDS, ...REQUIRED_DOCS].filter((field) => member[field]).length;
+  return Math.round((filled / (REQUIRED_FIELDS.length + REQUIRED_DOCS.length)) * 100);
+};
+
+// Tracker for the data collection drive: one row per jamaah account (a family shares one link).
+export const getDataCollection = async (req, res, next) => {
+  try {
+    const members = await db
+      .select({
+        id: jamaahData.id,
+        userId: jamaahData.userId,
+        bookingNumber: jamaahData.bookingNumber,
+        memberName: jamaahData.memberName,
+        isPrimaryMember: jamaahData.isPrimaryMember,
+        registrationStatus: jamaahData.registrationStatus,
+        ...Object.fromEntries([...REQUIRED_FIELDS, ...REQUIRED_DOCS].map((field) => [field, jamaahData[field]])),
+        fullName: users.fullName,
+        phone: users.phone,
+      })
+      .from(jamaahData)
+      .innerJoin(users, eq(users.id, jamaahData.userId))
+      .where(and(eq(users.role, "JAMAAH"), eq(users.isActive, true)));
+
+    const links = await db.select().from(jamaahDataLinks).orderBy(desc(jamaahDataLinks.createdAt));
+    const latestLink = new Map();
+    for (const link of links) if (!latestLink.has(link.userId)) latestLink.set(link.userId, link);
+
+    const accounts = new Map();
+    for (const member of members) {
+      const account = accounts.get(member.userId) || { userId: member.userId, name: member.fullName, phone: member.phone, members: [] };
+      account.members.push({
+        bookingNumber: member.bookingNumber,
+        name: member.memberName || member.namaPaspor || member.fullName,
+        isPrimary: Boolean(member.isPrimaryMember),
+        registrationStatus: member.registrationStatus,
+        progress: memberProgress(member),
+      });
+      accounts.set(member.userId, account);
+    }
+
+    const now = Date.now();
+    const rows = [...accounts.values()].map((account) => {
+      account.members.sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+      const link = latestLink.get(account.userId);
+      const progress = Math.round(account.members.reduce((sum, m) => sum + m.progress, 0) / account.members.length);
+      return {
+        ...account,
+        bookingNumber: account.members[0].bookingNumber,
+        progress,
+        complete: account.members.every((m) => m.progress === 100),
+        submitted: account.members.every((m) => m.registrationStatus !== "DRAFT"),
+        link: link ? {
+          sentAt: link.createdAt,
+          active: !link.revokedAt && new Date(link.expiresAt).getTime() > now,
+          expiresAt: link.expiresAt,
+          lastUsedAt: link.lastUsedAt,
+          useCount: link.useCount,
+        } : null,
+      };
+    }).sort((a, b) => a.progress - b.progress);
+
+    return successResponse(res, rows);
+  } catch (error) {
+    next(error);
+  }
+};

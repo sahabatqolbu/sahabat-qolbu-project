@@ -1,6 +1,6 @@
 // backend/src/routes/jamaah.js
 import express from "express";
-import { createDataLink, getDataLinkStatus, revokeDataLink } from "../controllers/jamaahDataLinkController.js";
+import { createDataLink, getDataCollection, getDataLinkStatus, revokeDataLink } from "../controllers/jamaahDataLinkController.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
 import {
@@ -198,6 +198,13 @@ router.post(
   authorize(["ADMIN", "AGEN"]),
   validate(jamaahAdminSchemas.create),
   createJamaah,
+);
+// Must stay above "/admin/:bookingNumber" so the path is not read as a booking number.
+router.get(
+  "/admin/data-collection",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  getDataCollection,
 );
 router.get(
   "/admin/:bookingNumber",

@@ -83,7 +83,21 @@ export interface CreatedDataLink {
   phone: string | null;
 }
 
+export interface DataCollectionRow {
+  userId: number;
+  name: string;
+  phone: string | null;
+  bookingNumber: string;
+  progress: number;
+  complete: boolean;
+  submitted: boolean;
+  members: { bookingNumber: string; name: string; isPrimary: boolean; registrationStatus: string; progress: number }[];
+  link: { sentAt: string; active: boolean; expiresAt: string; lastUsedAt: string | null; useCount: number } | null;
+}
+
 export const jamaahService = {
+  getDataCollection: async () =>
+    (await api.get<{ data: DataCollectionRow[] }>("/jamaah/admin/data-collection")).data.data,
   getDataLink: async (bookingNumber: string) =>
     (await api.get<{ data: DataLinkStatus }>(`/jamaah/admin/${encodeURIComponent(bookingNumber)}/data-link`)).data.data,
   createDataLink: async (bookingNumber: string) =>
