@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Building2,
@@ -112,8 +112,25 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
     return availableMonths[0] || "";
   });
 
-  // Sync when filters prop changes
-  useEffect(() => {
+  // Level 2: Selected Package Type for the active month ("ALL" or specific name)
+  const [selectedPackage, setSelectedPackage] = useState<string>("ALL");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter & Sort state
+  const [selectedAirline, setSelectedAirline] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<"date_asc" | "price_asc">("date_asc");
+
+  // Accordion Expand state (one or none)
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  // Pagination / Limit state (default show 5)
+  const [showAll, setShowAll] = useState<boolean>(false);
+  // Re-apply the filters prop (also on first render) by adjusting state during render.
+  const filterKey = JSON.stringify([filters.departureMonth, filters.duration, filters.airline, availableMonths]);
+  const [appliedFilterKey, setAppliedFilterKey] = useState<string | null>(null);
+  if (appliedFilterKey !== filterKey) {
+    setAppliedFilterKey(filterKey);
     const matchingMonth = lists.find((list) => list.items.some((item) =>
       (!filters.duration || String(item.duration) === filters.duration) &&
       (!filters.airline || item.airline?.name === filters.airline)
@@ -129,22 +146,8 @@ export default function PackageScheduleLists({ lists, filters }: Props) {
       setExpandedId(null);
       setShowAll(false);
     }
-  }, [filters.departureMonth, filters.duration, filters.airline, availableMonths, lists]);
+  }
 
-  // Level 2: Selected Package Type for the active month ("ALL" or specific name)
-  const [selectedPackage, setSelectedPackage] = useState<string>("ALL");
-  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Filter & Sort state
-  const [selectedAirline, setSelectedAirline] = useState<string>("ALL");
-  const [sortBy, setSortBy] = useState<"date_asc" | "price_asc">("date_asc");
-
-  // Accordion Expand state (one or none)
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-
-  // Pagination / Limit state (default show 5)
-  const [showAll, setShowAll] = useState<boolean>(false);
   const activeMonth = availableMonths.includes(selectedMonth) ? selectedMonth : availableMonths[0] || "";
 
   // When month changes, reset package tab & expanded state

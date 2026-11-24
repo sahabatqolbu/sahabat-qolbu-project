@@ -331,34 +331,12 @@ export const login = async (req, res, next) => {
       return unauthorizedResponse(res, "Email atau password salah");
     }
 
-    // Check password (supports bcrypt variants + legacy plain-text records once)
-    let isPasswordValid = false;
-
-    if (isBcryptHash(user.password)) {
-      logger.debug("Login password mode", { userId: user.id, mode: "bcrypt" });
-      isPasswordValid = await comparePassword(password, user.password);
-    } else {
-      logger.debug("Login password mode", {
-        userId: user.id,
-        mode: "legacy-plain",
-      });
-      isPasswordValid = password === user.password;
-
-      if (isPasswordValid) {
-        const migratedHash = await hashPassword(password);
-        await db
-          .update(users)
-          .set({
-            password: migratedHash,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, user.id));
-
-        logger.security("Legacy password hash migrated", {
-          userId: user.id,
-          email: normalizedEmail,
-        });
-      }
+    // Only bcrypt hashes are accepted; a non-hash value in the column never authenticates.
+    const isPasswordValid = isBcryptHash(user.password)
+      ? await comparePassword(password, user.password)
+      : false;
+    if (!isBcryptHash(user.password)) {
+      logger.security("Login rejected - stored password is not a bcrypt hash", { userId: user.id });
     }
 
     if (!isPasswordValid) {

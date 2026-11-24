@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -25,11 +25,14 @@ export default function PackageOptionSelect({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [value, setValue] = useState(String(selectedOptionId));
+  const [syncedOptionId, setSyncedOptionId] = useState(selectedOptionId);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
+  // Follow the option chosen on the server (e.g. after navigation) without an effect.
+  if (syncedOptionId !== selectedOptionId) {
+    setSyncedOptionId(selectedOptionId);
     setValue(String(selectedOptionId));
-  }, [selectedOptionId]);
+  }
 
   const handleChange = (nextValue: string) => {
     setValue(nextValue);
