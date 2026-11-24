@@ -51,6 +51,17 @@ const activeLinkWhere = (userId) => and(
   gt(jamaahDataLinks.expiresAt, new Date()),
 );
 
+// One live link per account: a new link replaces the previous one.
+export const issueDataLink = async (userId, createdBy = null) => {
+  const token = randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + LINK_TTL_DAYS * 24 * 60 * 60 * 1000);
+  await db.transaction(async (tx) => {
+    await tx.update(jamaahDataLinks).set({ revokedAt: new Date() }).where(activeLinkWhere(userId));
+    await tx.insert(jamaahDataLinks).values({ userId, tokenHash: hashLinkToken(token), expiresAt, createdBy });
+  });
+  return { url: `${dashboardUrl()}/isi-data/${token}`, expiresAt };
+};
+
 export const createDataLink = async (req, res, next) => {
   try {
     const { jamaah, user, error } = await findAccount(req.params.bookingNumber);
@@ -58,16 +69,9 @@ export const createDataLink = async (req, res, next) => {
     if (user.role !== "JAMAAH") return errorResponse(res, "Link pengisian data hanya untuk akun jamaah", 400);
     if (!user.isActive) return errorResponse(res, "Akun jamaah nonaktif", 400);
 
-    const token = randomBytes(32).toString("base64url");
-    const expiresAt = new Date(Date.now() + LINK_TTL_DAYS * 24 * 60 * 60 * 1000);
-    await db.transaction(async (tx) => {
-      // One live link per account: a new link replaces the previous one.
-      await tx.update(jamaahDataLinks).set({ revokedAt: new Date() }).where(activeLinkWhere(user.id));
-      await tx.insert(jamaahDataLinks).values({ userId: user.id, tokenHash: hashLinkToken(token), expiresAt, createdBy: req.user.userId });
-    });
+    const { url, expiresAt } = await issueDataLink(user.id, req.user.userId);
     await audit(req, "CREATE_DATA_LINK", `Link pengisian data untuk booking ${jamaah.bookingNumber}`);
 
-    const url = `${dashboardUrl()}/isi-data/${token}`;
     const name = jamaah.memberName || user.fullName || "Bapak/Ibu";
     const message = [
       `Assalamu'alaikum ${name},`,

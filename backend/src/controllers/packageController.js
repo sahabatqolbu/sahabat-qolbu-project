@@ -506,7 +506,7 @@ const withGeneratedPackageCodeRetry = async (
 // =====================================================
 // HELPER: Calculate Booked Seats
 // =====================================================
-const getBookedSeats = async (packageId) => {
+export const getBookedSeats = async (packageId) => {
   const result = await db
     .select({ count: count() })
     .from(jamaahData)
@@ -557,7 +557,7 @@ const getBookedSeatsByPackageIds = async (packageIds = []) => {
 // =====================================================
 // HELPER: Calculate Days Until Departure
 // =====================================================
-const getDaysUntilDeparture = (departureDate) => {
+export const getDaysUntilDeparture = (departureDate) => {
   if (!departureDate) {
     return 9999;
   }

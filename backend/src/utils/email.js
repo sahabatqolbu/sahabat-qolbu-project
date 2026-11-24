@@ -46,6 +46,10 @@ const getEmailQueue = () => {
 
 export const sendEmail = async ({ to, subject, text, html, queue = isQueueEnabled }) => {
   try {
+    // Accounts registered without an email get a reserved .invalid address; never send to it.
+    if (String(to || "").toLowerCase().endsWith(".invalid")) {
+      return { success: true, skipped: true };
+    }
     if (isTestEnv) {
       return {
         success: true,
@@ -84,6 +88,10 @@ export const sendEmail = async ({ to, subject, text, html, queue = isQueueEnable
 
 export const sendEmailSync = async ({ to, subject, text, html }) => {
   try {
+    // Accounts registered without an email get a reserved .invalid address; never send to it.
+    if (String(to || "").toLowerCase().endsWith(".invalid")) {
+      return { success: true, skipped: true };
+    }
     if (isTestEnv) {
       return {
         success: true,

@@ -1,6 +1,7 @@
 // backend/src/routes/auth.js
 import express from "express";
 import { exchangeDataLink } from "../controllers/jamaahDataLinkController.js";
+import { registerForPackage } from "../controllers/packageRegistrationController.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { validate, authSchemas } from "../validators/index.js";
 import {
@@ -36,6 +37,7 @@ router.post(
 );
 router.post("/login", authLimiter, validate(authSchemas.login), login);
 router.post("/data-link", authLimiter, exchangeDataLink);
+router.post("/register/paket", createAccountLimiter, registerForPackage);
 router.get("/google", authLimiter, startGoogleOAuth);
 router.get("/google/callback", authLimiter, handleGoogleOAuthCallback);
 router.post(

@@ -56,7 +56,7 @@ const isBookingNumberDuplicateError = (error) => {
   return error?.code === "ER_DUP_ENTRY" && message.includes("booking_number");
 };
 
-const createJamaahDataWithRetry = async (
+export const createJamaahDataWithRetry = async (
   buildValues,
   maxRetries = 5,
   executor = db,

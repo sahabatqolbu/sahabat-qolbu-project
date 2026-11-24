@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CalendarClock, Loader2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBranding } from "@/components/providers/BrandingProvider";
-import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
+import { getPackageRegistrationUrl } from "@/lib/dashboard-url";
 
 const fallbackImg =
   "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&q=80";
@@ -285,7 +285,7 @@ export default function PackageCard({ pkg, detailBasePath = "/paket" }: Props) {
   }
 
   const detailLink = `${detailBasePath}/${pkg.slug}`;
-  const registerLink = getCalonJamaahPackageRegisterUrl(pkg.slug);
+  const registerLink = getPackageRegistrationUrl(pkg.id);
   const availability = getPackageAvailability(pkg);
   const displayPrice = formatPrice(
     pkg.priceQuad || pkg.priceTriple || pkg.priceDouble,

@@ -34,7 +34,7 @@ import {
   getPublicHotelDetail,
   type MarketingPackage,
 } from "@/lib/public-api";
-import { getCalonJamaahPackageRegisterUrl } from "@/lib/dashboard-url";
+import { getPackageRegistrationUrl } from "@/lib/dashboard-url";
 import { getItineraryPreviewUrl } from "@/lib/itinerary-url";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -750,10 +750,7 @@ export default async function LandingPackageDetailPage({
   const seatsLeft = getSeatsLeft(pkg);
   const consultLink = getWhatsappLink(pkg, "consult");
   const waitlistLink = getWhatsappLink(pkg, "waitlist");
-  const bookingLink = getCalonJamaahPackageRegisterUrl(
-    pkg.slug,
-    selectedOption?.id,
-  );
+  const bookingLink = getPackageRegistrationUrl(pkg.id, selectedOption?.id);
   const typeLabel = getPackageTypeLabel(pkg);
   const packageDescription =
     String(pkg.description || "").trim() ||

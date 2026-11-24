@@ -148,6 +148,7 @@ export const issueAuthSession = async (
   user,
   message = "Login berhasil",
   statusCode = 200,
+  extraData = {},
 ) => {
   await db
     .update(users)
@@ -175,6 +176,7 @@ export const issueAuthSession = async (
         role: user.role,
         phone: user.phone || null,
       },
+      ...extraData,
     },
     message,
     statusCode,

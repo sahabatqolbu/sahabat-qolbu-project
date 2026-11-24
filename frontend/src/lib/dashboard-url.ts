@@ -43,3 +43,10 @@ export const getCalonJamaahPackageRegisterUrl = (
   const nextPath = `/calon-jamaah/packages/${slug}${optionQuery}`;
   return getCalonJamaahRegisterUrl(nextPath);
 };
+
+// One-screen registration: no account, email or password needed.
+export const getPackageRegistrationUrl = (packageId: number, packageOptionId?: number) => {
+  const params = new URLSearchParams({ paket: String(packageId) });
+  if (packageOptionId) params.set("opsi", String(packageOptionId));
+  return `${getDashboardBaseUrl()}/daftar-paket?${params.toString()}`;
+};
