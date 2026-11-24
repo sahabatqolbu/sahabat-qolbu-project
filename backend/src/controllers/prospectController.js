@@ -1,3 +1,4 @@
+import { seatHeldCondition } from "../utils/seats.js";
 import { and, count, desc, eq, like, or, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import {
@@ -143,7 +144,7 @@ const getBookedSeats = async (packageId) => {
     .where(
       and(
         eq(jamaahData.packageId, packageId),
-        sql`${jamaahData.registrationStatus} IN ('DRAFT','PENDING_DOCUMENT','PENDING_PAYMENT','VERIFIED','APPROVED')`,
+        seatHeldCondition(),
       ),
     );
 

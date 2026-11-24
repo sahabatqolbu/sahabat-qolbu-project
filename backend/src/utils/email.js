@@ -403,3 +403,57 @@ export const sendCredentialsEmail = async (email, fullName, password) => {
 };
 
 export default transporter;
+const registrationRows = ({ packageName, people, roomType, total }) => `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; line-height:1.8; color:#334155;">
+    <tr><td style="width:130px; color:#64748b;">Paket</td><td><strong>${escapeHtml(packageName)}</strong></td></tr>
+    <tr><td style="color:#64748b;">Jumlah jamaah</td><td><strong>${escapeHtml(String(people))} orang</strong></td></tr>
+    <tr><td style="color:#64748b;">Tipe kamar</td><td><strong>${escapeHtml(roomType)}</strong></td></tr>
+    <tr><td style="color:#64748b;">Estimasi total</td><td><strong>${formatCurrency(total)}</strong></td></tr>
+  </table>`;
+
+export const sendRegistrationReceivedEmail = async ({ email, fullName, packageName, people, roomType, total, continueUrl }) => {
+  const html = renderEmailLayout({
+    title: "Pendaftaran Diterima",
+    subtitle: "Tim kami akan menghubungi Anda lewat WhatsApp untuk konfirmasi seat.",
+    preheader: `Pendaftaran ${packageName} sudah kami terima.`,
+    cta: { href: continueUrl, label: "Lanjut Isi Data Jamaah" },
+    children: `
+      <div style="font-size:18px; font-weight:800; color:#0A2C45; margin-bottom:10px;">Assalamu'alaikum ${escapeHtml(fullName)},</div>
+      <p style="font-size:15px; line-height:1.8; margin:0 0 16px;">Terima kasih telah mendaftar bersama ${escapeHtml(brand.name)}. Pendaftaran Anda sudah kami terima. Sambil menunggu konfirmasi, silakan lengkapi data jamaah melalui tombol di bawah, tanpa perlu password.</p>
+      ${infoBox(registrationRows({ packageName, people, roomType, total }))}
+      <p style="font-size:14px; line-height:1.8; color:#64748b; margin:20px 0 0;">Link berlaku 14 hari dan khusus untuk Anda. Seat dikunci setelah dikonfirmasi tim kami atau setelah DP. Jika Anda tidak merasa mendaftar, abaikan email ini.</p>
+    `,
+  });
+  return sendEmail({
+    to: email,
+    subject: `Pendaftaran ${packageName} diterima`,
+    text: `Assalamu'alaikum ${fullName}, pendaftaran ${packageName} (${people} orang) sudah kami terima. Lanjut isi data: ${continueUrl}`,
+    html,
+  });
+};
+
+export const sendSeatConfirmedEmail = async ({ email, fullName, packageName, people, roomType, total, accessUrl, banks = [] }) => {
+  const bankRows = banks.map((bank) => `<tr><td style="width:130px; color:#64748b;">${escapeHtml(bank.bankName)}</td><td><strong>${escapeHtml(bank.accountNumber)}</strong> a.n. ${escapeHtml(bank.accountName)}</td></tr>`).join("");
+  const html = renderEmailLayout({
+    title: "Pendaftaran Dikonfirmasi",
+    subtitle: "Seat Anda sudah kami amankan.",
+    preheader: `Seat ${packageName} untuk ${people} orang sudah dikonfirmasi.`,
+    cta: { href: accessUrl, label: "Buka Data Jamaah" },
+    children: `
+      <div style="font-size:18px; font-weight:800; color:#0A2C45; margin-bottom:10px;">Assalamu'alaikum ${escapeHtml(fullName)},</div>
+      <p style="font-size:15px; line-height:1.8; margin:0 0 16px;">Alhamdulillah, pendaftaran Anda sudah dikonfirmasi dan seat sudah kami amankan. Langkah berikutnya: lengkapi data dan dokumen jamaah, lalu lakukan pembayaran DP ke rekening resmi di bawah.</p>
+      ${infoBox(registrationRows({ packageName, people, roomType, total }))}
+      ${bankRows ? infoBox(`
+        <div style="font-size:13px; color:#64748b; font-weight:700; margin-bottom:10px;">Rekening resmi PT Sahabat Qolbu Cahaya Baitullah</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px; line-height:1.8; color:#334155;">${bankRows}</table>
+      `) : ""}
+      <p style="font-size:14px; line-height:1.8; color:#64748b; margin:20px 0 0;">Tombol di atas membuka data jamaah Anda tanpa password dan berlaku 14 hari. Upload bukti transfer di menu Pembayaran setelah membayar.</p>
+    `,
+  });
+  return sendEmail({
+    to: email,
+    subject: `Pendaftaran ${packageName} dikonfirmasi`,
+    text: `Assalamu'alaikum ${fullName}, pendaftaran ${packageName} (${people} orang) sudah dikonfirmasi. Buka data jamaah: ${accessUrl}`,
+    html,
+  });
+};

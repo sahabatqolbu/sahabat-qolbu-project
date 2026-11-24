@@ -22,6 +22,11 @@ const shortDate = (value?: string | null) =>
   value ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "";
 
 const statusText = (row: DataCollectionRow) => {
+  const seat = row.seatConfirmed ? "Seat dikonfirmasi. " : "";
+  return seat + linkText(row);
+};
+
+const linkText = (row: DataCollectionRow) => {
   if (row.complete && row.submitted) return "Lengkap dan sudah dikirim ke admin";
   if (row.complete) return "Data lengkap, jamaah belum menekan Kirim";
   if (!row.link) return "Link belum dikirim";
@@ -43,6 +48,7 @@ export default function DataCollectionPage() {
   const basePath = pathname?.startsWith("/staff") ? "/staff" : "/admin";
   const [filter, setFilter] = useState<Filter>("ALL");
   const [sendingFor, setSendingFor] = useState<string | null>(null);
+  const [armedConfirm, setArmedConfirm] = useState<string | null>(null);
 
   const query = useQuery({ queryKey: ["data-collection"], queryFn: jamaahService.getDataCollection });
   const rows = useMemo(() => query.data ?? [], [query.data]);
@@ -78,6 +84,29 @@ export default function DataCollectionPage() {
     },
     onSettled: () => setSendingFor(null),
   });
+
+  const confirmMutation = useMutation({
+    mutationFn: (bookingNumber: string) => jamaahService.confirmSeat(bookingNumber),
+    onSuccess: (result) => {
+      toast({ title: result.message, description: result.data.emailSent ? undefined : "Kirim link lewat WhatsApp karena email belum ada atau gagal terkirim." });
+      queryClient.invalidateQueries({ queryKey: ["data-collection"] });
+    },
+    onError: (error) => {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast({ variant: "destructive", title: "Gagal konfirmasi", description: message || "Coba lagi" });
+    },
+    onSettled: () => setArmedConfirm(null),
+  });
+
+  // Two clicks so a seat is never confirmed by a stray tap.
+  const confirm = (row: DataCollectionRow) => {
+    if (armedConfirm !== row.bookingNumber) {
+      setArmedConfirm(row.bookingNumber);
+      window.setTimeout(() => setArmedConfirm((current) => (current === row.bookingNumber ? null : current)), 4000);
+      return;
+    }
+    confirmMutation.mutate(row.bookingNumber);
+  };
 
   const send = (row: DataCollectionRow) => {
     // Open the tab inside the click so the browser does not block it as a popup.
@@ -135,13 +164,14 @@ export default function DataCollectionPage() {
       ) : (
         <ul className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 bg-white">
           {visible.map((row) => (
-            <li key={row.userId} className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_200px_210px] sm:items-center sm:gap-6">
+            <li key={row.userId} className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_180px_310px] sm:items-center sm:gap-6">
               <div className="min-w-0">
                 <p className="truncate font-medium text-gray-900">{row.name}</p>
                 <p className="text-xs text-gray-500">
                   <span className="font-mono">{row.bookingNumber}</span>
                   {row.members.length > 1 && ` · ${row.members.length} anggota keluarga`}
                   {row.phone ? ` · ${row.phone}` : " · tanpa nomor HP"}
+                  {row.email ? ` · ${row.email}` : " · tanpa email"}
                 </p>
                 <p className="mt-1 text-xs text-gray-600">{statusText(row)}</p>
               </div>
@@ -154,7 +184,13 @@ export default function DataCollectionPage() {
                   <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${row.progress}%` }} />
                 </div>
               </div>
-              <div className="flex gap-2 sm:justify-end">
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                {!row.seatConfirmed && (
+                  <Button size="sm" variant={armedConfirm === row.bookingNumber ? "default" : "outline"} onClick={() => confirm(row)} disabled={confirmMutation.isPending && armedConfirm === row.bookingNumber}>
+                    {confirmMutation.isPending && armedConfirm === row.bookingNumber ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+                    {armedConfirm === row.bookingNumber ? "Klik lagi untuk konfirmasi" : "Konfirmasi"}
+                  </Button>
+                )}
                 {!(row.complete && row.submitted) && (
                   <Button size="sm" onClick={() => send(row)} disabled={sendingFor === row.bookingNumber} className="bg-green-600 hover:bg-green-700">
                     {sendingFor === row.bookingNumber ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-1 h-4 w-4" />}
@@ -173,7 +209,7 @@ export default function DataCollectionPage() {
       )}
 
       <p className="text-xs text-gray-500">
-        &ldquo;Kirim ulang&rdquo; membuat link baru dan mematikan link lama. Satu link berlaku untuk semua anggota keluarga dalam satu akun.
+        &ldquo;Konfirmasi&rdquo; mengunci seat dan mengirim email akses serta rekening pembayaran ke jamaah. &ldquo;Kirim ulang&rdquo; membuat link baru dan mematikan link lama. Satu link berlaku untuk semua anggota keluarga dalam satu akun.
       </p>
     </div>
   );

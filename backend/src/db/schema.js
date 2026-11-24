@@ -1189,6 +1189,9 @@ export const jamaahData = mysqlTable(
       "REJECTED",
     ]).default("DRAFT"),
     isProfileComplete: boolean("is_profile_complete").default(false),
+    // Seat held for this member once an admin confirms the registration.
+    seatConfirmedAt: timestamp("seat_confirmed_at"),
+    seatConfirmedBy: int("seat_confirmed_by"),
 
     // === NOTES & TIMESTAMPS ===
     notes: text("notes"),

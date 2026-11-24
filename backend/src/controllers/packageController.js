@@ -1,4 +1,5 @@
 // backend/src/controllers/packageController.js
+import { seatHeldCondition } from "../utils/seats.js";
 import { concurrentMutation } from "../utils/concurrentMutation.js";
 export const createPackage = concurrentMutation(createPackageHandler);
 
@@ -513,10 +514,7 @@ export const getBookedSeats = async (packageId) => {
     .where(
       and(
         eq(jamaahData.packageId, packageId),
-        or(
-          eq(jamaahData.registrationStatus, "CONFIRMED"),
-          eq(jamaahData.registrationStatus, "PENDING_PAYMENT"),
-        ),
+        seatHeldCondition(),
       ),
     );
   return result[0]?.count || 0;
@@ -536,10 +534,7 @@ const getBookedSeatsByPackageIds = async (packageIds = []) => {
     .where(
       and(
         inArray(jamaahData.packageId, packageIds),
-        or(
-          eq(jamaahData.registrationStatus, "CONFIRMED"),
-          eq(jamaahData.registrationStatus, "PENDING_PAYMENT"),
-        ),
+        seatHeldCondition(),
       ),
     )
     .groupBy(jamaahData.packageId);

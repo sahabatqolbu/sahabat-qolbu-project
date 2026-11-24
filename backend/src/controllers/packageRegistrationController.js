@@ -6,9 +6,10 @@ import { packageOptions, packages, users } from "../db/schema.js";
 import { errorResponse } from "../utils/response.js";
 import { hashPassword } from "../utils/password.js";
 import { logger } from "../utils/logger.js";
+import { sendRegistrationReceivedEmail } from "../utils/email.js";
 import { issueAuthSession } from "./authController.js";
 import { createJamaahDataWithRetry } from "./adminController.js";
-import { issueDataLink, toWhatsAppNumber } from "./jamaahDataLinkController.js";
+import { currentStaffRole, issueDataLink, toWhatsAppNumber } from "./jamaahDataLinkController.js";
 import { getBookedSeats, getDaysUntilDeparture, getPackageBookingState } from "./packageController.js";
 import { notifyAdmins } from "./notificationController.js";
 
@@ -16,6 +17,7 @@ const ROOM_PRICE_FIELD = { QUAD: "priceQuad", TRIPLE: "priceTriple", DOUBLE: "pr
 
 export const packageRegistrationSchema = z.object({
   fullName: z.string().trim().min(3, "Nama minimal 3 huruf").max(150),
+  email: z.string().trim().toLowerCase().email("Format email tidak valid").max(255),
   phone: z.string().trim().regex(/^[0-9+\-\s()]{9,20}$/, "Nomor WhatsApp tidak valid"),
   packageId: z.coerce.number().int().positive(),
   packageOptionId: z.coerce.number().int().positive().optional(),
@@ -25,9 +27,6 @@ export const packageRegistrationSchema = z.object({
   honeypot: z.string().max(0).optional().default(""),
   formStartedAt: z.coerce.number().optional(),
 });
-
-// Accounts created without an email get a reserved address that mail is never sent to.
-export const placeholderEmail = (waNumber) => `daftar-${waNumber}-${randomBytes(3).toString("hex")}@sahabatqolbu.invalid`;
 
 const findAccountByPhone = async (waNumber) => {
   const lastDigits = waNumber.slice(-9);
@@ -73,17 +72,19 @@ export const registerForPackage = async (req, res, next) => {
     const unitPrice = Number((option || pkg)[ROOM_PRICE_FIELD[input.roomType]] || 0);
     if (unitPrice <= 0) return errorResponse(res, "Tipe kamar ini belum tersedia untuk paket tersebut", 400);
 
-    // Never hand out a session for an account found only by phone number.
-    const existing = await findAccountByPhone(waNumber);
+    // Never hand out a session for an existing account found by email or phone; the reply
+    // does not say which one matched, so the form cannot be used to probe who is registered.
+    const existing = (await db.query.users.findFirst({ where: eq(users.email, input.email), columns: { id: true } }))
+      || (await findAccountByPhone(waNumber));
     if (existing) {
       await notifyAdmins({
         type: "JAMAAH_REGISTERED",
-        title: "Pendaftaran ulang dari nomor terdaftar",
-        message: `${input.fullName} (${input.phone}) mendaftar ${pkg.name} dengan nomor yang sudah punya akun. Hubungi lewat WhatsApp.`,
+        title: "Pendaftaran ulang dari akun terdaftar",
+        message: `${input.fullName} (${input.phone}, ${input.email}) mendaftar ${pkg.name} dengan email atau nomor yang sudah punya akun. Hubungi lewat WhatsApp.`,
         referenceId: existing.id,
         referenceType: "USER",
       });
-      return errorResponse(res, "Nomor WhatsApp ini sudah terdaftar. Tim Sahabat Qolbu akan menghubungi Anda lewat WhatsApp untuk melanjutkan.", 409, null, "PHONE_REGISTERED");
+      return errorResponse(res, "Email atau nomor WhatsApp ini sudah terdaftar. Tim Sahabat Qolbu akan menghubungi Anda lewat WhatsApp untuk melanjutkan.", 409, null, "ALREADY_REGISTERED");
     }
 
     const extraNames = Array.from({ length: input.people - 1 }, (_, index) => {
@@ -97,7 +98,7 @@ export const registerForPackage = async (req, res, next) => {
 
     const user = await db.transaction(async (tx) => {
       const [created] = await tx.insert(users).values({
-        email: placeholderEmail(waNumber),
+        email: input.email,
         password: await hashPassword(randomBytes(24).toString("base64url")),
         fullName: input.fullName,
         phone: input.phone,
@@ -136,6 +137,20 @@ export const registerForPackage = async (req, res, next) => {
     logger.security("Direct package registration", { userId: user.id, packageId: pkg.id, people: input.people });
 
     const link = await issueDataLink(user.id, null);
+    sendRegistrationReceivedEmail({
+      email: input.email,
+      fullName: input.fullName,
+      packageName: pkg.name,
+      people: input.people,
+      roomType: input.roomType,
+      total: unitPrice * input.people,
+      continueUrl: link.url,
+    }).catch((error) => logger.error("Registration email failed", error, { userId: user.id }));
+    const extra = { continueUrl: link.url, continueUntil: link.expiresAt, whatsappNumber: waNumber, packageName: pkg.name };
+    // A staff member filling the form (e.g. for a walk-in customer) keeps their own session.
+    if (await currentStaffRole(req)) {
+      return res.status(201).json({ success: true, message: "Pendaftaran diterima", data: { ...extra, staffSessionKept: true } });
+    }
     return issueAuthSession(req, res, user, "Pendaftaran diterima", 201, {
       continueUrl: link.url,
       continueUntil: link.expiresAt,

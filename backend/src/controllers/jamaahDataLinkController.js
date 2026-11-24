@@ -1,13 +1,31 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, count, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { db } from "../db/index.js";
-import { auditLogs, jamaahData, jamaahDataLinks, users } from "../db/schema.js";
+import { auditLogs, jamaahData, jamaahDataLinks, masterBanks, packages, users } from "../db/schema.js";
+import { seatHeldForPackage } from "../utils/seats.js";
+import { sendSeatConfirmedEmail } from "../utils/email.js";
 import { errorResponse, notFoundResponse, successResponse } from "../utils/response.js";
 import { logger } from "../utils/logger.js";
 import { issueAuthSession } from "./authController.js";
+import { extractToken, verifyToken } from "../utils/jwt.js";
 
 const LINK_TTL_DAYS = 14;
 const dashboardUrl = () => (process.env.DASHBOARD_URL || "https://dashboard.sahabatqolbu.com").replace(/\/$/, "");
+
+const STAFF_ROLES = new Set(["ADMIN", "STAFF", "FINANCE", "AGEN"]);
+
+// Role of the staff session already in this browser, if any; jamaah flows must not replace it.
+export const currentStaffRole = async (req) => {
+  const token = extractToken(req.headers?.authorization) || req.cookies?.access_token;
+  if (!token) return null;
+  try {
+    const { userId } = verifyToken(token);
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { role: true, isActive: true } });
+    return user?.isActive && STAFF_ROLES.has(user.role) ? user.role : null;
+  } catch {
+    return null;
+  }
+};
 
 export const hashLinkToken = (token) => createHash("sha256").update(String(token)).digest("hex");
 
@@ -129,6 +147,10 @@ export const exchangeDataLink = async (req, res, next) => {
   try {
     const token = String(req.body?.token || "");
     if (token.length < 20 || token.length > 100) return errorResponse(res, "Link tidak valid", 400);
+    const staffRole = await currentStaffRole(req);
+    if (staffRole) {
+      return errorResponse(res, `Browser ini sedang login sebagai ${staffRole}. Buka link jamaah di jendela incognito agar sesi Anda tidak tertimpa.`, 409, null, "STAFF_SESSION_ACTIVE");
+    }
     const link = await db.query.jamaahDataLinks.findFirst({
       where: and(eq(jamaahDataLinks.tokenHash, hashLinkToken(token)), isNull(jamaahDataLinks.revokedAt), gt(jamaahDataLinks.expiresAt, new Date())),
     });
@@ -171,9 +193,13 @@ export const getDataCollection = async (req, res, next) => {
         memberName: jamaahData.memberName,
         isPrimaryMember: jamaahData.isPrimaryMember,
         registrationStatus: jamaahData.registrationStatus,
+        seatConfirmedAt: jamaahData.seatConfirmedAt,
+        statusPayment: jamaahData.statusPayment,
+        packageId: jamaahData.packageId,
         ...Object.fromEntries([...REQUIRED_FIELDS, ...REQUIRED_DOCS].map((field) => [field, jamaahData[field]])),
         fullName: users.fullName,
         phone: users.phone,
+        email: users.email,
       })
       .from(jamaahData)
       .innerJoin(users, eq(users.id, jamaahData.userId))
@@ -185,13 +211,16 @@ export const getDataCollection = async (req, res, next) => {
 
     const accounts = new Map();
     for (const member of members) {
-      const account = accounts.get(member.userId) || { userId: member.userId, name: member.fullName, phone: member.phone, members: [] };
+      const email = member.email && !member.email.endsWith(".invalid") ? member.email : null;
+      const account = accounts.get(member.userId) || { userId: member.userId, name: member.fullName, phone: member.phone, email, members: [] };
       account.members.push({
         bookingNumber: member.bookingNumber,
         name: member.memberName || member.namaPaspor || member.fullName,
         isPrimary: Boolean(member.isPrimaryMember),
         registrationStatus: member.registrationStatus,
         progress: memberProgress(member),
+        seatHeld: holdsSeat(member),
+        hasPackage: Boolean(member.packageId),
       });
       accounts.set(member.userId, account);
     }
@@ -207,6 +236,7 @@ export const getDataCollection = async (req, res, next) => {
         progress,
         complete: account.members.every((m) => m.progress === 100),
         submitted: account.members.every((m) => m.registrationStatus !== "DRAFT"),
+        seatConfirmed: account.members.every((m) => m.seatHeld || !m.hasPackage),
         link: link ? {
           sentAt: link.createdAt,
           active: !link.revokedAt && new Date(link.expiresAt).getTime() > now,
@@ -218,6 +248,63 @@ export const getDataCollection = async (req, res, next) => {
     }).sort((a, b) => a.progress - b.progress);
 
     return successResponse(res, rows);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const holdsSeat = (member) =>
+  Boolean(member.seatConfirmedAt) || ["CICILAN", "LUNAS"].includes(member.statusPayment) || member.registrationStatus === "APPROVED";
+
+// Admin confirms a registration: hold the seats, then email the jamaah an access link and payment details.
+export const confirmSeat = async (req, res, next) => {
+  try {
+    const { jamaah, user, error } = await findAccount(req.params.bookingNumber);
+    if (error) return notFoundResponse(res, error);
+    if (user.role !== "JAMAAH") return errorResponse(res, "Konfirmasi hanya untuk akun jamaah", 400);
+
+    const members = await db.query.jamaahData.findMany({ where: eq(jamaahData.userId, user.id) });
+    const pending = members.filter((m) => m.packageId && !m.seatConfirmedAt && m.registrationStatus !== "REJECTED");
+    if (pending.length === 0) return errorResponse(res, "Semua anggota sudah dikonfirmasi atau belum memilih paket", 400);
+
+    const byPackage = new Map();
+    for (const member of pending) byPackage.set(member.packageId, [...(byPackage.get(member.packageId) || []), member]);
+    for (const [packageId, group] of byPackage) {
+      const pkg = await db.query.packages.findFirst({ where: eq(packages.id, packageId), columns: { name: true, totalSeats: true } });
+      const [{ held }] = await db.select({ held: count() }).from(jamaahData).where(seatHeldForPackage(packageId));
+      const needed = group.filter((m) => !holdsSeat(m)).length;
+      const remaining = Number(pkg?.totalSeats || 0) - Number(held || 0);
+      if (needed > remaining) {
+        return errorResponse(res, `Sisa seat ${pkg?.name || "paket"} tinggal ${Math.max(remaining, 0)}, butuh ${needed}`, 409, null, "SEATS_FULL");
+      }
+    }
+
+    await db.update(jamaahData)
+      .set({ seatConfirmedAt: new Date(), seatConfirmedBy: req.user.userId, updatedAt: new Date() })
+      .where(inArray(jamaahData.id, pending.map((m) => m.id)));
+    await audit(req, "CONFIRM_SEAT", `Konfirmasi seat ${pending.length} jamaah untuk booking ${jamaah.bookingNumber}`);
+
+    const { url } = await issueDataLink(user.id, req.user.userId);
+    const account = await db.query.users.findFirst({ where: eq(users.id, user.id), columns: { email: true } });
+    const primary = members.find((m) => m.isPrimaryMember) || members[0];
+    const pkg = await db.query.packages.findFirst({ where: eq(packages.id, primary.packageId), columns: { name: true } });
+    const people = members.filter((m) => m.packageId === primary.packageId && m.registrationStatus !== "REJECTED");
+    let emailSent = false;
+    if (account?.email && !account.email.endsWith(".invalid")) {
+      const banks = await db.query.masterBanks.findMany({ where: eq(masterBanks.isActive, true), columns: { bankName: true, accountNumber: true, accountName: true } });
+      const result = await sendSeatConfirmedEmail({
+        email: account.email,
+        fullName: primary.memberName || user.fullName,
+        packageName: pkg?.name || "Paket umroh",
+        people: people.length,
+        roomType: primary.roomTypeMakkah || "-",
+        total: people.reduce((sum, m) => sum + Number(m.hargaFinal || 0), 0),
+        accessUrl: url,
+        banks,
+      }).catch((err) => { logger.error("Seat confirmation email failed", err, { userId: user.id }); return null; });
+      emailSent = Boolean(result?.success);
+    }
+    return successResponse(res, { confirmed: pending.length, emailSent }, emailSent ? "Seat dikonfirmasi dan email akses terkirim" : "Seat dikonfirmasi (email belum terkirim)");
   } catch (error) {
     next(error);
   }

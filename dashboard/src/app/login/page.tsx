@@ -431,7 +431,7 @@ function LoginContent() {
           href="/daftar-paket"
           className="mt-2 block rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
         >
-          Sudah pilih paket? <span className="font-medium text-primary">Daftar langsung tanpa email</span>
+          Sudah pilih paket? <span className="font-medium text-primary">Daftar langsung tanpa password</span>
         </a>
       </CardHeader>
 

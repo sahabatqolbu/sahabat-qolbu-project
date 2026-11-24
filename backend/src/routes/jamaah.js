@@ -1,6 +1,6 @@
 // backend/src/routes/jamaah.js
 import express from "express";
-import { createDataLink, getDataCollection, getDataLinkStatus, revokeDataLink } from "../controllers/jamaahDataLinkController.js";
+import { confirmSeat, createDataLink, getDataCollection, getDataLinkStatus, revokeDataLink } from "../controllers/jamaahDataLinkController.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
 import {
@@ -252,6 +252,13 @@ router.post(
   authorize(["ADMIN", "STAFF"]),
   validateParams(jamaahAdminSchemas.bookingParams),
   createDataLink,
+);
+router.post(
+  "/admin/:bookingNumber/confirm-seat",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  validateParams(jamaahAdminSchemas.bookingParams),
+  confirmSeat,
 );
 router.delete(
   "/admin/:bookingNumber/data-link",

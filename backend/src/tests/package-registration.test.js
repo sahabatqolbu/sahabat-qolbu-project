@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 process.env.JWT_SECRET ??= "ci-test-jwt-secret-0123456789abcdef";
-const { registerForPackage, placeholderEmail, packageRegistrationSchema } = await import("../controllers/packageRegistrationController.js");
+const { registerForPackage, packageRegistrationSchema } = await import("../controllers/packageRegistrationController.js");
 const { sendEmail } = await import("../utils/email.js");
 
 const fakeRes = () => {
@@ -12,10 +12,14 @@ const fakeRes = () => {
   res.cookie = (name, value) => { res.cookies[name] = value; return res; };
   return res;
 };
-const valid = { fullName: "Ahmad Fauzi", phone: "0812-3456-7890", packageId: 1, roomType: "QUAD", people: 2, formStartedAt: Date.now() - 60_000 };
+const valid = { fullName: "Ahmad Fauzi", email: "Ahmad@Example.com", phone: "0812-3456-7890", packageId: 1, roomType: "QUAD", people: 2, formStartedAt: Date.now() - 60_000 };
 
-test("the one-screen form needs only name, WhatsApp, package, room and people", () => {
-  assert.equal(packageRegistrationSchema.safeParse(valid).success, true);
+test("the one-screen form needs name, email, WhatsApp, package, room and people", () => {
+  const parsed = packageRegistrationSchema.safeParse(valid);
+  assert.equal(parsed.success, true);
+  assert.equal(parsed.data.email, "ahmad@example.com");
+  assert.equal(packageRegistrationSchema.safeParse({ ...valid, email: undefined }).success, false);
+  assert.equal(packageRegistrationSchema.safeParse({ ...valid, email: "bukan-email" }).success, false);
   assert.equal(packageRegistrationSchema.safeParse({ ...valid, roomType: "SUITE" }).success, false);
   assert.equal(packageRegistrationSchema.safeParse({ ...valid, people: 11 }).success, false);
 });
@@ -29,9 +33,7 @@ test("bots filling the hidden field or submitting instantly get no account or se
   }
 });
 
-test("accounts without email get a reserved .invalid address that is never mailed", async () => {
-  const email = placeholderEmail("6281234567890");
-  assert.match(email, /^daftar-6281234567890-[0-9a-f]{6}@sahabatqolbu\.invalid$/);
-  const result = await sendEmail({ to: email, subject: "x", text: "x", html: "x" });
+test("mail is never sent to reserved .invalid addresses", async () => {
+  const result = await sendEmail({ to: "daftar-6281234567890-abc123@sahabatqolbu.invalid", subject: "x", text: "x", html: "x" });
   assert.equal(result.skipped, true);
 });

@@ -218,6 +218,13 @@
       "when": 1795495843059,
       "tag": "0030_add_jamaah_data_links",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795504537252,
+      "tag": "0031_add_jamaah_seat_confirmation",
+      "breakpoints": true
     }
   ]
 }

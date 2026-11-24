@@ -1,4 +1,5 @@
 // backend/src/controllers/dashboardController.js
+import { seatHeldCondition } from "../utils/seats.js";
 import { db } from "../db/index.js";
 import { users, packages, jamaahData, agentData } from "../db/schema.js";
 import { and, desc, eq, inArray, or, sql, count } from "drizzle-orm";
@@ -19,10 +20,7 @@ const getBookedSeatsByPackageIds = async (packageIds = []) => {
     .where(
       and(
         inArray(jamaahData.packageId, packageIds),
-        or(
-          eq(jamaahData.registrationStatus, "CONFIRMED"),
-          eq(jamaahData.registrationStatus, "PENDING_PAYMENT"),
-        ),
+        seatHeldCondition(),
       ),
     )
     .groupBy(jamaahData.packageId);

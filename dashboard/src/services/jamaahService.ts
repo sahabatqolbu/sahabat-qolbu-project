@@ -87,15 +87,19 @@ export interface DataCollectionRow {
   userId: number;
   name: string;
   phone: string | null;
+  email: string | null;
   bookingNumber: string;
   progress: number;
   complete: boolean;
   submitted: boolean;
+  seatConfirmed: boolean;
   members: { bookingNumber: string; name: string; isPrimary: boolean; registrationStatus: string; progress: number }[];
   link: { sentAt: string; active: boolean; expiresAt: string; lastUsedAt: string | null; useCount: number } | null;
 }
 
 export const jamaahService = {
+  confirmSeat: async (bookingNumber: string) =>
+    (await api.post<{ data: { confirmed: number; emailSent: boolean }; message: string }>(`/jamaah/admin/${encodeURIComponent(bookingNumber)}/confirm-seat`)).data,
   getDataCollection: async () =>
     (await api.get<{ data: DataCollectionRow[] }>("/jamaah/admin/data-collection")).data.data,
   getDataLink: async (bookingNumber: string) =>

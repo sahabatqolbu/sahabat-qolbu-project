@@ -28,7 +28,7 @@ type PublicPackage = PriceFields & {
   isBookable?: boolean;
   options?: PackageOption[];
 };
-type Registered = { continueUrl: string; whatsappNumber: string; packageName: string };
+type Registered = { continueUrl: string; whatsappNumber: string; packageName: string; staffSessionKept?: boolean };
 
 const rupiah = (value: number) => `Rp ${new Intl.NumberFormat("id-ID").format(value)}`;
 const price = (source: PriceFields | undefined, room: RoomType) =>
@@ -41,6 +41,7 @@ function RegistrationForm() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [startedAt] = useState(() => Date.now());
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [packageId, setPackageId] = useState<number | null>(Number(params.get("paket")) || null);
   const [optionId, setOptionId] = useState<number | null>(Number(params.get("opsi")) || null);
@@ -69,6 +70,7 @@ function RegistrationForm() {
     mutationFn: async () =>
       (await api.post("/auth/register/paket", {
         fullName,
+        email,
         phone,
         packageId,
         packageOptionId: option?.id,
@@ -80,16 +82,33 @@ function RegistrationForm() {
       })).data?.data,
     onSuccess: (data) => {
       if (data?.user) setAuth(data.user);
-      setDone({ continueUrl: data.continueUrl, whatsappNumber: data.whatsappNumber, packageName: data.packageName });
+      setDone({ continueUrl: data.continueUrl, whatsappNumber: data.whatsappNumber, packageName: data.packageName, staffSessionKept: data.staffSessionKept });
     },
     onError: (err: unknown) => {
       const response = (err as { response?: { data?: { message?: string; code?: string } } })?.response?.data;
-      setError({ message: response?.message || "Pendaftaran gagal. Coba lagi sebentar lagi.", registered: response?.code === "PHONE_REGISTERED" });
+      setError({ message: response?.message || "Pendaftaran gagal. Coba lagi sebentar lagi.", registered: response?.code === "ALREADY_REGISTERED" });
     },
   });
 
   const changePeople = (next: number) => setPeople(Math.min(10, Math.max(1, next)));
-  const canSubmit = fullName.trim().length >= 3 && phone.replace(/\D/g, "").length >= 9 && selected && unitPrice > 0;
+  const canSubmit = fullName.trim().length >= 3 && /^\S+@\S+\.\S+$/.test(email.trim()) && phone.replace(/\D/g, "").length >= 9 && selected && unitPrice > 0;
+
+  if (done?.staffSessionKept) {
+    const forwardText = `Assalamu'alaikum, pendaftaran umroh ${done.packageName} sudah kami terima. Silakan lengkapi data jamaah lewat link berikut (berlaku 14 hari, tanpa password):
+${done.continueUrl}`;
+    return (
+      <div className="space-y-5 text-center">
+        <h1 className="text-xl font-semibold text-gray-900">Pendaftaran tercatat</h1>
+        <p className="text-sm text-gray-600">Anda tetap login sebagai admin. Kirim link lanjutan ke WhatsApp jamaah agar mereka melengkapi data.</p>
+        <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+          <a href={`https://wa.me/${done.whatsappNumber}?text=${encodeURIComponent(forwardText)}`} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="mr-2 h-4 w-4" /> Kirim link ke WhatsApp jamaah
+          </a>
+        </Button>
+        <Button variant="outline" className="w-full" onClick={() => window.location.reload()}>Daftarkan jamaah lain</Button>
+      </div>
+    );
+  }
 
   if (done) {
     const saveText = `Link lanjutan pendaftaran umroh saya (${done.packageName}):\n${done.continueUrl}`;
@@ -123,12 +142,17 @@ function RegistrationForm() {
     >
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Daftar umroh</h1>
-        <p className="mt-1 text-sm text-gray-600">Sekitar 1 menit. Tanpa email dan password, belum perlu bayar sekarang.</p>
+        <p className="mt-1 text-sm text-gray-600">Sekitar 1 menit. Tanpa password, belum perlu bayar sekarang.</p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="fullName">Nama lengkap sesuai KTP</Label>
         <Input id="fullName" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" type="email" inputMode="email" autoComplete="email" placeholder="nama@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <p className="text-xs text-gray-500">Konfirmasi pendaftaran dan link akses dikirim ke email ini.</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="phone">Nomor WhatsApp</Label>
