@@ -8,7 +8,6 @@ import { jamaahSelfService } from "@/services/jamaahSelfService";
 import { useAuthStore } from "@/stores/authStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNav } from "@/components/mobile/BottomNav";
 import { NotificationDropdownJamaah } from "@/components/mobile/NotificationDropdownJamaah";
@@ -17,22 +16,16 @@ import {
   CreditCard,
   FileText,
   Phone,
-  MapPin,
   Calendar,
-  Plane,
-  Building,
   AlertCircle,
   CheckCircle,
   Clock,
   ChevronRight,
   User,
   Loader2,
-  Star,
-  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
-import { format, differenceInDays } from "date-fns";
-import { id } from "date-fns/locale";
+import TripTicket from "@/components/jamaah/TripTicket";
 
 
 export default function JamaahDashboardPage() {
@@ -96,9 +89,6 @@ export default function JamaahDashboardPage() {
 
   // ===== CALCULATIONS =====
   const packageData = profile.package;
-  const daysUntilDeparture = packageData?.departureDate
-    ? differenceInDays(new Date(packageData.departureDate), new Date())
-    : null;
 
   const paymentProgress =
     parseFloat(profile.hargaFinal) > 0
@@ -117,13 +107,9 @@ export default function JamaahDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-8 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-[var(--color-primary)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 rounded-b-[2rem] md:rounded-b-[2.5rem] relative overflow-hidden">
-        {/* Decorative */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-8 left-0 w-24 h-24 bg-white/5 rounded-full -translate-x-1/2" />
-
+      <div className="bg-[var(--color-primary)] text-white p-5 pb-20 md:px-8 md:pt-8 md:pb-24 relative">
         <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm text-white/60">Assalamu'alaikum,</p>
               <h1 className="text-lg md:text-3xl font-bold">
@@ -150,156 +136,49 @@ export default function JamaahDashboardPage() {
             </div>
           </div>
 
-          {/* Booking Number */}
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-[10px] text-white/60">
-              No. Booking
-            </p>
-            <p className="text-lg font-bold tracking-wider">
-              {profile.bookingNumber}
-            </p>
-          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="px-4 md:px-8 -mt-12 md:-mt-16 space-y-4 md:space-y-6 relative z-10 max-w-7xl mx-auto">
-        {/* Package Card */}
-        {packageData ? (
-          <Card className="border-0 shadow-lg rounded-2xl overflow-hidden">
-            <div className="bg-[var(--color-secondary)] p-4 text-[var(--color-secondary-foreground)]">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  <span className="font-bold text-sm">Paket Umrah</span>
-                </div>
-                {daysUntilDeparture !== null && daysUntilDeparture > 0 && (
-                  <Badge className="bg-white/20 text-white border-0">
-                    H-{daysUntilDeparture}
-                  </Badge>
-                )}
-              </div>
-              <h2 className="font-bold text-lg mb-1">{packageData.name}</h2>
-              <div className="flex items-center gap-3 text-sm opacity-90">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {format(new Date(packageData.departureDate), "dd MMM yyyy", {
-                    locale: id,
-                  })}
-                </span>
-              </div>
-            </div>
-            <CardContent className="p-4">
-              <Link href="/jamaah/packages">
-                <Button variant="outline" className="w-full" size="sm">
-                  Lihat Detail Paket
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-0 shadow-lg rounded-2xl">
-            <CardContent className="p-4 text-center">
-              <Package className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">Belum ada paket terdaftar</p>
-              <p className="text-xs text-gray-400 mt-1">Hubungi agen Anda</p>
-            </CardContent>
-          </Card>
-        )}
+        <TripTicket bookingNumber={profile.bookingNumber} pkg={packageData} />
 
         {/* Payment Status */}
-        <Card className="border-0 shadow-md rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-9 w-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <CreditCard className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Status Pembayaran</p>
-                  <p className="font-semibold text-sm">
-                    {profile.statusPayment === "LUNAS" ? (
-                      <span className="text-green-600">Lunas ✓</span>
-                    ) : profile.statusPayment === "CICILAN" ? (
-                      <span className="text-amber-600">Cicilan</span>
-                    ) : (
-                      <span className="text-red-600">Belum Bayar</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <Link href="/jamaah/payments">
-                <Button variant="ghost" size="sm" className="text-xs">
-                  Detail
-                  <ChevronRight className="h-3 w-3 ml-1" />
-                </Button>
+        <Card className="rounded-2xl border border-gray-200 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-900">Pembayaran</p>
+              <Link href="/jamaah/payments" className="inline-flex items-center text-xs font-medium text-[var(--color-primary)]">
+                Riwayat <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
-
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">
-                  Rp {parseFloat(profile.totalPayment).toLocaleString("id-ID")}
-                </span>
-                <span className="font-medium">
-                  Rp {parseFloat(profile.hargaFinal).toLocaleString("id-ID")}
-                </span>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-[width] ${
-                    paymentProgress >= 100
-                      ? "bg-green-500"
-                      : paymentProgress > 0
-                        ? "bg-amber-500"
-                        : "bg-gray-300"
-                  }`}
-                  style={{ width: `${Math.min(paymentProgress, 100)}%` }}
-                />
-              </div>
-              {outstandingAmount > 0 && (
-                <p className="text-xs text-amber-600">
-                  Sisa: Rp {outstandingAmount.toLocaleString("id-ID")}
-                </p>
-              )}
+            <p className="mt-3 text-2xl font-semibold tabular-nums text-gray-900">
+              Rp {parseFloat(profile.totalPayment || "0").toLocaleString("id-ID")}
+            </p>
+            <p className="text-xs text-gray-500">
+              sudah dibayar dari Rp {parseFloat(profile.hargaFinal || "0").toLocaleString("id-ID")}
+            </p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(paymentProgress, 100))} aria-label="Progres pembayaran">
+              <div className="h-full rounded-full bg-[var(--color-primary)] transition-[width]" style={{ width: `${Math.min(paymentProgress, 100)}%` }} />
             </div>
+            <p className="mt-2 text-xs text-gray-600">
+              {profile.statusPayment === "LUNAS"
+                ? "Pembayaran lunas"
+                : outstandingAmount > 0
+                  ? `Sisa Rp ${outstandingAmount.toLocaleString("id-ID")}`
+                  : "Belum ada pembayaran"}
+            </p>
           </CardContent>
         </Card>
 
-        {/* Countdown & Deadlines */}
-        {packageData?.departureDate &&
-          daysUntilDeparture !== null &&
-          daysUntilDeparture > 0 && (
-            <Card className="border-0 shadow-md rounded-2xl overflow-hidden">
-              <div className="bg-blue-600 p-4 text-white">
-                <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 rounded-xl bg-white/20 flex items-center justify-center">
-                    <CalendarDays className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/70">Keberangkatan dalam</p>
-                    <p className="text-3xl font-bold">{daysUntilDeparture}</p>
-                    <p className="text-xs text-white/70">hari lagi</p>
-                  </div>
-                </div>
-              </div>
-              {profile.deadlines?.daysUntilH30 !== null &&
-                profile.deadlines.daysUntilH30 > 0 && (
-                  <CardContent className="p-3 bg-amber-50">
-                    <div className="flex items-center gap-2 text-amber-700">
-                      <AlertCircle className="h-4 w-4" />
-                      <p className="text-xs">
-                        <span className="font-medium">H-30:</span> Serahkan
-                        paspor asli & bukti vaksin (
-                        {profile.deadlines.daysUntilH30} hari lagi)
-                      </p>
-                    </div>
-                  </CardContent>
-                )}
-            </Card>
-          )}
+        {profile.deadlines?.daysUntilH30 !== null && profile.deadlines?.daysUntilH30 > 0 && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p className="text-xs">
+              <span className="font-medium">H-30:</span> serahkan paspor asli dan bukti vaksin ({profile.deadlines.daysUntilH30} hari lagi)
+            </p>
+          </div>
+        )}
 
         {/* Quick Menu */}
         <div>
@@ -309,8 +188,8 @@ export default function JamaahDashboardPage() {
           <div className="grid grid-cols-4 md:grid-cols-6 gap-2 md:gap-4">
             <Link href="/jamaah/packages">
               <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center mb-1.5">
-                  <Package className="h-5 w-5 text-purple-600" />
+                <div className="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center mb-1.5">
+                  <Package className="h-5 w-5 text-[var(--color-primary)]" />
                 </div>
                 <p className="text-[10px] font-medium text-gray-600 text-center">
                   Paket
@@ -320,8 +199,8 @@ export default function JamaahDashboardPage() {
 
             <Link href="/jamaah/payments">
               <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-1.5">
-                  <CreditCard className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center mb-1.5">
+                  <CreditCard className="h-5 w-5 text-[var(--color-primary)]" />
                 </div>
                 <p className="text-[10px] font-medium text-gray-600 text-center">
                   Bayar
@@ -331,8 +210,8 @@ export default function JamaahDashboardPage() {
 
             <Link href="/jamaah/documents">
               <div className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center mb-1.5">
-                  <FileText className="h-5 w-5 text-blue-600" />
+                <div className="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center mb-1.5">
+                  <FileText className="h-5 w-5 text-[var(--color-primary)]" />
                 </div>
                 <p className="text-[10px] font-medium text-gray-600 text-center">
                   Dokumen
