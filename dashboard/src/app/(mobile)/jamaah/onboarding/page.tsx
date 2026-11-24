@@ -321,6 +321,16 @@ export default function JamaahOnboardingPage() {
           </Alert>
         )}
 
+        {currentStep === 1 && !isRejected && (
+          <div className="rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-700">
+            <p className="font-medium text-gray-900">Mulai dari data diri, sekitar 2 menit</p>
+            <p className="mt-1">
+              Semua isian tersimpan otomatis. Boleh berhenti kapan saja dan lanjut nanti dari link yang sama.
+              Dokumen (KTP, KK, foto) bisa difoto langsung dari HP di langkah Dokumen.
+            </p>
+          </div>
+        )}
+
         {/* Step Content */}
         <Card>
           <CardHeader className="pb-4">

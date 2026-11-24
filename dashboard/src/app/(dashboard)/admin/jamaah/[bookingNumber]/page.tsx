@@ -9,6 +9,7 @@ import { adminService } from "@/services/adminService";
 import { packageService } from "@/services/packageService";
 import { masterService } from "@/services/masterService";
 import { useToast } from "@/hooks/use-toast";
+import DataLinkDialog from "@/components/jamaah/DataLinkDialog";
 import { useAuthStore } from "@/stores/authStore";
 import { use, ComponentType, useEffect, useState } from "react";
 
@@ -1352,6 +1353,7 @@ const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
               </Button>
             </Link>
           )}
+          {(user?.role === "ADMIN" || user?.role === "STAFF") && <DataLinkDialog bookingNumber={bookingNumber} />}
           {(user?.role === "ADMIN" || user?.role === "FINANCE") && jamaah.packageId && (
             <Link href={`${roleBasePath}/financial-documents?type=INVOICE&sourceType=BOOKING&sourceId=${encodeURIComponent(bookingNumber)}`}>
               <Button variant="outline"><FileText className="mr-2 h-4 w-4" /> Invoice</Button>

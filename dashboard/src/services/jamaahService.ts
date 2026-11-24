@@ -67,7 +67,30 @@ export interface JamaahDetail {
   // ... all other fields
 }
 
+export interface DataLinkStatus {
+  active: boolean;
+  createdAt?: string;
+  expiresAt?: string;
+  lastUsedAt?: string | null;
+  useCount?: number;
+}
+
+export interface CreatedDataLink {
+  url: string;
+  expiresAt: string;
+  message: string;
+  whatsappUrl: string | null;
+  phone: string | null;
+}
+
 export const jamaahService = {
+  getDataLink: async (bookingNumber: string) =>
+    (await api.get<{ data: DataLinkStatus }>(`/jamaah/admin/${encodeURIComponent(bookingNumber)}/data-link`)).data.data,
+  createDataLink: async (bookingNumber: string) =>
+    (await api.post<{ data: CreatedDataLink }>(`/jamaah/admin/${encodeURIComponent(bookingNumber)}/data-link`)).data.data,
+  revokeDataLink: async (bookingNumber: string) =>
+    (await api.delete(`/jamaah/admin/${encodeURIComponent(bookingNumber)}/data-link`)).data,
+
   // ENDPOINT: /jamaah/admin
   getAll: async (filters?: JamaahFilters) => {
     console.log("jamaahService.getAll - Filters:", filters);

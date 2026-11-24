@@ -1,5 +1,6 @@
 // backend/src/routes/jamaah.js
 import express from "express";
+import { createDataLink, getDataLinkStatus, revokeDataLink } from "../controllers/jamaahDataLinkController.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
 import { authorize } from "../middlewares/roleMiddleware.js";
 import {
@@ -228,6 +229,29 @@ router.post(
   uploadDocument.single("file"),
   saveDocument("jamaah"),
   uploadAdminDocument,
+);
+
+// Personal link for a jamaah to fill in their own data (shared via WhatsApp)
+router.get(
+  "/admin/:bookingNumber/data-link",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  validateParams(jamaahAdminSchemas.bookingParams),
+  getDataLinkStatus,
+);
+router.post(
+  "/admin/:bookingNumber/data-link",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  validateParams(jamaahAdminSchemas.bookingParams),
+  createDataLink,
+);
+router.delete(
+  "/admin/:bookingNumber/data-link",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  validateParams(jamaahAdminSchemas.bookingParams),
+  revokeDataLink,
 );
 
 // Payments

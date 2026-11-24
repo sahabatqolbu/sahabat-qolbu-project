@@ -211,6 +211,13 @@
       "when": 1794561109685,
       "tag": "0029_add_password_changed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795495843059,
+      "tag": "0030_add_jamaah_data_links",
+      "breakpoints": true
     }
   ]
 }

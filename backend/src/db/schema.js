@@ -1998,3 +1998,27 @@ export const assetDocuments = mysqlTable(
     ),
   }),
 );
+
+// =====================================================
+// JAMAAH DATA LINKS (personal WhatsApp link to fill in jamaah data)
+// =====================================================
+export const jamaahDataLinks = mysqlTable(
+  "jamaah_data_links",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Only the SHA-256 of the token is stored; the link itself is shown once.
+    tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+    expiresAt: timestamp("expires_at").notNull(),
+    revokedAt: timestamp("revoked_at"),
+    lastUsedAt: timestamp("last_used_at"),
+    useCount: int("use_count").notNull().default(0),
+    createdBy: int("created_by").references(() => users.id),
+    createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    userIdx: index("jamaah_data_link_user_idx").on(table.userId),
+  }),
+);

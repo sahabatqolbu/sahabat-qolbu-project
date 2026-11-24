@@ -142,7 +142,7 @@ const getGoogleOAuthConfig = () => {
   return { clientId, clientSecret, callbackUrl };
 };
 
-const issueAuthSession = async (
+export const issueAuthSession = async (
   req,
   res,
   user,

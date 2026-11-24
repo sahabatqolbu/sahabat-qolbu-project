@@ -74,6 +74,11 @@ export const authService = {
   },
 
   // Login
+  exchangeDataLink: async (token: string) => {
+    const response = await api.post<LoginResponse>("/auth/data-link", { token });
+    return response.data;
+  },
+
   login: async (data: LoginRequest) => {
     const response = await api.post<LoginResponse>("/auth/login", data);
     return response.data;
