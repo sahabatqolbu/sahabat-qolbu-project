@@ -1,11 +1,8 @@
 // dashboard/src/app/(mobile)/jamaah/page.tsx
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { jamaahSelfService } from "@/services/jamaahSelfService";
-import { useAuthStore } from "@/stores/authStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,18 +19,14 @@ import {
   Clock,
   ChevronRight,
   User,
-  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import TripTicket from "@/components/jamaah/TripTicket";
 
 
 export default function JamaahDashboardPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-
   // ===== FETCH PROFILE =====
-  const { data: profileData, isLoading } = useQuery({
+  const { data: profileData, isLoading, isError, refetch } = useQuery({
     queryKey: ["jamaah-profile"],
     queryFn: () => jamaahSelfService.getProfile(),
     staleTime: 30000,
@@ -41,29 +34,6 @@ export default function JamaahDashboardPage() {
   });
 
   const profile = profileData?.data;
-
-  // ===== REDIRECT LOGIC =====
-  useEffect(() => {
-    if (!isLoading && profile) {
-      const status = profile.registrationStatus;
-
-      // Belum lengkap → Onboarding
-      if (
-        status === "DRAFT" ||
-        status === "PENDING_DOCUMENT" ||
-        status === "REJECTED"
-      ) {
-        router.replace("/jamaah/onboarding");
-        return;
-      }
-
-      // Menunggu approval → Waiting page
-      if (status === "VERIFIED") {
-        router.replace("/jamaah/waiting-approval");
-        return;
-      }
-    }
-  }, [isLoading, profile, router]);
 
   // ===== LOADING STATE =====
   if (isLoading) {
@@ -78,11 +48,76 @@ export default function JamaahDashboardPage() {
     );
   }
 
-  // Jika belum APPROVED, jangan render (redirect akan handle)
-  if (!profile || profile.registrationStatus !== "APPROVED") {
+  if (isError || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-5 text-center">
+        <AlertCircle className="h-9 w-9 text-amber-600" />
+        <h1 className="text-lg font-semibold text-gray-900">Data jamaah belum dapat ditampilkan</h1>
+        <p className="max-w-sm text-sm text-gray-600">Coba muat ulang. Jika tetap bermasalah, hubungi admin untuk memeriksa data akun Anda.</p>
+        <Button onClick={() => refetch()}>Coba Lagi</Button>
+      </div>
+    );
+  }
+
+  if (profile.registrationStatus !== "APPROVED") {
+    const needsOnboarding = ["DRAFT", "PENDING_DOCUMENT", "REJECTED"].includes(
+      profile.registrationStatus,
+    );
+    const awaitingApproval = profile.registrationStatus === "VERIFIED";
+
+    return (
+      <div className="min-h-screen bg-gray-50 px-4 py-8 md:px-8">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div>
+            <p className="text-sm text-gray-600">Assalamu&apos;alaikum,</p>
+            <h1 className="mt-1 text-2xl font-semibold text-gray-900">
+              {profile.user?.fullName?.split(" ")[0] || "Jamaah"}
+            </h1>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-5 sm:p-6">
+            <div className="flex items-start gap-3">
+              {awaitingApproval ? (
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              ) : (
+                <FileText className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-primary)]" />
+              )}
+              <div className="min-w-0">
+                <h2 className="font-semibold text-gray-900">
+                  {awaitingApproval
+                    ? "Data menunggu verifikasi admin"
+                    : profile.registrationStatus === "REJECTED"
+                      ? "Data perlu diperbaiki"
+                      : "Lengkapi data jamaah"}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  {awaitingApproval
+                    ? "Data sudah dikirim. Anda dapat memantau statusnya sambil menunggu persetujuan admin."
+                    : needsOnboarding
+                      ? "Isi biodata dan dokumen yang diperlukan agar admin dapat memeriksa pendaftaran Anda."
+                      : "Status pendaftaran Anda sedang diproses. Hubungi admin jika memerlukan bantuan."}
+                </p>
+                {profile.bookingNumber && (
+                  <p className="mt-3 text-xs text-gray-500">No. booking: {profile.bookingNumber}</p>
+                )}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {needsOnboarding && (
+                    <Button asChild>
+                      <Link href="/jamaah/onboarding">Lanjutkan Pendaftaran</Link>
+                    </Button>
+                  )}
+                  {awaitingApproval && (
+                    <Button asChild>
+                      <Link href="/jamaah/waiting-approval">Lihat Status Verifikasi</Link>
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => refetch()}>
+                    Perbarui Status
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -98,12 +133,6 @@ export default function JamaahDashboardPage() {
 
   const outstandingAmount = parseFloat(profile.outstanding) || 0;
 
-  // Document status
-  const docsComplete = profile.completeness?.requiredDocsComplete;
-  const optionalDocsCount = Object.values(
-    profile.completeness?.optionalDocs || {},
-  ).filter(Boolean).length;
-
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-8 overflow-x-hidden">
       {/* Header */}
@@ -111,7 +140,7 @@ export default function JamaahDashboardPage() {
         <div className="relative z-10 max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs md:text-sm text-white/60">Assalamu'alaikum,</p>
+              <p className="text-xs md:text-sm text-white/60">Assalamu&apos;alaikum,</p>
               <h1 className="text-lg md:text-3xl font-bold">
                 {profile.user?.fullName?.split(" ")[0] || "Jamaah"}
               </h1>
