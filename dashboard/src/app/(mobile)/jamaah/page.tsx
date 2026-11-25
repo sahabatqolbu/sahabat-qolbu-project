@@ -113,6 +113,9 @@ export default function JamaahDashboardPage() {
                   <Button variant="outline" onClick={() => refetch()}>
                     Perbarui Status
                   </Button>
+                  <Button variant="ghost" asChild>
+                    <Link href="/jamaah/profile">Profil &amp; Keluar Akun</Link>
+                  </Button>
                 </div>
               </div>
             </div>
