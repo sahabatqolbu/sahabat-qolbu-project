@@ -834,3 +834,10 @@ html{scroll-behavior:smooth}
 .sq .hero .dots{display:none}
 @media (max-width:640px){.sq .hnav{bottom:64px}.sq .hlabel{display:none}.sq .harrow{width:36px;height:36px}.sq .hseg.on{width:40px}.sq .hseg{width:16px}}
 @media (prefers-reduced-motion:reduce){.sq .hseg.on i::after{animation:none;width:100%}}
+/* ---- detail: flyer besar di atas deskripsi ---- */
+.sq .dsum{grid-template-columns:minmax(0,1fr);gap:24px}
+.sq .dflyer{position:relative;top:auto;max-width:none;display:flex;justify-content:center;background:radial-gradient(120% 120% at 50% 0%,#123f5c 0%,var(--night) 70%);border-radius:20px;padding:12px}
+.sq .dflyer img{width:auto;max-width:100%;height:auto;max-height:760px;border-radius:12px;object-fit:contain}
+.sq .dflyer::after{content:"Klik untuk ukuran penuh";position:absolute;right:20px;bottom:20px;font-size:12px;font-weight:600;color:#fff;background:rgba(7,26,51,.75);padding:6px 12px;border-radius:999px;opacity:0;transition:opacity .2s var(--ease)}
+.sq .dflyer:hover::after{opacity:1}
+@media (max-width:760px){.sq .dflyer{padding:6px;max-width:none}.sq .dflyer img{max-height:none;width:100%}}
