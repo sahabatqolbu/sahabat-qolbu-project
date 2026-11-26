@@ -552,6 +552,59 @@ export const getBookedSeatsByPackageIds = async (packageIds = []) => {
 // =====================================================
 // HELPER: Calculate Days Until Departure
 // =====================================================
+// Field internal (pembayaran vendor, alokasi kamar, override manual) tidak
+// boleh ikut terkirim ke endpoint publik.
+const INTERNAL_PACKAGE_FIELDS = [
+  "airlineStatus",
+  "airlineIssuedDate",
+  "airlineTermin1Amount",
+  "airlineTermin1Date",
+  "airlineTermin1Status",
+  "airlineTermin2Amount",
+  "airlineTermin2Date",
+  "airlineTermin2Status",
+  "airlinePaymentTotal",
+  "airlinePaymentStatus",
+  "hotelMakkahStatus",
+  "hotelMakkahDouble",
+  "hotelMakkahTriple",
+  "hotelMakkahQuad",
+  "hotelMakkahQuint",
+  "hotelMadinahStatus",
+  "hotelMadinahDouble",
+  "hotelMadinahTriple",
+  "hotelMadinahQuad",
+  "hotelMadinahQuint",
+  "hotelMakkahRooms",
+  "hotelMadinahRooms",
+  "manualBookingStatus",
+  "adminNotes",
+];
+
+export const toPublicPackage = (pkg) => {
+  if (!pkg || typeof pkg !== "object") return pkg;
+  const copy = { ...pkg };
+  for (const field of INTERNAL_PACKAGE_FIELDS) delete copy[field];
+  return copy;
+};
+
+/** Menambahkan sisa seat dan status booking ke paket mentah, lalu membuang field internal. */
+export const decoratePublicPackages = async (rows = []) => {
+  const booked = await getBookedSeatsByPackageIds(rows.map((pkg) => pkg.id));
+  return rows.map((pkg) => {
+    const bookedSeats = booked.get(pkg.id) || 0;
+    const remainingSeats = (pkg.totalSeats || 0) - bookedSeats;
+    const daysUntilDeparture = getDaysUntilDeparture(pkg.departureDate);
+    return toPublicPackage({
+      ...pkg,
+      bookedSeats,
+      remainingSeats,
+      daysUntilDeparture,
+      ...getPackageBookingState({ pkg, remainingSeats, daysUntilDeparture }),
+    });
+  });
+};
+
 export const getDaysUntilDeparture = (departureDate) => {
   if (!departureDate) {
     return 9999;
@@ -890,7 +943,9 @@ export const getAllPackages = async (req, res, next) => {
     }
 
     return successResponse(res, {
-      packages: paginatedPackages,
+      packages: req.publicView
+        ? paginatedPackages.map(toPublicPackage)
+        : paginatedPackages,
       pagination: {
         total,
         page: parsedPage,
@@ -1820,6 +1875,7 @@ export const getPublicPackages = async (req, res, next) => {
       isActive: "true",
       isPublished: "true",
     },
+    publicView: true,
   };
 
   return getAllPackages(reqWithPublicFilters, res, next);
@@ -1863,7 +1919,7 @@ export const getPublicPackageById = async (req, res, next) => {
     });
 
     return successResponse(res, {
-      ...packageData,
+      ...toPublicPackage(packageData),
       duration: calculateInclusiveDuration(
         packageData.departureDate,
         packageData.returnDate,

@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import type { PublicFaq } from "@/lib/public-api";
 import { WaLink } from "./chrome";
+import { PageHead } from "./ui";
 import { IconCard, IconDoc, IconPassport, IconPlus, IconSearch, IconSyringe, IconUsers } from "./icons";
 
 const TOPICS = [
@@ -69,15 +70,17 @@ export default function FaqExplorer({ faqs, aside }: { faqs: PublicFaq[]; aside:
 
   return (
     <>
-      <div className="finder" style={{ marginTop: -62 }}>
-        <div className="wrap">
-          <form className="search" role="search" onSubmit={(e) => e.preventDefault()} style={{ maxWidth: 640 }}>
-            <IconSearch />
-            <label htmlFor="faq-cari" className="sr-only">Cari pertanyaan</label>
-            <input id="faq-cari" type="search" placeholder="Cari: paspor, DP, vaksin" value={query} onChange={(e) => setQuery(e.target.value)} />
-          </form>
-        </div>
-      </div>
+      <PageHead
+        crumbs={[{ href: "/", label: "Beranda" }, { label: "FAQ" }]}
+        title="Ada yang ingin ditanyakan?"
+        lead="Jawaban seputar pendaftaran, paspor, vaksin, dan pembayaran umroh di Sahabat Qolbu."
+      >
+        <form className="search hsearch" role="search" onSubmit={(e) => e.preventDefault()}>
+          <IconSearch />
+          <label htmlFor="faq-cari" className="sr-only">Cari pertanyaan</label>
+          <input id="faq-cari" type="search" placeholder="Cari: paspor, DP, vaksin" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </form>
+      </PageHead>
       <section className="sec" style={{ paddingTop: 40 }}>
         <div className="wrap">
           <div className="topics" role="group" aria-label="Pilih topik">

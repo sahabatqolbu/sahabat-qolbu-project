@@ -237,28 +237,33 @@ export default function HeroSlider({ items }: { items: HeroItem[] }) {
         </div>
       ))}
       {items.length > 1 ? (
-        <div className="dots">
-          <div className="wrap" style={{ gridTemplateColumns: `repeat(${items.length},minmax(0,1fr)) auto` }}>
-            {items.map((item, index) => (
-              <button
-                key={`dot-${index}-${index === current ? tick : 0}`}
-                className={`dot${index === current ? " on" : ""}`}
-                type="button"
-                aria-label={`Tampilkan ${item.label}`}
-                aria-current={index === current}
-                onClick={() => show(index)}
-              >
-                {item.label}
-              </button>
-            ))}
-            <div className="arrows">
-              <button type="button" aria-label="Slide sebelumnya" onClick={() => show(current - 1)}>
-                <IconChevron dir="left" />
-              </button>
-              <button type="button" aria-label="Slide berikutnya" onClick={() => show(current + 1)}>
-                <IconChevron dir="right" />
-              </button>
+        <div className="hnav">
+          <div className="hnav-in">
+            <button type="button" className="harrow" aria-label="Slide sebelumnya" onClick={() => show(current - 1)}>
+              <IconChevron dir="left" />
+            </button>
+            <div className="hsegs" role="tablist" aria-label="Pilih slide">
+              {items.map((item, index) => (
+                <button
+                  key={`seg-${index}-${index === current ? tick : 0}`}
+                  type="button"
+                  role="tab"
+                  className={`hseg${index === current ? " on" : ""}`}
+                  aria-label={`Slide ${index + 1}: ${item.label}`}
+                  aria-selected={index === current}
+                  onClick={() => show(index)}
+                >
+                  <i />
+                </button>
+              ))}
             </div>
+            <span className="hcount" aria-hidden="true">
+              <b>{String(current + 1).padStart(2, "0")}</b>/{String(items.length).padStart(2, "0")}
+            </span>
+            <span className="hlabel" aria-live="polite">{items[current]?.label}</span>
+            <button type="button" className="harrow" aria-label="Slide berikutnya" onClick={() => show(current + 1)}>
+              <IconChevron dir="right" />
+            </button>
           </div>
         </div>
       ) : null}

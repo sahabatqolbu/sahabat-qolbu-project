@@ -61,7 +61,11 @@ export default async function HotelPage({ params }: { params: Params }) {
   const videos = (Array.isArray(hotel.videoUrls) ? hotel.videoUrls : parseList(hotel.videoUrls as string | null))
     .map((url) => ({ url: url.replace(/[?&]utm_source=[^&]*/, ""), id: youtubeId(url) }))
     .filter((video) => video.id);
-  const packages = detail.packages.map(toMarketingPackage).map(viewPackage);
+  const rank: Record<string, number> = { open: 0, soon: 1, full: 2, closed: 2, departed: 3 };
+  const packages = detail.packages
+    .map(toMarketingPackage)
+    .map(viewPackage)
+    .sort((a, b) => (rank[a.state] ?? 4) - (rank[b.state] ?? 4) || (b.pkg.departureDate || "").localeCompare(a.pkg.departureDate || ""));
   const gallery = (hotel.images || []).map((image) => image.imageUrl).filter(Boolean);
   const mapsUrl = hotel.mapUrl
     ? hotel.mapUrl.replace(/&utm_source=[^&]*/, "")

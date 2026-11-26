@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getPublicArticlesPage, type PublicArticle } from "@/lib/public-api";
 import ArticleCard, { articleDate, categoryLabel, readingMinutes } from "./ArticleCard";
 import { IconSearch } from "./icons";
+import { PageHead } from "./ui";
 
 const CATEGORIES = [
   { id: "all", label: "Semua" },
@@ -81,16 +82,19 @@ export default function ArticleExplorer({ initial, total }: { initial: PublicArt
 
   return (
     <>
-      <div className="finder" style={{ marginTop: -62 }}>
-        <div className="wrap">
-          <form className="search" role="search" onSubmit={submit} style={{ maxWidth: 640 }}>
-            <IconSearch />
-            <label htmlFor="artikel-cari" className="sr-only">Cari artikel</label>
-            <input id="artikel-cari" type="search" placeholder="Cari: puasa, Abraj Taba, lansia" value={query} onChange={(e) => setQuery(e.target.value)} />
-            <button className="btn btn-gold" type="submit" style={{ minHeight: 44, padding: "0 20px" }}>Cari</button>
-          </form>
-        </div>
-      </div>
+      <PageHead
+        image="/sq/clock-tower.webp"
+        crumbs={[{ href: "/", label: "Beranda" }, { label: "Artikel" }]}
+        title="Artikel dan panduan umroh"
+        lead="Tuntunan ibadah sesuai sunnah, ulasan hotel di Makkah dan Madinah, dan tips persiapan dari tim Sahabat Qolbu."
+      >
+        <form className="search hsearch" role="search" onSubmit={submit}>
+          <IconSearch />
+          <label htmlFor="artikel-cari" className="sr-only">Cari artikel</label>
+          <input id="artikel-cari" type="search" placeholder="Cari: puasa, Abraj Taba, lansia" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <button className="btn btn-gold" type="submit">Cari</button>
+        </form>
+      </PageHead>
       <section className="sec" style={{ paddingTop: 40 }}>
         <div className="wrap">
           <div className="bar">

@@ -10,6 +10,17 @@ import {
 import { and, count, desc, eq, like, or } from "drizzle-orm";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { deleteFile } from "../utils/upload.js";
+import { decoratePublicPackages } from "./packageController.js";
+
+// Relasi yang dibutuhkan kartu paket di halaman hotel dan maskapai.
+const PUBLIC_PACKAGE_RELATIONS = {
+  hotelMakkah: true,
+  hotelMadinah: true,
+  airline: true,
+  arrivalAirport: true,
+  returnAirport: true,
+  images: { orderBy: (images, { asc }) => [asc(images.sortOrder)] },
+};
 
 const ARTICLE_CATEGORIES = new Set([
   "UMRAH",
@@ -440,14 +451,18 @@ export const getPublicHotelById = async (req, res, next) => {
       orderBy: [desc(articles.publishedAt), desc(articles.createdAt)],
     });
 
-    const relatedPackages = await db.query.packages.findMany({
-      where: or(
-        eq(packages.hotelMakkahId, id),
-        eq(packages.hotelMadinahId, id),
-      ),
-      orderBy: [desc(packages.departureDate)],
-      limit: 12,
-    });
+    const relatedPackages = await decoratePublicPackages(
+      await db.query.packages.findMany({
+        where: and(
+          or(eq(packages.hotelMakkahId, id), eq(packages.hotelMadinahId, id)),
+          eq(packages.isActive, true),
+          eq(packages.isPublished, true),
+        ),
+        orderBy: [desc(packages.departureDate)],
+        limit: 12,
+        with: PUBLIC_PACKAGE_RELATIONS,
+      }),
+    );
 
     return successResponse(res, {
       hotel,
@@ -485,15 +500,18 @@ export const getPublicAirlineById = async (req, res, next) => {
       orderBy: [desc(articles.publishedAt), desc(articles.createdAt)],
     });
 
-    const relatedPackages = await db.query.packages.findMany({
-      where: and(
-        eq(packages.airlineId, id),
-        eq(packages.isActive, true),
-        eq(packages.isPublished, true),
-      ),
-      orderBy: [desc(packages.departureDate)],
-      limit: 12,
-    });
+    const relatedPackages = await decoratePublicPackages(
+      await db.query.packages.findMany({
+        where: and(
+          eq(packages.airlineId, id),
+          eq(packages.isActive, true),
+          eq(packages.isPublished, true),
+        ),
+        orderBy: [desc(packages.departureDate)],
+        limit: 12,
+        with: PUBLIC_PACKAGE_RELATIONS,
+      }),
+    );
 
     return successResponse(res, {
       airline,

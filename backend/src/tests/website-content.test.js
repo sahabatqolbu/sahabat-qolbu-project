@@ -63,3 +63,18 @@ test("hero payload normalizes kind, background and package", () => {
   assert.equal(invalid.kind, null);
   assert.equal(invalid.background, null);
 });
+
+test("public package payload drops vendor payment and room allocation fields", async () => {
+  const { toPublicPackage } = await import("../controllers/packageController.js");
+  const cleaned = toPublicPackage({
+    id: 1,
+    name: "Umroh",
+    price: "100",
+    airlineTermin1Amount: "5000000",
+    airlinePaymentStatus: "PAID",
+    hotelMakkahQuad: 4,
+    hotelMadinahRooms: 9,
+    manualBookingStatus: "OPEN",
+  });
+  assert.deepEqual(cleaned, { id: 1, name: "Umroh", price: "100" });
+});

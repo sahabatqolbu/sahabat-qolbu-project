@@ -8,11 +8,19 @@ import { getDashboardBaseUrl } from "@/lib/dashboard-url";
 import { IconMenu, IconShield, IconWa } from "./icons";
 
 const DEFAULT_MESSAGE =
-  "Assalamualaikum, saya lihat di website sahabatqolbu.com dan ingin konsultasi paket umroh";
+  "Assalamualaikum, saya ingin konsultasi paket umroh Sahabat Qolbu";
+
+const SOURCE_TAG = "Lihat dari web sahabatqolbu.com";
+
+/** Semua pesan WhatsApp dari website diberi penanda sumber supaya admin tahu asal lead. */
+export const withSource = (message?: string) => {
+  const text = (message || DEFAULT_MESSAGE).trim();
+  return text.includes(SOURCE_TAG) ? text : `${text}\n\n(${SOURCE_TAG})`;
+};
 
 export const useWaHref = (message?: string) => {
   const { whatsappNumber } = useBranding();
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message || DEFAULT_MESSAGE)}`;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(withSource(message))}`;
 };
 
 /** Link WhatsApp yang mengikuti nomor perusahaan, atau nomor agen bila ada ?agent=. */

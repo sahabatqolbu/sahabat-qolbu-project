@@ -42,8 +42,22 @@ export const viewPackage = (pkg: MarketingPackage) => {
     Number(pkg.remainingSeats ?? Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0)),
     0,
   );
+  const departureTime = new Date(pkg.departureDate || "").getTime();
+  const departed =
+    /berangkat/i.test(pkg.bookingStatusLabel || "") ||
+    (Number.isFinite(departureTime) && departureTime < Date.now() - 86_400_000);
   const open =
-    pkg.isBookable !== false && seats > 0 && !["SOLD_OUT", "CLOSED", "DEPARTED"].includes(status);
+    !departed && pkg.isBookable !== false && seats > 0 && !["SOLD_OUT", "CLOSED", "DEPARTED", "COMING_SOON"].includes(status);
+  const state: "open" | "full" | "closed" | "departed" | "soon" = open
+    ? "open"
+    : departed
+      ? "departed"
+      : status === "COMING_SOON"
+        ? "soon"
+        : status === "SOLD_OUT" || seats <= 0
+          ? "full"
+          : "closed";
+  const STATE_LABEL = { open: "Tersedia", full: "Seat penuh", closed: "Pendaftaran ditutup", departed: "Sudah berangkat", soon: "Segera dibuka" };
   const quad = num(pkg.priceQuad);
   const triple = num(pkg.priceTriple);
   const double = num(pkg.priceDouble);
@@ -53,8 +67,9 @@ export const viewPackage = (pkg: MarketingPackage) => {
     pkg,
     href: `/paket/${pkg.slug}`,
     open,
+    state,
     seats,
-    statusLabel: open ? "Tersedia" : pkg.bookingStatusLabel || "Seat penuh",
+    statusLabel: STATE_LABEL[state],
     price,
     quad,
     triple,
@@ -131,6 +146,10 @@ export function PackageCard({ view }: { view: PackageView }) {
                 message={`Assalamualaikum, saya ingin booking ${name} (${view.date})`}
               >
                 <IconWa />Booking
+              </WaLink>
+            ) : view.state === "departed" ? (
+              <WaLink className="btn btn-line" message={`Assalamualaikum, apakah ada jadwal serupa dengan ${name}?`}>
+                Jadwal serupa
               </WaLink>
             ) : (
               <WaLink className="btn btn-line" message={`Assalamualaikum, saya ingin masuk daftar tunggu ${name}`}>

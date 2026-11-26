@@ -5,7 +5,7 @@ import ArticleCard from "@/components/sq/ArticleCard";
 import Markdown from "@/components/sq/Markdown";
 import { WaLink } from "@/components/sq/chrome";
 import { IconCheck, IconPlane, IconWa } from "@/components/sq/icons";
-import { PageHead, rupiah, titleCase, viewPackage } from "@/components/sq/ui";
+import { PackageCard, PageHead, rupiah, titleCase, viewPackage } from "@/components/sq/ui";
 import { getPublicAirlineDetail, parseEntityIdFromSlug, toMarketingPackage } from "@/lib/public-api";
 import { safeJsonLd } from "@/lib/seo";
 
@@ -45,8 +45,17 @@ export default async function AirlinePage({ params }: { params: Params }) {
 
   const { airline, articles } = detail;
   const name = String(airline.name || "Maskapai");
-  const views = detail.packages.map(toMarketingPackage).map(viewPackage)
-    .sort((a, b) => (b.pkg.departureDate || "").localeCompare(a.pkg.departureDate || ""));
+  const rank: Record<string, number> = { open: 0, soon: 1, full: 2, closed: 2, departed: 3 };
+  const views = detail.packages
+    .map(toMarketingPackage)
+    .map(viewPackage)
+    .sort((a, b) => {
+      const r = (rank[a.state] ?? 4) - (rank[b.state] ?? 4);
+      if (r) return r;
+      return a.state === "departed"
+        ? (b.pkg.departureDate || "").localeCompare(a.pkg.departureDate || "")
+        : (a.pkg.departureDate || "").localeCompare(b.pkg.departureDate || "");
+    });
   const upcoming = views.filter((v) => v.open).sort((a, b) => (a.pkg.departureDate || "").localeCompare(b.pkg.departureDate || ""));
   const facilities = parseList(airline.facilities);
   const routes = [...new Set(upcoming.map((v) => [v.pkg.route?.arrivalCode, v.pkg.route?.returnCode].filter(Boolean).join(" / ")).filter(Boolean))];
@@ -102,20 +111,6 @@ export default async function AirlinePage({ params }: { params: Params }) {
                 </>
               ) : null}
             </div>
-            {views.length ? (
-              <div className="panel">
-                <h2>Jadwal bersama {name}</h2>
-                <ul className="hist">
-                  {views.map((v) => (
-                    <li key={v.pkg.id}>
-                      <time>{v.date}</time>
-                      <Link href={v.href} style={{ color: "var(--navy)", fontWeight: 600, textDecoration: "none" }}>{titleCase(v.pkg.name)}</Link>
-                      <span className={`pill ${v.open ? "go" : "done"}`}>{v.open ? "Tersedia" : v.statusLabel}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
           </div>
           <aside className="sticky lift">
             <div className="panel side">
@@ -135,8 +130,25 @@ export default async function AirlinePage({ params }: { params: Params }) {
         </div>
       </section>
 
-      {articles.length ? (
+      {views.length ? (
         <section className="sec sandband">
+          <div className="wrap">
+            <div className="head">
+              <div>
+                <h2 className="h2">Paket bersama {name}</h2>
+                <p className="lead">{upcoming.length ? `${upcoming.length} jadwal masih tersedia.` : "Belum ada jadwal terbuka."} Jadwal yang sudah lewat tetap ditampilkan sebagai riwayat.</p>
+              </div>
+              <Link className="btn btn-line" href="/paket">Semua paket</Link>
+            </div>
+            <div className="cards">
+              {views.map((v) => <PackageCard key={v.pkg.id} view={v} />)}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {articles.length ? (
+        <section className="sec">
           <div className="wrap">
             <h2 className="h2">Artikel tentang {name}</h2>
             <div className="grid3" style={{ marginTop: 32 }}>

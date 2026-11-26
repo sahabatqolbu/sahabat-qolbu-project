@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ArticleExplorer from "@/components/sq/ArticleExplorer";
 import { WaLink } from "@/components/sq/chrome";
-import { Closing, PageHead } from "@/components/sq/ui";
+import { Closing } from "@/components/sq/ui";
 import { getPublicArticlesPage } from "@/lib/public-api";
 
 export const dynamic = "force-dynamic";
@@ -19,12 +19,6 @@ export default async function ArticlesPage() {
   const { articles, pagination } = await getPublicArticlesPage("page=1&limit=13");
   return (
     <>
-      <PageHead
-        image="/sq/clock-tower.webp"
-        crumbs={[{ href: "/", label: "Beranda" }, { label: "Artikel" }]}
-        title="Artikel dan panduan umroh"
-        lead="Tuntunan ibadah sesuai sunnah, ulasan hotel di Makkah dan Madinah, dan tips persiapan dari tim Sahabat Qolbu."
-      />
       <ArticleExplorer initial={articles} total={pagination.total || articles.length} />
       <Closing
         title="Siap berangkat setelah membaca?"

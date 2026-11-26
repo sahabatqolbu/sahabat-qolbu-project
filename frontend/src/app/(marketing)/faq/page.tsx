@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import FaqExplorer from "@/components/sq/FaqExplorer";
 import { WaLink } from "@/components/sq/chrome";
 import { IconWa } from "@/components/sq/icons";
-import { PageHead } from "@/components/sq/ui";
 import { getActiveBanks, getPublicCompanyProfile, getPublicFaqs } from "@/lib/public-api";
 import { safeJsonLd } from "@/lib/seo";
 
@@ -58,11 +57,6 @@ export default async function FaqPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
-      <PageHead
-        crumbs={[{ href: "/", label: "Beranda" }, { label: "FAQ" }]}
-        title="Ada yang ingin ditanyakan?"
-        lead="Jawaban seputar pendaftaran, paspor, vaksin, dan pembayaran umroh di Sahabat Qolbu."
-      />
       <FaqExplorer faqs={faqs} aside={aside} />
     </>
   );
