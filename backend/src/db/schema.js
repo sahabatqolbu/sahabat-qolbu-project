@@ -974,8 +974,19 @@ export const heroSlides = mysqlTable(
   {
     id: int("id").primaryKey().autoincrement(),
     title: varchar("title", { length: 255 }),
-    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    imageUrl: varchar("image_url", { length: 500 }),
     altText: varchar("alt_text", { length: 255 }),
+    // PROMO: kartu promo dengan teks; BANNER: gambar penuh saja.
+    kind: varchar("kind", { length: 20 }).notNull().default("PROMO"),
+    packageId: int("package_id"),
+    tag: varchar("tag", { length: 60 }),
+    headline: varchar("headline", { length: 160 }),
+    note: varchar("note", { length: 255 }),
+    priceLabel: varchar("price_label", { length: 60 }),
+    oldPriceLabel: varchar("old_price_label", { length: 60 }),
+    ctaLabel: varchar("cta_label", { length: 60 }),
+    ctaUrl: varchar("cta_url", { length: 500 }),
+    background: varchar("background", { length: 20 }).notNull().default("HARAM"),
     isActive: boolean("is_active").notNull().default(true),
     sortOrder: int("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
@@ -990,6 +1001,20 @@ export const heroSlides = mysqlTable(
     ),
   }),
 );
+
+// =====================================================
+// WEBSITE CONTENT (teks dan foto halaman publik yang diatur dari dashboard)
+// =====================================================
+export const siteContents = mysqlTable("site_contents", {
+  id: int("id").primaryKey().autoincrement(),
+  key: varchar("content_key", { length: 50 }).notNull().unique(),
+  content: json("content").notNull(),
+  updatedBy: int("updated_by"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at")
+    .default(sql`CURRENT_TIMESTAMP`)
+    .onUpdateNow(),
+});
 
 // =====================================================
 // ARTICLES / EDUCATIONAL CONTENT

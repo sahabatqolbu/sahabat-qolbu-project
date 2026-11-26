@@ -1,35 +1,37 @@
-import ArticleIndexClient from "@/components/marketing/ArticleIndexClient";
+import type { Metadata } from "next";
+import Link from "next/link";
+import ArticleExplorer from "@/components/sq/ArticleExplorer";
+import { WaLink } from "@/components/sq/chrome";
+import { Closing, PageHead } from "@/components/sq/ui";
+import { getPublicArticlesPage } from "@/lib/public-api";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Artikel Umroh | Sahabat Qolbu",
   description:
-    "Artikel edukasi seputar umroh, hotel, maskapai, dan layanan Sahabat Qolbu.",
+    "Panduan ibadah umroh sesuai sunnah, ulasan hotel Makkah dan Madinah, serta tips persiapan perjalanan dari Sahabat Qolbu.",
+  alternates: { canonical: "/artikel" },
 };
 
-export default function ArtikelPage() {
+export default async function ArticlesPage() {
+  const { articles, pagination } = await getPublicArticlesPage("page=1&limit=13");
   return (
-    <main className="min-h-screen bg-white pt-24 text-neutral-800">
-      <section className="border-b border-neutral-200 bg-neutral-50 py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-gold">
-            Artikel
-          </p>
-          <h1 className="mt-3 text-4xl font-extrabold text-primary md:text-5xl">
-            Panduan & Informasi Umroh
-          </h1>
-          <p className="mt-4 max-w-2xl leading-8 text-neutral-600">
-            Kenali fasilitas, hotel, maskapai, dan panduan perjalanan sebelum
-            memilih paket.
-          </p>
-        </div>
-      </section>
-
-      <section className="py-14 md:py-20">
-        <ArticleIndexClient />
-      </section>
-    </main>
+    <>
+      <PageHead
+        image="/sq/clock-tower.webp"
+        crumbs={[{ href: "/", label: "Beranda" }, { label: "Artikel" }]}
+        title="Artikel dan panduan umroh"
+        lead="Tuntunan ibadah sesuai sunnah, ulasan hotel di Makkah dan Madinah, dan tips persiapan dari tim Sahabat Qolbu."
+      />
+      <ArticleExplorer initial={articles} total={pagination.total || articles.length} />
+      <Closing
+        title="Siap berangkat setelah membaca?"
+        text="Lihat jadwal umroh terdekat atau tanyakan langsung ke admin kami."
+        primary={<Link className="btn btn-gold" href="/paket">Lihat jadwal paket</Link>}
+        secondary={<WaLink className="btn btn-ghost">Konsultasi via WhatsApp</WaLink>}
+      />
+    </>
   );
 }

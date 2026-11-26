@@ -1,879 +1,179 @@
-import { safeJsonLd } from "@/lib/seo";
-import Link from "next/link";
-import { Suspense } from "react";
-import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import RoomCalculator, { type RoomPrice } from "@/components/sq/RoomCalculator";
+import SectionNav from "@/components/sq/SectionNav";
 import {
-  ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
-  ClipboardList,
-  Download,
-  Hotel,
-  Info,
-  MapPin,
-  MessageCircle,
-  Plane,
-  Star,
-  Train,
-  XCircle,
-} from "lucide-react";
-import RelatedPackages from "@/components/marketing/PackageDetail/RelatedPackages";
-import PackageDetailNav from "@/components/marketing/PackageDetail/PackageDetailNav";
-import PackageOptionSelect from "@/components/marketing/PackageDetail/PackageOptionSelect";
-import PackageFlyerGallery from "@/components/marketing/PackageDetail/PackageFlyerGallery";
-import VendorInfoDrawer, {
-  type PackageVendor,
-} from "@/components/marketing/PackageDetail/VendorInfoDrawer";
-import {
-  entitySlug,
-  getMarketingPackageBySlug,
-  getPublicAirlineDetail,
-  getPublicAgentLanding,
-  getPublicHotelDetail,
-  type MarketingPackage,
-} from "@/lib/public-api";
+  IconCalendar,
+  IconCheck,
+  IconClock,
+  IconHotel,
+  IconPlane,
+  IconShield,
+  IconWalk,
+  IconX,
+  Stars,
+} from "@/components/sq/icons";
+import { PackageCard, PageHead, titleCase, typeLabel, viewPackage } from "@/components/sq/ui";
 import { getPackageRegistrationUrl } from "@/lib/dashboard-url";
-import { getItineraryPreviewUrl } from "@/lib/itinerary-url";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { entitySlug, getMarketingPackageBySlug, getMarketingPackages, type MarketingPackage } from "@/lib/public-api";
+import { safeJsonLd } from "@/lib/seo";
+import { normalizeItinerary } from "@/lib/sq-itinerary";
 
 type Params = Promise<{ slug: string }>;
-
-const toCurrency = (value?: string) => {
-  const parsed = Number.parseInt(String(value || "0"), 10);
-  return formatCurrency(Number.isFinite(parsed) ? parsed : 0);
-};
-
-const getNumericPrice = (value?: string) => {
-  const parsed = Number.parseInt(String(value || "0"), 10);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const getOriginalPrice = (pkg: MarketingPackage, currentPrice?: string) => {
-  const originalPrice = getNumericPrice(pkg.originalPrice);
-  const activePrice = getNumericPrice(currentPrice);
-
-  return originalPrice > activePrice ? pkg.originalPrice : undefined;
-};
-
-const getSeatsLeft = (pkg: MarketingPackage) => {
-  const status = String(pkg.bookingStatus || "").toUpperCase();
-  if (status === "SOLD_OUT" || status === "CLOSED") {
-    return 0;
-  }
-  return Math.max(
-    Number(
-      pkg.remainingSeats ??
-        Number(pkg.totalSeats || 0) - Number(pkg.bookedSeats || 0),
-    ),
-    0,
-  );
-};
-
-const getPackageAvailability = (pkg: MarketingPackage, seatsLeft: number) => {
-  const status = String(pkg.bookingStatus || "").toUpperCase();
-
-  if (status === "SOLD_OUT" || seatsLeft <= 0) {
-    return {
-      isBookable: false,
-      label: "Sold Out",
-      description: "Seat paket ini sudah penuh.",
-      buttonLabel: "Sold Out",
-    };
-  }
-
-  if (status === "COMING_SOON") {
-    return {
-      isBookable: false,
-      label: pkg.bookingStatusLabel || "Coming Soon",
-      description:
-        "Detail paket ini sedang dilengkapi. Silakan hubungi admin untuk info awal.",
-      buttonLabel: "Coming Soon",
-    };
-  }
-
-  if (status === "CLOSED" || pkg.isBookable === false) {
-    return {
-      isBookable: false,
-      label: pkg.bookingStatusLabel || "Paket Close",
-      description: "Pendaftaran paket ini sudah close.",
-      buttonLabel: "Paket Close",
-    };
-  }
-
-  if (status === "LAST_CALL" || seatsLeft <= 5) {
-    return {
-      isBookable: true,
-      label: pkg.bookingStatusLabel || `Last Call - Sisa ${seatsLeft} Seat`,
-      description: "Seat terbatas. Segera amankan pilihan kamar Anda.",
-      buttonLabel: "Daftar Sekarang",
-    };
-  }
-
-  return {
-    isBookable: true,
-    label: "Tersedia",
-    description: "",
-    buttonLabel: "Daftar Paket",
-  };
-};
-
-const getPackageTypeLabel = (pkg: MarketingPackage) => {
-  const rawType = String(pkg.backendType || "").trim();
-
-  if (rawType) {
-    return rawType
-      .replace(/[_-]+/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (letter) => letter.toUpperCase());
-  }
-
-  return String(pkg.type || "UMRAH")
-    .replace(/[_-]+/g, " ")
-    .toLowerCase()
-    .replace(/\bumrah\b/g, "umroh")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Params;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const pkg = await getMarketingPackageBySlug(slug);
-
-  if (!pkg) {
-    return {
-      title: "Paket Tidak Ditemukan | Sahabat Qolbu",
-    };
-  }
-
-  const description =
-    pkg.description?.slice(0, 160) ||
-    `Detail paket umroh ${pkg.name} dari Sahabat Qolbu.`;
-
+  if (!pkg) return { title: "Paket Tidak Ditemukan | Sahabat Qolbu" };
+  const name = titleCase(pkg.name);
+  const description = pkg.description?.slice(0, 160) || `Detail paket umroh ${name} dari Sahabat Qolbu.`;
   return {
-    title: `${pkg.name} | Sahabat Qolbu`,
+    title: `${name} | Sahabat Qolbu`,
     description,
-    alternates: {
-      canonical: `/paket/${slug}`,
-    },
+    alternates: { canonical: `/paket/${slug}` },
     openGraph: {
-      title: `${pkg.name} | Sahabat Qolbu`,
+      title: `${name} | Sahabat Qolbu`,
       description,
       url: `https://sahabatqolbu.com/paket/${slug}`,
       images: pkg.image ? [{ url: pkg.image }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${pkg.name} | Sahabat Qolbu`,
+      title: `${name} | Sahabat Qolbu`,
       description,
       images: pkg.image ? [pkg.image] : undefined,
     },
   };
 }
 
-export const viewport = {
-  themeColor: "#0A2C45",
-  width: "device-width",
-  initialScale: 1,
+export const viewport = { themeColor: "#0A2C45", width: "device-width", initialScale: 1 };
+
+const num = (value?: string) => {
+  const parsed = Number.parseFloat(String(value || "0"));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+const dayDate = (value?: string) => {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 };
 
-function BookingPanel({
-  pkg,
-  seatsLeft,
-  bookingLink,
-  consultLink,
-  waitlistLink,
-  selectedOptionId,
-}: {
-  pkg: MarketingPackage;
-  seatsLeft: number;
-  bookingLink: string;
-  consultLink: string;
-  waitlistLink?: string;
-  selectedOptionId?: number;
-}) {
-  const seatPercent = pkg.totalSeats
-    ? Math.round((seatsLeft / pkg.totalSeats) * 100)
-    : 0;
-  const topPrice = pkg.discountedPrice || pkg.priceQuad;
-  const originalPrice = getOriginalPrice(pkg, topPrice);
-  const availability = getPackageAvailability(pkg, seatsLeft);
-  const isLastCall =
-    availability.isBookable &&
-    (String(pkg.bookingStatus || "").toUpperCase() === "LAST_CALL" ||
-      seatsLeft <= 5);
-  const selectedOption = pkg.options?.find(
-    (option) => option.id === selectedOptionId,
-  );
-
-  return (
-    <aside className="lg:sticky lg:top-24">
-      <div className="overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-xl shadow-primary/10">
-        {selectedOptionId && pkg.options && pkg.options.length > 1 ? (
-          <PackageOptionSelect
-            options={pkg.options}
-            selectedOptionId={selectedOptionId}
-            selectedOptionIsDefault={selectedOption?.isDefault === true}
-            selectedOptionHasFlyer={Boolean(selectedOption?.gallery?.length)}
-          />
-        ) : null}
-        <div className="border-b border-neutral-200 p-6">
-          <h2 className="text-xl font-extrabold leading-tight text-primary">
-            {pkg.name}
-          </h2>
-          <p className="mt-5 text-sm font-semibold text-neutral-500">From</p>
-          {originalPrice ? (
-            <p className="mt-1 text-lg font-extrabold text-neutral-400 line-through decoration-2">
-              {toCurrency(originalPrice)}
-            </p>
-          ) : null}
-          <p className="mt-1 text-3xl font-extrabold leading-none text-primary">
-            {toCurrency(topPrice)}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-neutral-500">
-            per orang, kamar quad
-          </p>
+function HotelCard({ label, hotel, distance }: { label: string; hotel: MarketingPackage["hotelMakkah"]; distance?: string }) {
+  const inner = (
+    <>
+      {hotel.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={hotel.imageUrl} alt={`Hotel ${hotel.name}`} loading="lazy" />
+      ) : (
+        <div style={{ aspectRatio: "4/3", borderRadius: 14, background: "var(--sand)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--navy)" }}>
+          <IconHotel width={36} height={36} className="" />
         </div>
-
-        <div className="divide-y divide-neutral-200 px-6">
-          <div className="py-4">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-              Tour Type
-            </p>
-            <p className="mt-1 font-extrabold text-primary">
-              {getPackageTypeLabel(pkg)}
-            </p>
-          </div>
-          <div className="py-4">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-              Hotel Makkah
-            </p>
-            {pkg.hotelMakkah.id ? (
-              <Link
-                href={`/hotel/${entitySlug(pkg.hotelMakkah.name, pkg.hotelMakkah.id)}`}
-                className="mt-1 inline-flex font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
-              >
-                {pkg.hotelMakkah.name}
-              </Link>
-            ) : (
-              <p className="mt-1 font-extrabold text-primary">
-                {pkg.hotelMakkah.name}
-              </p>
-            )}
-            {pkg.hotelMakkah.distanceToHaram ? (
-              <p className="mt-1 text-sm font-semibold text-neutral-500">
-                {pkg.hotelMakkah.distanceToHaram}
-              </p>
-            ) : null}
-          </div>
-          {pkg.hotelMadinah ? (
-            <div className="py-4">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                Hotel Madinah
-              </p>
-              {pkg.hotelMadinah.id ? (
-                <Link
-                  href={`/hotel/${entitySlug(pkg.hotelMadinah.name, pkg.hotelMadinah.id)}`}
-                  className="mt-1 inline-flex font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
-                >
-                  {pkg.hotelMadinah.name}
-                </Link>
-              ) : (
-                <p className="mt-1 font-extrabold text-primary">
-                  {pkg.hotelMadinah.name}
-                </p>
-              )}
-              {pkg.hotelMadinah.distanceToMasjid ? (
-                <p className="mt-1 text-sm font-semibold text-neutral-500">
-                  {pkg.hotelMadinah.distanceToMasjid}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          <div className="space-y-3 py-4">
-            <p className="flex items-center gap-2 font-extrabold text-primary">
-              <Plane className="h-4 w-4 text-gold" />
-              {pkg.airline.id ? (
-                <Link
-                  href={`/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`}
-                  className="underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
-                >
-                  By {pkg.airline.name}
-                </Link>
-              ) : (
-                <>By {pkg.airline.name}</>
-              )}
-            </p>
-            <p className="flex items-center gap-2 font-extrabold text-primary">
-              <Train className="h-4 w-4 text-gold" />
-              Kereta / bus sesuai program
-            </p>
-            <p className="text-sm font-semibold text-neutral-500">
-              Makkah - Madinah
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-5 p-6">
-          <div>
-            <p className="font-extrabold leading-snug text-primary">
-              Pilih waktu pemberangkatan {pkg.name}
-            </p>
-            <div className="mt-3 rounded-sm border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-bold text-primary">
-              {pkg.departureDate
-                ? formatDate(pkg.departureDate, "long")
-                : "Waktu pemberangkatan belum tersedia"}
-            </div>
-            <div className="mt-3 flex items-center justify-between text-xs font-extrabold text-neutral-500">
-              <span>{seatsLeft} seat tersisa</span>
-              <span>{seatPercent}% tersedia</span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-gold"
-                style={{ width: `${seatPercent}%` }}
-              />
-            </div>
-          </div>
-          {!availability.isBookable || isLastCall ? (
-            <div
-              className={
-                isLastCall
-                  ? "rounded-sm border border-red-200 bg-red-50 p-4"
-                  : "rounded-sm border border-neutral-200 bg-neutral-50 p-4"
-              }
-            >
-              <p
-                className={
-                  isLastCall
-                    ? "font-extrabold text-red-700"
-                    : "font-extrabold text-primary"
-                }
-              >
-                {availability.label}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-neutral-500">
-                {availability.description}
-              </p>
-            </div>
-          ) : null}
-          {availability.isBookable ? (
-            <a
-              href={bookingLink}
-              className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary px-5 py-4 font-extrabold text-white transition hover:bg-primary-700"
-            >
-              <ClipboardList className="h-5 w-5" />
-              {availability.buttonLabel}
-            </a>
-          ) : availability.label === "Sold Out" && waitlistLink ? (
-            <a
-              href={waitlistLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 rounded-sm bg-amber-600 px-5 py-4 font-extrabold text-white transition hover:bg-amber-700"
-            >
-              <ClipboardList className="h-5 w-5" />
-              Hubungi Admin (Waiting List)
-            </a>
-          ) : (
-            <span className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-sm bg-neutral-200 px-5 py-4 font-extrabold text-neutral-500">
-              <ClipboardList className="h-5 w-5" />
-              {availability.buttonLabel}
-            </span>
-          )}
-          <a
-            href={consultLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-sm border border-primary px-5 py-3.5 font-extrabold text-primary transition hover:bg-primary hover:text-white"
-          >
-            Konsultasi Dulu
-          </a>
-
-          {pkg.itineraryPdf ? (
-            <Link
-              href={getItineraryPreviewUrl(pkg.slug)}
-              className="flex w-full items-center justify-center gap-2 text-sm font-extrabold text-neutral-600 hover:text-primary"
-            >
-              <Download className="h-4 w-4" />
-              Lihat Itinerary
-            </Link>
-          ) : null}
-        </div>
+      )}
+      <div>
+        <small>{label}</small>
+        <h3>{titleCase(hotel.name)} <Stars count={hotel.starRating} /></h3>
+        {distance ? <p><IconWalk />Sekitar {distance}</p> : null}
+        {hotel.address ? <p>{hotel.address.trim()}</p> : null}
       </div>
-    </aside>
+    </>
+  );
+  return hotel.id ? (
+    <Link className="hotelcard" href={`/hotel/${entitySlug(hotel.name, hotel.id)}`}>{inner}</Link>
+  ) : (
+    <div className="hotelcard">{inner}</div>
   );
 }
 
-function HotelSummary({ pkg }: { pkg: MarketingPackage }) {
-  const hotels = [
-    {
-      city: "Makkah",
-      id: pkg.hotelMakkah.id,
-      name: pkg.hotelMakkah.name,
-      distance: pkg.hotelMakkah.distanceToHaram,
-      rating: pkg.hotelMakkah.starRating,
-    },
-    pkg.hotelMadinah
-      ? {
-          city: "Madinah",
-          id: pkg.hotelMadinah.id,
-          name: pkg.hotelMadinah.name,
-          distance: pkg.hotelMadinah.distanceToMasjid,
-          rating: pkg.hotelMadinah.starRating,
-        }
-      : null,
-  ].filter(Boolean) as {
-    id?: number;
-    city: string;
-    name: string;
-    distance?: string;
-    rating: number;
-  }[];
+const Ticks = ({ items, no, two = true }: { items: string[]; no?: boolean; two?: boolean }) => (
+  <ul className={`ticks${two ? " two" : ""}${no ? " no" : ""}`}>
+    {items.map((item) => (
+      <li key={item}>
+        {no ? <IconX /> : <IconCheck />}
+        <span>{item.replace(/\.$/, "")}</span>
+      </li>
+    ))}
+  </ul>
+);
 
-  return (
-    <div className="grid gap-4">
-      {hotels.map((hotel) => (
-        <article
-          key={hotel.city}
-          className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm"
-        >
-          <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-sm bg-gold/10 text-gold">
-              <Hotel className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">
-                Hotel {hotel.city}
-              </p>
-              {hotel.id ? (
-                <Link
-                  href={`/hotel/${entitySlug(hotel.name, hotel.id)}`}
-                  className="mt-1 inline-flex text-xl font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
-                >
-                  {hotel.name}
-                </Link>
-              ) : (
-                <h3 className="mt-1 text-xl font-extrabold text-primary">
-                  {hotel.name}
-                </h3>
-              )}
-              <div className="mt-2 flex items-center gap-2">
-                <div className="flex">
-                  {Array.from({
-                    length: Math.max(0, Math.min(5, hotel.rating)),
-                  }).map((_, index) => (
-                    <Star key={index} className="h-4 w-4 fill-gold text-gold" />
-                  ))}
-                </div>
-                <span className="text-xs font-bold text-neutral-500">
-                  {hotel.rating || "-"} Bintang
-                </span>
-              </div>
-              {hotel.distance ? (
-                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-neutral-600">
-                  <MapPin className="h-4 w-4 text-gold" />
-                  {hotel.distance}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </article>
-      ))}
-      <article className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm">
-        <div className="flex items-start gap-4">
-          <span className="flex h-12 w-12 flex-none items-center justify-center rounded-sm bg-gold/10 text-gold">
-            <Plane className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">
-              Maskapai
-            </p>
-            {pkg.airline.id ? (
-              <Link
-                href={`/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`}
-                className="mt-1 inline-flex text-xl font-extrabold text-primary underline decoration-gold/50 underline-offset-4 transition hover:text-gold"
-              >
-                {pkg.airline.name}
-              </Link>
-            ) : (
-              <h3 className="mt-1 text-xl font-extrabold text-primary">
-                {pkg.airline.name}
-              </h3>
-            )}
-            {pkg.airline.code || pkg.airline.country ? (
-              <p className="mt-2 text-sm font-semibold text-neutral-500">
-                {[pkg.airline.code, pkg.airline.country]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </article>
-    </div>
-  );
-}
-
-const formatItineraryDate = (departureDate: string, dayNumber: number) => {
-  const date = new Date(`${departureDate.slice(0, 10)}T00:00:00Z`);
-  if (Number.isNaN(date.getTime())) return "Tanggal menyusul";
-  date.setUTCDate(date.getUTCDate() + dayNumber - 1);
-  return new Intl.DateTimeFormat("id-ID", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(date);
-};
-
-function ItineraryTimeline({ pkg }: { pkg: MarketingPackage }) {
-  const savedByDay = new Map(
-    (pkg.itinerary || []).map((item) => [item.day, item]),
-  );
-  const days = Array.from(
-    { length: Math.max(pkg.duration || 0, 0) },
-    (_, index) => {
-      const day = index + 1;
-      return (
-        savedByDay.get(day) || {
-          day,
-          title: "Agenda menunggu konfirmasi",
-          activities: [],
-        }
-      );
-    },
-  );
-
-  if (!days.length) {
-    return (
-      <p className="leading-7 text-neutral-600">
-        Itinerary teks sedang disiapkan oleh tim Sahabat Qolbu.
-      </p>
-    );
-  }
-
-  return (
-    <ol className="relative ml-3 border-l border-gold/40">
-      {days.map((item) => (
-        <li key={item.day} className="relative pb-8 pl-8 last:pb-0">
-          <span className="absolute -left-4 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-white ring-4 ring-white">
-            {item.day}
-          </span>
-          <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-gold">
-            {formatItineraryDate(pkg.departureDate, item.day)}
-          </p>
-          <h3 className="mt-1 text-lg font-extrabold text-primary">
-            {item.title || "Agenda menunggu konfirmasi"}
-          </h3>
-          {item.activities.length ? (
-            <ul className="mt-3 space-y-2 text-neutral-700">
-              {item.activities.map((activity) => (
-                <li key={activity} className="flex gap-2">
-                  <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-gold" />
-                  {activity}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-neutral-500">
-              Rincian kegiatan akan diperbarui setelah jadwal operasional
-              dikonfirmasi.
-            </p>
-          )}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function DetailSection({
-  id,
-  title,
-  children,
-}: {
-  id: string;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section
-      id={`tab-${id}`}
-      role="tabpanel"
-      aria-labelledby={`tab-button-${id}`}
-      data-package-panel={id}
-      className="scroll-mt-32 py-8"
-    >
-      <h2 className="mb-5 text-2xl font-extrabold text-primary">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-function SimpleList({
-  items,
-  fallback,
-  icon: Icon,
-}: {
-  items?: string[];
-  fallback: string;
-  icon: typeof CheckCircle2;
-}) {
-  const listItems = items?.length ? items : [fallback];
-
-  return (
-    <ul className="space-y-3">
-      {listItems.map((item, index) => (
-        <li
-          key={`${item}-${index}`}
-          className="flex gap-3 leading-7 text-neutral-700"
-        >
-          <Icon className="mt-1 h-5 w-5 flex-none text-gold" />
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-export default async function LandingPackageDetailPage({
+export default async function PackageDetailPage({
   params,
   searchParams,
 }: {
   params: Params;
-  searchParams: Promise<{ agent?: string; option?: string }>;
+  searchParams: Promise<{ option?: string }>;
 }) {
   const { slug } = await params;
-  const sParams = await searchParams;
-  const agentSlug = sParams?.agent || "";
+  const query = await searchParams;
+  const base = await getMarketingPackageBySlug(slug);
+  if (!base) notFound();
 
-  let waNumber = "6281255871984"; // Default company WA number
-  if (agentSlug) {
-    const agentLanding = await getPublicAgentLanding(agentSlug);
-    if (agentLanding?.cta?.whatsapp) {
-      const digits = agentLanding.cta.whatsapp.replace(/\D/g, "");
-      if (digits) {
-        if (digits.startsWith("0")) {
-          waNumber = "62" + digits.slice(1);
-        } else if (digits.startsWith("8")) {
-          waNumber = "62" + digits;
-        } else {
-          waNumber = digits;
-        }
-      }
-    }
-  }
-
-  const basePackage = await getMarketingPackageBySlug(slug);
-
-  if (!basePackage) {
-    notFound();
-  }
-
-  const activeOptions = (basePackage.options || []).filter(
-    (option) => option.isActive !== false,
-  );
-  const defaultOption =
-    activeOptions.find((option) => option.isDefault) || activeOptions[0];
-  const requestedOptionId = Number(sParams?.option || 0);
-  const selectedOption =
-    activeOptions.find((option) => option.id === requestedOptionId) ||
-    defaultOption;
-  const hasDedicatedOptionFlyer = Boolean(
-    selectedOption &&
-      !selectedOption.isDefault &&
-      selectedOption.gallery?.length,
-  );
-  const selectedGallery = hasDedicatedOptionFlyer
-    ? selectedOption?.gallery || basePackage.gallery
-    : basePackage.gallery;
-  const optionPrice = (value: string | undefined, fallback: string) =>
-    getNumericPrice(value) > 0 ? String(value) : fallback;
-  const selectedQuadPrice = optionPrice(
-    selectedOption?.priceQuad,
-    basePackage.priceQuad,
-  );
-  const pkg: MarketingPackage = selectedOption
+  const options = (base.options || []).filter((o) => o.isActive !== false);
+  const defaultOption = options.find((o) => o.isDefault) || options[0];
+  const selected = options.find((o) => o.id === Number(query?.option || 0)) || defaultOption;
+  const pick = (value: string | undefined, fallback: string) => (num(value) > 0 ? String(value) : fallback);
+  const pkg: MarketingPackage = selected
     ? {
-        ...basePackage,
-        hotelMakkah: selectedOption.hotelMakkah || basePackage.hotelMakkah,
-        hotelMadinah: selectedOption.hotelMadinah || basePackage.hotelMadinah,
-        priceQuad: selectedQuadPrice,
-        priceTriple: optionPrice(
-          selectedOption.priceTriple,
-          basePackage.priceTriple || selectedQuadPrice,
-        ),
-        priceDouble: optionPrice(
-          selectedOption.priceDouble,
-          basePackage.priceDouble,
-        ),
-        discountedPrice: selectedQuadPrice,
-        image: selectedGallery?.[0] || basePackage.image,
-        gallery: selectedGallery,
+        ...base,
+        hotelMakkah: selected.hotelMakkah || base.hotelMakkah,
+        hotelMadinah: selected.hotelMadinah || base.hotelMadinah,
+        priceQuad: pick(selected.priceQuad, base.priceQuad),
+        priceTriple: pick(selected.priceTriple, base.priceTriple || base.priceQuad),
+        priceDouble: pick(selected.priceDouble, base.priceDouble),
+        discountedPrice: pick(selected.priceQuad, base.priceQuad),
+        gallery: !selected.isDefault && selected.gallery?.length ? selected.gallery : base.gallery,
+        image: (!selected.isDefault && selected.gallery?.[0]) || base.image,
       }
-    : basePackage;
+    : base;
 
-  const getWhatsappLink = (
-    pkg: MarketingPackage,
-    intent: "consult" | "book" | "waitlist",
-  ) => {
-    const action =
-      intent === "book"
-        ? "ingin booking seat"
-        : intent === "waitlist"
-          ? "ingin masuk waiting list karena kuota sold out"
-          : "tertarik konsultasi";
-    const optionText = selectedOption ? `, opsi ${selectedOption.name}` : "";
-    const message = `Assalamualaikum, saya lihat di website sahabatqolbu.com dan ${action} paket ${pkg.name}${optionText}`;
-    return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
-  };
+  const view = viewPackage(pkg);
+  const name = titleCase(pkg.name);
+  const rooms: RoomPrice[] = [
+    { id: "quad", name: "Quad", note: "Sekamar ber-4", price: num(pkg.priceQuad) },
+    { id: "triple", name: "Triple", note: "Sekamar ber-3", price: num(pkg.priceTriple) },
+    { id: "double", name: "Double", note: "Sekamar ber-2", price: num(pkg.priceDouble) },
+  ].filter((room) => room.price > 0);
+  const itinerary = normalizeItinerary(pkg.itinerary || []);
+  const preview = itinerary.slice(0, 3);
+  const flyer = pkg.gallery?.[0] || pkg.image;
+  const highlights = pkg.terms || [];
+  const related = (await getMarketingPackages())
+    .map(viewPackage)
+    .filter((v) => v.open && v.pkg.id !== pkg.id)
+    .sort((a, b) => Math.abs(new Date(a.pkg.departureDate).getTime() - new Date(pkg.departureDate).getTime()) - Math.abs(new Date(b.pkg.departureDate).getTime() - new Date(pkg.departureDate).getTime()))
+    .slice(0, 3);
 
-  const gallery = pkg.gallery?.length
-    ? pkg.gallery
-    : pkg.image
-      ? [pkg.image]
-      : [];
-  const fallbackHeroImage =
-    "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1920&q=80";
-  const validGallery = gallery.filter(
-    (image) => image && !image.includes("localhost:5000"),
-  );
-  const heroImages = validGallery.length ? validGallery : [fallbackHeroImage];
-  const seatsLeft = getSeatsLeft(pkg);
-  const consultLink = getWhatsappLink(pkg, "consult");
-  const waitlistLink = getWhatsappLink(pkg, "waitlist");
-  const bookingLink = getPackageRegistrationUrl(pkg.id, selectedOption?.id);
-  const typeLabel = getPackageTypeLabel(pkg);
-  const packageDescription =
-    String(pkg.description || "").trim() ||
-    "Deskripsi paket akan diinformasikan lebih lanjut oleh admin Sahabat Qolbu.";
-  const packageAdvantages = pkg.terms?.length ? pkg.terms : undefined;
-  const [makkahDetail, madinahDetail, airlineDetail] = await Promise.all([
-    pkg.hotelMakkah.id ? getPublicHotelDetail(pkg.hotelMakkah.id) : null,
-    pkg.hotelMadinah?.id ? getPublicHotelDetail(pkg.hotelMadinah.id) : null,
-    pkg.airline.id ? getPublicAirlineDetail(pkg.airline.id) : null,
-  ]);
-  const vendors: PackageVendor[] = [
-    {
-      key: "makkah",
-      label: "Hotel Makkah",
-      kind: "hotel" as const,
-      name: pkg.hotelMakkah.name,
-      detailUrl: pkg.hotelMakkah.id
-        ? `/hotel/${entitySlug(pkg.hotelMakkah.name, pkg.hotelMakkah.id)}`
-        : undefined,
-      imageUrl: pkg.hotelMakkah.imageUrl,
-      gallery:
-        makkahDetail?.hotel?.images?.map((image) => image.imageUrl) ||
-        pkg.hotelMakkah.gallery,
-      description: pkg.hotelMakkah.description,
-      meta: pkg.hotelMakkah.distanceToHaram,
-      address: pkg.hotelMakkah.address,
-      mapUrl: pkg.hotelMakkah.mapUrl,
-      facilities: pkg.hotelMakkah.facilities,
-      videoUrls: pkg.hotelMakkah.videoUrls,
-      articles: makkahDetail?.articles,
-    },
-    ...(pkg.hotelMadinah
-      ? [
-          {
-            key: "madinah",
-            label: "Hotel Madinah",
-            kind: "hotel" as const,
-            name: pkg.hotelMadinah.name,
-            detailUrl: pkg.hotelMadinah.id
-              ? `/hotel/${entitySlug(pkg.hotelMadinah.name, pkg.hotelMadinah.id)}`
-              : undefined,
-            imageUrl: pkg.hotelMadinah.imageUrl,
-            gallery:
-              madinahDetail?.hotel?.images?.map((image) => image.imageUrl) ||
-              pkg.hotelMadinah.gallery,
-            description: pkg.hotelMadinah.description,
-            meta: pkg.hotelMadinah.distanceToMasjid,
-            address: pkg.hotelMadinah.address,
-            mapUrl: pkg.hotelMadinah.mapUrl,
-            facilities: pkg.hotelMadinah.facilities,
-            videoUrls: pkg.hotelMadinah.videoUrls,
-            articles: madinahDetail?.articles,
-          },
-        ]
-      : []),
-    {
-      key: "airline",
-      label: "Maskapai",
-      kind: "airline" as const,
-      name: pkg.airline.name,
-      detailUrl: pkg.airline.id
-        ? `/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`
-        : undefined,
-      imageUrl: pkg.airline.logo,
-      gallery:
-        airlineDetail?.airline?.images?.map((image) => image.imageUrl) ||
-        pkg.airline.gallery,
-      description: pkg.airline.description,
-      meta: [pkg.airline.code, pkg.airline.country].filter(Boolean).join(" · "),
-      departureDate: pkg.departureDate
-        ? formatDate(pkg.departureDate, "long")
-        : undefined,
-      route:
-        pkg.route?.code ||
-        [pkg.route?.arrivalCity, pkg.route?.returnCity]
-          .filter(Boolean)
-          .join(" - ") ||
-        undefined,
-      facilities: pkg.airline.facilities,
-      videoUrls: pkg.airline.videoUrls,
-      articles: airlineDetail?.articles,
-    },
-  ];
-  const infoNav = [
-    { id: "deskripsi", label: "Deskripsi" },
-    { id: "itinerary", label: "Itinerary" },
-    { id: "syarat-daftar", label: "Syarat Daftar" },
-    { id: "termasuk", label: "Termasuk" },
-    { id: "tidak-termasuk", label: "Tidak Termasuk" },
-    { id: "keunggulan", label: "Keunggulan Paket" },
-    { id: "syarat-ketentuan", label: "Syarat & Ketentuan" },
-    { id: "cara-daftar", label: "Tata Cara Daftar" },
-    { id: "info", label: "Informasi Lebih Lanjut" },
+  const sections = [
+    { id: "ringkasan", label: "Ringkasan" },
+    ...(pkg.included?.length || pkg.excluded?.length ? [{ id: "fasilitas", label: "Fasilitas" }] : []),
+    { id: "perjalanan", label: "Penerbangan dan hotel" },
+    ...(itinerary.length || pkg.itineraryPdf ? [{ id: "itinerary", label: "Itinerary" }] : []),
+    ...(pkg.registrationRequirements?.length || pkg.termsConditions?.length ? [{ id: "syarat", label: "Syarat" }] : []),
+    ...(pkg.registrationSteps?.length ? [{ id: "cara-daftar", label: "Cara daftar" }] : []),
   ];
 
-  const numericPrices = [
-    getNumericPrice(pkg.priceQuad),
-    getNumericPrice(pkg.priceTriple),
-    getNumericPrice(pkg.priceDouble),
-  ].filter((p) => p > 0);
-  const minPrice = numericPrices.length ? Math.min(...numericPrices) : undefined;
-  const maxPrice = numericPrices.length ? Math.max(...numericPrices) : undefined;
-
-  const packageSchema = {
+  const prices = rooms.map((r) => r.price);
+  const schema = {
     "@context": "https://schema.org",
     "@type": ["TouristTrip", "Product"],
     "@id": `https://sahabatqolbu.com/paket/${encodeURIComponent(pkg.slug)}#trip`,
-    name: pkg.name,
-    description: pkg.description || `Paket perjalanan ibadah umroh ${pkg.name} dari Sahabat Qolbu.`,
+    name,
+    description: pkg.description || `Paket perjalanan ibadah umroh ${name} dari Sahabat Qolbu.`,
     image: pkg.image ? [pkg.image] : undefined,
     touristType: "Jamaah Umroh",
-    provider: {
-      "@id": "https://sahabatqolbu.com/#organization",
-    },
-    ...(minPrice
+    provider: { "@id": "https://sahabatqolbu.com/#organization" },
+    ...(prices.length
       ? {
           offers: {
             "@type": "AggregateOffer",
             priceCurrency: "IDR",
-            lowPrice: minPrice,
-            highPrice: maxPrice || minPrice,
-            offerCount: pkg.options?.length || 1,
-            availability: seatsLeft > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+            lowPrice: Math.min(...prices),
+            highPrice: Math.max(...prices),
+            offerCount: options.length || 1,
+            availability: view.open ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
             url: `https://sahabatqolbu.com/paket/${encodeURIComponent(pkg.slug)}`,
           },
         }
@@ -883,293 +183,188 @@ export default async function LandingPackageDetailPage({
   };
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(packageSchema) }}
-      />
-      <div className="landing-detail min-h-screen bg-white font-[var(--font-inter)] text-neutral-800 antialiased">
-      <main className="bg-white pt-20">
-        <section className="border-b border-neutral-200 bg-neutral-50 py-8 lg:py-12">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <Link
-              href="/paket"
-              className="mb-5 inline-flex items-center gap-2 text-sm font-extrabold text-primary transition hover:text-gold"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Semua Paket Umroh
-            </Link>
+    <div className="has-mbar">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
+      <PageHead
+        crumbs={[{ href: "/", label: "Beranda" }, { href: "/paket", label: "Paket Umroh" }, { label: name }]}
+        eyebrow={typeLabel(pkg)}
+        title={name}
+      >
+        <div className="hchips">
+          {view.open ? <span className="ok"><IconCheck />{view.statusLabel}</span> : <span>{view.statusLabel}</span>}
+          <span><IconCalendar />{dayDate(pkg.departureDate)}{pkg.returnDate ? ` sampai ${dayDate(pkg.returnDate)}` : ""}</span>
+          {view.days ? <span><IconClock />{view.days} hari</span> : null}
+          <span><IconPlane />{pkg.airline.name}</span>
+        </div>
+      </PageHead>
 
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_390px]">
-              <div>
-                <PackageFlyerGallery
-                  key={selectedOption?.id || "package"}
-                  images={heroImages}
-                  packageName={pkg.name}
-                  optionName={
-                    selectedOption?.isDefault
-                      ? "Utama"
-                      : hasDedicatedOptionFlyer
-                        ? selectedOption?.name
-                        : "Utama"
-                  }
-                />
+      <SectionNav items={sections} />
 
-                <div className="mt-7 max-w-4xl">
-                  <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-gold">
-                    {typeLabel}
-                  </p>
-                  <h1 className="mt-3 text-3xl font-extrabold leading-tight text-primary sm:text-4xl lg:text-5xl">
-                    {pkg.name}
-                  </h1>
+      <section className="sec" style={{ paddingTop: 40 }}>
+        <div className="wrap layout">
+          <div>
+            <div className="panel anchor" id="ringkasan">
+              {flyer ? (
+                <div className="flyerbox">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={flyer} alt={`Flyer ${name}`} />
                 </div>
+              ) : null}
+              {options.length > 1 ? (
+                <div style={{ marginTop: 22 }}>
+                  <h3>Pilihan hotel</h3>
+                  <div className="tabs" style={{ marginTop: 12 }}>
+                    {options.map((option) => (
+                      <Link
+                        key={option.id}
+                        className="tab"
+                        aria-selected={option.id === selected?.id}
+                        href={`/paket/${pkg.slug}${option.isDefault ? "" : `?option=${option.id}`}`}
+                        style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}
+                        scroll={false}
+                      >
+                        {option.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <h2 style={{ marginTop: 28 }}>Tentang paket ini</h2>
+              <p>{pkg.description}</p>
+              {highlights.length ? (
+                <>
+                  <h3 style={{ marginTop: 24 }}>Keunggulan paket</h3>
+                  <Ticks items={highlights} two={false} />
+                </>
+              ) : null}
+            </div>
 
-                <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {[
-                    {
-                      icon: CalendarDays,
-                      label: "Berangkat",
-                      value: pkg.departureDate
-                        ? formatDate(pkg.departureDate)
-                        : "Menyusul",
-                    },
-                    {
-                      icon: ClipboardList,
-                      label: "Durasi",
-                      value: `${pkg.duration || "-"} Hari`,
-                    },
-                    {
-                      icon: Plane,
-                      label: "Maskapai",
-                      value: pkg.airline.name,
-                    },
-                    {
-                      icon: Hotel,
-                      label: "Akomodasi",
-                      value: `${pkg.hotelMakkah.starRating || "-"} Bintang`,
-                    },
-                  ].map(({ icon: Icon, label, value }) => (
-                    <div
-                      key={label}
-                      className="rounded-sm border border-neutral-200 bg-white p-4 shadow-sm"
-                    >
-                      <Icon className="h-5 w-5 text-gold" />
-                      <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.14em] text-neutral-500">
-                        {label}
-                      </p>
-                      <p className="mt-1 truncate text-sm font-extrabold text-primary">
-                        {value}
-                      </p>
+            {pkg.included?.length || pkg.excluded?.length ? (
+              <div className="panel anchor" id="fasilitas">
+                <h2>Fasilitas paket</h2>
+                {pkg.included?.length ? (
+                  <>
+                    <h3 style={{ marginTop: 20 }}>Sudah termasuk</h3>
+                    <Ticks items={pkg.included} />
+                  </>
+                ) : null}
+                {pkg.excluded?.length ? (
+                  <>
+                    <h3 style={{ marginTop: 28 }}>Belum termasuk</h3>
+                    <Ticks items={pkg.excluded} no />
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="panel anchor" id="perjalanan">
+              <h2>Penerbangan dan hotel</h2>
+              <div className="route" style={{ marginTop: 22 }}>
+                <div><b>ID</b><small>Indonesia, {dayDate(pkg.departureDate)}</small></div>
+                <div className="line"><IconPlane className="" /></div>
+                <div><b>{pkg.route?.arrivalCode || "KSA"}</b><small>{pkg.route?.arrivalCity || "Arab Saudi"}</small></div>
+                {pkg.route?.returnCode && pkg.route.returnCode !== pkg.route.arrivalCode ? (
+                  <>
+                    <div className="line"><IconPlane className="" /></div>
+                    <div><b>{pkg.route.returnCode}</b><small>{pkg.route.returnCity}, pulang {dayDate(pkg.returnDate)}</small></div>
+                  </>
+                ) : null}
+              </div>
+              <p style={{ marginTop: 14 }}>Maskapai {pkg.airline.name}{pkg.airline.id ? <> (<Link href={`/maskapai/${entitySlug(pkg.airline.name, pkg.airline.id)}`} style={{ color: "var(--navy)", fontWeight: 600 }}>lihat profil maskapai</Link>)</> : null}.</p>
+              <div style={{ marginTop: 24 }}>
+                <HotelCard label="HOTEL MAKKAH" hotel={pkg.hotelMakkah} distance={pkg.hotelMakkah.distanceToHaram} />
+                {pkg.hotelMadinah ? <HotelCard label="HOTEL MADINAH" hotel={pkg.hotelMadinah} distance={pkg.hotelMadinah.distanceToMasjid} /> : null}
+              </div>
+            </div>
+
+            {itinerary.length || pkg.itineraryPdf ? (
+              <div className="panel anchor" id="itinerary">
+                <div className="bar">
+                  <h2>Itinerary{itinerary.length ? ` ${itinerary.length} hari` : ""}</h2>
+                  <Link className="btn btn-line" href={`/itinerary/${encodeURIComponent(pkg.slug)}`} style={{ minHeight: 44 }}>Lihat itinerary lengkap</Link>
+                </div>
+                <div style={{ marginTop: 24 }}>
+                  {preview.map((day) => (
+                    <div className="day" key={day.day}>
+                      <div className="dnum"><small>Hari</small><b>{day.day}</b></div>
+                      <div className="dcard">
+                        <h3>{day.title}</h3>
+                        {day.city ? <span className="city">{day.city === "Pulang" ? "Perjalanan pulang" : day.city}</span> : null}
+                        <ul className="acts-list">
+                          {day.activities.slice(0, 4).map((a, i) => (
+                            <li key={i}><time>{a.time}</time><span>{a.text}</span></li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   ))}
+                  {itinerary.length > 3 ? (
+                    <p style={{ color: "var(--muted)", fontSize: 15, background: "var(--sand)", borderRadius: 16, padding: "14px 18px" }}>
+                      Masih ada {itinerary.length - 3} hari lagi.{" "}
+                      <Link href={`/itinerary/${encodeURIComponent(pkg.slug)}`} style={{ color: "var(--navy)", fontWeight: 600 }}>Lihat semua hari</Link>
+                    </p>
+                  ) : null}
                 </div>
               </div>
+            ) : null}
 
-              <BookingPanel
-                pkg={pkg}
-                seatsLeft={seatsLeft}
-                bookingLink={bookingLink}
-                consultLink={consultLink}
-                waitlistLink={waitlistLink}
-                selectedOptionId={selectedOption?.id}
-              />
+            {pkg.registrationRequirements?.length || pkg.termsConditions?.length ? (
+              <div className="panel anchor" id="syarat">
+                {pkg.registrationRequirements?.length ? (
+                  <>
+                    <h2>Syarat pendaftaran</h2>
+                    <Ticks items={pkg.registrationRequirements} />
+                  </>
+                ) : null}
+                {pkg.termsConditions?.length ? (
+                  <>
+                    <h3 style={{ marginTop: 28 }}>Syarat dan ketentuan</h3>
+                    <ul className="ticks">
+                      {pkg.termsConditions.map((t) => <li key={t}><IconShield /><span>{t}</span></li>)}
+                    </ul>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+
+            {pkg.registrationSteps?.length ? (
+              <div className="panel anchor" id="cara-daftar">
+                <h2>Cara mendaftar</h2>
+                <ol className="numlist">
+                  {pkg.registrationSteps.map((s) => <li key={s}>{s}</li>)}
+                </ol>
+              </div>
+            ) : null}
+          </div>
+
+          <aside className="sticky lift">
+            <RoomCalculator
+              packageName={name}
+              rooms={rooms}
+              seats={view.seats}
+              totalSeats={pkg.totalSeats}
+              open={view.open}
+              statusLabel={view.statusLabel}
+              registerUrl={getPackageRegistrationUrl(pkg.id, selected && !selected.isDefault ? selected.id : undefined)}
+              optionName={selected && !selected.isDefault ? selected.name : undefined}
+            />
+          </aside>
+        </div>
+      </section>
+
+      {related.length ? (
+        <section className="sec sandband">
+          <div className="wrap">
+            <div className="head">
+              <h2 className="h2">Paket lain yang mungkin cocok</h2>
+              <Link className="btn btn-line" href="/paket">Lihat semua paket</Link>
+            </div>
+            <div className="cards">
+              {related.map((v) => <PackageCard key={v.pkg.id} view={v} />)}
             </div>
           </div>
         </section>
-
-        <PackageDetailNav items={infoNav} />
-
-        <section className="bg-white pb-16 pt-4 md:pb-24">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
-            <article className="rounded-sm border border-neutral-200 bg-white px-5 py-2 shadow-sm sm:px-8 lg:self-start">
-              <DetailSection id="deskripsi" title="Deskripsi">
-                <div className="whitespace-pre-line text-sm font-medium leading-6 text-neutral-700 sm:text-base">
-                  {packageDescription}
-                </div>
-              </DetailSection>
-
-              <DetailSection id="itinerary" title="Itinerary Perjalanan">
-                <ItineraryTimeline pkg={pkg} />
-                {pkg.itineraryPdf ? (
-                  <Link
-                    href={getItineraryPreviewUrl(pkg.slug)}
-                    className="mt-6 inline-flex items-center gap-2 rounded-sm border border-primary px-5 py-3 font-extrabold text-primary transition hover:bg-primary hover:text-white"
-                  >
-                    <Download className="h-5 w-5" />
-                    Lihat Itinerary PDF
-                  </Link>
-                ) : null}
-              </DetailSection>
-
-              <DetailSection id="syarat-daftar" title="Syarat Pendaftaran">
-                <SimpleList
-                  items={pkg.registrationRequirements}
-                  fallback="Persyaratan pendaftaran akan dikonfirmasi oleh admin Sahabat Qolbu."
-                  icon={CheckCircle2}
-                />
-              </DetailSection>
-
-              <DetailSection id="termasuk" title="Termasuk">
-                <SimpleList
-                  items={pkg.included}
-                  fallback="Fasilitas paket akan dikonfirmasi oleh admin Sahabat Qolbu."
-                  icon={CheckCircle2}
-                />
-              </DetailSection>
-
-              <DetailSection id="tidak-termasuk" title="Tidak Termasuk">
-                <SimpleList
-                  items={pkg.excluded}
-                  fallback="Rincian biaya di luar paket akan dijelaskan oleh admin Sahabat Qolbu saat konsultasi."
-                  icon={XCircle}
-                />
-              </DetailSection>
-
-              <DetailSection id="keunggulan" title="Keunggulan Paket">
-                <SimpleList
-                  items={packageAdvantages}
-                  fallback="Informasi keunggulan paket dapat ditanyakan langsung kepada admin Sahabat Qolbu."
-                  icon={CheckCircle2}
-                />
-              </DetailSection>
-
-              <DetailSection id="syarat-ketentuan" title="Syarat & Ketentuan">
-                <SimpleList
-                  items={pkg.termsConditions}
-                  fallback="Syarat dan ketentuan paket akan dikonfirmasi oleh admin Sahabat Qolbu."
-                  icon={ClipboardList}
-                />
-              </DetailSection>
-
-              <DetailSection id="cara-daftar" title="Tata Cara Pendaftaran">
-                <ol className="space-y-4">
-                  {(pkg.registrationSteps?.length
-                    ? pkg.registrationSteps
-                    : ["Hubungi admin Sahabat Qolbu untuk memulai pendaftaran."]
-                  ).map((step, index) => (
-                    <li
-                      key={`${step}-${index}`}
-                      className="flex gap-4 rounded-sm border border-neutral-200 p-4"
-                    >
-                      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary text-sm font-extrabold text-white">
-                        {index + 1}
-                      </span>
-                      <span className="pt-1 font-semibold leading-6 text-neutral-700">
-                        {step}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </DetailSection>
-
-              <DetailSection id="info" title="Informasi Lebih Lanjut">
-                <div className="rounded-sm border border-gold/40 bg-gold/10 p-5">
-                  <div className="flex gap-3">
-                    <Info className="mt-1 h-5 w-5 flex-none text-gold" />
-                    <div>
-                      <p className="font-extrabold text-primary">
-                        Detail harga, jadwal, dan ketersediaan seat bisa berubah
-                        mengikuti kondisi maskapai dan hotel.
-                      </p>
-                      <p className="mt-2 leading-7 text-neutral-700">
-                        Hubungi admin Sahabat Qolbu untuk validasi jadwal,
-                        pilihan kamar, dokumen, dan arahan pembayaran sebelum
-                        booking.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <a
-                      href={consultLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-5 py-3 font-extrabold text-white transition hover:bg-primary-700"
-                    >
-                      <MessageCircle className="h-5 w-5" />
-                      Tanya Admin
-                    </a>
-                    {pkg.itineraryPdf ? (
-                      <Link
-                        href={getItineraryPreviewUrl(pkg.slug)}
-                        className="inline-flex items-center justify-center gap-2 rounded-sm border border-primary px-5 py-3 font-extrabold text-primary transition hover:bg-primary hover:text-white"
-                      >
-                        <Download className="h-5 w-5" />
-                        Lihat Itinerary
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-              </DetailSection>
-            </article>
-
-            <aside className="space-y-5 lg:sticky lg:top-40 lg:self-start">
-              <HotelSummary pkg={pkg} />
-
-              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-gold">
-                  Harga kamar
-                </p>
-                <div className="mt-4 space-y-3">
-                  {[
-                    ["Quad", pkg.priceQuad],
-                    ["Triple", pkg.priceTriple || pkg.priceQuad],
-                    ["Double", pkg.priceDouble],
-                  ].map(([label, value]) => (
-                    <div
-                      key={label}
-                      className="flex items-center justify-between border-b border-neutral-100 pb-3"
-                    >
-                      <span className="font-bold text-neutral-500">
-                        {label}
-                      </span>
-                      <span className="text-right">
-                        {getOriginalPrice(pkg, value) ? (
-                          <span className="block text-xs font-extrabold text-neutral-400 line-through decoration-2">
-                            {toCurrency(getOriginalPrice(pkg, value))}
-                          </span>
-                        ) : null}
-                        <span className="block text-lg font-extrabold text-primary">
-                          {toCurrency(value)}
-                        </span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-sm bg-primary p-6 text-white shadow-lg shadow-primary/15">
-                <p className="text-xl font-extrabold">
-                  Butuh bantuan pilih paket?
-                </p>
-                <p className="mt-2 text-sm font-medium leading-6 text-gray-300">
-                  Konsultasikan jadwal, harga, dan kebutuhan keluarga langsung
-                  dengan admin Sahabat Qolbu.
-                </p>
-                <a
-                  href={consultLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-5 flex items-center justify-center gap-2 rounded-sm bg-gold px-5 py-3.5 font-extrabold text-primary transition hover:opacity-90"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Chat Admin
-                </a>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <Suspense fallback={null}>
-          <RelatedPackages
-            currentPackageId={pkg.id}
-            packageType={pkg.type}
-            detailBasePath="/paket"
-          />
-        </Suspense>
-      </main>
-
-      <VendorInfoDrawer vendors={vendors} />
+      ) : null}
     </div>
-    </>
   );
 }

@@ -520,7 +520,7 @@ export const getBookedSeats = async (packageId) => {
   return result[0]?.count || 0;
 };
 
-const getBookedSeatsByPackageIds = async (packageIds = []) => {
+export const getBookedSeatsByPackageIds = async (packageIds = []) => {
   if (!packageIds.length) {
     return new Map();
   }

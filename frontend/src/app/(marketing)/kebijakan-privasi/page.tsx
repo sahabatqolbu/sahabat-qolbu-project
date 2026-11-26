@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import SectionNav from "@/components/sq/SectionNav";
+import { IconCalendar } from "@/components/sq/icons";
+import { PageHead } from "@/components/sq/ui";
+import { getPublicCompanyProfile } from "@/lib/public-api";
 
 export const metadata: Metadata = {
   title: "Kebijakan Privasi | Sahabat Qolbu",
   description:
     "Kebijakan privasi Sahabat Qolbu terkait pengumpulan, penggunaan, dan perlindungan data calon jamaah dan jamaah.",
-  alternates: {
-    canonical: "https://sahabatqolbu.com/kebijakan-privasi",
-  },
+  alternates: { canonical: "https://sahabatqolbu.com/kebijakan-privasi" },
 };
 
 const sections = [
@@ -75,68 +77,51 @@ const sections = [
   },
 ];
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const company = await getPublicCompanyProfile();
+  const address = [company?.address, company?.city, company?.postalCode].filter(Boolean).join(", ");
+  const toc = sections.map((section, i) => ({ id: `k${i + 1}`, label: section.title }));
   return (
-    <div className="bg-white">
-      <section className="bg-primary pb-16 pt-28 text-white md:pb-20 md:pt-36">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-gold">
-            Sahabat Qolbu
-          </span>
-          <h1 className="mt-4 text-3xl font-bold md:text-5xl">
-            Kebijakan Privasi
-          </h1>
-          <p className="mt-5 max-w-3xl text-base leading-8 text-gray-200 md:text-lg">
-            Halaman ini menjelaskan bagaimana Sahabat Qolbu mengumpulkan,
-            menggunakan, menyimpan, dan melindungi data calon jamaah dan jamaah.
-          </p>
-          <p className="mt-4 text-sm text-gray-300">
-            Terakhir diperbarui: 14 Juli 2026
-          </p>
-        </div>
-      </section>
-
-      <section className="py-12 md:py-16">
-        <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
-          <aside className="lg:sticky lg:top-28 lg:self-start">
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-5">
-              <h2 className="font-bold text-primary">Kontak Resmi</h2>
-              <div className="mt-4 space-y-3 text-sm leading-6 text-gray-600">
-                <p>WhatsApp Hotline: 0812 4000 0101</p>
-                <p>Admin Pembayaran: 0896 5919 5000</p>
-                <p>Email: admin@sahabatqolbu.com</p>
-                <p>
-                  Alamat: Ruko Jl. Ebony, Metland Transyogi No.11, Cileungsi,
-                  Bogor 16820
-                </p>
-              </div>
-            </div>
+    <>
+      <PageHead
+        image="/sq/clock-tower.webp"
+        crumbs={[{ href: "/", label: "Beranda" }, { label: "Kebijakan Privasi" }]}
+        title="Kebijakan privasi"
+        lead="Bagaimana Sahabat Qolbu mengumpulkan, menggunakan, menyimpan, dan melindungi data calon jamaah dan jamaah."
+      >
+        <div className="hchips"><span><IconCalendar />Terakhir diperbarui 14 Juli 2026</span></div>
+      </PageHead>
+      <section className="sec" style={{ paddingTop: 40 }}>
+        <div className="wrap layout narrow">
+          <aside className="sticky">
+            <nav className="panel" aria-label="Daftar isi" style={{ padding: 20 }}>
+              <h2 style={{ fontSize: 16 }}>Daftar isi</h2>
+              <SectionNav items={toc} variant="toc" />
+            </nav>
           </aside>
-
-          <div className="space-y-6">
-            <div className="rounded-xl border border-gold/30 bg-gold/10 p-5 text-sm leading-7 text-primary">
-              Dengan menggunakan website, dashboard, atau layanan Sahabat Qolbu,
-              Anda dianggap telah membaca dan memahami Kebijakan Privasi ini.
+          <div>
+            <p className="note">
+              Dengan menggunakan website, dashboard, atau layanan Sahabat Qolbu, Anda dianggap telah membaca dan memahami kebijakan privasi ini.
+            </p>
+            <div className="policy">
+              {sections.map((section, i) => (
+                <section id={`k${i + 1}`} key={section.title}>
+                  <h2><span>{i + 1}</span>{section.title.replace(/^\d+\.\s*/, "")}</h2>
+                  {section.content.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                </section>
+              ))}
             </div>
-
-            {sections.map((section) => (
-              <article
-                key={section.title}
-                className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-              >
-                <h2 className="text-xl font-bold text-primary">
-                  {section.title}
-                </h2>
-                <div className="mt-4 space-y-3 text-sm leading-7 text-gray-600 md:text-base">
-                  {section.content.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </div>
-              </article>
-            ))}
+            <div className="help" style={{ marginTop: 20 }}>
+              <h3>Kontak resmi untuk urusan data</h3>
+              <dl>
+                {company?.whatsapp ? <div><dt>WhatsApp</dt><dd>{company.whatsapp}</dd></div> : null}
+                {company?.email ? <div><dt>Email</dt><dd style={{ overflowWrap: "anywhere" }}>{company.email}</dd></div> : null}
+                {address ? <div><dt>Alamat</dt><dd>{address}</dd></div> : null}
+              </dl>
+            </div>
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 }

@@ -1,285 +1,198 @@
-import { safeJsonLd } from "@/lib/seo";
-﻿import Link from "next/link";
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, Building2, FileText, MapPin, Star } from "lucide-react";
-import {
-  getPublicHotelDetail,
-  parseEntityIdFromSlug,
-  slugifyPackageName,
-} from "@/lib/public-api";
+import { notFound } from "next/navigation";
+import ArticleCard from "@/components/sq/ArticleCard";
+import Markdown from "@/components/sq/Markdown";
+import { WaLink } from "@/components/sq/chrome";
+import { IconCheck, IconHotel, IconPin, IconPlay, IconWa, IconWalk, Stars } from "@/components/sq/icons";
+import { AskCard, PackageCard, PageHead, titleCase, viewPackage } from "@/components/sq/ui";
+import { getPublicHotelDetail, parseEntityIdFromSlug, toMarketingPackage } from "@/lib/public-api";
+import { safeJsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
-
-const parseFacilities = (value?: string | null) => {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
-  } catch {}
-  return value
-    .split(/\r?\n|,/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Params;
-}): Promise<Metadata> {
+const parseList = (value?: string | null) => {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.map((item) => String(item).replace(/^[•\-*\s]+/, "").trim()).filter(Boolean);
+  } catch {
+    // bukan JSON
+  }
+  return value.split(/\r?\n|•/).map((item) => item.replace(/^[-*\s]+/, "").trim()).filter(Boolean);
+};
+
+const youtubeId = (url: string) => url.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/)?.[1] || "";
+const cityName = (city?: string | null) => (city ? city.charAt(0) + city.slice(1).toLowerCase() : "");
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const id = parseEntityIdFromSlug(slug);
-  if (!id) return { title: "Hotel | Sahabat Qolbu" };
-
-  const detail = await getPublicHotelDetail(id);
+  const detail = id ? await getPublicHotelDetail(id) : null;
   if (!detail) return { title: "Hotel Tidak Ditemukan | Sahabat Qolbu" };
-
   const { hotel } = detail;
-  const title = `Hotel ${hotel.name} ${hotel.city ? `di ${hotel.city}` : ""} | Sahabat Qolbu`;
-  const description = `Fasilitas, lokasi, dan paket umroh Sahabat Qolbu dengan akomodasi ${hotel.name} di ${hotel.city || "Tanah Suci"}. Jarak ${hotel.distanceToHaram ? `${hotel.distanceToHaram}m dari masjid` : "dekat masjid"}.`;
-
+  const name = titleCase(String(hotel.name || "Hotel"));
+  const city = cityName(hotel.city);
+  const title = `Hotel ${name}${city ? ` di ${city}` : ""} | Sahabat Qolbu`;
+  const description = `Fasilitas, lokasi, dan paket umroh Sahabat Qolbu yang menginap di ${name}${hotel.distanceToHaram ? `, sekitar ${hotel.distanceToHaram} m dari masjid` : ""}.`;
   return {
     title,
     description,
-    alternates: {
-      canonical: `/hotel/${slug}`,
-    },
-    openGraph: {
-      title,
-      description,
-      images: hotel.imageUrl ? [{ url: hotel.imageUrl }] : undefined,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: hotel.imageUrl ? [hotel.imageUrl] : undefined,
-    },
+    alternates: { canonical: `/hotel/${slug}` },
+    openGraph: { title, description, images: hotel.imageUrl ? [{ url: hotel.imageUrl }] : undefined },
+    twitter: { card: "summary_large_image", title, description, images: hotel.imageUrl ? [hotel.imageUrl] : undefined },
   };
 }
 
-export default async function HotelDetailPage({ params }: { params: Params }) {
+export default async function HotelPage({ params }: { params: Params }) {
   const { slug } = await params;
   const id = parseEntityIdFromSlug(slug);
   if (!id) notFound();
   const detail = await getPublicHotelDetail(id);
   if (!detail) notFound();
-  const { hotel, articles, packages } = detail;
-  const facilities = parseFacilities(hotel.facilities);
-  const gallery = hotel.images || [];
-  const mapEmbedUrl = hotel.mapUrl
-    ? `https://www.google.com/maps?q=${encodeURIComponent(hotel.address || hotel.name || "Hotel Umroh")}&output=embed`
-    : null;
 
-  const hotelSchema = {
+  const { hotel, articles } = detail;
+  const name = titleCase(String(hotel.name || "Hotel"));
+  const city = cityName(hotel.city);
+  const mosque = String(hotel.city || "").toUpperCase() === "MADINAH" ? "Masjid Nabawi" : "Masjidil Haram";
+  const facilities = parseList(hotel.facilities);
+  const videos = (Array.isArray(hotel.videoUrls) ? hotel.videoUrls : parseList(hotel.videoUrls as string | null))
+    .map((url) => ({ url: url.replace(/[?&]utm_source=[^&]*/, ""), id: youtubeId(url) }))
+    .filter((video) => video.id);
+  const packages = detail.packages.map(toMarketingPackage).map(viewPackage);
+  const gallery = (hotel.images || []).map((image) => image.imageUrl).filter(Boolean);
+  const mapsUrl = hotel.mapUrl
+    ? hotel.mapUrl.replace(/&utm_source=[^&]*/, "")
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${hotel.name} ${hotel.city || ""}`)}`;
+
+  const schema = {
     "@context": "https://schema.org",
     "@type": "Hotel",
-    name: hotel.name,
-    description: `Hotel ${hotel.name} ${hotel.city ? `di ${hotel.city}` : ""}, akomodasi resmi paket umroh Sahabat Qolbu.`,
+    name,
     image: hotel.imageUrl ? [hotel.imageUrl] : undefined,
-    address: hotel.address
-      ? {
-          "@type": "PostalAddress",
-          streetAddress: hotel.address,
-          addressLocality: hotel.city,
-          addressCountry: "SA",
-        }
-      : undefined,
-    starRating: hotel.starRating
-      ? {
-          "@type": "Rating",
-          ratingValue: hotel.starRating,
-        }
-      : undefined,
+    address: hotel.address ? { "@type": "PostalAddress", streetAddress: hotel.address.trim(), addressLocality: city, addressCountry: "SA" } : undefined,
+    starRating: hotel.starRating ? { "@type": "Rating", ratingValue: hotel.starRating } : undefined,
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(hotelSchema) }}
-      />
-      <main className="min-h-screen bg-white pt-24 text-neutral-800">
-        <section className="border-b border-neutral-200 bg-neutral-50 py-10 md:py-14">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8">
-            <div>
-              <Link
-                href="/paket"
-                className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-primary transition hover:text-gold"
-              >
-                <ArrowLeft className="h-4 w-4" /> Kembali ke Paket
-              </Link>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-                Hotel {hotel.city || "Umroh"}
-              </p>
-              <h1 className="mt-3 text-4xl font-extrabold text-primary md:text-5xl">
-                {hotel.name}
-              </h1>
-              {hotel.address ? (
-                <p className="mt-4 flex items-start gap-2 leading-7 text-neutral-600">
-                  <MapPin className="mt-1 h-5 w-5 text-gold" />
-                  {hotel.address}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
+      <PageHead
+        image={hotel.imageUrl || "/sq/clock-tower.webp"}
+        crumbs={[{ href: "/", label: "Beranda" }, { href: "/paket", label: "Paket Umroh" }, { label: `Hotel ${name}` }]}
+        eyebrow={`Hotel ${city || "umroh"}`}
+        title={name}
+      >
+        <div className="hchips">
+          {city ? <span><IconPin />{city}</span> : null}
+          {hotel.starRating ? <span><Stars count={hotel.starRating} />Bintang {hotel.starRating}</span> : null}
+          {hotel.distanceToHaram ? <span><IconWalk />Sekitar {hotel.distanceToHaram} m ke {mosque}</span> : null}
+        </div>
+      </PageHead>
+
+      <section className="sec" style={{ paddingTop: 40 }}>
+        <div className="wrap layout">
+          <div>
+            <div className="panel">
+              <h2>Tentang hotel</h2>
+              {hotel.description ? (
+                <div className="prose" style={{ fontSize: 16, marginTop: 12 }}><Markdown content={hotel.description} /></div>
+              ) : (
+                <p>
+                  {name} adalah hotel{hotel.starRating ? ` bintang ${hotel.starRating}` : ""} di {city || "Tanah Suci"}
+                  {hotel.distanceToHaram ? `, sekitar ${hotel.distanceToHaram} m dari ${mosque}` : ""}. Hotel ini dipakai dalam paket umroh Sahabat Qolbu.
                 </p>
+              )}
+              {hotel.distanceToHaram ? (
+                <div className="walk">
+                  <h3>Jarak ke {mosque}</h3>
+                  <div className="walkline" aria-hidden="true">
+                    <span><IconHotel /></span>
+                    <em>Sekitar {hotel.distanceToHaram} m</em>
+                    <span><IconPin /></span>
+                  </div>
+                  <div className="walklab"><span>{name}</span><span>{mosque}</span></div>
+                </div>
               ) : null}
-              <div className="mt-5 flex flex-wrap gap-3">
-                <span className="inline-flex items-center gap-2 rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
-                  <Building2 className="h-4 w-4 text-gold" />
-                  {hotel.city}
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
-                  <Star className="h-4 w-4 fill-gold text-gold" />
-                  {hotel.starRating || "-"} Bintang
-                </span>
-                {hotel.distanceToHaram ? (
-                  <span className="inline-flex items-center gap-2 rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
-                    {hotel.distanceToHaram}m dari masjid
-                  </span>
-                ) : null}
-              </div>
             </div>
-            {hotel.imageUrl ? (
-              <img
-                src={hotel.imageUrl}
-                alt={hotel.name || "Hotel"}
-                className="h-auto w-full rounded-sm border border-neutral-200 bg-white object-contain shadow-lg shadow-primary/10"
-              />
+            {facilities.length ? (
+              <div className="panel">
+                <h2>Fasilitas</h2>
+                <ul className="ticks two">
+                  {facilities.map((f) => <li key={f}><IconCheck /><span>{f}</span></li>)}
+                </ul>
+              </div>
+            ) : null}
+            {gallery.length ? (
+              <div className="panel">
+                <h2>Foto hotel</h2>
+                <div className="grid2" style={{ marginTop: 18, gap: 14 }}>
+                  {gallery.slice(0, 6).map((src) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={src} src={src} alt={`Foto ${name}`} loading="lazy" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: 16 }} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {videos.length ? (
+              <div className="panel">
+                <h2>Video hotel</h2>
+                <p>Tonton suasana hotel dan jalan menuju {mosque}.</p>
+                <div className="vlinks">
+                  {videos.map((video, i) => (
+                    <a key={video.id} href={video.url} target="_blank" rel="noopener noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} alt={`Video ${name} ${i + 1}`} loading="lazy" />
+                      <span><IconPlay className="" /></span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <aside className="sticky lift">
+            <div className="panel side">
+              <h2 style={{ fontSize: 20 }}>Lokasi</h2>
+              <dl className="kv">
+                {city ? <div><dt>Kota</dt><dd>{city}</dd></div> : null}
+                {hotel.address ? <div><dt>Alamat</dt><dd>{hotel.address.trim()}</dd></div> : null}
+                {hotel.starRating ? <div><dt>Kelas</dt><dd>Bintang {hotel.starRating}</dd></div> : null}
+                {hotel.distanceToHaram ? <div><dt>Ke masjid</dt><dd>Sekitar {hotel.distanceToHaram} m</dd></div> : null}
+              </dl>
+              <a className="btn btn-navy" href={mapsUrl} target="_blank" rel="noopener noreferrer">Buka di Google Maps</a>
+              <WaLink className="btn btn-wa" message={`Assalamualaikum, saya ingin paket umroh yang menginap di ${name}`}>
+                <IconWa />Tanya paket dengan hotel ini
+              </WaLink>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {packages.length || articles.length ? (
+        <section className="sec sandband">
+          <div className="wrap">
+            {packages.length ? (
+              <>
+                <h2 className="h2">Paket yang menginap di {name}</h2>
+                <div className="cards">
+                  {packages.map((v) => <PackageCard key={v.pkg.id} view={v} />)}
+                  <AskCard title="Mau hotel ini di tanggal lain?" text={`Admin bisa cek ketersediaan ${name} untuk jadwal keberangkatan lain.`} />
+                </div>
+              </>
+            ) : null}
+            {articles.length ? (
+              <>
+                <h2 className="h2" style={{ marginTop: packages.length ? 72 : 0 }}>Artikel tentang hotel ini</h2>
+                <div className="grid3" style={{ marginTop: 32 }}>
+                  {articles.slice(0, 6).map((a) => <ArticleCard key={a.id} article={a} />)}
+                </div>
+              </>
             ) : null}
           </div>
         </section>
-
-        <section className="py-14 md:py-20">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-            <article className="space-y-8">
-              {gallery.length ? (
-                <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-2xl font-extrabold text-primary">
-                    Galeri Hotel
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    Lihat suasana gedung, kamar, dan fasilitas yang tersedia.
-                  </p>
-                  <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {gallery.map((image, index) => (
-                      <div
-                        key={image.id}
-                        className={`${index === 0 ? "col-span-2 row-span-2 sm:col-span-2" : ""} aspect-[4/3] overflow-hidden rounded-sm bg-neutral-100`}
-                      >
-                        <img
-                          src={image.imageUrl}
-                          alt={`${hotel.name} - foto ${index + 1}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {mapEmbedUrl ? (
-                <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-                  <h2 className="flex items-center gap-2 text-2xl font-extrabold text-primary">
-                    <MapPin className="h-6 w-6 text-gold" /> Lokasi Hotel
-                  </h2>
-                  <div className="mt-5 overflow-hidden rounded-sm border border-neutral-200 bg-neutral-100">
-                    <iframe
-                      src={mapEmbedUrl}
-                      title={`Peta lokasi ${hotel.name}`}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      className="h-72 w-full md:h-96"
-                    />
-                  </div>
-                  <a
-                    href={hotel.mapUrl || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 font-extrabold text-primary transition hover:text-gold"
-                  >
-                    Buka di Google Maps <MapPin className="h-4 w-4" />
-                  </a>
-                </div>
-              ) : null}
-              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-                <h2 className="text-2xl font-extrabold text-primary">
-                  Fasilitas Hotel
-                </h2>
-                {facilities.length ? (
-                  <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {facilities.map((item) => (
-                      <li
-                        key={item}
-                        className="rounded-sm bg-neutral-50 px-4 py-3 font-semibold text-neutral-700"
-                      >
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-4 text-neutral-600">
-                    Informasi fasilitas akan dilengkapi oleh admin.
-                  </p>
-                )}
-              </div>
-              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-                <h2 className="text-2xl font-extrabold text-primary">
-                  Artikel Terkait
-                </h2>
-                {articles.length ? (
-                  <div className="mt-5 grid gap-4 md:grid-cols-2">
-                    {articles.map((article) => (
-                      <Link
-                        key={article.id}
-                        href={`/artikel/${article.slug}`}
-                        className="rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:shadow-sm"
-                      >
-                        <FileText className="h-5 w-5 text-gold" />
-                        <h3 className="mt-3 font-extrabold text-primary">
-                          {article.title}
-                        </h3>
-                        {article.excerpt ? (
-                          <p className="mt-2 line-clamp-2 text-sm text-neutral-600">
-                            {article.excerpt}
-                          </p>
-                        ) : null}
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-neutral-600">
-                    Belum ada artikel terkait hotel ini.
-                  </p>
-                )}
-              </div>
-            </article>
-            <aside className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm lg:self-start">
-              <h2 className="text-xl font-extrabold text-primary">
-                Paket yang Menggunakan Hotel Ini
-              </h2>
-              <div className="mt-5 space-y-3">
-                {packages.length ? (
-                  packages.map((pkg) => (
-                    <Link
-                      key={pkg.id}
-                      href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
-                      className="block rounded-sm border border-neutral-200 p-4 font-bold text-primary transition hover:border-gold hover:text-gold"
-                    >
-                      {pkg.name}
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-neutral-600">
-                    Belum ada paket published yang memakai hotel ini.
-                  </p>
-                )}
-              </div>
-            </aside>
-          </div>
-        </section>
-      </main>
+      ) : null}
     </>
   );
 }

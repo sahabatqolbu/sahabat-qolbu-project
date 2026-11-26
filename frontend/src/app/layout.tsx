@@ -31,7 +31,7 @@ const jsonLd = {
       url: "https://sahabatqolbu.com",
       logo: "https://sahabatqolbu.com/landing/images/icon.png",
       image: "https://sahabatqolbu.com/og-image.jpg",
-      telephone: "+62-812-5587-1984",
+      telephone: "+62-851-2805-2678",
       email: "Sahabatqolbucahayabaitullah@gmail.com",
       priceRange: "Rp 34.900.000 - Rp 45.000.000",
       currenciesAccepted: "IDR",
@@ -75,7 +75,7 @@ const jsonLd = {
       ],
       contactPoint: {
         "@type": "ContactPoint",
-        telephone: "+62-812-5587-1984",
+        telephone: "+62-851-2805-2678",
         contactType: "customer service",
         areaServed: "ID",
         availableLanguage: ["id", "en", "ar"],

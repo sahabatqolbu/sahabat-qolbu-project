@@ -99,6 +99,7 @@ export const optimizeImage =
         "articles",
         "promotional-popups",
         "hero-slides",
+        "site-content",
       ];
 
       if (!validFolders.includes(folder)) {
@@ -208,6 +209,7 @@ export const optimizeMultipleImages = (folder = "general", options = {}) => {
         "articles",
         "promotional-popups",
         "hero-slides",
+        "site-content",
       ];
 
       if (!validFolders.includes(folder)) {

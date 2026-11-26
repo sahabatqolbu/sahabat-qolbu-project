@@ -989,12 +989,37 @@ export interface PublicPromotionalPopup {
   updatedAt?: string | null;
 }
 
+export interface PublicHeroSlidePackage {
+  id: number;
+  name: string;
+  departureDate?: string | null;
+  returnDate?: string | null;
+  duration?: number | null;
+  airline?: string | null;
+  price?: string | number | null;
+  discountPrice?: string | number | null;
+  priceQuad?: string | number | null;
+  remainingSeats?: number | null;
+  image?: string | null;
+}
+
 export interface PublicHeroSlide {
   id: number;
   title?: string | null;
   imageUrl: string;
   altText?: string | null;
   sortOrder?: number | null;
+  kind?: "PROMO" | "BANNER" | string | null;
+  packageId?: number | null;
+  tag?: string | null;
+  headline?: string | null;
+  note?: string | null;
+  priceLabel?: string | null;
+  oldPriceLabel?: string | null;
+  ctaLabel?: string | null;
+  ctaUrl?: string | null;
+  background?: "HARAM" | "CLOCK" | "FLYER" | string | null;
+  package?: PublicHeroSlidePackage | null;
 }
 
 const normalizeStructuredContent = (
@@ -1084,11 +1109,16 @@ export const getPublicHeroSlides = async (): Promise<PublicHeroSlide[]> => {
   if (!Array.isArray(payload?.slides)) return [];
 
   return payload.slides
-    .map((slide) => ({
-      ...slide,
-      imageUrl: resolveAssetUrl(slide.imageUrl) || "",
-    }))
-    .filter((slide): slide is PublicHeroSlide => Boolean(slide.imageUrl));
+    .map(
+      (slide): PublicHeroSlide => ({
+        ...slide,
+        imageUrl: resolveAssetUrl(slide.imageUrl) || "",
+        package: slide.package
+          ? { ...slide.package, image: resolveAssetUrl(slide.package.image) || null }
+          : null,
+      }),
+    )
+    .filter((slide) => Boolean(slide.imageUrl) || Boolean(slide.package));
 };
 
 export interface PublicArticle {
@@ -1243,3 +1273,18 @@ export const parseEntityIdFromSlug = (slug: string) => {
   const match = String(slug || "").match(/-(\d+)$/);
   return match ? Number.parseInt(match[1], 10) : null;
 };
+
+export interface PublicBank {
+  id: number;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+}
+
+export const getActiveBanks = async (): Promise<PublicBank[]> => {
+  const banks = await fetchApi<PublicBank[]>("/master/banks/active");
+  return Array.isArray(banks) ? banks : [];
+};
+
+/** Mengubah paket mentah dari endpoint hotel/maskapai ke bentuk kartu paket. */
+export const toMarketingPackage = (pkg: BackendPackage): MarketingPackage => mapPackage(pkg);

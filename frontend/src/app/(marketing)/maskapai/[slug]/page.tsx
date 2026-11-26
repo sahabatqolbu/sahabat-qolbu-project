@@ -1,210 +1,150 @@
-import { safeJsonLd } from "@/lib/seo";
-﻿import Link from "next/link";
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, FileText, Plane } from "lucide-react";
-import {
-  getPublicAirlineDetail,
-  parseEntityIdFromSlug,
-  slugifyPackageName,
-} from "@/lib/public-api";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ArticleCard from "@/components/sq/ArticleCard";
+import Markdown from "@/components/sq/Markdown";
+import { WaLink } from "@/components/sq/chrome";
+import { IconCheck, IconPlane, IconWa } from "@/components/sq/icons";
+import { PageHead, rupiah, titleCase, viewPackage } from "@/components/sq/ui";
+import { getPublicAirlineDetail, parseEntityIdFromSlug, toMarketingPackage } from "@/lib/public-api";
+import { safeJsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Params;
-}): Promise<Metadata> {
+const parseList = (value?: string | null) => {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+  } catch {
+    // bukan JSON
+  }
+  return value.split(/\r?\n|•/).map((item) => item.replace(/^[-*\s]+/, "").trim()).filter(Boolean);
+};
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const id = parseEntityIdFromSlug(slug);
-  if (!id) return { title: "Maskapai | Sahabat Qolbu" };
-
-  const detail = await getPublicAirlineDetail(id);
+  const detail = id ? await getPublicAirlineDetail(id) : null;
   if (!detail) return { title: "Maskapai Tidak Ditemukan | Sahabat Qolbu" };
-
-  const { airline } = detail;
-  const title = `Penerbangan Umroh ${airline.name} | Sahabat Qolbu`;
-  const description = `Informasi maskapai ${airline.name} (${airline.code || "Penerbangan Umroh"}), armada, kenyamanan, dan daftar paket umroh resmi Sahabat Qolbu yang menggunakannya.`;
-
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `/maskapai/${slug}`,
-    },
-    openGraph: {
-      title,
-      description,
-      images: airline.logo ? [{ url: airline.logo }] : undefined,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: airline.logo ? [airline.logo] : undefined,
-    },
-  };
+  const name = String(detail.airline.name || "Maskapai");
+  const title = `Umroh dengan ${name} | Sahabat Qolbu`;
+  const description = `Paket umroh Sahabat Qolbu dengan ${name}: rute, jadwal keberangkatan, dan artikel terkait.`;
+  return { title, description, alternates: { canonical: `/maskapai/${slug}` }, openGraph: { title, description } };
 }
 
-export default async function AirlineDetailPage({
-  params,
-}: {
-  params: Params;
-}) {
+export default async function AirlinePage({ params }: { params: Params }) {
   const { slug } = await params;
   const id = parseEntityIdFromSlug(slug);
   if (!id) notFound();
   const detail = await getPublicAirlineDetail(id);
   if (!detail) notFound();
-  const { airline, articles, packages } = detail;
-  const gallery = airline.images || [];
 
-  const airlineSchema = {
+  const { airline, articles } = detail;
+  const name = String(airline.name || "Maskapai");
+  const views = detail.packages.map(toMarketingPackage).map(viewPackage)
+    .sort((a, b) => (b.pkg.departureDate || "").localeCompare(a.pkg.departureDate || ""));
+  const upcoming = views.filter((v) => v.open).sort((a, b) => (a.pkg.departureDate || "").localeCompare(b.pkg.departureDate || ""));
+  const facilities = parseList(airline.facilities);
+  const routes = [...new Set(upcoming.map((v) => [v.pkg.route?.arrivalCode, v.pkg.route?.returnCode].filter(Boolean).join(" / ")).filter(Boolean))];
+  const next = upcoming[0];
+
+  const schema = {
     "@context": "https://schema.org",
     "@type": "Airline",
-    name: airline.name,
+    name,
     iataCode: airline.code || undefined,
     logo: airline.logo || undefined,
-    description: `Maskapai ${airline.name}, mitra maskapai penerbangan resmi paket umroh Sahabat Qolbu.`,
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(airlineSchema) }}
-      />
-      <main className="min-h-screen bg-white pt-24 text-neutral-800">
-        <section className="border-b border-neutral-200 bg-neutral-50 py-10 md:py-14">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-            <div>
-              <Link
-                href="/paket"
-                className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-primary transition hover:text-gold"
-              >
-                <ArrowLeft className="h-4 w-4" /> Kembali ke Paket
-              </Link>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-                Maskapai
-              </p>
-              <h1 className="mt-3 text-4xl font-extrabold text-primary md:text-5xl">
-                {airline.name}
-              </h1>
-              <div className="mt-5 flex flex-wrap gap-3">
-                {airline.code ? (
-                  <span className="inline-flex rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
-                    Kode: {airline.code}
-                  </span>
-                ) : null}
-                {airline.country ? (
-                  <span className="inline-flex rounded-sm border border-neutral-200 bg-white px-4 py-2 font-bold text-primary">
-                    {airline.country}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-            <div className="flex min-h-56 items-center justify-center rounded-sm border border-neutral-200 bg-white p-8 shadow-lg shadow-primary/10">
-              {airline.logo ? (
-                <img
-                  src={airline.logo}
-                  alt={airline.name || "Maskapai"}
-                  className="max-h-40 w-full object-contain"
-                />
-              ) : (
-                <Plane className="h-16 w-16 text-gold" />
-              )}
-            </div>
-          </div>
-        </section>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
+      <PageHead
+        crumbs={[{ href: "/", label: "Beranda" }, { href: "/paket", label: "Paket Umroh" }, { label: name }]}
+        eyebrow="Maskapai"
+        title={name}
+        logo={airline.logo || undefined}
+      >
+        <div className="hchips">
+          {airline.code ? <span>Kode penerbangan {airline.code}</span> : null}
+          {airline.country ? <span>{airline.country}</span> : null}
+        </div>
+      </PageHead>
 
-        <section className="py-14 md:py-20">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
-            <article className="space-y-8">
-              {gallery.length ? (
-                <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-2xl font-extrabold text-primary">
-                    Galeri Maskapai
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    Lihat armada, kabin, kursi, dan pengalaman penerbangannya.
-                  </p>
-                  <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {gallery.map((image, index) => (
-                      <div
-                        key={image.id}
-                        className={`${index === 0 ? "col-span-2 row-span-2 sm:col-span-2" : ""} aspect-[4/3] overflow-hidden rounded-sm bg-neutral-100`}
-                      >
-                        <img
-                          src={image.imageUrl}
-                          alt={`${airline.name} - foto ${index + 1}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-              <h2 className="text-2xl font-extrabold text-primary">
-                Artikel Terkait Maskapai
-              </h2>
-              {articles.length ? (
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {articles.map((article) => (
-                    <Link
-                      key={article.id}
-                      href={`/artikel/${article.slug}`}
-                      className="rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:shadow-sm"
-                    >
-                      <FileText className="h-5 w-5 text-gold" />
-                      <h3 className="mt-3 font-extrabold text-primary">
-                        {article.title}
-                      </h3>
-                      {article.excerpt ? (
-                        <p className="mt-2 line-clamp-2 text-sm text-neutral-600">
-                          {article.excerpt}
-                        </p>
-                      ) : null}
-                    </Link>
-                  ))}
-                </div>
+      <section className="sec" style={{ paddingTop: 40 }}>
+        <div className="wrap layout">
+          <div>
+            <div className="panel">
+              <h2>Terbang dengan {name}</h2>
+              {airline.description ? (
+                <div className="prose" style={{ fontSize: 16, marginTop: 12 }}><Markdown content={airline.description} /></div>
               ) : (
-                <p className="mt-4 text-neutral-600">
-                  Belum ada artikel terkait maskapai ini.
-                </p>
+                <p>{name}{airline.code ? ` (kode ${airline.code})` : ""} adalah salah satu maskapai yang dipakai dalam paket umroh Sahabat Qolbu.</p>
               )}
+              {routes.length ? (
+                <>
+                  <h3 style={{ marginTop: 26 }}>Bandara tujuan di paket terdekat</h3>
+                  <div className="route" style={{ marginTop: 16 }}>
+                    <div><b>ID</b><small>Indonesia</small></div>
+                    <div className="line"><IconPlane className="" /></div>
+                    <div><b>{routes[0]}</b><small>Arab Saudi</small></div>
+                  </div>
+                </>
+              ) : null}
+              {facilities.length ? (
+                <>
+                  <h3 style={{ marginTop: 26 }}>Fasilitas</h3>
+                  <ul className="ticks two">{facilities.map((f) => <li key={f}><IconCheck /><span>{f}</span></li>)}</ul>
+                </>
+              ) : null}
+            </div>
+            {views.length ? (
+              <div className="panel">
+                <h2>Jadwal bersama {name}</h2>
+                <ul className="hist">
+                  {views.map((v) => (
+                    <li key={v.pkg.id}>
+                      <time>{v.date}</time>
+                      <Link href={v.href} style={{ color: "var(--navy)", fontWeight: 600, textDecoration: "none" }}>{titleCase(v.pkg.name)}</Link>
+                      <span className={`pill ${v.open ? "go" : "done"}`}>{v.open ? "Tersedia" : v.statusLabel}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </article>
-            <aside className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm lg:self-start">
-              <h2 className="text-xl font-extrabold text-primary">
-                Paket dengan Maskapai Ini
-              </h2>
-              <div className="mt-5 space-y-3">
-                {packages.length ? (
-                  packages.map((pkg) => (
-                    <Link
-                      key={pkg.id}
-                      href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
-                      className="block rounded-sm border border-neutral-200 p-4 font-bold text-primary transition hover:border-gold hover:text-gold"
-                    >
-                      {pkg.name}
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-neutral-600">
-                    Belum ada paket published yang memakai maskapai ini.
-                  </p>
-                )}
-              </div>
-            </aside>
+            ) : null}
+          </div>
+          <aside className="sticky lift">
+            <div className="panel side">
+              <h2 style={{ fontSize: 20 }}>{next ? "Paket terdekat" : "Tanya jadwal"}</h2>
+              {next ? (
+                <>
+                  <p style={{ fontSize: 15 }}>{titleCase(next.pkg.name)}, {next.date}, {next.days} hari.</p>
+                  <div className="total" style={{ marginTop: 12 }}><span style={{ color: "var(--muted)" }}>Mulai</span><b>{rupiah(next.price)}</b></div>
+                  <Link className="btn btn-gold" href={next.href}>Lihat paket</Link>
+                </>
+              ) : (
+                <p style={{ fontSize: 15 }}>Belum ada jadwal terbuka dengan maskapai ini. Admin bisa bantu carikan.</p>
+              )}
+              <WaLink className="btn btn-wa" message={`Assalamualaikum, saya ingin paket umroh dengan ${name}`}><IconWa />Tanya admin</WaLink>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {articles.length ? (
+        <section className="sec sandband">
+          <div className="wrap">
+            <h2 className="h2">Artikel tentang {name}</h2>
+            <div className="grid3" style={{ marginTop: 32 }}>
+              {articles.slice(0, 6).map((a) => <ArticleCard key={a.id} article={a} />)}
+            </div>
           </div>
         </section>
-      </main>
+      ) : null}
     </>
   );
 }

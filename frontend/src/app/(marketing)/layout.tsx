@@ -1,6 +1,21 @@
-import Footer from "@/components/layout/Footer";
-import Navbar from "@/components/layout/Navbar";
+import { Amiri, Poppins } from "next/font/google";
 import PromotionalPopup from "@/components/marketing/PromotionalPopup";
+import { SiteFooter, SiteHeader } from "@/components/sq/chrome";
+import "@/components/sq/sq.css";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  variable: "--font-amiri",
+  display: "swap",
+});
 
 export default function MarketingLayout({
   children,
@@ -8,11 +23,11 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="landing-static">
+    <div className={`sq ${poppins.variable} ${amiri.variable}`}>
       <PromotionalPopup />
-      <Navbar />
+      <SiteHeader />
       <main>{children}</main>
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }

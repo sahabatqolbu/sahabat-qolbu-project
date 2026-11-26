@@ -91,6 +91,11 @@ import {
   getAllHeroSlides,
   updateHeroSlide,
 } from "../controllers/heroSlideController.js";
+import {
+  getSiteContent,
+  saveSiteContent,
+  uploadSiteContentImage,
+} from "../controllers/siteContentController.js";
 
 const router = express.Router();
 
@@ -351,6 +356,35 @@ router.delete(
   authenticate,
   authorize(["ADMIN", "STAFF"]),
   deleteHeroSlide,
+);
+
+// =====================================================
+// WEBSITE CONTENT (teks dan foto halaman publik)
+// =====================================================
+router.post(
+  "/site-content/images",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  upload.single("image"),
+  optimizeImage("site-content", {
+    outputFormat: "webp",
+    maxWidth: 1920,
+    maxHeight: 1920,
+    quality: 84,
+  }),
+  uploadSiteContentImage,
+);
+router.get(
+  "/site-content/:key",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  getSiteContent,
+);
+router.put(
+  "/site-content/:key",
+  authenticate,
+  authorize(["ADMIN", "STAFF"]),
+  saveSiteContent,
 );
 
 // ARTICLES

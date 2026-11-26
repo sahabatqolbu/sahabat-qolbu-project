@@ -19,6 +19,7 @@ import {
 } from "../controllers/articleController.js";
 import { getPublicPromotionalPopup } from "../controllers/promotionalPopupController.js";
 import { getPublicHeroSlides } from "../controllers/heroSlideController.js";
+import { getPublicSiteContent } from "../controllers/siteContentController.js";
 import { getPublicPackageScheduleLists } from "../controllers/packageScheduleController.js";
 
 const router = express.Router();
@@ -37,6 +38,7 @@ router.get("/faqs", getPublicFaqs);
 router.get("/gallery", getPublicGallery);
 router.get("/promotional-popup", getPublicPromotionalPopup);
 router.get("/hero-slides", getPublicHeroSlides);
+router.get("/site-content/:key", getPublicSiteContent);
 router.get("/articles", getPublicArticles);
 router.get("/articles/:slug", getPublicArticleBySlug);
 router.get("/hotels/:id", getPublicHotelById);

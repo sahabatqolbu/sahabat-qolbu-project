@@ -1,24 +1,22 @@
-import { safeJsonLd } from "@/lib/seo";
-﻿import Link from "next/link";
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  ArrowLeft,
-  BookOpen,
-  CalendarDays,
-  ChevronRight,
-  FileText,
-} from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ArticleCard, { categoryLabel } from "@/components/sq/ArticleCard";
+import Markdown, { headingSlug } from "@/components/sq/Markdown";
+import SectionNav from "@/components/sq/SectionNav";
+import ShareButtons from "@/components/sq/ShareButtons";
+import { IconCalendar, IconClock, IconUsers } from "@/components/sq/icons";
+import { PageHead, rupiah, titleCase, viewPackage } from "@/components/sq/ui";
 import {
   getMarketingPackageById,
+  getMarketingPackages,
+  getPublicAirlineDetail,
   getPublicArticleBySlug,
   getPublicArticles,
-  getPublicAirlineDetail,
   getPublicHotelDetail,
   slugifyPackageName,
 } from "@/lib/public-api";
-import ArticleEngagement from "@/components/marketing/ArticleEngagement";
-import { renderMarkdownContent } from "@/components/marketing/MarkdownContent";
+import { safeJsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
 
@@ -97,12 +95,6 @@ const formatPrice = (value?: string | number | null) => {
   }).format(amount);
 };
 
-const getRelatedPackageTitle = (relatedType?: string | null) => {
-  if (relatedType === "HOTEL") return "Paket yang Menggunakan Hotel Ini";
-  if (relatedType === "AIRLINE") return "Paket yang Menggunakan Maskapai Ini";
-  if (relatedType === "PACKAGE") return "Paket Terkait Artikel Ini";
-  return "Paket yang Menggunakan Layanan Ini";
-};
 
 const getRelatedPackages = async (
   relatedType?: string | null,
@@ -147,7 +139,6 @@ const getRelatedPackages = async (
   return [];
 };
 
-const renderContent = (content: string) => renderMarkdownContent(content);
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -184,26 +175,34 @@ export async function generateMetadata({
   };
 }
 
-export default async function ArticleDetailPage({
-  params,
-}: {
-  params: Params;
-}) {
+export default async function ArticleDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
   const article = await getPublicArticleBySlug(slug);
   if (!article) notFound();
-  const relatedArticles = (await getPublicArticles("limit=6"))
-    .filter((item) => item.slug !== article.slug)
-    .slice(0, 4);
-  const relatedPackages = await getRelatedPackages(
-    article.relatedType,
-    article.relatedId,
-  );
-  const preparedContent = prepareArticleContent(
-    article.content || "",
-    article.title,
-  );
-  const readingTime = estimateReadingTime(preparedContent);
+
+  const [latest, relatedPackages, allPackages] = await Promise.all([
+    getPublicArticles(`limit=7${article.category ? `&category=${encodeURIComponent(article.category)}` : ""}`),
+    getRelatedPackages(article.relatedType, article.relatedId),
+    getMarketingPackages(),
+  ]);
+  const related = latest.filter((item) => item.slug !== article.slug).slice(0, 3);
+  const content = prepareArticleContent(article.content || "", article.title);
+  const minutes = estimateReadingTime(content);
+  const toc = content
+    .split(/\r?\n/)
+    .map((line) => line.match(/^#{1,2}\s+(.+)$/)?.[1]?.replace(/[*_`]/g, "").trim())
+    .filter((text): text is string => Boolean(text))
+    .map((text) => ({ id: headingSlug(text), label: text.length > 48 ? `${text.slice(0, 46)}...` : text }))
+    .filter((item, index, all) => item.id && all.findIndex((x) => x.id === item.id) === index);
+  const sidePackages = relatedPackages.length
+    ? relatedPackages.slice(0, 4).map((p) => ({ href: `/paket/${slugifyPackageName(p.name)}`, name: titleCase(p.name), sub: formatDate(p.departureDate), price: formatPrice(p.price) }))
+    : allPackages
+        .map(viewPackage)
+        .filter((v) => v.open)
+        .sort((a, b) => (a.pkg.departureDate || "").localeCompare(b.pkg.departureDate || ""))
+        .slice(0, 4)
+        .map((v) => ({ href: v.href, name: titleCase(v.pkg.name), sub: `${v.date}, ${v.days} hari`, price: v.price ? rupiah(v.price) : null }));
+  const url = `https://sahabatqolbu.com/artikel/${article.slug}`;
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -213,190 +212,90 @@ export default async function ArticleDetailPage({
     image: article.coverImage ? [article.coverImage] : undefined,
     datePublished: article.publishedAt || article.createdAt,
     dateModified: article.publishedAt || article.createdAt,
-    author: {
-      "@type": "Organization",
-      name: "Sahabat Qolbu",
-      url: "https://sahabatqolbu.com",
-    },
-    publisher: {
-      "@id": "https://sahabatqolbu.com/#organization",
-    },
-    mainEntityOfPage: `https://sahabatqolbu.com/artikel/${article.slug}`,
+    author: { "@type": "Organization", name: "Sahabat Qolbu", url: "https://sahabatqolbu.com" },
+    publisher: { "@id": "https://sahabatqolbu.com/#organization" },
+    mainEntityOfPage: url,
   };
-
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Beranda",
-        item: "https://sahabatqolbu.com",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Artikel",
-        item: "https://sahabatqolbu.com/artikel",
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: article.title,
-        item: `https://sahabatqolbu.com/artikel/${article.slug}`,
-      },
+      { "@type": "ListItem", position: 1, name: "Beranda", item: "https://sahabatqolbu.com" },
+      { "@type": "ListItem", position: 2, name: "Artikel", item: "https://sahabatqolbu.com/artikel" },
+      { "@type": "ListItem", position: 3, name: article.title, item: url },
     ],
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
-      />
-      <main className="min-h-screen bg-[#f8faf8] pt-24 text-neutral-800">
-        <article>
-          <header className="relative overflow-hidden border-b border-primary/10 bg-primary py-10 text-white md:py-16">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.28),transparent_34%)]" />
-            <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-              <Link
-                href="/artikel"
-                className="mb-6 inline-flex items-center gap-2 text-sm font-extrabold text-gold transition hover:text-white"
-              >
-                <ArrowLeft className="h-4 w-4" /> Semua Artikel
-              </Link>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-                  {article.category || "Artikel"}
-                </span>
-                <span className="inline-flex items-center gap-2 text-sm font-bold text-white/75">
-                  <BookOpen className="h-4 w-4 text-gold" />
-                  {readingTime} menit baca
-                </span>
-              </div>
-              <h1 className="mt-5 max-w-4xl text-3xl font-extrabold leading-tight md:text-5xl">
-                {article.title}
-              </h1>
-              {article.excerpt ? (
-                <p className="mt-5 max-w-3xl text-lg leading-8 text-white/80">
-                  {article.excerpt}
-                </p>
-              ) : null}
-              <p className="mt-5 flex items-center gap-2 text-sm font-bold text-white/70">
-                <CalendarDays className="h-4 w-4" />
-                {formatDate(article.publishedAt || article.createdAt)}
-              </p>
-            </div>
-          </header>
-          {article.coverImage ? (
-            <div className="mx-auto max-w-5xl px-4 pt-10 sm:px-6 lg:px-8">
-              <img
-                src={article.coverImage}
-                alt={article.title}
-                className="h-auto w-full rounded-sm border border-neutral-200 object-contain shadow-lg shadow-primary/10"
-              />
-            </div>
-          ) : null}
-          <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:py-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
-            <div className="space-y-8">
-              <div className="min-w-0 px-0 py-1 md:rounded-md md:border md:border-neutral-200 md:bg-white md:px-10 md:py-9 md:shadow-sm lg:px-12">
-                <div className="mx-auto max-w-[780px] text-base">
-                  {renderContent(preparedContent)}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }} />
+      <PageHead
+        image={article.coverImage || "/sq/clock-tower.webp"}
+        busy={Boolean(article.coverImage)}
+        crumbs={[{ href: "/", label: "Beranda" }, { href: "/artikel", label: "Artikel" }, { label: categoryLabel(article.category) }]}
+        eyebrow={categoryLabel(article.category)}
+        title={article.title}
+      >
+        <div className="byline">
+          {formatDate(article.publishedAt || article.createdAt) ? <span><IconCalendar />{formatDate(article.publishedAt || article.createdAt)}</span> : null}
+          <span><IconClock />{minutes} menit baca</span>
+          <span><IconUsers />Tim Sahabat Qolbu</span>
+        </div>
+      </PageHead>
+
+      <section className="sec" style={{ paddingTop: 40 }}>
+        <div className="wrap layout">
+          <article className="prose">
+            {article.coverImage ? (
+              <figure className="cover-fig">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={article.coverImage} alt={article.title} />
+              </figure>
+            ) : null}
+            <Markdown content={content} headingIds />
+            {article.tags?.length ? <p style={{ fontSize: 15, color: "var(--muted)" }}>Tag: {article.tags.join(", ")}</p> : null}
+            <ShareButtons title={article.title} url={url} />
+          </article>
+
+          <aside className="sticky" style={{ display: "grid", gap: 20 }}>
+            {toc.length > 1 ? (
+              <nav className="panel" aria-label="Daftar isi">
+                <h2 style={{ fontSize: 18 }}>Daftar isi</h2>
+                <SectionNav items={toc} variant="toc" />
+              </nav>
+            ) : null}
+            {sidePackages.length ? (
+              <div className="panel">
+                <h2 style={{ fontSize: 18 }}>{relatedPackages.length ? "Paket terkait" : "Jadwal umroh terdekat"}</h2>
+                <div className="mini">
+                  {sidePackages.map((p) => (
+                    <Link key={p.href + p.name} href={p.href}>
+                      <span><b>{p.name}</b><small>{p.sub}</small></span>
+                      {p.price ? <span>{p.price}</span> : null}
+                    </Link>
+                  ))}
                 </div>
+                <Link className="btn btn-gold" href="/paket" style={{ width: "100%", marginTop: 16 }}>Lihat semua paket</Link>
               </div>
+            ) : null}
+          </aside>
+        </div>
+      </section>
 
-              <ArticleEngagement slug={article.slug} title={article.title} />
+      {related.length ? (
+        <section className="sec sandband">
+          <div className="wrap">
+            <div className="head">
+              <h2 className="h2">Artikel terkait</h2>
+              <Link className="btn btn-line" href="/artikel">Semua artikel</Link>
             </div>
-
-            <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
-              {relatedPackages.length ? (
-                <div className="rounded-sm border border-gold/30 bg-white p-5 shadow-sm">
-                  <h2 className="text-lg font-extrabold text-primary">
-                    {getRelatedPackageTitle(article.relatedType)}
-                  </h2>
-                  <div className="mt-4 space-y-3">
-                    {relatedPackages.slice(0, 4).map((pkg) => (
-                      <Link
-                        key={pkg.id}
-                        href={`/paket/${slugifyPackageName(pkg.name || `paket-${pkg.id}`)}`}
-                        className="block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
-                      >
-                        <h3 className="font-extrabold leading-6 text-primary">
-                          {pkg.name}
-                        </h3>
-                        <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-neutral-500">
-                          {pkg.departureDate ? (
-                            <span>{formatDate(pkg.departureDate)}</span>
-                          ) : null}
-                          {formatPrice(pkg.price) ? (
-                            <span className="text-gold">
-                              {formatPrice(pkg.price)}
-                            </span>
-                          ) : null}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="rounded-sm border border-neutral-200 bg-white p-5 shadow-sm">
-                <h2 className="flex items-center gap-2 text-lg font-extrabold text-primary">
-                  <FileText className="h-5 w-5 text-gold" />
-                  Artikel Lainnya
-                </h2>
-                <div className="mt-4 space-y-3">
-                  {relatedArticles.length ? (
-                    relatedArticles.map((item) => (
-                      <Link
-                        key={item.id}
-                        href={`/artikel/${item.slug}`}
-                        className="group block rounded-sm border border-neutral-200 p-4 transition hover:border-gold hover:bg-gold/5"
-                      >
-                        <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-gold">
-                          {item.category || "Artikel"}
-                        </p>
-                        <h3 className="mt-2 line-clamp-2 font-extrabold leading-6 text-primary group-hover:text-gold">
-                          {item.title}
-                        </h3>
-                        <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary">
-                          Baca artikel
-                          <ChevronRight className="h-4 w-4" />
-                        </span>
-                      </Link>
-                    ))
-                  ) : (
-                    <p className="text-sm text-neutral-500">
-                      Belum ada artikel lain.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-sm bg-primary p-5 text-white shadow-sm">
-                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-gold">
-                  Butuh rekomendasi?
-                </p>
-                <h2 className="mt-2 text-xl font-extrabold">
-                  Konsultasikan pilihan paket dengan tim Sahabat Qolbu.
-                </h2>
-                <Link
-                  href="/#paket"
-                  className="mt-5 inline-flex items-center gap-2 rounded-sm bg-gold px-4 py-3 font-extrabold text-primary transition hover:bg-white"
-                >
-                  Lihat Paket Umroh
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </aside>
-          </section>
-        </article>
-      </main>
+            <div className="grid3" style={{ marginTop: 32 }}>
+              {related.map((a) => <ArticleCard key={a.id} article={a} />)}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

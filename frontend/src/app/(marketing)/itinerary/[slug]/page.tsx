@@ -1,196 +1,108 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
-import {
-  ArrowLeft,
-  CalendarDays,
-  Download,
-  FileText,
-  Hotel,
-  MessageCircle,
-  Plane,
-  ShieldCheck,
-} from "lucide-react";
-import {
-  getMarketingPackageBySlug,
-  type MarketingPackage,
-} from "@/lib/public-api";
-import {
-  getItineraryDownloadUrl,
-  getItineraryPreviewUrl,
-} from "@/lib/itinerary-url";
-import { formatCurrency, formatDate } from "@/lib/utils";
 import PdfItineraryPreview from "@/components/marketing/PdfItineraryPreview";
+import ItineraryTimeline from "@/components/sq/ItineraryTimeline";
+import { WaLink } from "@/components/sq/chrome";
+import { IconWa } from "@/components/sq/icons";
+import { PageHead, rupiah, titleCase, viewPackage } from "@/components/sq/ui";
+import { getItineraryDownloadUrl, getItineraryPreviewUrl } from "@/lib/itinerary-url";
+import { getMarketingPackageBySlug } from "@/lib/public-api";
+import { normalizeItinerary } from "@/lib/sq-itinerary";
 
 type Params = Promise<{ slug: string }>;
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const toCurrency = (value?: string) => {
-  const parsed = Number.parseInt(String(value || "0"), 10);
-  return formatCurrency(Number.isFinite(parsed) ? parsed : 0);
-};
 
-const getWhatsappLink = (pkg: MarketingPackage) => {
-  const message = `Assalamualaikum admin Sahabat Qolbu, saya ingin bertanya tentang itinerary paket ${pkg.name}.`;
-  return `https://wa.me/6281240000101?text=${encodeURIComponent(message)}`;
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Params;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const pkg = await getMarketingPackageBySlug(slug);
-
-  if (!pkg || !pkg.itineraryPdf) {
+  if (!pkg || (!pkg.itinerary?.length && !pkg.itineraryPdf)) {
     return { title: "Itinerary Tidak Ditemukan | Sahabat Qolbu" };
   }
-
+  const name = titleCase(pkg.name);
   return {
-    title: `Itinerary ${pkg.name} | Sahabat Qolbu`,
-    description: `Preview itinerary resmi untuk paket ${pkg.name} dari Sahabat Qolbu.`,
-    alternates: {
-      canonical: getItineraryPreviewUrl(pkg.slug),
-    },
-    robots: {
-      index: false,
-      follow: true,
-    },
+    title: `Itinerary ${name} | Sahabat Qolbu`,
+    description: `Jadwal harian perjalanan ${name} dari Sahabat Qolbu.`,
+    alternates: { canonical: getItineraryPreviewUrl(pkg.slug) },
+    robots: { index: false, follow: true },
   };
 }
 
-export default async function ItineraryPreviewPage({
-  params,
-}: {
-  params: Params;
-}) {
+const dayDate = (value?: string) => {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+};
+
+export default async function ItineraryPage({ params }: { params: Params }) {
   const { slug } = await params;
   const pkg = await getMarketingPackageBySlug(slug);
+  if (!pkg || (!pkg.itinerary?.length && !pkg.itineraryPdf)) notFound();
 
-  if (!pkg?.itineraryPdf) {
-    notFound();
-  }
-
-  const downloadUrl = getItineraryDownloadUrl(pkg.slug);
-  const consultLink = getWhatsappLink(pkg);
+  const days = normalizeItinerary(pkg.itinerary || []);
+  const view = viewPackage(pkg);
+  const name = titleCase(pkg.name);
+  const nights = (city: string) => days.filter((d) => d.city === city).length;
 
   return (
-    <main className="min-h-screen bg-[#f7faf8] pt-24 text-neutral-800">
-      <section className="relative overflow-hidden bg-primary py-10 text-white md:py-14">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.28),transparent_34%)]" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Link
-            href={`/paket/${pkg.slug}`}
-            className="inline-flex items-center gap-2 text-sm font-extrabold text-gold transition hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Kembali ke Detail Paket
-          </Link>
-
-          <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-gold">
-                <FileText className="h-4 w-4" />
-                Preview Itinerary
-              </div>
-              <h1 className="mt-5 max-w-4xl text-3xl font-extrabold leading-tight md:text-5xl">
-                Itinerary {pkg.name}
-              </h1>
-              <p className="mt-4 max-w-3xl text-base font-medium leading-8 text-white/78">
-                Lihat jadwal perjalanan umum dalam tampilan resmi Sahabat Qolbu.
-                Detail final tetap mengikuti konfirmasi admin, maskapai, hotel,
-                dan kondisi operasional keberangkatan.
-              </p>
-            </div>
-
-            <div className="rounded-sm border border-white/15 bg-white/10 p-5 backdrop-blur">
-              <p className="text-sm font-bold text-white/70">Mulai dari</p>
-              <p className="mt-1 text-3xl font-extrabold text-white">
-                {toCurrency(pkg.discountedPrice || pkg.priceQuad)}
-              </p>
-              <div className="mt-4 grid gap-3 text-sm font-bold text-white/80">
-                <span className="inline-flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4 text-gold" />
-                  {pkg.departureDate
-                    ? formatDate(pkg.departureDate)
-                    : "Jadwal menyusul"}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Plane className="h-4 w-4 text-gold" />
-                  {pkg.airline.name}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Hotel className="h-4 w-4 text-gold" />
-                  {pkg.hotelMakkah.name}
-                </span>
-              </div>
-            </div>
+    <>
+      <PageHead
+        image="/sq/clock-tower.webp"
+        crumbs={[
+          { href: "/", label: "Beranda" },
+          { href: "/paket", label: "Paket Umroh" },
+          { href: `/paket/${pkg.slug}`, label: name },
+          { label: "Itinerary" },
+        ]}
+        title={`Itinerary ${days.length ? `${days.length} hari` : name}`}
+        lead={`${name}, ${dayDate(pkg.departureDate)}${pkg.returnDate ? ` sampai ${dayDate(pkg.returnDate)}` : ""}. Waktu dapat menyesuaikan jadwal shalat dan kondisi di lapangan.`}
+      >
+        {days.length ? (
+          <div className="hchips noprint">
+            {nights("Madinah") ? <span>Madinah {nights("Madinah")} hari</span> : null}
+            {nights("Makkah") ? <span>Makkah {nights("Makkah")} hari</span> : null}
+            <span>{pkg.airline.name}</span>
           </div>
-        </div>
-      </section>
+        ) : null}
+      </PageHead>
 
-      <section className="py-8 md:py-12">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-8">
-          <div className="overflow-hidden rounded-sm border border-neutral-200 bg-white shadow-xl shadow-primary/10">
-            <div className="flex flex-col gap-3 border-b border-neutral-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-gold">
-                  Dokumen Jadwal
-                </p>
-                <h2 className="mt-1 text-xl font-extrabold text-primary">
-                  Preview PDF Itinerary
-                </h2>
+      <section className="sec" style={{ paddingTop: 40 }}>
+        <div className="wrap layout">
+          <div>
+            {days.length ? <ItineraryTimeline days={days} /> : null}
+            {pkg.itineraryPdf ? (
+              <div className="panel" style={{ marginTop: days.length ? 28 : 0 }}>
+                <div className="bar">
+                  <h2 style={{ fontSize: 20 }}>Dokumen itinerary resmi</h2>
+                  <a className="btn btn-line" href={getItineraryDownloadUrl(pkg.slug)} style={{ minHeight: 44 }}>Unduh PDF</a>
+                </div>
+                <div style={{ marginTop: 18 }}>
+                  <PdfItineraryPreview fileUrl={getItineraryDownloadUrl(pkg.slug)} title={`Itinerary ${name}`} />
+                </div>
               </div>
-              <a
-                href={downloadUrl}
-                className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-primary-700"
-              >
-                <Download className="h-4 w-4" />
-                Download PDF
-              </a>
-            </div>
-            <PdfItineraryPreview
-              fileUrl={downloadUrl}
-              title={`Preview itinerary ${pkg.name}`}
-            />
+            ) : null}
           </div>
-
-          <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
-            <div className="rounded-sm border border-neutral-200 bg-white p-6 shadow-sm">
-              <ShieldCheck className="h-8 w-8 text-gold" />
-              <h2 className="mt-4 text-xl font-extrabold text-primary">
-                Catatan Jadwal
-              </h2>
-              <p className="mt-3 text-sm font-medium leading-7 text-neutral-600">
-                PDF ini berisi jadwal umum. Jam penerbangan, urutan ziarah, dan
-                teknis perjalanan bisa menyesuaikan arahan pembimbing serta
-                kebijakan operasional di lapangan.
-              </p>
-            </div>
-
-            <div className="rounded-sm bg-primary p-6 text-white shadow-lg shadow-primary/15">
-              <h2 className="text-xl font-extrabold">
-                Ingin validasi itinerary?
-              </h2>
-              <p className="mt-2 text-sm font-medium leading-6 text-white/75">
-                Admin Sahabat Qolbu bisa bantu jelaskan jadwal, hotel, pilihan
-                kamar, dan estimasi pembayaran.
-              </p>
-              <a
-                href={consultLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-sm bg-gold px-5 py-3 font-extrabold text-primary transition hover:bg-white"
-              >
-                <MessageCircle className="h-5 w-5" />
-                Tanya Admin
-              </a>
+          <aside className="sticky noprint">
+            <div className="panel side">
+              <span className="cat">Paket ini</span>
+              <h3 style={{ marginTop: 12, fontSize: 20 }}>{name}</h3>
+              <dl className="kv">
+                <div><dt>Berangkat</dt><dd>{view.date}</dd></div>
+                <div><dt>Maskapai</dt><dd>{pkg.airline.name}</dd></div>
+                {pkg.hotelMadinah ? <div><dt>Hotel Madinah</dt><dd>{titleCase(pkg.hotelMadinah.name)}</dd></div> : null}
+                <div><dt>Hotel Makkah</dt><dd>{titleCase(pkg.hotelMakkah.name)}</dd></div>
+                {view.price ? <div><dt>Mulai</dt><dd>{rupiah(view.price)}</dd></div> : null}
+              </dl>
+              <Link className="btn btn-gold" href={`/paket/${pkg.slug}`} style={{ width: "100%", marginTop: 18 }}>Lihat detail dan harga</Link>
+              <WaLink className="btn btn-wa" message={`Assalamualaikum, saya ingin bertanya tentang itinerary ${name}`}>
+                <IconWa />Tanya itinerary ke admin
+              </WaLink>
             </div>
           </aside>
         </div>
       </section>
-    </main>
+    </>
   );
 }

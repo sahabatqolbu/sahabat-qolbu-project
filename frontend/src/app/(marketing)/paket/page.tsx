@@ -1,426 +1,182 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+import PackageExplorer from "@/components/sq/PackageExplorer";
+import { WaLink } from "@/components/sq/chrome";
+import { IconCalendar, IconCheck } from "@/components/sq/icons";
+import { Closing, PageHead, rupiah, titleCase, typeLabel, viewPackage } from "@/components/sq/ui";
+import { getDashboardBaseUrl } from "@/lib/dashboard-url";
+import { getMarketingPackages, getPublicPackageScheduleLists } from "@/lib/public-api";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { useBranding } from "@/components/providers/BrandingProvider";
-import PackageCard from "@/components/marketing/PackageCard";
-import PackageSearchBar, { type PackageFilters } from "@/components/marketing/PackageSearchBar";
-import PackageScheduleLists from "@/components/marketing/PackageScheduleLists";
-import {
-  getMarketingPackages,
-  getPublicPackageScheduleLists,
-  type MarketingPackage,
-  type PublicPackageScheduleList,
-} from "@/lib/public-api";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-const EMPTY_FILTERS: PackageFilters = { departureMonth: "", duration: "", airline: "" };
-
-// Helper categories matching legacy style
-const typeList = [
-  {
-    id: "all",
-    name: "Semua",
-    icon: (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "reguler",
-    name: "Reguler",
-    icon: (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "extreme",
-    name: "Extreme",
-    icon: (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M13 10V3L4 14h7v7l9-11h-7z"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "semi-mandiri",
-    name: "Semi Mandiri",
-    icon: (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "fleksibilitas",
-    name: "Fleksibel",
-    icon: (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "konsorsium",
-    name: "Konsorsium",
-    icon: (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "la",
-    name: "Land Arrangement",
-    icon: (
-      <svg
-        className="w-4 h-4"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"
-        />
-      </svg>
-    ),
-  },
-];
-
-const getTabFromPackageType = (typeQuery: string | null) => {
-  if (typeQuery === "UMRAH") return "reguler";
-  if (typeQuery === "UMRAH_RAMADHAN") return "fleksibilitas";
-  if (typeQuery === "UMRAH_PLUS") return "extreme";
-  return "all";
+export const metadata: Metadata = {
+  title: "Paket Umroh Sahabat Qolbu",
+  description:
+    "Jadwal dan harga paket umroh Sahabat Qolbu: full service, konsorsium, dan umroh Ramadhan. Bandingkan harga kamar Quad, Triple, dan Double.",
+  alternates: { canonical: "/paket" },
 };
 
-function PackagesInnerPage() {
-  const branding = useBranding();
-  const searchParams = useSearchParams();
+const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const monthName = (key: string) => {
+  const [y, m] = key.split("-").map(Number);
+  return m ? `${MONTHS[m - 1]} ${y}` : key;
+};
+const scheduleStatus: Record<string, string> = { CHECK_SEAT: "Cek seat", SOLD_OUT: "Penuh", CLOSED: "Tutup" };
 
-  // Active filter tab
-  const [activeTab, setActiveTab] = useState(() =>
-    getTabFromPackageType(searchParams.get("type")),
-  );
-  const [packages, setPackages] = useState<MarketingPackage[]>([]);
-  const [scheduleLists, setScheduleLists] = useState<PublicPackageScheduleList[]>([]);
-  const [filters, setFilters] = useState<PackageFilters>(EMPTY_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<PackageFilters>(EMPTY_FILTERS);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    Promise.all([getMarketingPackages(), getPublicPackageScheduleLists()])
-      .then(([data, schedules]) => {
-        if (active) {
-          setPackages(data);
-          setScheduleLists(schedules);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load packages", err);
-        if (active) {
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Map package raw type to tipeList IDs
-  const getMappedType = (pkg: MarketingPackage) => {
-    const rawType = pkg.backendType || "";
-    if (rawType === "FULL_SERVICE") return "reguler";
-    if (rawType === "EXTREME") return "extreme";
-    if (rawType === "SEMI_MANDIRI") return "semi-mandiri";
-    if (rawType === "FLEKSIBILITAS") return "fleksibilitas";
-    if (rawType === "KONSORSIUM") return "konsorsium";
-    if (rawType === "LA") return "la";
-    return "reguler";
-  };
-
-  // Filter packages based on activeTab
-  const filteredPackages = useMemo(() => packages.filter((pkg) => {
-    if (activeTab !== "all" && getMappedType(pkg) !== activeTab) return false;
-    return (!appliedFilters.departureMonth || pkg.departureDate.startsWith(appliedFilters.departureMonth)) &&
-      (!appliedFilters.duration || String(pkg.duration) === appliedFilters.duration) &&
-      (!appliedFilters.airline || pkg.airline?.name === appliedFilters.airline);
-  }), [activeTab, appliedFilters, packages]);
-
-  // Count helper
-  const getCountByTipe = (tipeId: string) => {
-    if (tipeId === "all") return packages.length;
-    return packages.filter((p) => getMappedType(p) === tipeId).length;
-  };
-
-  const messageConsult = encodeURIComponent(
-    "Halo, saya mau konsultasi paket umroh",
-  );
-  const waContactLink = `https://wa.me/${branding.whatsappNumber}?text=${messageConsult}`;
+export default async function PackagesPage() {
+  const [packages, lists] = await Promise.all([getMarketingPackages(), getPublicPackageScheduleLists()]);
+  const views = packages.map(viewPackage);
+  const open = views.filter((v) => v.open).sort((a, b) => (a.pkg.departureDate || "").localeCompare(b.pkg.departureDate || ""));
+  const cheapest = open.length ? Math.min(...open.map((v) => v.price).filter(Boolean)) : 0;
+  const months = [...new Set(open.map((v) => v.month).filter(Boolean))].sort();
+  const now = new Date().toISOString().slice(0, 10);
+  const activeLists = lists
+    .map((list) => ({ ...list, items: list.items.filter((item) => item.departureDate >= now) }))
+    .filter((list) => list.items.length);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans antialiased text-gray-800">
-      {/* Page Header */}
-      <section className="bg-primary pt-28 pb-12 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-3">
-              Pilih Paket Umroh
-            </h1>
-            <p className="text-gray-300 text-sm sm:text-base">
-              Menampilkan{" "}
-              <span className="text-gold font-bold">
-                {filteredPackages.length}
-              </span>{" "}
-              paket
-            </p>
-          </div>
+    <>
+      <PageHead
+        image="/sq/clock-tower.webp"
+        crumbs={[{ href: "/", label: "Beranda" }, { label: "Paket Umroh" }]}
+        title="Paket umroh Sahabat Qolbu"
+        lead="Pilih jadwal keberangkatan, bandingkan harga per tipe kamar, lalu booking langsung lewat WhatsApp atau form pendaftaran."
+      >
+        <div className="hchips">
+          <span className="ok"><IconCheck />{open.length} jadwal masih tersedia</span>
+          {months.length ? (
+            <span><IconCalendar />{monthName(months[0])}{months.length > 1 ? ` sampai ${monthName(months[months.length - 1])}` : ""}</span>
+          ) : null}
+          {cheapest ? <span>Mulai {rupiah(cheapest)}</span> : null}
+        </div>
+      </PageHead>
 
-          {/* MOBILE: Dropdown Filter */}
-          <div className="md:hidden max-w-sm mx-auto">
-            <div className="relative">
-              <select
-                value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value)}
-                className="w-full appearance-none bg-white/10 text-white border border-white/20 rounded-xl px-4 py-3.5 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gold"
-              >
-                {typeList.map((t) => (
-                  <option
-                    key={t.id}
-                    value={t.id}
-                    className="bg-primary text-white"
-                  >
-                    {t.name} ({getCountByTipe(t.id)})
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg
-                  className="w-5 h-5 text-white/60"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+      <Suspense fallback={null}>
+        <PackageExplorer
+          mode="full"
+          packages={packages}
+          askTitle="Butuh jadwal lain?"
+          askText="Admin bisa bantu carikan tanggal, maskapai, dan tipe kamar yang sesuai, termasuk umroh plus Turki, Dubai, dan Mesir."
+        />
+      </Suspense>
+
+      {open.length ? (
+        <section className="sec sandband" id="bandingkan">
+          <div className="wrap">
+            <div className="head">
+              <div>
+                <h2 className="h2">Bandingkan harga per tipe kamar</h2>
+                <p className="lead">Harga per orang. Semakin sedikit penghuni kamar, semakin tinggi harganya.</p>
               </div>
             </div>
+            <div className="scroll" style={{ marginTop: 32, background: "#fff" }}>
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Paket</th>
+                    <th scope="col">Berangkat</th>
+                    <th scope="col">Maskapai</th>
+                    <th scope="col" className="n">Quad (ber-4)</th>
+                    <th scope="col" className="n">Triple (ber-3)</th>
+                    <th scope="col" className="n">Double (ber-2)</th>
+                    <th scope="col" className="n">Sisa seat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {open.map((v) => (
+                    <tr key={v.pkg.id}>
+                      <td>
+                        <Link href={v.href}>{titleCase(v.pkg.name)}</Link>
+                        <br />
+                        <span style={{ fontSize: 13, color: "var(--muted)" }}>{v.days} hari, {typeLabel(v.pkg)}</span>
+                      </td>
+                      <td style={{ whiteSpace: "nowrap" }}>{v.date}</td>
+                      <td>{v.pkg.airline.name}</td>
+                      <td className="n">
+                        <b>{v.quad ? rupiah(v.quad) : "-"}</b>
+                        {v.oldPrice ? <><br /><s style={{ fontSize: 13, color: "var(--muted)" }}>{rupiah(v.oldPrice)}</s></> : null}
+                      </td>
+                      <td className="n">{v.triple ? rupiah(v.triple) : "-"}</td>
+                      <td className="n">{v.double ? rupiah(v.double) : "-"}</td>
+                      <td className="n">{v.seats} / {v.pkg.totalSeats}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 14 }}>
+              Harga dan ketersediaan seat dapat berubah. Konfirmasi ke admin sebelum melakukan pembayaran.
+            </p>
           </div>
+        </section>
+      ) : null}
 
-          {/* DESKTOP: Tabs Filter */}
-          <div className="hidden md:flex gap-2 justify-center flex-wrap">
-            {typeList.map((t) => {
-              const count = getCountByTipe(t.id);
-              const isActive = activeTab === t.id;
-
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveTab(t.id)}
-                  className={`filter-btn group/btn relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
-                    ${
-                      isActive
-                        ? "bg-white text-primary shadow-lg"
-                        : "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
-                    }`}
-                >
-                  <span className="transition-transform duration-200 group-hover/btn:scale-110">
-                    {t.icon}
-                  </span>
-                  <span>{t.name}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full transition-colors
-                      ${isActive ? "bg-primary/10 text-primary" : "bg-white/10 text-white/60"}`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+      {activeLists.map((list) => (
+        <section className="sec" key={list.id}>
+          <div className="wrap">
+            <h2 className="h2">{titleCase(list.name)}</h2>
+            {list.subtitle ? <p className="lead">{list.subtitle}</p> : null}
+            <div className="scroll" style={{ marginTop: 28 }}>
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Berangkat</th>
+                    <th scope="col">Maskapai</th>
+                    <th scope="col">Hotel</th>
+                    <th scope="col" className="n">Quad</th>
+                    <th scope="col" className="n">Triple</th>
+                    <th scope="col" className="n">Double</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.items.map((item) => (
+                    <tr key={item.id}>
+                      <td style={{ whiteSpace: "nowrap" }}>{item.departureDate}{item.duration ? `, ${item.duration} hari` : ""}</td>
+                      <td>{item.airline?.name || "-"}</td>
+                      <td>Makkah: {item.hotelMakkahLabel}<br />Madinah: {item.hotelMadinahLabel}</td>
+                      <td className="n">{rupiah(Number(item.priceQuad))}</td>
+                      <td className="n">{rupiah(Number(item.priceTriple))}</td>
+                      <td className="n">{rupiah(Number(item.priceDouble))}</td>
+                      <td>
+                        {item.effectiveStatus === "CHECK_SEAT" ? (
+                          <WaLink className="btn btn-wa" message={`Assalamualaikum, saya ingin cek seat ${list.name} tanggal ${item.departureDate}`}>
+                            Cek seat
+                          </WaLink>
+                        ) : (
+                          scheduleStatus[item.effectiveStatus] || item.effectiveStatus
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {list.note ? <p style={{ fontSize: 14, color: "var(--muted)", marginTop: 14 }}>{list.note}</p> : null}
           </div>
-        </div>
-      </section>
-      <div className="relative z-20 -mt-5 px-1">
-        <PackageSearchBar
-          packages={packages}
-          scheduleLists={scheduleLists}
-          filters={filters}
-          onChange={setFilters}
-          onSearch={() => setAppliedFilters(filters)}
-        />
-      </div>
-      {/* Grid Section */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : filteredPackages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center shadow-sm max-w-xl mx-auto">
-              <p className="text-xl font-bold text-primary">
-                Paket belum tersedia
-              </p>
-              <p className="mt-2 text-sm text-gray-500">
-                Silakan cek kembali nanti atau hubungi admin untuk jadwal
-                terbaru.
-              </p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPackages.map((pkg) => (
-                <PackageCard key={pkg.id} pkg={pkg} />
-              ))}
-            </div>
-          )}
-          {!loading && activeTab === "all" ? (
-            <PackageScheduleLists lists={scheduleLists} filters={appliedFilters} />
-          ) : null}
-        </div>
-      </section>
-      {/* CTA Section */}
-      <section className="relative overflow-hidden bg-primary py-16 md:py-20">
-        <div className="absolute inset-x-0 top-0 h-px bg-gold/50" />
-        <div className="absolute right-0 top-0 h-72 w-72 translate-x-1/3 rounded-full bg-gold/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-72 w-72 -translate-x-1/3 rounded-full bg-black/10 blur-3xl" />
+        </section>
+      ))}
 
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 rounded-xl border border-white/10 bg-white/[0.05] p-6 shadow-2xl shadow-black/10 md:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:p-10">
-            <div>
-              <span className="inline-flex rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gold">
-                Butuh Bantuan Pilih Paket?
-              </span>
-              <h2 className="mt-5 text-3xl font-bold leading-tight text-white md:text-4xl">
-                Konsultasi Dulu Sebelum Menentukan Keberangkatan
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-gray-200">
-                Tim kami bantu cocokkan jadwal, budget, hotel, maskapai, dan
-                kebutuhan keluarga agar pilihan paket lebih tenang.
-              </p>
-              <a
-                href={waContactLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-7 inline-flex items-center justify-center gap-3 rounded-md bg-gold px-7 py-4 text-base font-bold text-primary shadow-lg shadow-gold/20 transition hover:bg-gold-dark"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
-                </svg>
-                Chat WhatsApp
-              </a>
-            </div>
-
-            <div className="grid gap-3">
-              {[
-                "Rekomendasi paket sesuai jadwal dan budget",
-                "Penjelasan fasilitas hotel, maskapai, dan itinerary",
-                "Arahan pendaftaran calon jamaah dari awal",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-start gap-4 rounded-lg border border-white/10 bg-white/[0.06] p-4"
-                >
-                  <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-bold text-primary">
-                    ✓
-                  </span>
-                  <p className="text-sm leading-6 text-gray-100">{item}</p>
-                </div>
-              ))}
-            </div>
+      <section className="sec">
+        <div className="wrap">
+          <h2 className="h2">Mengenal jenis paket kami</h2>
+          <p className="lead">Setiap jenis punya cara pengaturan yang berbeda. Admin bisa bantu memilih yang paling cocok untuk keluarga Anda.</p>
+          <div className="grid3" style={{ marginTop: 36 }}>
+            <div className="panel"><h3>Full Service</h3><p className="txt">Tiket, hotel, visa, transportasi, makan, manasik, dan pendampingan diurus lengkap oleh Sahabat Qolbu. Cocok untuk keluarga dan jamaah lansia.</p></div>
+            <div className="panel"><h3>Konsorsium</h3><p className="txt">Berangkat bersama rombongan travel anggota asosiasi Mutiara Haji Indonesia, dengan pembimbing dan program ibadah yang sama.</p></div>
+            <div className="panel"><h3>Umroh Ramadhan</h3><p className="txt">Jadwal di bulan Ramadhan: awal, pertengahan, sampai i&apos;tikaf 10 malam terakhir dan Lebaran di Makkah.</p></div>
           </div>
         </div>
       </section>
-    </div>
-  );
-}
 
-export default function PackagesPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      }
-    >
-      <PackagesInnerPage />
-    </Suspense>
+      <Closing
+        title="Belum menemukan jadwal yang pas?"
+        text="Ceritakan rencana keluarga Anda. Admin bantu carikan tanggal, maskapai, dan tipe kamar yang sesuai."
+        primary={<WaLink className="btn btn-gold" message="Assalamualaikum, saya ingin dicarikan jadwal umroh">Konsultasi via WhatsApp</WaLink>}
+        secondary={<a className="btn btn-ghost" href={`${getDashboardBaseUrl()}/daftar-paket`}>Isi form pendaftaran</a>}
+      />
+    </>
   );
 }

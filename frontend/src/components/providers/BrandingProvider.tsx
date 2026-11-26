@@ -22,6 +22,7 @@ export interface BrandingData {
   facebook: string;
   youtube: string;
   tiktok: string;
+  ppiu: string;
   isAgentActive: boolean;
   agentSlug: string;
   logoTextSahabat: string;
@@ -36,14 +37,15 @@ const defaultBranding: BrandingData = {
   logo: "/landing/images/icon.png",
   address:
     "Ruko Jl. Ebony, Metland Transyogi No.11, Kec. Cileungsi, Kab. Bogor, Jawa Barat 16820",
-  whatsapp: "https://wa.me/6281255871984",
-  whatsappNumber: "6281255871984",
-  phone: "0812-5587-1984",
+  whatsapp: "https://wa.me/6285128052678",
+  whatsappNumber: "6285128052678",
+  phone: "0851 2805 2678",
   email: "Sahabatqolbucahayabaitullah@gmail.com",
   instagram: "https://www.instagram.com/sahabatqolbu.ofc/",
   facebook: "https://www.facebook.com/sahabatqolbu.ofc",
   youtube: "",
   tiktok: "",
+  ppiu: "12112100038690008",
   isAgentActive: false,
   agentSlug: "",
   logoTextSahabat: "Sahabat",
@@ -132,6 +134,7 @@ function BrandingInnerProvider({ children }: { children: React.ReactNode }) {
         if (company.facebook) current.facebook = company.facebook;
         if (company.youtube) current.youtube = company.youtube;
         if (company.tiktok) current.tiktok = company.tiktok;
+        if (company.ppiu) current.ppiu = company.ppiu;
 
         // If agent slug is provided, load agent details
         if (agentSlug) {
