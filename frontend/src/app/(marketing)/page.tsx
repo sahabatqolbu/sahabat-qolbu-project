@@ -141,6 +141,14 @@ export default async function HomePage() {
                   <span key={chip}><IconCheck />{chip}</span>
                 ))}
               </div>
+              <div className="partners" aria-label="Sistem dan lembaga terkait">
+                {/* eslint-disable @next/next/no-img-element */}
+                <img src="/sq/nusuk.png" alt="Nusuk" width={150} height={65} loading="lazy" />
+                <img src="/sq/siskopatuh.png" alt="Siskopatuh Kemenhaj" width={124} height={52} loading="lazy" />
+                <img src="/sq/kan.png" alt="Komite Akreditasi Nasional" width={142} height={56} loading="lazy" />
+                <img className="tall" src="/sq/pasti-umrah.png" alt="5 Pasti Umrah" width={58} height={64} loading="lazy" />
+                {/* eslint-enable @next/next/no-img-element */}
+              </div>
             </div>
           </section>
               }

@@ -29,7 +29,7 @@ export const DEFAULT_HOME = {
   why: {
     heading: "Mengapa jamaah memilih Sahabat Qolbu",
     lead: "Setiap detail perjalanan disiapkan supaya Anda bisa fokus beribadah, dari manasik sampai kembali ke tanah air.",
-    photoUrl: "",
+    photoUrl: "/uploads/gallery/1783479414395-0a02f3c757f92f96.webp",
     photoCaption: "Rombongan jamaah Sahabat Qolbu",
     items: [
       { title: "Sesuai Al-Qur'an dan Sunnah", text: "Kegiatan ibadah dibimbing pembimbing yang paham manasik sesuai tuntunan." },
@@ -89,7 +89,7 @@ export const DEFAULT_ABOUT = {
     ],
     quote: "Berangkat Umroh, Pulang Berhijrah.",
     closing: "Keberhasilan sebuah perjalanan umroh bukan hanya ketika jamaah sampai di Tanah Suci, tetapi ketika jamaah memperoleh pengalaman ibadah yang bermakna dan membawa perubahan kebaikan setelah kembali ke Tanah Air.",
-    photoUrl: "",
+    photoUrl: "/uploads/gallery/1783486675372-558d3a63acd2a6c5.webp",
     photoCaption: "Tim SQ bersama jamaah",
   },
   health: {

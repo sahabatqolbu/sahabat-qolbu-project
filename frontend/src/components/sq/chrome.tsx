@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useBranding } from "@/components/providers/BrandingProvider";
 import { getDashboardBaseUrl } from "@/lib/dashboard-url";
 import { IconMenu, IconShield, IconWa } from "./icons";
@@ -71,12 +71,23 @@ function Brand() {
   );
 }
 
+const noSubscribe = () => () => {};
+
 export function SiteHeader() {
   const pathname = usePathname() || "/";
   const branding = useBranding();
   const [solid, setSolid] = useState(false);
   const [open, setOpen] = useState(false);
+  // Cookie sq_account dipasang dashboard setelah login; belum punya akun = ajak daftar.
+  const hasAccount = useSyncExternalStore(
+    noSubscribe,
+    () => /(?:^|;\s*)sq_account=1/.test(document.cookie),
+    () => false,
+  );
   const waHref = useWaHref();
+  const account = hasAccount
+    ? { href: `${getDashboardBaseUrl()}/login`, label: "Masuk", sheet: "Masuk ke akun saya" }
+    : { href: `${getDashboardBaseUrl()}/login?tab=register`, label: "Daftar", sheet: "Daftar akun jamaah" };
   const instagramHandle = branding.instagram
     ? "@" + branding.instagram.replace(/\/+$/, "").split("/").pop()
     : "";
@@ -124,8 +135,8 @@ export function SiteHeader() {
                 {page.label}
               </Link>
             ))}
-            <a className="btn btn-gold" href={`${getDashboardBaseUrl()}/login`}>
-              Masuk
+            <a className="btn btn-gold" href={account.href}>
+              {account.label}
             </a>
           </nav>
           <button
@@ -151,7 +162,7 @@ export function SiteHeader() {
                 {page.label}
               </Link>
             ))}
-            <a href={`${getDashboardBaseUrl()}/login`}>Masuk ke akun jamaah</a>
+            <a href={account.href}>{account.sheet}</a>
             <a className="btn btn-gold" href={waHref} target="_blank" rel="noopener noreferrer">
               Konsultasi via WhatsApp
             </a>

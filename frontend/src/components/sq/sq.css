@@ -841,3 +841,9 @@ html{scroll-behavior:smooth}
 .sq .dflyer::after{content:"Klik untuk ukuran penuh";position:absolute;right:20px;bottom:20px;font-size:12px;font-weight:600;color:#fff;background:rgba(7,26,51,.75);padding:6px 12px;border-radius:999px;opacity:0;transition:opacity .2s var(--ease)}
 .sq .dflyer:hover::after{opacity:1}
 @media (max-width:760px){.sq .dflyer{padding:6px;max-width:none}.sq .dflyer img{max-height:none;width:100%}}
+
+/* Logo sistem dan lembaga di section trust */
+.sq .trust .partners{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-around;gap:24px 40px;padding:22px 24px;border-top:1px solid var(--line)}
+.sq .trust .partners img{height:52px;width:auto;max-width:160px;object-fit:contain}
+@media (max-width:560px){.sq .trust .partners{gap:18px 28px;padding-inline:0}.sq .trust .partners img{height:40px;max-width:120px}}
+.sq .trust .partners img.tall{height:72px}@media (max-width:560px){.sq .trust .partners img.tall{height:56px}}
