@@ -133,7 +133,8 @@ export default function PackageBrowser({ packages }: { packages: MarketingPackag
         if (f.sort === "exp") return price(b) - price(a);
         const rank = (stateRank[a.state] ?? 4) - (stateRank[b.state] ?? 4);
         if (rank) return rank;
-        return a.state === "departed" ? time(b) - time(a) : time(a) - time(b);
+        // Paket aktif ikut urutan pinned dari dashboard; yang sudah berangkat terbaru dulu.
+        return a.state === "departed" ? time(b) - time(a) : 0;
       });
   }, [views, f]);
 

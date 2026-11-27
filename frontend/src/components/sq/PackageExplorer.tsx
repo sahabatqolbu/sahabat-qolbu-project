@@ -14,7 +14,7 @@ const monthName = (key: string) => {
 };
 
 type Filters = { month: string; days: string; airline: string; type: string; q: string; sort: string; sold: boolean };
-const EMPTY: Filters = { month: "all", days: "all", airline: "all", type: "all", q: "", sort: "date", sold: false };
+const EMPTY: Filters = { month: "all", days: "all", airline: "all", type: "all", q: "", sort: "best", sold: false };
 
 export default function PackageExplorer({
   packages,
@@ -62,8 +62,12 @@ export default function PackageExplorer({
       .filter((v) => filters.airline === "all" || v.pkg.airline.name === filters.airline)
       .filter((v) => filters.type === "all" || (filters.type === "RAMADHAN" ? v.ramadhan : v.backendType === filters.type))
       .filter((v) => !q || `${v.pkg.name} ${v.pkg.airline.name} ${v.pkg.hotelMakkah.name} ${v.pkg.hotelMadinah?.name || ""}`.toLowerCase().includes(q))
+      // "best" = urutan dari getMarketingPackages (pinned dashboard dulu); sort bawaan JS stabil.
       .sort((a, b) =>
-        filters.sort === "cheap" ? price(a) - price(b) : filters.sort === "exp" ? price(b) - price(a) : (a.pkg.departureDate || "").localeCompare(b.pkg.departureDate || ""),
+        filters.sort === "cheap" ? price(a) - price(b)
+          : filters.sort === "exp" ? price(b) - price(a)
+            : filters.sort === "date" ? (a.pkg.departureDate || "").localeCompare(b.pkg.departureDate || "")
+              : 0,
       );
   }, [views, filters, mode]);
 
@@ -136,6 +140,7 @@ export default function PackageExplorer({
             <label htmlFor="f-urut">
               Urutkan
               <select id="f-urut" value={draft.sort} onChange={(e) => set({ sort: e.target.value })}>
+                <option value="best">Rekomendasi</option>
                 <option value="date">Berangkat terdekat</option>
                 <option value="cheap">Harga termurah</option>
                 <option value="exp">Harga tertinggi</option>
